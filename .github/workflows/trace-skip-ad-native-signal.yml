@@ -1,0 +1,282 @@
+name: Trace Skip Ad native Signal endpoint
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-native-signal.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipnative/apk /tmp/skipnative/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -q input/spotify-9-1-84-2205.apk -d /tmp/skipnative/apkzip
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipnative/native
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool
+          python3 -m pip install --quiet pyelftools
+
+      - name: Decode smali
+        run: |
+          apktool d -f input/spotify-9-1-84-2205.apk -o /tmp/skipnative/apk >/dev/null
+
+      - name: Build report
+        run: |
+          SO=/tmp/skipnative/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipnative/orbit.disasm
+          python3 - <<'PY' > analysis/skip-ad-native-signal.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          root=Path('/tmp/skipnative/apk')
+          so=Path('/tmp/skipnative/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/skipnative/orbit.disasm').read_text(errors='replace').splitlines()
+
+          print('# Skip Ad Signal -> native endpoint trace')
+          print()
+          print('Goal: close the path SignalCommand("skip-ad") -> EsSignalRequest -> ContextPlayer/Signal -> Orbit handler/ad transition.')
+          print()
+
+          # ---- Android smali: exact command serialization ----
+          wanted=['xcw','zqw','b8p0','hrw','tow']
+          allsmali=list(root.glob('smali*/**/*.smali'))
+          byname={}
+          for p in allsmali:
+            stem=p.stem
+            if stem in wanted:
+              byname.setdefault(stem,[]).append(p)
+
+          for name in wanted:
+            print(f'## Android class {name}')
+            ps=byname.get(name,[])
+            if not ps:
+              print('- not found'); print(); continue
+            for p in ps:
+              t=p.read_text(errors='replace')
+              print(f'- {p}')
+              methods=[]
+              pos=0
+              while True:
+                a=t.find('.method',pos)
+                if a<0: break
+                b=t.find('.end method',a)
+                if b<0: break
+                b += len('.end method')
+                m=t[a:b]
+                if name in ('xcw','zqw'):
+                  if any(x in m for x in ('EsSignalRequest','SignalCommand','Lp/b8p0;','"Signal"','signalId','loggingParams','parameters')):
+                    methods.append(m)
+                elif name in ('b8p0','hrw'):
+                  if any(x in m for x in ('SignalCommand','Lp/zqw;','Lp/b8p0;','Lp/h8p0;')):
+                    methods.append(m)
+                else:
+                  if any(x in m for x in ('EsSignalRequest','m17989n','m17990o','m17991p')):
+                    methods.append(m)
+              for m in methods[:12]:
+                print('~~~smali')
+                print(m)
+                print('~~~')
+                print()
+
+          # Whole APK direct builders of EsSignalRequest, to compare field mapping.
+          print('## Whole-APK EsSignalRequest builder call patterns')
+          for p in allsmali:
+            t=p.read_text(errors='replace')
+            if 'EsSignalRequest$SignalRequest' not in t: continue
+            if not any(x in t for x in ('->r(', '->q(', 'm81225r', 'm81224q', 'SignalCommand')):
+              continue
+            snippets=[]
+            for m in re.finditer(r'EsSignalRequest\$SignalRequest',t):
+              s=max(0,m.start()-1800); e=min(len(t),m.end()+3500)
+              sn=t[s:e]
+              if sn not in snippets: snippets.append(sn)
+            if snippets:
+              print(f'### {p}')
+              for sn in snippets[:6]:
+                print('~~~smali'); print(sn); print('~~~')
+              print()
+
+          # ---- Native ELF helpers ----
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a: fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs.append((rel['r_offset'],add,sec.name))
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def off2va(off):
+            for a,b,v in loads:
+              if a<=off<b: return v+(off-a)
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def cstr_at_off(off,maxlen=300):
+            if off is None or off>=len(data): return None
+            e=data.find(b'\0',off,min(len(data),off+maxlen))
+            if e<0:return None
+            raw=data[off:e]
+            try:return raw.decode('utf-8')
+            except:return None
+          def context(i,b=18,a=28):
+            for x in dis[max(0,i-b):min(len(dis),i+a+1)]: print('    '+x)
+
+          targets=[
+            b'skip-ad',
+            b'ad_skipped',
+            b'ad_skip',
+            b'spotify.player.esperanto.proto.ContextPlayer',
+            b'disallow_skipping_next_reasons',
+          ]
+          print('## Native semantic string locations and xrefs')
+          target_vas={}
+          for needle in targets:
+            print(f'### {needle.decode(errors="replace")}')
+            start=0; locs=[]
+            while True:
+              o=data.find(needle,start)
+              if o<0:break
+              va=off2va(o)
+              if va is not None: locs.append((o,va))
+              start=o+1
+            if not locs:
+              print('- not present')
+              print()
+              continue
+            target_vas[needle]=[va for _,va in locs]
+            for o,va in locs:
+              print(f'- file+0x{o:x}, VA 0x{va:x}')
+              # print nearby strings in same data area
+              lo=max(0,o-0x180); hi=min(len(data),o+0x240)
+              chunk=data[lo:hi]
+              ss=[]
+              for m in re.finditer(rb'[ -~]{4,}',chunk):
+                s=m.group().decode('ascii','replace')
+                if s not in ss: ss.append(s)
+              if ss:
+                print('  nearby strings: ' + ' | '.join(ss[:30]))
+            # RIP comment refs in objdump
+            vas={va for _,va in locs}
+            hits=[]
+            for a,i,op,l in ins:
+              if '#' not in l: continue
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm and int(mm.group(1),16) in vas:
+                hits.append((a,i,l))
+            # reloc addends to string VAs
+            for roff,add,sec in relocs:
+              if add in vas:
+                print(f'- relocation slot 0x{roff:x} ({sec}) -> 0x{add:x}')
+            for a,i,l in hits[:80]:
+              print(f'- code xref 0x{a:x}, FDE={fde_for(a)}')
+              context(i)
+            print()
+
+          # Find functions referencing any pointer slot that relocates to skip-ad/ad_skipped.
+          print('## Indirect pointer-table xrefs to skip-ad/ad_skipped')
+          semantic=set()
+          for n in (b'skip-ad',b'ad_skipped'):
+            semantic.update(target_vas.get(n,[]))
+          slots={roff:add for roff,add,sec in relocs if add in semantic}
+          if not slots: print('- no relocation slots')
+          for slot,add in slots.items():
+            print(f'### pointer slot 0x{slot:x} -> 0x{add:x}')
+            for a,i,op,l in ins:
+              if '#' not in l: continue
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm and int(mm.group(1),16)==slot:
+                print(f'- code xref 0x{a:x}, FDE={fde_for(a)}')
+                context(i,24,40)
+          print()
+
+          # Generic compare/hash/string-use scan around native signal processing candidates.
+          print('## Functions containing skip/ad semantic neighborhoods')
+          interesting=set()
+          for needle,vas in target_vas.items():
+            for a,i,op,l in ins:
+              if '#' not in l:continue
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm and int(mm.group(1),16) in set(vas):
+                fr=fde_for(a)
+                if fr: interesting.add(fr)
+          for fr in sorted(interesting):
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x} size=0x{fr[1]-fr[0]:x}')
+            count=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l); count+=1
+                if count>1800:
+                  print('    ... truncated ...'); break
+            print()
+
+          # Native service-name endpoint table heuristics: strings near ContextPlayer occurrence.
+          print('## ContextPlayer native string-table neighborhood')
+          for va in target_vas.get(b'spotify.player.esperanto.proto.ContextPlayer',[]):
+            o=va2off(va)
+            if o is None:continue
+            lo=max(0,o-0x1000); hi=min(len(data),o+0x2000)
+            chunk=data[lo:hi]
+            for m in re.finditer(rb'[ -~]{3,}',chunk):
+              s=m.group().decode('ascii','replace')
+              if any(k.lower() in s.lower() for k in ('Signal','Skip','ContextPlayer','ad_','advert')):
+                print(f'- file+0x{lo+m.start():x}: {s}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-native-signal.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad native Signal endpoint"
+          git pull --rebase origin main
+          git push origin HEAD:main
