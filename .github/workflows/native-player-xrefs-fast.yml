@@ -1,0 +1,153 @@
+name: Fast native Spotify player xrefs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-player-xrefs-fast.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Spotify r1 APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          echo "APK=$(find input -type f -name '*.apk' -print -quit)" >> "$GITHUB_ENV"
+
+      - name: Extract x86_64 Orbit library
+        run: |
+          mkdir -p /tmp/native
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+          file /tmp/native/liborbit-jni-spotify.so
+
+      - name: Build xref report
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          python3 - <<'PY' > analysis/native-player-xrefs-fast.md
+          from pathlib import Path
+          import struct, re, subprocess
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          targets=[
+            b'ad.skippable_ad_delay',
+            b'ad.is_skippable',
+            b'ad_disallow',
+            b'mft_disallow',
+            b'disallow_skipping_next_reasons',
+            b'SKIP_TO_NEXT_RESTRICTED',
+            b'skip_to_next_restricted',
+          ]
+
+          # Parse PT_LOAD mappings from readelf.
+          out=subprocess.check_output(['readelf','-lW',str(so)],text=True)
+          loads=[]
+          for line in out.splitlines():
+            if line.strip().startswith('LOAD'):
+              p=line.split()
+              # Type Offset VirtAddr PhysAddr FileSiz MemSiz Flg Align
+              try:
+                off=int(p[1],16); va=int(p[2],16); filesz=int(p[4],16)
+                loads.append((off,off+filesz,va))
+              except Exception:
+                pass
+
+          def off2va(off):
+            for a,b,v in loads:
+              if a <= off < b:
+                return v+(off-a)
+            return None
+
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          def contexts_for_hex(value):
+            hx=f'{value:x}'
+            hits=[]
+            # objdump usually annotates RIP-relative targets after '#'.
+            for i,line in enumerate(dis):
+              if re.search(r'#\s*0*'+re.escape(hx)+r'\b',line,re.I):
+                hits.append(i)
+            return hits
+
+          def func_header(i):
+            for j in range(i,-1,-1):
+              if re.match(r'^[0-9a-f]+\s+<.*>:$',dis[j].strip()):
+                return dis[j].strip()
+              if i-j > 5000:
+                break
+            return '<stripped/unknown>'
+
+          print('# Fast native xref report — x86_64 liborbit-jni-spotify.so')
+          print()
+          print('Direct RIP-relative references and one-level pointer-table references to semantic strings.')
+          print()
+          for t in targets:
+            name=t.decode()
+            occ=[]
+            p=0
+            while True:
+              p=data.find(t,p)
+              if p<0: break
+              occ.append((p,off2va(p)))
+              p+=1
+            print(f'## {name}')
+            if not occ:
+              print('NOT FOUND\n')
+              continue
+            for off,va in occ:
+              print(f'- string: file+0x{off:x}, VA 0x{va:x}' if va is not None else f'- string: file+0x{off:x}')
+              if va is None:
+                continue
+              refs=[('direct',va)]
+              # Find static pointer slots containing this VA.
+              needle=struct.pack('<Q',va)
+              q=0
+              while True:
+                q=data.find(needle,q)
+                if q<0: break
+                pva=off2va(q)
+                if pva is not None and pva != va:
+                  refs.append(('ptr',pva))
+                q+=1
+              seen=set()
+              for kind,refva in refs:
+                if (kind,refva) in seen: continue
+                seen.add((kind,refva))
+                hits=contexts_for_hex(refva)
+                print(f'  - {kind} target VA 0x{refva:x}: {len(hits)} code xref(s)')
+                for n,i in enumerate(hits[:20],1):
+                  print(f'    - xref {n}: {func_header(i)}')
+                  lo=max(0,i-8); hi=min(len(dis),i+9)
+                  print('      ---')
+                  for line in dis[lo:hi]:
+                    print('      '+line)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-player-xrefs-fast.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Add fast native Orbit semantic xrefs"
+          git pull --rebase origin main
+          git push origin HEAD:main
