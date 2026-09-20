@@ -1,0 +1,82 @@
+name: Map native disallow_signals and ad signal gate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-disallow-signals.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/dsig
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/dsig
+
+      - name: Build report
+        run: |
+          SO=/tmp/dsig/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/dsig/orbit.disasm
+          {
+            echo '# Native disallow_signals / Skip Ad gate map'
+            echo
+            echo 'Expected legacy restriction array base: owner+0x1410; set-like slots use 0x18 stride.'
+            echo 'Candidate extended slots: +0x1620 playback-speed, +0x1638 modes, +0x1650 signals, +0x1668 next extended field.'
+            echo
+
+            echo '## Restriction builder around candidate extended slots'
+            objdump -d -M intel --start-address=0x10a69e0 --stop-address=0x10a6bc0 "$SO"
+            echo
+
+            echo '## Restriction builder switch-to-video / map-looking tail'
+            objdump -d -M intel --start-address=0x10a7a80 --stop-address=0x10a7e50 "$SO"
+            echo
+
+            echo '## All owner+0x1638/+0x1650/+0x1668 accesses in player region'
+            grep -E -B12 -A20 '\[(r14|rdi|rbx|rsi)\+0x(1638|1650|1668)\]' /tmp/dsig/orbit.disasm | head -n 16000 || true
+            echo
+
+            echo '## Export/serialization code after disallow_updating_context_reasons'
+            objdump -d -M intel --start-address=0x166f480 --stop-address=0x166f900 "$SO"
+            echo
+            objdump -d -M intel --start-address=0x1677ef0 --stop-address=0x1678400 "$SO"
+            echo
+
+            echo '## switch-to-video direct xrefs'
+            grep -F -B25 -A90 '# 387742 ' /tmp/dsig/orbit.disasm | head -n 12000 || true
+            echo
+
+            echo '## ad_disallow direct xrefs after 0x10a7600'
+            awk '
+              /^[[:space:]]*[0-9a-f]+:/ {
+                a=$1; gsub(":","",a);
+                if (a >= "10a7600" && a <= "10a7f52") print
+              }' /tmp/dsig/orbit.disasm | grep -B35 -A70 -F '# 36dd45 ' | head -n 12000 || true
+            echo
+          } > analysis/native-disallow-signals.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-disallow-signals.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Map native disallow_signals gate"
+          git pull --rebase origin main
+          git push origin HEAD:main
