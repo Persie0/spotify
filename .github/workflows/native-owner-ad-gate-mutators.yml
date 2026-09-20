@@ -1,0 +1,65 @@
+name: Decode indirect restriction ad gate mutators
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-owner-ad-gate-mutators.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Decode candidate mutators
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Indirect restriction-owner ad-gate mutators"
+            echo
+            echo "owner+0x470 = state(owner+0x38)+0x438."
+            echo
+            echo "## Owner wrappers around 0x10a9d00..0x10a9f9e"
+            objdump -d -M intel --start-address=0x10a9d00 --stop-address=0x10a9fbe "$SO"
+            echo
+            echo "## lower helper 0x1089a72"
+            objdump -d -M intel --start-address=0x1089a50 --stop-address=0x1089af0 "$SO"
+            echo
+            echo "## lower helper 0x1089b98"
+            objdump -d -M intel --start-address=0x1089b70 --stop-address=0x1089c10 "$SO"
+            echo
+            echo "## nearby lower helper cluster"
+            objdump -d -M intel --start-address=0x10898f0 --stop-address=0x1089d20 "$SO"
+            echo
+            echo "## Owner wrapper address arithmetic"
+            objdump -d -M intel --start-address=0x10a9d00 --stop-address=0x10a9fbe "$SO" |
+              grep -n -B10 -A14 -E '\+0x(38|438|470|560|598)\]|0x438|0x470|1089a72|1089b98' || true
+          } > analysis/native-owner-ad-gate-mutators.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-owner-ad-gate-mutators.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode indirect restriction ad gate mutators"
+          git pull --rebase origin main
+          git push origin HEAD:main
