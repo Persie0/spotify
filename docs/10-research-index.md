@@ -168,12 +168,24 @@ ad_disallow  -> r14+0x14a0
 
 The ad skip-next write is guarded by `r14+0x598` and `r14+0x470`. The first is reused in active/playing-context logic; the second is the current ad-specific anchor.
 
+The indirect native delay consumer is now resolved. Orbit maps `ad.skippable_ad_delay` to an internal `skippable_ad_delay` key. ELF relocations reconstruct the ad-model runtime vtable at `0x1879950`:
+
+```text
++0xc8 -> raw skippable metadata getter
++0xd0 -> derived skippable/timing predicate
++0xe8 -> skippable_ad_delay integer parser
+```
+
+The derived predicate returns true when object byte `+0x1b8` is set; otherwise a positive delay suppresses skippability and zero/non-positive delay falls back to the raw `skippable` property.
+
+A ContextPlayer event handler at `0x10a9668` can set `currentTrackObject+0x1b8 = 1` for event subtype `6` and immediately rebuild restrictions. This is a concrete state bridge, but it is **not yet the proven skip-next unlock**: skip-next `ad_disallow` insertion happens earlier in the builder and remains gated by ContextPlayer bytes `+0x598` and `+0x470`.
+
 Current target:
 
-- identify writers/semantic meaning of the `+0x470` ad guard
-- find the indirect consumer of `ad.skippable_ad_delay`
-- determine whether delay expiry flips that native guard locally or arrives through another player-core event
-- trace available-command synchronization after the native restriction set changes
+- identify the true ContextPlayer writers/semantic meaning of byte gates `+0x470` and `+0x598`
+- resolve event subtype `6` and the role of the `+0x1b8` ad-object flag
+- determine whether delay expiry changes the skip-next gate locally or via another player-core event
+- trace available-command synchronization after the native skip-next restriction set changes
 
 ## 6. Connect-device behavior — OPEN
 
