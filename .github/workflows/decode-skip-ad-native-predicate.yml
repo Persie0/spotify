@@ -1,0 +1,284 @@
+name: Decode skip-ad native predicate and dispatch
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skip-ad-native-predicate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/pred
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pred
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode predicate and dispatch
+        run: |
+          SO=/tmp/pred/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/pred/orbit.disasm
+          python3 - <<'PY' > analysis/skip-ad-native-predicate.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/pred/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/pred/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr'],seg['p_flags']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              symtab=elf.get_section(sec['sh_link']) if sec['sh_link'] else None
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                sym=''
+                try:
+                  if symtab and rel['r_info_sym']:
+                    sym=symtab.get_symbol(rel['r_info_sym']).name
+                except: pass
+                relocs.append((rel['r_offset'],add,sec.name,sym))
+            dynsyms=[]
+            sec=elf.get_section_by_name('.dynsym')
+            if sec:
+              for sym in sec.iter_symbols():
+                if sym['st_value']:
+                  dynsyms.append((sym['st_value'],sym.name))
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def va2off(va):
+            for a,b,v,fl in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+          def off2va(off):
+            for a,b,v,fl in loads:
+              if a<=off<b: return v+(off-a)
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr: lo=m+1
+              else: hi=m
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def cstr(va,maxlen=260):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.92:return None
+            return raw.decode('utf-8','replace')
+          def context(idx,b=16,a=22):
+            for x in lines[max(0,idx-b):min(len(lines),idx+a+1)]: print('    '+x)
+          def dump_fde(addr,title,maxins=2600):
+            fr=fde_for(addr)
+            print(f'## {title}')
+            print('FDE: '+(f'0x{fr[0]:x}..0x{fr[1]:x} size=0x{fr[1]-fr[0]:x}' if fr else 'none'))
+            if fr:
+              n=0
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:
+                  # Resolve comments to readable strings inline.
+                  extra=''
+                  if '#' in l:
+                    mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+                    if mm:
+                      s=cstr(int(mm.group(1),16))
+                      if s: extra=' ; STRING='+repr(s)
+                  print('    '+l+extra); n+=1
+                  if n>=maxins:
+                    print('    ... truncated ...');break
+            print()
+            return fr
+          def callers(target):
+            out=[]
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if m and int(m.group(1),16)==target: out.append((a,i,fde_for(a)))
+            return out
+          def refs_to_va(target):
+            out=[]
+            for a,i,op,l in ins:
+              if '#' not in l:continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m and int(m.group(1),16)==target: out.append((a,i,fde_for(a)))
+            return out
+
+          print('# Native skip-ad predicate / dispatch deep trace')
+          print()
+          print('Anchors:')
+          print('- availability producer: 0xfd381a')
+          print('- incoming skip-ad discriminator: 0xfd38d6')
+          print('- special tail label: 0xfd397f')
+          print('- secondary discriminator: 0x12044d8 inside its containing FDE')
+          print()
+
+          fr_av=dump_fde(0xfd381a,'Availability producer 0xfd381a')
+          fr_sig=dump_fde(0xfd38d6,'Incoming skip-ad discriminator 0xfd38d6')
+          fr_secondary=dump_fde(0x12044d8,'Secondary skip-ad discriminator containing 0x12044d8',5000)
+
+          # Print direct callers and call-site argument setup.
+          print('## Direct callers of availability / signal helpers')
+          for t in (0xfd381a,0xfd38d6,0xfd69d4,0xfd65d4):
+            print(f'### target 0x{t:x}')
+            cs=callers(t)
+            if not cs: print('- none')
+            for a,i,fr in cs:
+              print(f'- 0x{a:x}; caller FDE={fr}')
+              context(i,24,30)
+            print()
+
+          # Relocation slots pointing at method functions = likely vtable entries / callback tables.
+          print('## Relocation slots pointing at 0xfd381a / 0xfd38d6')
+          for target in (0xfd381a,0xfd38d6):
+            hits=[r for r in relocs if r[1]==target]
+            print(f'### target 0x{target:x}')
+            if not hits: print('- no relocation addend hit')
+            for off,add,sec,sym in hits:
+              print(f'- slot 0x{off:x} sec={sec} sym={sym!r}')
+              # Dump +/- 0x100 as reloc/raw values.
+              for va in range(max(0,off-0x100),off+0x108,8):
+                rr=[r for r in relocs if r[0]==va]
+                if rr and rr[0][1] is not None:
+                  val=rr[0][1]
+                  nm=next((n for a,n in dynsyms if a==val),'')
+                  st=cstr(val)
+                  print(f'    0x{va:x}: reloc -> 0x{val:x} {nm}'+(f' STRING={st!r}' if st else ''))
+                else:
+                  o=va2off(va)
+                  if o is not None and o+8<=len(data):
+                    raw=struct.unpack_from('<Q',data,o)[0]
+                    if raw:
+                      print(f'    0x{va:x}: raw 0x{raw:x}')
+              # constructor/code refs to table slot
+              print('  code refs to slot/table neighborhood:')
+              for probe in range(max(0,off-0x80),off+0x81,8):
+                for a,i,fr in refs_to_va(probe):
+                  print(f'    ref @0x{a:x} -> 0x{probe:x}; FDE={fr}')
+                  context(i,12,18)
+            print()
+
+          # Search likely owner constructors/writers for +0x40 and +0x68 in the same code family.
+          print('## +0x40 / +0x68 field writes near skip-ad owner code')
+          for a,i,op,l in ins:
+            if not (0xfc0000<=a<0xff0000):continue
+            if not any(x in op for x in ('+0x40]','+0x68]')):continue
+            left=op.split(',',1)[0]
+            if '[' not in left:continue
+            if not re.search(r'\bmov\b',op):continue
+            print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}')
+            context(i,10,16)
+            print()
+
+          # Enumerate all indirect +0x140 calls in the relevant module neighborhoods.
+          print('## All indirect virtual +0x140 calls near relevant code')
+          for a,i,op,l in ins:
+            if not ((0xf00000<=a<0x1100000) or (0x1200000<=a<0x1210000)): continue
+            if re.search(r'call\s+QWORD PTR \[[^\]]+\+0x140\]',op):
+              print(f'### 0x{a:x}; FDE={fde_for(a)}')
+              context(i,14,22)
+              print()
+
+          # Decode readable strings around the full signal function and special branches.
+          print('## Readable strings referenced by incoming signal FDE')
+          if fr_sig:
+            seen=[]
+            for a,i,op,l in ins:
+              if not(fr_sig[0]<=a<fr_sig[1]) or '#' not in l:continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              va=int(m.group(1),16); s=cstr(va)
+              if s and (va,s) not in seen:
+                seen.append((va,s))
+                print(f'- 0x{va:x}: {s!r}')
+          print()
+
+          print('## Readable strings referenced by secondary discriminator FDE')
+          if fr_secondary:
+            seen=[]
+            for a,i,op,l in ins:
+              if not(fr_secondary[0]<=a<fr_secondary[1]) or '#' not in l:continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              va=int(m.group(1),16); s=cstr(va)
+              if s and (va,s) not in seen:
+                seen.append((va,s))
+                print(f'- 0x{va:x}: {s!r}')
+          print()
+
+          # Find all vtable-like relocation arrays where entry +0x140 targets a small function;
+          # rank candidates whose target FDE itself references ad/signal semantics or the ad object methods.
+          print('## Candidate concrete +0x140 vtable targets')
+          relmap={off:add for off,add,sec,sym in relocs if add is not None}
+          candidates=[]
+          for base in sorted(relmap):
+            t=relmap.get(base+0x140)
+            if t is None:continue
+            fr=fde_for(t)
+            if not fr:continue
+            score=0; evidence=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if any(k in op for k in ('+0xd0]','+0xe8]','+0x1b8]','+0x438]','+0x470]','+0x598]')):
+                score+=4; evidence.append(op)
+              if '#' in l:
+                m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                if m:
+                  s=cstr(int(m.group(1),16))
+                  if s and any(k in s.lower() for k in ('ad','skip','signal','restrict')):
+                    score+=3; evidence.append(s)
+            # Only emit plausible code-target entries, cap output.
+            if score:
+              candidates.append((score,base,t,fr,evidence[:10]))
+          for score,base,t,fr,evidence in sorted(candidates,reverse=True)[:80]:
+            print(f'- score={score} tableBase=0x{base:x} slot+0x140=0x{t:x} FDE={fr} evidence={evidence}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-native-predicate.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode skip-ad native predicate and dispatch"
+          git pull --rebase origin main
+          git push origin HEAD:main
