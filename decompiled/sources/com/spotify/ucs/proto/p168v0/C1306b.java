@@ -1,0 +1,161 @@
+package com.spotify.ucs.proto.p168v0;
+
+import com.google.protobuf.AbstractC0268g;
+import com.google.protobuf.AbstractC0269h;
+import com.spotify.rcs.resolver.grpc.p141v0.ResolveRequest;
+import java.io.InputStream;
+import p204p.AbstractC2081l8;
+import p204p.AbstractC2118m8;
+import p204p.aux;
+import p204p.gva;
+import p204p.ore0;
+import p204p.owe;
+import p204p.pre0;
+import p204p.sre0;
+
+/* JADX INFO: renamed from: com.spotify.ucs.proto.v0.b */
+/* JADX INFO: loaded from: classes2.dex */
+public final class C1306b extends AbstractC0268g implements sre0 {
+    @Override // com.google.protobuf.AbstractC0268g, p204p.ore0
+    public final /* bridge */ /* synthetic */ pre0 build() {
+        return build();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.ore0
+    public final /* bridge */ /* synthetic */ pre0 buildPartial() {
+        return super.buildPartial();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: clear */
+    public final /* bridge */ /* synthetic */ ore0 mo98325clear() {
+        return mo98325clear();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: clone */
+    public final /* bridge */ /* synthetic */ Object mo98328clone() {
+        return super.mo98326clone();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.sre0
+    public final /* bridge */ /* synthetic */ pre0 getDefaultInstanceForType() {
+        return super.getDefaultInstanceForType();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.AbstractC2081l8
+    public final /* bridge */ /* synthetic */ AbstractC2081l8 internalMergeFrom(AbstractC2118m8 abstractC2118m8) {
+        return super.internalMergeFrom((AbstractC0269h) abstractC2118m8);
+    }
+
+    /* JADX INFO: renamed from: m */
+    public final void m21891m(C1305a c1305a) {
+        copyOnWrite();
+        UcsRequest.m21861n((UcsRequest) this.instance, (UcsRequest.AccountAttributesRequest) c1305a.build());
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.AbstractC2081l8, p204p.ore0
+    public final /* bridge */ /* synthetic */ AbstractC2081l8 mergeFrom(owe oweVar, aux auxVar) {
+        return super.mergeFrom(oweVar, auxVar);
+    }
+
+    /* JADX INFO: renamed from: q */
+    public final void m21892q(C1307c c1307c) {
+        copyOnWrite();
+        UcsRequest.m21862o((UcsRequest) this.instance, (UcsRequest.CallerInfo) c1307c.build());
+    }
+
+    /* JADX INFO: renamed from: r */
+    public final void m21893r(ResolveRequest resolveRequest) {
+        copyOnWrite();
+        UcsRequest.m21863p((UcsRequest) this.instance, resolveRequest);
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: clone */
+    public final /* bridge */ /* synthetic */ AbstractC2081l8 mo98327clone() {
+        return super.mo98326clone();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ AbstractC2081l8 mo98329mergeFrom(byte[] bArr, int i, int i2) {
+        return super.mo98329mergeFrom(bArr, i, i2);
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: clone */
+    public final /* bridge */ /* synthetic */ ore0 mo98327clone() {
+        return super.mo98326clone();
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ AbstractC2081l8 mo98330mergeFrom(byte[] bArr, int i, int i2, aux auxVar) {
+        return super.mo98330mergeFrom(bArr, i, i2, auxVar);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98371mergeFrom(InputStream inputStream) {
+        return super.mo98371mergeFrom(inputStream);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98372mergeFrom(InputStream inputStream, aux auxVar) {
+        return super.mo98372mergeFrom(inputStream, auxVar);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98373mergeFrom(gva gvaVar) {
+        return super.mo98373mergeFrom(gvaVar);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98374mergeFrom(gva gvaVar, aux auxVar) {
+        return super.mo98374mergeFrom(gvaVar, auxVar);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98375mergeFrom(owe oweVar) {
+        return super.mo98375mergeFrom(oweVar);
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g, p204p.ore0
+    public final /* bridge */ /* synthetic */ ore0 mergeFrom(owe oweVar, aux auxVar) {
+        return super.mergeFrom(oweVar, auxVar);
+    }
+
+    @Override // p204p.AbstractC2081l8, p204p.ore0
+    public final /* bridge */ /* synthetic */ ore0 mergeFrom(pre0 pre0Var) {
+        return super.mergeFrom(pre0Var);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98376mergeFrom(byte[] bArr) {
+        return super.mo98376mergeFrom(bArr);
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98329mergeFrom(byte[] bArr, int i, int i2) {
+        return super.mo98329mergeFrom(bArr, i, i2);
+    }
+
+    @Override // com.google.protobuf.AbstractC0268g
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98330mergeFrom(byte[] bArr, int i, int i2, aux auxVar) {
+        return super.mo98330mergeFrom(bArr, i, i2, auxVar);
+    }
+
+    @Override // p204p.AbstractC2081l8
+    /* JADX INFO: renamed from: mergeFrom */
+    public final /* bridge */ /* synthetic */ ore0 mo98377mergeFrom(byte[] bArr, aux auxVar) {
+        return super.mo98377mergeFrom(bArr, auxVar);
+    }
+}

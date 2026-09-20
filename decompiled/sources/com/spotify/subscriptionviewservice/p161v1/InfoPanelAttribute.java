@@ -1,0 +1,100 @@
+package com.spotify.subscriptionviewservice.p161v1;
+
+import com.google.protobuf.AbstractC0269h;
+import p204p.ore0;
+import p204p.pre0;
+import p204p.r110;
+import p204p.r2n0;
+import p204p.sre0;
+import p204p.z110;
+import p204p.zc40;
+
+/* JADX INFO: loaded from: classes10.dex */
+public final class InfoPanelAttribute extends AbstractC0269h implements sre0 {
+    private static final InfoPanelAttribute DEFAULT_INSTANCE;
+    public static final int ICON_FIELD_NUMBER = 2;
+    public static final int LABEL_FIELD_NUMBER = 1;
+    private static volatile r2n0 PARSER;
+    private int bitField0_;
+    private Icon icon_;
+    private String label_ = "";
+
+    static {
+        InfoPanelAttribute infoPanelAttribute = new InfoPanelAttribute();
+        DEFAULT_INSTANCE = infoPanelAttribute;
+        AbstractC0269h.registerDefaultInstance(InfoPanelAttribute.class, infoPanelAttribute);
+    }
+
+    private InfoPanelAttribute() {
+    }
+
+    public static r2n0 parser() {
+        return DEFAULT_INSTANCE.getParserForType();
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h
+    public final Object dynamicMethod(z110 z110Var, Object obj, Object obj2) {
+        r2n0 r110Var;
+        int iOrdinal = z110Var.ordinal();
+        if (iOrdinal == 0) {
+            return (byte) 1;
+        }
+        if (iOrdinal == 2) {
+            return AbstractC0269h.newMessageInfo(DEFAULT_INSTANCE, "\u0000\u0002\u0000\u0001\u0001\u0002\u0002\u0000\u0000\u0000\u0001Ȉ\u0002ဉ\u0000", new Object[]{"bitField0_", "label_", "icon_"});
+        }
+        if (iOrdinal == 3) {
+            return new InfoPanelAttribute();
+        }
+        if (iOrdinal == 4) {
+            return new zc40(DEFAULT_INSTANCE, 6);
+        }
+        if (iOrdinal == 5) {
+            return DEFAULT_INSTANCE;
+        }
+        if (iOrdinal != 6) {
+            throw null;
+        }
+        r2n0 r2n0Var = PARSER;
+        if (r2n0Var != null) {
+            return r2n0Var;
+        }
+        synchronized (InfoPanelAttribute.class) {
+            try {
+                r110Var = PARSER;
+                if (r110Var == null) {
+                    r110Var = new r110(DEFAULT_INSTANCE);
+                    PARSER = r110Var;
+                }
+            } catch (Throwable th) {
+                throw th;
+            }
+        }
+        return r110Var;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.sre0
+    public final /* bridge */ /* synthetic */ pre0 getDefaultInstanceForType() {
+        return getDefaultInstanceForType();
+    }
+
+    /* JADX INFO: renamed from: n */
+    public final Icon m21759n() {
+        Icon icon = this.icon_;
+        return icon == null ? Icon.m21752o() : icon;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.pre0
+    public final /* bridge */ /* synthetic */ ore0 newBuilderForType() {
+        return newBuilderForType();
+    }
+
+    /* JADX INFO: renamed from: o */
+    public final String m21760o() {
+        return this.label_;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.pre0
+    public final /* bridge */ /* synthetic */ ore0 toBuilder() {
+        return toBuilder();
+    }
+}

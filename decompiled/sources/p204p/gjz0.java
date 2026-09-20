@@ -1,0 +1,27 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes7.dex */
+public final class gjz0 extends ibk {
+
+    /* JADX INFO: renamed from: a */
+    public /* synthetic */ Object f80652a;
+
+    /* JADX INFO: renamed from: b */
+    public int f80653b;
+
+    /* JADX INFO: renamed from: c */
+    public final /* synthetic */ ady0 f80654c;
+
+    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+    public gjz0(ady0 ady0Var, fbk fbkVar) {
+        super(fbkVar);
+        this.f80654c = ady0Var;
+    }
+
+    @Override // p204p.ly8
+    public final Object invokeSuspend(Object obj) {
+        this.f80652a = obj;
+        this.f80653b |= Integer.MIN_VALUE;
+        return this.f80654c.emit(null, this);
+    }
+}

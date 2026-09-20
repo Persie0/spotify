@@ -1,0 +1,20 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes7.dex */
+public final class qyz0 {
+
+    /* JADX INFO: renamed from: a */
+    public static final qyz0 f194070a = new qyz0();
+
+    public final boolean equals(Object obj) {
+        return this == obj || (obj instanceof qyz0);
+    }
+
+    public final int hashCode() {
+        return 828826664;
+    }
+
+    public final String toString() {
+        return "Clicked";
+    }
+}

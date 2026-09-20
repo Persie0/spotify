@@ -1,0 +1,19 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes11.dex */
+public final /* synthetic */ class wq6 extends spi0 {
+
+    /* JADX INFO: renamed from: h */
+    public static final wq6 f253935h = new wq6(t870.class, "flags", "getFlags$kotlin_metadata()I", 0);
+
+    @Override // p204p.spi0, p204p.yq60
+    /* JADX INFO: renamed from: b0 */
+    public final void mo25834b0(Object obj, Object obj2) {
+        ((t870) obj).f217987a = ((Number) obj2).intValue();
+    }
+
+    @Override // p204p.spi0, p204p.nr60
+    public final Object get(Object obj) {
+        return Integer.valueOf(((t870) obj).f217987a);
+    }
+}

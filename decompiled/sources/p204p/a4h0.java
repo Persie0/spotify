@@ -1,0 +1,59 @@
+package p204p;
+
+import java.util.ArrayList;
+
+/* JADX INFO: loaded from: classes10.dex */
+public final class a4h0 implements pv91 {
+
+    /* JADX INFO: renamed from: a */
+    public final zt91 f12250a;
+
+    /* JADX INFO: renamed from: b */
+    public final /* synthetic */ r2h0 f12251b;
+
+    public a4h0(r2h0 r2h0Var) {
+        this.f12251b = r2h0Var;
+        yt91 yt91VarM96903c = r2h0Var.f195145c.m96903c();
+        yt91VarM96903c.f276055i.add(new bu91("toggle_automix_state_item", null, null, null, null));
+        yt91VarM96903c.f276056j = false;
+        this.f12250a = yt91VarM96903c.m94607a();
+    }
+
+    @Override // p204p.pv91
+    /* JADX INFO: renamed from: d */
+    public final st91 mo24361d() {
+        st91 st91Var = st91.f213865b;
+        st91 st91Var2 = this.f12251b.f195144b;
+        ArrayList arrayList = new ArrayList();
+        if (st91Var2 != null) {
+            arrayList.addAll(st91Var2.f213866a);
+        }
+        zt91 zt91Var = this.f12250a;
+        return xl81.m91404m(zt91Var, "location", arrayList, zt91Var, arrayList);
+    }
+
+    /* JADX INFO: renamed from: e */
+    public final av91 m24700e(int i, int i2) {
+        String str;
+        String str2;
+        dv91 dv91Var = new dv91("hit", 1);
+        if (i == 1) {
+            str = "off";
+        } else {
+            if (i != 2) {
+                throw null;
+            }
+            str = "on";
+        }
+        pqm0 pqm0Var = new pqm0("state_before_toggle", str);
+        if (i2 == 1) {
+            str2 = "off";
+        } else {
+            if (i2 != 2) {
+                throw null;
+            }
+            str2 = "on";
+        }
+        return new av91("", "", dv91Var, new bv91("toggle_state", 1, kkc0.m56695h0(pqm0Var, new pqm0("state_after_toggle", str2))), this.f12250a, this.f12251b.f195144b, System.currentTimeMillis());
+    }
+}

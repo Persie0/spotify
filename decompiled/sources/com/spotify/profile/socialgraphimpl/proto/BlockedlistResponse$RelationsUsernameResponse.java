@@ -1,0 +1,104 @@
+package com.spotify.profile.socialgraphimpl.proto;
+
+import com.google.protobuf.AbstractC0269h;
+import p204p.ae50;
+import p204p.ore0;
+import p204p.pre0;
+import p204p.r110;
+import p204p.r2n0;
+import p204p.sre0;
+import p204p.z110;
+import p204p.z79;
+
+/* JADX INFO: loaded from: classes10.dex */
+public final class BlockedlistResponse$RelationsUsernameResponse extends AbstractC0269h implements sre0 {
+    private static final BlockedlistResponse$RelationsUsernameResponse DEFAULT_INSTANCE;
+    public static final int NEXT_PAGE_TOKEN_FIELD_NUMBER = 2;
+    private static volatile r2n0 PARSER = null;
+    public static final int USERS_FIELD_NUMBER = 1;
+    private int bitField0_;
+    private ae50 users_ = AbstractC0269h.emptyProtobufList();
+    private String nextPageToken_ = "";
+
+    static {
+        BlockedlistResponse$RelationsUsernameResponse blockedlistResponse$RelationsUsernameResponse = new BlockedlistResponse$RelationsUsernameResponse();
+        DEFAULT_INSTANCE = blockedlistResponse$RelationsUsernameResponse;
+        AbstractC0269h.registerDefaultInstance(BlockedlistResponse$RelationsUsernameResponse.class, blockedlistResponse$RelationsUsernameResponse);
+    }
+
+    private BlockedlistResponse$RelationsUsernameResponse() {
+    }
+
+    /* JADX INFO: renamed from: n */
+    public static BlockedlistResponse$RelationsUsernameResponse m19833n() {
+        return DEFAULT_INSTANCE;
+    }
+
+    public static r2n0 parser() {
+        return DEFAULT_INSTANCE.getParserForType();
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h
+    public final Object dynamicMethod(z110 z110Var, Object obj, Object obj2) {
+        r2n0 r110Var;
+        int iOrdinal = z110Var.ordinal();
+        if (iOrdinal == 0) {
+            return (byte) 1;
+        }
+        if (iOrdinal == 2) {
+            return AbstractC0269h.newMessageInfo(DEFAULT_INSTANCE, "\u0000\u0002\u0000\u0001\u0001\u0002\u0002\u0000\u0001\u0000\u0001\u001b\u0002ለ\u0000", new Object[]{"bitField0_", "users_", BlockedlistResponse$UsernameUser.class, "nextPageToken_"});
+        }
+        if (iOrdinal == 3) {
+            return new BlockedlistResponse$RelationsUsernameResponse();
+        }
+        if (iOrdinal == 4) {
+            return new z79(DEFAULT_INSTANCE, 6);
+        }
+        if (iOrdinal == 5) {
+            return DEFAULT_INSTANCE;
+        }
+        if (iOrdinal != 6) {
+            throw null;
+        }
+        r2n0 r2n0Var = PARSER;
+        if (r2n0Var != null) {
+            return r2n0Var;
+        }
+        synchronized (BlockedlistResponse$RelationsUsernameResponse.class) {
+            try {
+                r110Var = PARSER;
+                if (r110Var == null) {
+                    r110Var = new r110(DEFAULT_INSTANCE);
+                    PARSER = r110Var;
+                }
+            } catch (Throwable th) {
+                throw th;
+            }
+        }
+        return r110Var;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.sre0
+    public final /* bridge */ /* synthetic */ pre0 getDefaultInstanceForType() {
+        return getDefaultInstanceForType();
+    }
+
+    public final String getNextPageToken() {
+        return this.nextPageToken_;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.pre0
+    public final /* bridge */ /* synthetic */ ore0 newBuilderForType() {
+        return newBuilderForType();
+    }
+
+    /* JADX INFO: renamed from: o */
+    public final ae50 m19834o() {
+        return this.users_;
+    }
+
+    @Override // com.google.protobuf.AbstractC0269h, p204p.pre0
+    public final /* bridge */ /* synthetic */ ore0 toBuilder() {
+        return toBuilder();
+    }
+}

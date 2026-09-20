@@ -1,0 +1,17 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes11.dex */
+public abstract /* synthetic */ class jwp {
+
+    /* JADX INFO: renamed from: a */
+    public static final /* synthetic */ int[] f116668a;
+
+    static {
+        int[] iArr = new int[tll0.values().length];
+        try {
+            iArr[0] = 1;
+        } catch (NoSuchFieldError unused) {
+        }
+        f116668a = iArr;
+    }
+}

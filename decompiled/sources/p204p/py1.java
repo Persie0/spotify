@@ -1,0 +1,29 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes4.dex */
+public enum py1 {
+    INTERESTED(null),
+    NOT_INTERESTED(null),
+    REPORT_AD(null),
+    CLOSE_AD(null),
+    DSA(null),
+    BRAND_SURVEY(null),
+    TOO_OFTEN(null),
+    NOT_BRAND(null),
+    NOT_PRODUCT(null),
+    ALREADY_USING(null),
+    SOMETHING_ELSE(null),
+    REPORT_ADULT_CONTENT(d9g0.REPORT_ADULT_CONTENT),
+    REPORT_DECEPTIVE_MISLEADING(d9g0.REPORT_DECEPTIVE_MISLEADING),
+    REPORT_DANGEROUS_INAPPROPRIATE(d9g0.REPORT_DANGEROUS_INAPPROPRIATE),
+    REPORT_ILLEGAL_RESTRICTED(d9g0.REPORT_ILLEGAL_RESTRICTED),
+    REPORT_QUALITY_TECHNICAL(d9g0.REPORT_QUALITY_TECHNICAL);
+
+
+    /* JADX INFO: renamed from: a */
+    public final d9g0 f183307a;
+
+    py1(d9g0 d9g0Var) {
+        this.f183307a = d9g0Var;
+    }
+}

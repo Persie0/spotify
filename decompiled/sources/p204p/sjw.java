@@ -1,0 +1,25 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes2.dex */
+public enum sjw implements od50 {
+    UNKNOWN(0),
+    DEFAULT(1),
+    PARROT(2),
+    UNRECOGNIZED(-1);
+
+
+    /* JADX INFO: renamed from: a */
+    public final int f209939a;
+
+    sjw(int i) {
+        this.f209939a = i;
+    }
+
+    @Override // p204p.od50
+    public final int getNumber() {
+        if (this != UNRECOGNIZED) {
+            return this.f209939a;
+        }
+        throw new IllegalArgumentException("Can't get the number of an unknown enum value.");
+    }
+}

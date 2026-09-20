@@ -1,0 +1,7 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes.dex */
+public interface k6x {
+    /* JADX INFO: renamed from: a */
+    String mo55623a();
+}

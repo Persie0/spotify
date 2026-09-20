@@ -1,0 +1,8 @@
+package p204p;
+
+import android.os.Parcelable;
+
+/* JADX INFO: loaded from: classes6.dex */
+public interface r8w0 extends Parcelable {
+    String getId();
+}

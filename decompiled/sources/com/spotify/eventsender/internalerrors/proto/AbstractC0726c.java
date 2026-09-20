@@ -1,0 +1,12 @@
+package com.spotify.eventsender.internalerrors.proto;
+
+import p204p.vgc0;
+import p204p.vyd1;
+
+/* JADX INFO: renamed from: com.spotify.eventsender.internalerrors.proto.c */
+/* JADX INFO: loaded from: classes6.dex */
+public abstract class AbstractC0726c {
+
+    /* JADX INFO: renamed from: a */
+    public static final vgc0 f3914a = new vgc0(vyd1.f246078g, "", vyd1.f246080i, EventSenderInternalErrors.Counts.m9812p());
+}

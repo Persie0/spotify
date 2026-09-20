@@ -1,0 +1,8 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes9.dex */
+public final class l1o {
+
+    /* JADX INFO: renamed from: a */
+    public final /* synthetic */ int f128762a;
+}

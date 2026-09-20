@@ -1,0 +1,14 @@
+package p204p;
+
+import kotlin.Metadata;
+
+/* JADX INFO: loaded from: classes2.dex */
+@gtq
+@Metadata(m24211d1 = {"\u0000\n\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\bg\u0018\u00002\u00020\u0001ø\u0001\u0000\u0082\u0002\u0006\n\u0004\b!0\u0001¨\u0006\u0002À\u0006\u0001"}, m24212d2 = {"Lp/lt91;", "", "src_main_java_com_spotify_ubi_dwelltimelogger-dwelltimelogger"}, m24213k = 1, m24214mv = {2, 3, 0}, m24216xi = 48)
+public interface lt91 {
+    /* JADX INFO: renamed from: d */
+    jt91 mo59874d(kt91 kt91Var);
+
+    /* JADX INFO: renamed from: q */
+    String mo59875q(jt91 jt91Var);
+}

@@ -1,0 +1,8 @@
+package com.fasterxml.jackson.databind.introspect;
+
+/* JADX INFO: loaded from: classes3.dex */
+public abstract class ClassIntrospector {
+
+    public interface MixInResolver {
+    }
+}

@@ -1,0 +1,8 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes8.dex */
+public final class xwb0 {
+
+    /* JADX INFO: renamed from: a */
+    public i4t0 f266630a;
+}

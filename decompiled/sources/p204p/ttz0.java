@@ -1,0 +1,95 @@
+package p204p;
+
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.CappingRule;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.MessageTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.Pacing;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.UndefinedMessageTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.AccessoryContent;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.AccessoryImage;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.BackgroundColor;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.Button;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.ButtonStyle;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.ClickAction;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.Format;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.HeaderContent;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.Icon;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.Signifier;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.Text;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.BannerTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.BottomSheetTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.FullscreenTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.InlineCardTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.ModalTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.SnackBarTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.TooltipTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.api.models.p110ui.templates.WebViewTemplate;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.data.models.Html;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.data.models.Message;
+import com.spotify.messaging.clientmessagingplatform.clientmessagingplatformsdk.data.models.MessageCreative;
+
+/* JADX INFO: loaded from: classes2.dex */
+public final class ttz0 {
+    /* JADX INFO: renamed from: a */
+    public final i82 m81544a() {
+        i82 i82Var = new i82(16);
+        jqv0 jqv0Var = qpv0.f191387a;
+        w8q0 w8q0Var = new w8q0(jqv0Var.mo54112b(Message.class));
+        w8q0Var.m87473j(stz0.m79356j(Message.JITMessageStub.class, w8q0Var, jqv0Var.mo54112b(Message.JITMessageStub.class), jqv0Var, Message.CreativeMessage.class), qjg1.m72926r(qpv0.m73454a(Message.CreativeMessage.class)));
+        w8q0Var.m87470d(i82Var);
+        w8q0 w8q0Var2 = new w8q0(jqv0Var.mo54112b(MessageCreative.class));
+        w8q0Var2.m87473j(stz0.m79356j(MessageCreative.FormatCreative.class, w8q0Var2, jqv0Var.mo54112b(MessageCreative.FormatCreative.class), jqv0Var, MessageCreative.HtmlCreative.class), qjg1.m72926r(qpv0.m73454a(MessageCreative.HtmlCreative.class)));
+        w8q0Var2.m87470d(i82Var);
+        w8q0 w8q0Var3 = new w8q0(jqv0Var.mo54112b(Html.class));
+        w8q0Var3.m87473j(stz0.m79356j(Html.SnackBar.class, w8q0Var3, stz0.m79356j(Html.Fullscreen.class, w8q0Var3, stz0.m79356j(Html.Modal.class, w8q0Var3, stz0.m79356j(Html.Banner.class, w8q0Var3, jqv0Var.mo54112b(Html.Banner.class), jqv0Var, Html.Modal.class), jqv0Var, Html.Fullscreen.class), jqv0Var, Html.SnackBar.class), jqv0Var, Html.UnknownFormat.class), qjg1.m72926r(qpv0.m73454a(Html.UnknownFormat.class)));
+        w8q0Var3.m87470d(i82Var);
+        w8q0 w8q0Var4 = new w8q0(jqv0Var.mo54112b(Format.class));
+        w8q0Var4.m87473j(stz0.m79356j(Format.WebView.class, w8q0Var4, stz0.m79356j(Format.InlineCard.class, w8q0Var4, stz0.m79356j(Format.BottomSheet.class, w8q0Var4, stz0.m79356j(Format.SnackBar.class, w8q0Var4, stz0.m79356j(Format.Tooltip.class, w8q0Var4, stz0.m79356j(Format.Banner.class, w8q0Var4, stz0.m79356j(Format.Fullscreen.class, w8q0Var4, stz0.m79356j(Format.Modal.class, w8q0Var4, jqv0Var.mo54112b(Format.Modal.class), jqv0Var, Format.Fullscreen.class), jqv0Var, Format.Banner.class), jqv0Var, Format.Tooltip.class), jqv0Var, Format.SnackBar.class), jqv0Var, Format.BottomSheet.class), jqv0Var, Format.InlineCard.class), jqv0Var, Format.WebView.class), jqv0Var, Format.UndefinedFormat.class), qjg1.m72926r(qpv0.m73454a(Format.UndefinedFormat.class)));
+        w8q0Var4.m87470d(i82Var);
+        w8q0 w8q0Var5 = new w8q0(jqv0Var.mo54112b(MessageTemplate.class));
+        w8q0Var5.m87473j(stz0.m79356j(WebViewTemplate.BasicWebView.class, w8q0Var5, stz0.m79356j(WebViewTemplate.Undefined.class, w8q0Var5, stz0.m79356j(InlineCardTemplate.BaseInlineCard.class, w8q0Var5, stz0.m79356j(InlineCardTemplate.MicroCompactInlineCard.class, w8q0Var5, stz0.m79356j(InlineCardTemplate.CompactInlineCard.class, w8q0Var5, stz0.m79356j(InlineCardTemplate.StandardInlineCard.class, w8q0Var5, stz0.m79356j(InlineCardTemplate.Undefined.class, w8q0Var5, stz0.m79356j(SnackBarTemplate.Undefined.class, w8q0Var5, stz0.m79356j(SnackBarTemplate.JitSnackBar.class, w8q0Var5, stz0.m79356j(SnackBarTemplate.BaseSnackBar.class, w8q0Var5, stz0.m79356j(TooltipTemplate.BaseTooltip.class, w8q0Var5, stz0.m79356j(TooltipTemplate.Undefined.class, w8q0Var5, stz0.m79356j(BannerTemplate.BaseBanner.class, w8q0Var5, stz0.m79356j(BannerTemplate.SignifierBanner.class, w8q0Var5, stz0.m79356j(BannerTemplate.JitBanner.class, w8q0Var5, stz0.m79356j(BannerTemplate.RichBanner.class, w8q0Var5, stz0.m79356j(BannerTemplate.BasicBanner.class, w8q0Var5, stz0.m79356j(BannerTemplate.Undefined.class, w8q0Var5, stz0.m79356j(BottomSheetTemplate.BaseBottomSheet.class, w8q0Var5, stz0.m79356j(BottomSheetTemplate.FullBleedBottomSheet.class, w8q0Var5, stz0.m79356j(BottomSheetTemplate.RichBottomSheet.class, w8q0Var5, stz0.m79356j(BottomSheetTemplate.BasicBottomSheet.class, w8q0Var5, stz0.m79356j(BottomSheetTemplate.Undefined.class, w8q0Var5, stz0.m79356j(FullscreenTemplate.JitFullscreen.class, w8q0Var5, stz0.m79356j(FullscreenTemplate.BaseFullscreen.class, w8q0Var5, stz0.m79356j(FullscreenTemplate.Undefined.class, w8q0Var5, stz0.m79356j(ModalTemplate.JitModal.class, w8q0Var5, stz0.m79356j(ModalTemplate.BasicModal.class, w8q0Var5, stz0.m79356j(ModalTemplate.BaseModal.class, w8q0Var5, stz0.m79356j(ModalTemplate.Undefined.class, w8q0Var5, jqv0Var.mo54112b(ModalTemplate.Undefined.class), jqv0Var, ModalTemplate.BaseModal.class), jqv0Var, ModalTemplate.BasicModal.class), jqv0Var, ModalTemplate.JitModal.class), jqv0Var, FullscreenTemplate.Undefined.class), jqv0Var, FullscreenTemplate.BaseFullscreen.class), jqv0Var, FullscreenTemplate.JitFullscreen.class), jqv0Var, BottomSheetTemplate.Undefined.class), jqv0Var, BottomSheetTemplate.BasicBottomSheet.class), jqv0Var, BottomSheetTemplate.RichBottomSheet.class), jqv0Var, BottomSheetTemplate.FullBleedBottomSheet.class), jqv0Var, BottomSheetTemplate.BaseBottomSheet.class), jqv0Var, BannerTemplate.Undefined.class), jqv0Var, BannerTemplate.BasicBanner.class), jqv0Var, BannerTemplate.RichBanner.class), jqv0Var, BannerTemplate.JitBanner.class), jqv0Var, BannerTemplate.SignifierBanner.class), jqv0Var, BannerTemplate.BaseBanner.class), jqv0Var, TooltipTemplate.Undefined.class), jqv0Var, TooltipTemplate.BaseTooltip.class), jqv0Var, SnackBarTemplate.BaseSnackBar.class), jqv0Var, SnackBarTemplate.JitSnackBar.class), jqv0Var, SnackBarTemplate.Undefined.class), jqv0Var, InlineCardTemplate.Undefined.class), jqv0Var, InlineCardTemplate.StandardInlineCard.class), jqv0Var, InlineCardTemplate.CompactInlineCard.class), jqv0Var, InlineCardTemplate.MicroCompactInlineCard.class), jqv0Var, InlineCardTemplate.BaseInlineCard.class), jqv0Var, WebViewTemplate.Undefined.class), jqv0Var, WebViewTemplate.BasicWebView.class), jqv0Var, UndefinedMessageTemplate.class), qjg1.m72926r(qpv0.m73454a(UndefinedMessageTemplate.class)));
+        w8q0Var5.m87470d(i82Var);
+        w8q0 w8q0Var6 = new w8q0(jqv0Var.mo54112b(ModalTemplate.class));
+        w8q0Var6.m87473j(stz0.m79356j(ModalTemplate.BasicModal.class, w8q0Var6, stz0.m79356j(ModalTemplate.BaseModal.class, w8q0Var6, stz0.m79356j(ModalTemplate.Undefined.class, w8q0Var6, jqv0Var.mo54112b(ModalTemplate.Undefined.class), jqv0Var, ModalTemplate.BaseModal.class), jqv0Var, ModalTemplate.BasicModal.class), jqv0Var, ModalTemplate.JitModal.class), qjg1.m72926r(qpv0.m73454a(ModalTemplate.JitModal.class)));
+        w8q0Var6.m87470d(i82Var);
+        w8q0 w8q0Var7 = new w8q0(jqv0Var.mo54112b(FullscreenTemplate.class));
+        w8q0Var7.m87473j(stz0.m79356j(FullscreenTemplate.BaseFullscreen.class, w8q0Var7, stz0.m79356j(FullscreenTemplate.Undefined.class, w8q0Var7, jqv0Var.mo54112b(FullscreenTemplate.Undefined.class), jqv0Var, FullscreenTemplate.BaseFullscreen.class), jqv0Var, FullscreenTemplate.JitFullscreen.class), qjg1.m72926r(qpv0.m73454a(FullscreenTemplate.JitFullscreen.class)));
+        w8q0Var7.m87470d(i82Var);
+        w8q0 w8q0Var8 = new w8q0(jqv0Var.mo54112b(BannerTemplate.class));
+        w8q0Var8.m87473j(stz0.m79356j(BannerTemplate.SignifierBanner.class, w8q0Var8, stz0.m79356j(BannerTemplate.JitBanner.class, w8q0Var8, stz0.m79356j(BannerTemplate.RichBanner.class, w8q0Var8, stz0.m79356j(BannerTemplate.BasicBanner.class, w8q0Var8, stz0.m79356j(BannerTemplate.Undefined.class, w8q0Var8, jqv0Var.mo54112b(BannerTemplate.Undefined.class), jqv0Var, BannerTemplate.BasicBanner.class), jqv0Var, BannerTemplate.RichBanner.class), jqv0Var, BannerTemplate.JitBanner.class), jqv0Var, BannerTemplate.SignifierBanner.class), jqv0Var, BannerTemplate.BaseBanner.class), qjg1.m72926r(qpv0.m73454a(BannerTemplate.BaseBanner.class)));
+        w8q0Var8.m87470d(i82Var);
+        w8q0 w8q0Var9 = new w8q0(jqv0Var.mo54112b(TooltipTemplate.class));
+        w8q0Var9.m87473j(stz0.m79356j(TooltipTemplate.Undefined.class, w8q0Var9, jqv0Var.mo54112b(TooltipTemplate.Undefined.class), jqv0Var, TooltipTemplate.BaseTooltip.class), qjg1.m72926r(qpv0.m73454a(TooltipTemplate.BaseTooltip.class)));
+        w8q0Var9.m87470d(i82Var);
+        w8q0 w8q0Var10 = new w8q0(jqv0Var.mo54112b(BottomSheetTemplate.class));
+        w8q0Var10.m87473j(stz0.m79356j(BottomSheetTemplate.FullBleedBottomSheet.class, w8q0Var10, stz0.m79356j(BottomSheetTemplate.RichBottomSheet.class, w8q0Var10, stz0.m79356j(BottomSheetTemplate.BasicBottomSheet.class, w8q0Var10, stz0.m79356j(BottomSheetTemplate.Undefined.class, w8q0Var10, jqv0Var.mo54112b(BottomSheetTemplate.Undefined.class), jqv0Var, BottomSheetTemplate.BasicBottomSheet.class), jqv0Var, BottomSheetTemplate.RichBottomSheet.class), jqv0Var, BottomSheetTemplate.FullBleedBottomSheet.class), jqv0Var, BottomSheetTemplate.BaseBottomSheet.class), qjg1.m72926r(qpv0.m73454a(BottomSheetTemplate.BaseBottomSheet.class)));
+        w8q0Var10.m87470d(i82Var);
+        w8q0 w8q0Var11 = new w8q0(jqv0Var.mo54112b(InlineCardTemplate.class));
+        w8q0Var11.m87473j(stz0.m79356j(InlineCardTemplate.MicroCompactInlineCard.class, w8q0Var11, stz0.m79356j(InlineCardTemplate.CompactInlineCard.class, w8q0Var11, stz0.m79356j(InlineCardTemplate.StandardInlineCard.class, w8q0Var11, stz0.m79356j(InlineCardTemplate.Undefined.class, w8q0Var11, jqv0Var.mo54112b(InlineCardTemplate.Undefined.class), jqv0Var, InlineCardTemplate.StandardInlineCard.class), jqv0Var, InlineCardTemplate.CompactInlineCard.class), jqv0Var, InlineCardTemplate.MicroCompactInlineCard.class), jqv0Var, InlineCardTemplate.BaseInlineCard.class), qjg1.m72926r(qpv0.m73454a(InlineCardTemplate.BaseInlineCard.class)));
+        w8q0Var11.m87470d(i82Var);
+        w8q0 w8q0Var12 = new w8q0(jqv0Var.mo54112b(WebViewTemplate.class));
+        w8q0Var12.m87473j(stz0.m79356j(WebViewTemplate.Undefined.class, w8q0Var12, jqv0Var.mo54112b(WebViewTemplate.Undefined.class), jqv0Var, WebViewTemplate.BasicWebView.class), qjg1.m72926r(qpv0.m73454a(WebViewTemplate.BasicWebView.class)));
+        w8q0Var12.m87470d(i82Var);
+        w8q0 w8q0Var13 = new w8q0(jqv0Var.mo54112b(SnackBarTemplate.class));
+        w8q0Var13.m87473j(stz0.m79356j(SnackBarTemplate.JitSnackBar.class, w8q0Var13, stz0.m79356j(SnackBarTemplate.BaseSnackBar.class, w8q0Var13, jqv0Var.mo54112b(SnackBarTemplate.BaseSnackBar.class), jqv0Var, SnackBarTemplate.JitSnackBar.class), jqv0Var, SnackBarTemplate.Undefined.class), qjg1.m72926r(qpv0.m73454a(SnackBarTemplate.Undefined.class)));
+        w8q0Var13.m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(AccessoryImage.class)).m87470d(i82Var);
+        w8q0 w8q0Var14 = new w8q0(jqv0Var.mo54112b(AccessoryContent.class));
+        w8q0Var14.m87473j(stz0.m79356j(AccessoryContent.Icon.class, w8q0Var14, stz0.m79356j(AccessoryContent.NotSet.class, w8q0Var14, stz0.m79356j(AccessoryContent.Empty.class, w8q0Var14, jqv0Var.mo54112b(AccessoryContent.Empty.class), jqv0Var, AccessoryContent.NotSet.class), jqv0Var, AccessoryContent.Icon.class), jqv0Var, AccessoryContent.Image.class), qjg1.m72926r(qpv0.m73454a(AccessoryContent.Image.class)));
+        w8q0Var14.m87470d(i82Var);
+        w8q0 w8q0Var15 = new w8q0(jqv0Var.mo54112b(HeaderContent.class));
+        w8q0Var15.m87473j(stz0.m79356j(HeaderContent.Signifier.class, w8q0Var15, stz0.m79356j(HeaderContent.HeaderText.class, w8q0Var15, jqv0Var.mo54112b(HeaderContent.HeaderText.class), jqv0Var, HeaderContent.Signifier.class), jqv0Var, HeaderContent.NotSet.class), qjg1.m72926r(qpv0.m73454a(HeaderContent.NotSet.class)));
+        w8q0Var15.m87470d(i82Var);
+        w8q0 w8q0Var16 = new w8q0(jqv0Var.mo54112b(BackgroundColor.class));
+        w8q0Var16.m87473j(stz0.m79356j(BackgroundColor.GradientBackgroundColor.class, w8q0Var16, stz0.m79356j(BackgroundColor.SolidBackgroundColor.class, w8q0Var16, stz0.m79356j(BackgroundColor.NotSet.class, w8q0Var16, jqv0Var.mo54112b(BackgroundColor.NotSet.class), jqv0Var, BackgroundColor.SolidBackgroundColor.class), jqv0Var, BackgroundColor.GradientBackgroundColor.class), jqv0Var, BackgroundColor.ImageUrl.class), qjg1.m72926r(qpv0.m73454a(BackgroundColor.ImageUrl.class)));
+        w8q0Var16.m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(Text.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(Button.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(ButtonStyle.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(ClickAction.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(Icon.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(Signifier.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(CappingRule.class)).m87470d(i82Var);
+        new w8q0(jqv0Var.mo54112b(Pacing.class)).m87470d(i82Var);
+        return i82Var.m49917h();
+    }
+}

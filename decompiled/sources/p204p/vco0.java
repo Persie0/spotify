@@ -1,0 +1,83 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes4.dex */
+public enum vco0 implements od50 {
+    UNKNOWN_PLATFORM(0),
+    META_RB(1),
+    GEMINI_WEB(2),
+    GEMINI_ANDROID(3),
+    GEMINI_IOS(4),
+    GEMINI_DESKTOP(5),
+    GEMINI_SPEAKER(6),
+    GEMINI_SMART_DISPLAY(7),
+    GEMINI_AUTOMOBILE(8),
+    GEMINI_ANDROID_AUTO_PROJECTED(9),
+    GEMINI_ANDROID_AUTO_EMBEDDED(10),
+    GEMINI_ANDROID_AUTOMOTIVE_OS(11),
+    GEMINI_WEAR_OS(12),
+    GEMINI_VR_ANDROID(13),
+    GEMINI_VR_WEB(14),
+    GEMINI_GLASSES_ANDROID(15),
+    GEMINI_GLASSES_IOS(16),
+    GEMINI_MAPS_NAVIGATION_ANDROID(17),
+    GEMINI_MAPS_NAVIGATION_IOS(18),
+    GEMINI_TV(19),
+    GA_TV(20),
+    SAMSUNG_AI_BRIEF(21),
+    ALEXA_PLUS(22),
+    GA_SPEAKER(23),
+    GA_SMART_DISPLAY(24),
+    GA_ANDROID(25),
+    GPT_WEB(26),
+    GPT_DESKTOP(27),
+    GPT_IOS(28),
+    GPT_ANDROID(29),
+    PERPLEXITY_IOS(30),
+    PERPLEXITY_ANDROID(31),
+    SAMSUNG_BIXBY_TV(32),
+    META_RB_TESTERS(33),
+    SESAME_VOICE_TEST(34),
+    XIAOMI_AUTOMOTIVE(35),
+    CLAUDE_WEB(36),
+    CLAUDE_IOS(37),
+    CLAUDE_ANDROID(38),
+    CLAUDE_DESKTOP(39),
+    SAMSUNG_AI_VISION_TV(40),
+    NAVER(41),
+    GEMINI_ANDROID_GO(42),
+    CERENCE_AUTOMOTIVE(43),
+    PARTNER_AGENT_DESIGN_PROTOTYPE(44),
+    GEMINI_WEAR_OS_UNTETHERED(45),
+    GEMINI_GOOGLE_SEARCH(46),
+    AUTOMOTIVE_NATIVE(47),
+    RIVIAN_AUTOMOTIVE(48),
+    MCP_APP_WEB(49),
+    MCP_APP_DESKTOP(50),
+    MCP_APP_IOS(51),
+    MCP_APP_ANDROID(52),
+    TESLA_AUTOMOTIVE(53),
+    WEBOS_TV(54),
+    ANDROID_TV(55),
+    SIRI_AI(56),
+    GEMINI_EVAL(57),
+    SNAP_SPECS(58),
+    SAMSUNG_BIXBY_MOBILE(59),
+    SAMSUNG_S_FINDER(60),
+    UNRECOGNIZED(-1);
+
+
+    /* JADX INFO: renamed from: a */
+    public final int f240240a;
+
+    vco0(int i) {
+        this.f240240a = i;
+    }
+
+    @Override // p204p.od50
+    public final int getNumber() {
+        if (this != UNRECOGNIZED) {
+            return this.f240240a;
+        }
+        throw new IllegalArgumentException("Can't get the number of an unknown enum value.");
+    }
+}

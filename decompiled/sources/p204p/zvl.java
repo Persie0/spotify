@@ -1,0 +1,27 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes5.dex */
+public final class zvl extends ibk {
+
+    /* JADX INFO: renamed from: a */
+    public /* synthetic */ Object f286737a;
+
+    /* JADX INFO: renamed from: b */
+    public int f286738b;
+
+    /* JADX INFO: renamed from: c */
+    public final /* synthetic */ hql f286739c;
+
+    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+    public zvl(hql hqlVar, fbk fbkVar) {
+        super(fbkVar);
+        this.f286739c = hqlVar;
+    }
+
+    @Override // p204p.ly8
+    public final Object invokeSuspend(Object obj) {
+        this.f286737a = obj;
+        this.f286738b |= Integer.MIN_VALUE;
+        return this.f286739c.emit(null, this);
+    }
+}

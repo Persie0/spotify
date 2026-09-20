@@ -1,0 +1,6 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes.dex */
+public interface h2t0 {
+    int getNumber();
+}

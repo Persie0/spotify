@@ -1,0 +1,6 @@
+package p204p;
+
+/* JADX INFO: loaded from: classes.dex */
+public interface j4t0 {
+    Object get();
+}

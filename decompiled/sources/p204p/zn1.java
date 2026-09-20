@@ -1,0 +1,22 @@
+package p204p;
+
+import com.spotify.mobius.coroutines.CoroutinesSubtypeEffectHandlerBuilder;
+
+/* JADX INFO: loaded from: classes4.dex */
+public final class zn1 implements CoroutinesSubtypeEffectHandlerBuilder.EffectHandler {
+
+    /* JADX INFO: renamed from: a */
+    public final /* synthetic */ fp1 f284389a;
+
+    public zn1(fp1 fp1Var) {
+        this.f284389a = fp1Var;
+    }
+
+    @Override // com.spotify.mobius.coroutines.CoroutinesSubtypeEffectHandlerBuilder.EffectHandler
+    /* JADX INFO: renamed from: a */
+    public final Object mo15629a(Object obj, bqz0 bqz0Var, ibk ibkVar) {
+        t891 t891Var = this.f284389a.f71673n;
+        t891Var.f218024j.put(((sm1) obj).f210537a, s891.f206605b);
+        return w2a1.f247311a;
+    }
+}
