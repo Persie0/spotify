@@ -3275,3 +3275,118 @@
 /tmp/spotify-smali/smali_classes9/p/e12.smali-354-    .line 32
 /tmp/spotify-smali/smali_classes9/p/e12.smali-355-    .line 33
 /tmp/spotify-smali/smali_classes9/p/e12.smali-356-    .line 34
+
+# Esperanto Restrictions -> domain Restrictions mapper references
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1510-    .line 92
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1511-    invoke-virtual {v0, v1}, Lcom/spotify/player/model/PlayerState$Builder;->contextUrl(Ljava/lang/String;)Lcom/spotify/player/model/PlayerState$Builder;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1512-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1513-    .line 93
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1514-    .line 94
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1515-    .line 95
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1516-    invoke-virtual {p1}, Lcom/spotify/player/esperanto/proto/EsContextPlayerState$ContextPlayerState;->r()Lcom/spotify/player/esperanto/proto/EsRestrictions$Restrictions;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1517-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1518-    .line 96
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1519-    .line 97
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1520-    .line 98
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1521-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1522-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1523-    .line 99
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali:1524:    invoke-static {v1}, Lp/f5x0;->a(Lcom/spotify/player/esperanto/proto/EsRestrictions$Restrictions;)Lcom/spotify/player/model/Restrictions;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1525-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1526-    .line 100
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1527-    .line 101
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1528-    .line 102
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1529-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1530-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1531-    .line 103
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1532-    invoke-virtual {v0, v1}, Lcom/spotify/player/model/PlayerState$Builder;->contextRestrictions(Lcom/spotify/player/model/Restrictions;)Lcom/spotify/player/model/PlayerState$Builder;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1533-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1534-    .line 104
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1535-    .line 105
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1536-    .line 106
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1537-    invoke-virtual {p1}, Lcom/spotify/player/esperanto/proto/EsContextPlayerState$ContextPlayerState;->F()Lcom/spotify/player/esperanto/proto/EsPlayOrigin$PlayOrigin;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1538-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1539-    .line 107
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1540-    .line 108
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1541-    .line 109
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1542-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1543-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1544-    .line 110
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1545-    invoke-virtual {v1}, Lcom/spotify/player/esperanto/proto/EsPlayOrigin$PlayOrigin;->A()Ljava/lang/String;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1546-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1547-    .line 111
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1548-    .line 112
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1549-    .line 113
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1550-    move-result-object v5
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1551-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1552-    .line 114
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1553-    invoke-static {v5}, Lcom/spotify/player/model/PlayOrigin;->builder(Ljava/lang/String;)Lcom/spotify/player/model/PlayOrigin$Builder;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1554-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1555-    .line 115
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1556-    .line 116
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1557-    .line 117
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1558-    move-result-object v5
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1559-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1560-    .line 118
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1561-    invoke-virtual {v1}, Lcom/spotify/player/esperanto/proto/EsPlayOrigin$PlayOrigin;->B()Ljava/lang/String;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1562-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1563-    .line 119
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-1564-    .line 120
+--
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2544-    .line 598
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2545-    invoke-virtual {v0, v1}, Lcom/spotify/player/model/PlayerState$Builder;->options(Lcom/spotify/player/model/PlayerOptions;)Lcom/spotify/player/model/PlayerState$Builder;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2546-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2547-    .line 599
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2548-    .line 600
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2549-    .line 601
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2550-    invoke-virtual {p1}, Lcom/spotify/player/esperanto/proto/EsContextPlayerState$ContextPlayerState;->N()Lcom/spotify/player/esperanto/proto/EsRestrictions$Restrictions;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2551-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2552-    .line 602
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2553-    .line 603
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2554-    .line 604
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2555-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2556-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2557-    .line 605
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali:2558:    invoke-static {v1}, Lp/f5x0;->a(Lcom/spotify/player/esperanto/proto/EsRestrictions$Restrictions;)Lcom/spotify/player/model/Restrictions;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2559-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2560-    .line 606
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2561-    .line 607
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2562-    .line 608
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2563-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2564-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2565-    .line 609
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2566-    invoke-virtual {v0, v1}, Lcom/spotify/player/model/PlayerState$Builder;->restrictions(Lcom/spotify/player/model/Restrictions;)Lcom/spotify/player/model/PlayerState$Builder;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2567-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2568-    .line 610
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2569-    .line 611
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2570-    .line 612
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2571-    invoke-virtual {p1}, Lcom/spotify/player/esperanto/proto/EsContextPlayerState$ContextPlayerState;->Q()I
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2572-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2573-    .line 613
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2574-    .line 614
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2575-    .line 615
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2576-    move-result v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2577-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2578-    .line 616
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2579-    if-lez v1, :cond_19
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2580-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2581-    .line 617
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2582-    .line 618
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2583-    invoke-virtual {p1}, Lcom/spotify/player/esperanto/proto/EsContextPlayerState$ContextPlayerState;->R()Lp/ae50;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2584-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2585-    .line 619
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2586-    .line 620
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2587-    .line 621
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2588-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2589-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2590-    .line 622
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2591-    invoke-static {v1}, Lp/g6f;->n1(Ljava/lang/Iterable;)Ljava/util/Set;
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2592-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2593-    .line 623
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2594-    .line 624
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2595-    .line 625
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2596-    move-result-object v1
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2597-
+/tmp/spotify-smali/smali_classes4/p/p4h1.smali-2598-    .line 626
+
+# ContextPlayerState restrictions accessor references
