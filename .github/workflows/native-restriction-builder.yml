@@ -63,6 +63,11 @@ jobs:
 
           def cstring_at(va,maxlen=300):
             off=va2off(va)
+            # This Orbit ELF maps the main read-only image close to file offsets;
+            # keep a direct-offset fallback because some objdump comments use
+            # link-time VAs that pyelftools/readelf mapping can miss.
+            if off is None and 0 <= va < len(data):
+              off=va
             if off is None or off>=len(data): return None
             end=data.find(b'\x00',off,min(len(data),off+maxlen))
             if end<0: return None
