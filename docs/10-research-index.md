@@ -72,9 +72,11 @@ The mapper reads `EsRestrictions$Restrictions.x0()` for the skip-next reasons.
 
 No Android-side countdown mutation exists between the streamed protocol state and the public `PlayerState`.
 
+Native ownership is now resolved further: Orbit's restriction builder directly inserts `ad_disallow` into the internal slot mapped to `disallowSkippingNextReasons`.
+
 Remaining question:
 
-> Inside/below `liborbit-jni-spotify.so`, is countdown expiry computed locally, or does Orbit consume an already-updated restriction from another player/backend state source?
+> What flips the ad-specific native guard controlling that insertion, and is the transition driven by `ad.skippable_ad_delay`, another local player timer/state machine, or a deeper player-state event?
 
 ## 3. MediaSession ACTION_SKIP_TO_NEXT generation — RESOLVED
 
@@ -149,14 +151,29 @@ Native xref status:
 
 The first three results confirm executable Orbit code actively uses the restriction vocabulary. The delay key being present but lacking a direct reference is consistent with generic metadata lookup/descriptor indirection.
 
-Most `ad_disallow` and `mft_disallow` references cluster in the broad `0x10a6xxx` region.
+The main `ad_disallow` and `mft_disallow` references are now grouped into the same Orbit function:
+
+```text
+0x10a6464..0x10a7f52
+```
+
+That function is a general restriction builder. Schema-field analysis establishes a `0x18` slot stride and maps its internal `r14+0x14a0` container to `disallow_skipping_next_reasons`.
+
+Confirmed native writes:
+
+```text
+mft_disallow -> r14+0x14a0
+ad_disallow  -> r14+0x14a0
+```
+
+The ad skip-next write is guarded by `r14+0x598` and `r14+0x470`. The first is reused in active/playing-context logic; the second is the current ad-specific anchor.
 
 Current target:
 
-- group the stripped native xrefs by real `.eh_frame` function ranges
-- determine whether `ad_disallow` and `mft_disallow` are emitted by the same function/subsystem
+- identify writers/semantic meaning of the `+0x470` ad guard
 - find the indirect consumer of `ad.skippable_ad_delay`
-- distinguish a local native timer transition from a restriction update supplied by deeper/backend state
+- determine whether delay expiry flips that native guard locally or arrives through another player-core event
+- trace available-command synchronization after the native restriction set changes
 
 ## 6. Connect-device behavior — OPEN
 
