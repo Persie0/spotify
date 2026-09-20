@@ -135,6 +135,16 @@ jobs:
                 print('    '+line)
               print()
 
+          print('## Ad skip guard flag references')
+          print()
+          for want in ('470','598'):
+            print(f'### r14+0x{want}')
+            for i,line in enumerate(asm):
+              if f'r14+0x{want}]' in line and start <= addrs[i] < end:
+                for line2 in asm[max(0,i-12):min(len(asm),i+13)]:
+                  print('    '+line2)
+                print()
+
           print('## Function prologue')
           print()
           for line in asm[:100]:
