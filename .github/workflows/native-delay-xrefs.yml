@@ -1,0 +1,142 @@
+name: Trace Orbit ad delay consumers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-delay-xrefs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace std string objects
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          cat > /tmp/trace.py <<'PY'
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          # These are starts of libc++ short-string objects, not the first text byte.
+          targets={
+            'ad.video_orientation':0x438788,
+            'ad.minimizable':0x4387a0,
+            'ad.canvas.type':0x4387b8,
+            'ad.canvas.file_id':0x4387d0,
+            'ad.canvas.url':0x4387e8,
+            'ad.skippable_ad_delay':0x438800,
+            'podcast_ads.parent_uri':0x438818,
+            'ad.companion.type':0x438830,
+            'skippable':0x4388f0,
+            'skippable_ad_delay':0x438950,
+            'seekable':0x4389c8,
+            'interruptible':0x4389e0,
+            'on_demand_capped':0x4389f8,
+          }
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return (a,b)
+            return None
+
+          print('# Native ad delay string-object xrefs')
+          print()
+          print('The metadata strings are static libc++ short-string objects at 0x18-byte stride.')
+          print('The first byte stores the short-string length/flag; the text starts one byte later.')
+          print()
+
+          hits={}
+          for idx,line in enumerate(dis):
+            msrc=re.match(r'^\s*([0-9a-f]+):',line)
+            if not msrc or '#' not in line:continue
+            mdst=re.match(r'\s*([0-9a-f]+)\b',line.split('#',1)[1])
+            if not mdst:continue
+            src=int(msrc.group(1),16); dst=int(mdst.group(1),16)
+            for name,t in targets.items():
+              if dst==t:
+                hits.setdefault(name,[]).append((src,idx,fde_for(src)))
+
+          for name,t in targets.items():
+            hs=hits.get(name,[])
+            print(f'## {name} @ object 0x{t:x}')
+            print(f'Direct code xrefs: {len(hs)}')
+            print()
+            for src,idx,fr in hs:
+              ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+              print(f'### xref 0x{src:x} in {ftxt}')
+              for l in dis[max(0,idx-18):min(len(dis),idx+28)]:
+                print('    '+l)
+              print()
+
+          # Look for 64-bit pointers to the string-object starts in data, then xrefs to those pointer slots.
+          print('## Pointer-table references')
+          print()
+          for name,t in targets.items():
+            needle=struct.pack('<Q',t)
+            offs=[]; p=0
+            while True:
+              p=data.find(needle,p)
+              if p<0:break
+              offs.append(p);p+=1
+            if not offs:continue
+            print(f'### {name}')
+            print('Pointer slots: '+', '.join(f'0x{x:x}' for x in offs[:100]))
+            print()
+          PY
+          python3 /tmp/trace.py > analysis/native-delay-xrefs.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+Persie0@users.noreply.github.com"
+          git add analysis/native-delay-xrefs.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace native ad delay consumers"
+          git pull --rebase origin main
+          git push origin HEAD:main
