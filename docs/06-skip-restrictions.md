@@ -570,22 +570,21 @@ Evidence:
 
 ## Practical consequence for spotify-muter
 
-The safest automatic-skip strategy remains:
+The previous MediaSession-only strategy is incomplete for timed ads. Spotify's own **Skip Ad** button is enabled by `PlayerState.signals().contains("skip-ad")`, while Android `ACTION_SKIP_TO_NEXT` belongs to the separate ordinary-next path.
+
+For an Accessibility-based companion, the robust external strategy is therefore:
 
 ```text
 ad detected
    |
-   v
-ACTION_SKIP_TO_NEXT currently exposed?
+   +-- actionable Spotify "Skip Ad" accessibility node visible?
+   |       |
+   |       +-- yes -> perform the normal UI click
    |
-   +-- yes --> request skipToNext()
-   |             |
-   |             +--> if playback advances, done
-   |
-   +-- no  --> mute
+   +-- otherwise -> mute while the ad remains active
 ```
 
-This follows Spotify's actual exported capability instead of trying to override restrictions.
+A normal external `MediaController` cannot invoke `ContextPlayer/Signal("skip-ad")` merely because the Skip Ad signal became available. `skipToNext()` should only be treated as the ordinary next-track command when Spotify actually exports that MediaSession action.
 
 ## Why forcing non-skippable ads is different
 
