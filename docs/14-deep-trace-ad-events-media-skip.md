@@ -447,9 +447,48 @@ if event[+0x38] == 6:
 
 This proves that subtype `6` mutates the same polymorphic object whose `+0xd0` method incorporates the delay/skippability state.
 
-It still does **not** prove subtype `6` is the countdown-expiry event, because the skip-next branch itself is evaluated before these virtual capability checks and tests only outer/inner optional presence. The unresolved transition is now precise:
+Subtype `6` is now proven to be the countdown-expiry/readiness event.
 
-> When skip-next becomes permitted, is the inner optional at `owner+0x438/+0x470` cleared or replaced, or does another player-core state transition bypass/remove `ad_disallow`?
+Two independent native producers contain the literal string `"ad_skip"` and perform the same sequence:
+
+```text
+delay = adObject->vtable[+0xe8]()   // skippable_ad_delay
+if delay > 0:
+    event.name = "ad_skip"
+    event.delay_ms = delay * 1000
+    event.subtype = 6
+    schedule via 0x139c09a
+```
+
+The concrete subtype stores are at `0x139ba71` and `0x139be38`.
+
+Therefore the full local transition is:
+
+```text
+ad metadata
+    |
+    +-- skippable_ad_delay
+            |
+            v
+      "ad_skip" scheduled timer
+            |
+            v
+      subtype 6 callback
+            |
+            +-- adObject+0x1b8 = 1
+            |
+            v
+      +0xd0 derived skippability => true
+            |
+            v
+      rebuild restrictions
+```
+
+However, the ordinary skip-next `ad_disallow` branch still tests only the two optional-engagement bytes. It is not directly removed by the `+0x1b8` override. This is strong evidence that Spotify's user-facing **Skip Ad** operation is a separate command path from ordinary next-track / MediaSession skip-next.
+
+The unresolved transition is therefore no longer a timer/lifetime mystery:
+
+> What ad-specific command is emitted by the Skip Ad UI after subtype 6 makes the ad skippable, and which Orbit/ContextPlayer endpoint executes that command?
 
 Reports:
 
@@ -602,12 +641,14 @@ Most of the original trace is now resolved:
 - meaning of `owner+0x598` and `owner+0x470`: **resolved structurally as outer/inner optional engagement bytes**
 - identity of the nested interface at `owner+0x438`: **resolved to the vtable family containing skippable/seekable/interruptible/delay methods**
 - restricted-skip error path: **resolved**
-- exact native transition that stops skip-next `ad_disallow`: **open**
+- ContextPlayer event subtype `6`: **resolved as the scheduled `ad_skip` readiness event**
+- native `skippable_ad_delay` -> timer -> `+0x1b8` transition: **resolved**
+- relationship between Skip Ad and ordinary skip-next: **resolved structurally as separate capability paths**
+- actual ad-specific skip command/action: **open**
 
 Next targets:
 
-1. trace the producer/lifetime of the inner optional at `owner+0x438/+0x470`
-2. resolve ContextPlayer event subtype `6` semantically and determine whether it is tied to delay expiry
-3. determine whether the inner object is cleared, swapped, or retained when skip-next unlocks
-4. trace available-command-set synchronization with that native restriction update
-5. map the equivalent path for Connect/remote playback
+1. trace the Skip Ad UI click handler
+2. identify the player/Esperanto/native command it emits
+3. trace that command to the ad playback transition and `ad_skipped` telemetry/event path
+4. map the equivalent command path for Connect/remote playback
