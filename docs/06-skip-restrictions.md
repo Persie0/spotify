@@ -496,7 +496,24 @@ There is still one important boundary:
 - the later `+0xd0/+0xd8/+0xe0` capability calls govern other ad-restriction decisions
 - therefore changing `object+0x1b8` changes the derived skippability method, but the skip-next branch does not directly test that return value
 
-The open native question is consequently the lifetime/state transition of the nested optional: whether the inner object is reset or replaced when the ad becomes skippable, or whether another player-core transition removes `ad_disallow` by changing the surrounding state.
+The native timing transition is now resolved further. Event subtype `6` is constructed by two independent Orbit paths that both contain the literal string `"ad_skip"`. Each producer:
+
+```text
+delay = adObject->vtable[+0xe8]()   // skippable_ad_delay
+if delay > 0:
+    event.name = "ad_skip"
+    event.delay_ms = delay * 1000
+    event.subtype = 6
+    schedule(event)
+```
+
+The concrete producer sites are `0x139ba71` and `0x139be38`; both schedule through `0x139c09a`.
+
+When subtype `6` reaches the restriction owner, `0x10a9668` sets `adObject+0x1b8 = 1` and rebuilds restrictions. This proves that the `+0x1b8` override is the local state transition produced by expiry of `skippable_ad_delay`.
+
+A crucial distinction follows: the ordinary skip-next branch still inserts `ad_disallow` from **outer/inner optional presence** and does not test `+0x1b8` or the `+0xd0` result. Therefore the timed Spotify **Skip Ad** capability is separate from ordinary next-track / MediaSession skip-next in this build.
+
+The remaining native question is no longer the delay transition. It is the actual **ad-specific skip command/action** invoked once `ad_skip` has made the ad skippable, and how that command reaches Orbit/ContextPlayer without using ordinary skip-next.
 
 Evidence:
 
