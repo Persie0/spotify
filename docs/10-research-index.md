@@ -1,77 +1,104 @@
 # Research index and open questions
 
-This file tracks useful next investigations and the best source anchors for each.
+This file tracks completed investigations and the next useful reverse-engineering targets.
 
-## 1. Exact ad milestone event types
+## 1. Exact ad milestone event types — RESOLVED
 
-Known:
+Recovered from:
 
-- `EventRequest.event_type`
-- `postEvent`
-- `postUnmanagedEvent`
-- `subEvent`
-- `postEventV2`
+`decompiled/sources/p204p/qm0.java`
 
-Still to map:
-
-- start
-- impression
-- first quartile
-- midpoint
-- third quartile
-- complete
-- skip
-- mute/unmute
-- error
-
-Best anchors:
-
-- `com.spotify.ads.esperanto.proto.EventRequest`
-- `UnmanagedEventRequest`
-- `PostEventV2Request`
-- `SubEventRequest/Response`
-- `tracking_events` consumers
-
-## 2. Relationship between ad metadata and Restrictions
-
-Known fields:
+Confirmed lifecycle/wire names include:
 
 ```text
-ad.is_skippable
-ad.skippable_ad_delay
-Restrictions.disallowSkippingNextReasons()
+started
+first_quartile
+midpoint
+third_quartile
+ended
+skipped
+muted
+unmuted
+progress
+viewed
+video_viewed
+viewability
+visible_0
+visible_gt_0
+visible_50
+visible_50_less
+visible_100
+errored
 ```
 
-Question:
+The complete 38-entry table is in:
 
-Does an internal timer mutate the restriction set when the delay expires, or are these exposed independently to separate UIs?
+[05-ad-reporting-tracking.md](05-ad-reporting-tracking.md)
 
-Best anchors:
+Also resolved:
 
-- `ContextTrack.java`
-- `sc11.java`
-- `Restrictions.java`
-- skip-button UI modules
-- MediaSession playback-state action builder
+- `IMPRESSION -> "viewed"`
+- normal completion-style event is `ENDED -> "ended"`
+- one-shot milestone deduplication exists per registered ad
+- progress/volume-style events can repeat
 
-## 3. MediaSession action-mask generation
+## 2. Relationship between ad delay and Restrictions — MOSTLY RESOLVED
+
+Confirmed:
+
+`ad.skippable_ad_delay`
+
+is read as countdown/presentation metadata.
+
+`fzg1.e(PlayerState, Resources)` reads the delay and:
+
+`Restrictions.disallowSkippingNextReasons().isEmpty()`
+
+**separately** and combines them only when rendering ad status text.
+
+No local Android Java/Kotlin path was found that mutates `Restrictions` from the delay value.
+
+The player restriction is transported as real player state through player schemas such as:
+
+`EsRestrictions$Restrictions`
+
+Remaining question:
+
+> Which deeper player/native/backend transition removes the skip restriction when the countdown expires?
+
+This is now the main unresolved part of the delay investigation.
+
+## 3. MediaSession ACTION_SKIP_TO_NEXT generation — RESOLVED
+
+JADX could not reconstruct `pqd0.b(...)`, so the DEX was decoded to smali.
+
+Stored under:
+
+`analysis/smali-targets/pqd0.smali`
+
+Confirmed:
+
+```text
+internal command 8 -> Android action 0x20
+internal command 9 -> Android action 0x20
+0x20 = ACTION_SKIP_TO_NEXT
+```
+
+`pqd0.onSkipToNext()` prefers internal command 9 and falls back to command 8.
+
+See:
+
+[06-skip-restrictions.md](06-skip-restrictions.md)
+
+and:
+
+[14-deep-trace-ad-events-media-skip.md](14-deep-trace-ad-events-media-skip.md)
+
+## 4. Player command error handling — OPEN
 
 Goal:
 
-Trace exactly where Spotify decides whether Android receives `ACTION_SKIP_TO_NEXT`.
-
-Best anchors:
-
-- PlaybackState builder code
-- `a4p0.java` wrappers around `PlaybackState.Builder.setActions`
-- MediaSession adapter classes
-- `disallowSkippingNextReasons` consumers
-
-## 4. Player command error handling
-
-Goal:
-
-Determine what happens when a skip command is submitted while restricted.
+Determine the exact error path when a next command is submitted but the deeper player rejects it.
 
 Best anchors:
 
@@ -79,55 +106,76 @@ Best anchors:
 - `wx7.java`
 - `l8k.java`
 - player Esperanto command request/response
-- error enums containing `SKIP_TO_NEXT_RESTRICTED`
+- player command result/error enums
+- native player boundary
 
-## 5. Native player / JNI boundary
+## 5. Native player / JNI boundary — HIGH PRIORITY
 
-The Java/Kotlin layer is not necessarily the final enforcement layer.
-
-Questions:
-
-- which player operations cross JNI?
-- which restrictions originate from the native player?
-- what state is server-provided vs calculated locally?
-
-This matters before concluding that patching a Java restriction check would change real behavior.
-
-## 6. Connect-device behavior
+The remaining skip-timing question likely lives below the Android presentation layer.
 
 Questions:
 
-- are ads represented with the same `ContextTrack` metadata on remote playback?
+- where does the available-command set change?
+- which restrictions originate in native player state?
+- is the countdown expiry handled locally in native code or supplied by backend/player state?
+- where is `EsContextPlayerState` converted into the Android `PlayerState` model?
+- can a restriction change occur without a new remote response?
+
+This is the most useful next investigation.
+
+## 6. Connect-device behavior — OPEN
+
+Questions:
+
+- are ads represented with the same `ContextTrack` metadata during remote playback?
 - does the phone export advertisement metadata when another device is the active renderer?
 - are skip restrictions device-specific?
+- does remote playback use the same Android command-set adapter?
 
-## 7. Ad viewability vs audio completion
+## 7. Ad viewability vs audio completion — PARTIALLY RESOLVED
 
-Known:
+Known distinct events now include:
 
-- `viewable_threshold_ms`
-- fallback around 3000 ms
-- "viewable impression timing" logging
-- tracking event maps
+- `viewed`
+- `video_viewed`
+- `viewability`
+- `visible_0`
+- `visible_gt_0`
+- `visible_50`
+- `visible_50_less`
+- `visible_100`
+- `started`
+- quartiles
+- `ended`
 
-Need to distinguish:
+Remaining work:
 
-- display impression
-- audio started
-- audible duration
-- playback completion
-- ad break completion
+- map which event producer is used for audio-only ads
+- identify placement-specific completion requirements
+- separate display-ad viewability from audible playback milestones
 
-## 8. Ad caching and prefetch
+## 8. Reporting authority / validation — OPEN
+
+Need to determine:
+
+- which RPC/event family is authoritative for billing
+- whether the backend cross-checks events against player telemetry
+- relationship between `postEvent`, `postUnmanagedEvent`, and `postEventV2`
+- whether Connect reports independently
+
+Documentation only; do not fabricate reporting events.
+
+## 9. Ad caching and prefetch — OPEN
 
 Potential anchors:
 
 - ad-on-app-open feature flags
-- cached ad expiration
+- cached-ad expiration
 - preview/fetch RPCs
 - media manifest IDs
+- ad opportunity state APIs
 
-## 9. App-wide architecture
+## 10. App-wide architecture — ONGOING
 
 Further documentation targets:
 
@@ -139,15 +187,18 @@ Further documentation targets:
 - analytics/logging stack
 - search/home data flow
 
-## 10. Decompilation quality improvements
+## 11. Decompilation quality improvements — ACTIVE
 
-Possible future Actions work:
+Implemented:
 
-- run CFR/FernFlower-style secondary decompiler for comparison
-- extract smali for methods JADX failed to reconstruct
-- index strings and xrefs automatically
-- produce package/class statistics
-- generate call graphs for selected semantic anchors
-- preserve method bytecode offsets beside docs
+- targeted apktool/smali extraction for classes JADX fails to reconstruct
+- stored bytecode targets under `analysis/smali-targets/`
+- xref report for MediaSession/ad-skip tracing
 
-The current docs should be updated whenever a new Spotify APK is added so behavior changes can be diffed across versions.
+Possible next improvements:
+
+- secondary decompiler comparison
+- automated semantic-string xref generation
+- call graphs for selected domain anchors
+- DEX/smali method-offset references in docs
+- version-to-version diffing when a newer APK is added

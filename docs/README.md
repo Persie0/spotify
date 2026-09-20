@@ -20,6 +20,7 @@ The APK analyzed here is **Spotify 9.1.84.2205** from release `r1`, decompiled w
 - [Android component inventory](11-android-components.md)
 - [Runtime and framework stack](12-runtime-stack.md)
 - [Top-level Spotify package index](13-top-level-package-index.md)
+- [Deep trace: ad milestones, skip delay, and Android skip-next](14-deep-trace-ad-events-media-skip.md)
 
 ## High-level mental model
 
@@ -59,12 +60,22 @@ but carry ad-specific metadata such as:
 
 A major theme throughout the app is that Spotify exposes stable domain models such as `PlayerState`, `ContextTrack`, and protobuf request/response types, while much of the wiring around them has been heavily obfuscated into the `p204p` package.
 
+## Bytecode fallback
+
+When JADX cannot reconstruct a critical method, targeted APKTool/smali extraction is used.
+
+Current bytecode targets are stored under:
+
+`analysis/smali-targets/`
+
+This was required to recover the MediaSession action builder and parts of the ad-skip UI mapping.
+
 ## Confidence levels
 
 Documentation distinguishes between:
 
-- **Confirmed** — directly visible in decompiled code or manifest.
-- **Strong inference** — multiple code paths point to the same interpretation.
-- **Uncertain** — JADX reconstruction or obfuscation prevents a definitive conclusion.
+- **Confirmed** — directly visible in decompiled code, smali, resources, or manifest.
+- **Strong inference** — multiple independent code paths point to the same interpretation.
+- **Uncertain** — reconstruction/obfuscation or a native/backend boundary prevents a definitive conclusion.
 
 The docs avoid pretending that JADX-generated names are original source names.
