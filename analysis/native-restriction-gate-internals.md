@@ -2,6 +2,41 @@
 
 Known owner allocation: 0x18b0 bytes; primary vptr 0x184c738.
 Known skip-next ad gate: owner+0x598 && owner+0x470.
+Coordinate transform inside 0x10a5fec: subobject base = owner+0x38, so sub+0x560=owner+0x598 and sub+0x438=owner+0x470.
+
+## nested owner-state initializer (base = owner+0x38): 0x1088fd0
+Function: 0x1088fd0..0x108903f
+Direct callees:
+- 0x17eeb90
+Field/address patterns:
+Disassembly:
+     1088fd0:	41 56                	push   r14
+     1088fd2:	53                   	push   rbx
+     1088fd3:	50                   	push   rax
+     1088fd4:	48 89 fb             	mov    rbx,rdi
+     1088fd7:	c6 07 01             	mov    BYTE PTR [rdi],0x1
+     1088fda:	83 67 08 00          	and    DWORD PTR [rdi+0x8],0x0
+     1088fde:	31 c0                	xor    eax,eax
+     1088fe0:	88 47 10             	mov    BYTE PTR [rdi+0x10],al
+     1088fe3:	88 87 60 05 00 00    	mov    BYTE PTR [rdi+0x560],al
+     1088fe9:	48 81 c7 68 05 00 00 	add    rdi,0x568
+     1088ff0:	4c 8d b3 00 06 00 00 	lea    r14,[rbx+0x600]
+     1088ff7:	0f 57 c0             	xorps  xmm0,xmm0
+     1088ffa:	0f 11 83 00 06 00 00 	movups XMMWORD PTR [rbx+0x600],xmm0
+     1089001:	83 63 01 00          	and    DWORD PTR [rbx+0x1],0x0
+     1089005:	ba 90 00 00 00       	mov    edx,0x90
+     108900a:	31 f6                	xor    esi,esi
+     108900c:	e8 7f 5b 76 00       	call   17eeb90 <memset@plt>
+     1089011:	4c 89 b3 f8 05 00 00 	mov    QWORD PTR [rbx+0x5f8],r14
+     1089018:	48 8d 83 18 06 00 00 	lea    rax,[rbx+0x618]
+     108901f:	0f 57 c0             	xorps  xmm0,xmm0
+     1089022:	0f 11 83 18 06 00 00 	movups XMMWORD PTR [rbx+0x618],xmm0
+     1089029:	48 89 83 10 06 00 00 	mov    QWORD PTR [rbx+0x610],rax
+     1089030:	0f 11 83 28 06 00 00 	movups XMMWORD PTR [rbx+0x628],xmm0
+     1089037:	48 83 c4 08          	add    rsp,0x8
+     108903b:	5b                   	pop    rbx
+     108903c:	41 5e                	pop    r14
+     108903e:	c3                   	ret
 
 ## owner subobject initializer called with owner+0x38: 0x10a5fec
 Function: 0x10a5fec..0x10a60d0
