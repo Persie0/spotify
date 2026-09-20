@@ -138,10 +138,24 @@ SKIP_TO_NEXT_RESTRICTED
 
 along with the player/Connect/Esperanto restriction descriptors.
 
+Native xref status:
+
+| String | Direct x86_64 code xrefs |
+|---|---:|
+| `ad_disallow` | 11 |
+| `mft_disallow` | 18 |
+| `disallow_skipping_next_reasons` | 3 |
+| `ad.skippable_ad_delay` | 0 direct |
+
+The first three results confirm executable Orbit code actively uses the restriction vocabulary. The delay key being present but lacking a direct reference is consistent with generic metadata lookup/descriptor indirection.
+
+Most `ad_disallow` and `mft_disallow` references cluster in the broad `0x10a6xxx` region.
+
 Current target:
 
-- native code xrefs for those strings
-- determine whether the same native subsystem consumes the delay and produces/removes `ad_disallow`
+- group the stripped native xrefs by real `.eh_frame` function ranges
+- determine whether `ad_disallow` and `mft_disallow` are emitted by the same function/subsystem
+- find the indirect consumer of `ad.skippable_ad_delay`
 - distinguish a local native timer transition from a restriction update supplied by deeper/backend state
 
 ## 6. Connect-device behavior — OPEN
