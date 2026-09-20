@@ -304,7 +304,30 @@ It also embeds the Connect/player/Esperanto restriction message descriptors.
 
 Therefore the remaining countdown-to-restriction transition is localized below the Android domain mapper, in the Orbit/native player layer or state consumed by that layer.
 
-A separate native xref report is being generated to narrow this from library-level ownership to function-level neighborhoods.
+The focused x86_64 report is:
+
+`analysis/native-player-xrefs-fast.md`
+
+It found:
+
+| String | Direct executable xrefs |
+|---|---:|
+| `ad_disallow` | 11 |
+| `mft_disallow` | 18 |
+| `disallow_skipping_next_reasons` | 3 |
+| `ad.skippable_ad_delay` | 0 |
+| `SKIP_TO_NEXT_RESTRICTED` | 0 |
+| `skip_to_next_restricted` | 0 |
+
+The most useful result is that `ad_disallow` and `mft_disallow` are referenced directly by executable native code. They are not merely dead descriptor strings.
+
+Their main xrefs cluster in the broad `0x10a6xxx` native region. In those neighborhoods Orbit constructs the reason strings and stores/passes them through nearby restriction/state objects.
+
+`disallow_skipping_next_reasons` also has direct executable references, including schema/field-conversion-looking paths.
+
+By contrast, `ad.skippable_ad_delay` has no simple direct xref. Because the key is demonstrably propagated into Android `ContextTrack` metadata, the most likely explanation is an indirect/generic metadata lookup rather than non-use.
+
+A follow-up report groups those stripped xrefs by ELF `.eh_frame` function ranges to determine whether the ad and MFT restriction reasons are produced by the same native function.
 
 ## 8. MediaSession PlaybackState builder recovered from smali
 
@@ -449,7 +472,8 @@ The three original research questions are now resolved except for one deeper tra
 
 Next targets:
 
-1. native function-level xrefs inside `liborbit-jni-spotify.so`
-2. determine local native timer vs deeper/backend-provided state
-3. available-command-set synchronization with the ContextPlayer restriction update
-4. Connect-device equivalent path
+1. group the `ad_disallow` / `mft_disallow` xrefs by native function range
+2. locate the indirect native consumer of `ad.skippable_ad_delay`
+3. determine local native timer vs deeper/backend-provided state
+4. available-command-set synchronization with the ContextPlayer restriction update
+5. Connect-device equivalent path
