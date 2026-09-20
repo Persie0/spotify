@@ -42,9 +42,17 @@ jobs:
             echo
             objdump -d -M intel --start-address=0xb28270 --stop-address=0xb282b0 "$SO"
             echo
-            echo "## 0x17d9e02 implementation"
+            echo "## 0x17d9e02 initializer + 0x17d9e66 teardown"
             echo
-            objdump -d -M intel --start-address=0x17d9dc0 --stop-address=0x17d9e80 "$SO"
+            objdump -d -M intel --start-address=0x17d9dc0 --stop-address=0x17da000 "$SO"
+            echo
+            echo "## b656f6 first-16-byte state constructor"
+            echo
+            objdump -d -M intel --start-address=0xb656b0 --stop-address=0xb65780 "$SO"
+            echo
+            echo "## Direct xrefs to initializer / teardown / first-state helper"
+            echo
+            objdump -d -M intel "$SO" | grep -E -B6 -A8 '\b(call|jmp)[[:space:]]+(17d9e02|17d9e66|b656f6)\b' | head -n 1400 || true
             echo
             echo "## Nearby dynamic symbols"
             echo
