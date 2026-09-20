@@ -1,0 +1,148 @@
+name: Trace ad object producer into restriction state
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-object-state-producer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install pyelftools
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace producer paths
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/all.disasm
+          python3 - <<'PY' > analysis/native-ad-object-state-producer.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/all.disasm').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m: ins.append((int(m.group(1),16),i,l))
+
+          so='/tmp/native/liborbit-jni-spotify.so'
+          with open(so,'rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          def fde_for(a):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=a: lo=m+1
+              else: hi=m
+            for k in range(max(0,lo-4),min(len(fdes),lo+2)):
+              x,y=fdes[k]
+              if x<=a<y:return x,y
+            return None
+
+          def print_context(idx,before=28,after=42):
+            for x in lines[max(0,idx-before):min(len(lines),idx+after+1)]:
+              print('    '+x)
+
+          targets={
+            'ad object constructor 0x14e15e4':0x14e15e4,
+            'payload copy ctor 0x108d88c':0x108d88c,
+            'payload assign 0x108daf0':0x108daf0,
+            'inner optional construct 0x108da9a':0x108da9a,
+            'outer optional construct 0x108dc54':0x108dc54,
+          }
+
+          print('# Ad object -> restriction-state producer trace')
+          print()
+          print('Known destination layout: owner+0x438 is the inner optional value, owner+0x470 its engagement byte.')
+          print('Known ad-model address point: 0x1879950.')
+          print()
+
+          for name,t in targets.items():
+            hits=[]
+            pat=re.compile(r'\b(?:call|jmp)\s+'+format(t,'x')+r'\b')
+            for a,i,l in ins:
+              asm=l.split('\t')[-1]
+              if pat.search(asm):
+                hits.append((a,i,l,fde_for(a)))
+            print(f'## Direct xrefs: {name}')
+            print(f'- count: {len(hits)}')
+            print()
+            for n,(a,i,l,fr) in enumerate(hits[:80],1):
+              print(f'### {n}. callsite 0x{a:x} in ' + (f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown FDE'))
+              print_context(i)
+              print()
+
+          print('## All RIP-relative references to vtable address point 0x1879950')
+          print()
+          for a,i,l in ins:
+            if '# 1879950 ' in l or '# 1879950<' in l:
+              fr=fde_for(a)
+              print(f'### ref 0x{a:x} in ' + (f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown FDE'))
+              print_context(i,22,35)
+              print()
+
+          print('## Calls in payload-producer-looking regions')
+          print()
+          # Functions that call payload copy/assign are especially useful; print unique FDE summaries.
+          wanted={0x108d88c,0x108daf0,0x108dc54}
+          seen=set()
+          for a,i,l in ins:
+            asm=l.split('\t')[-1]
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',asm)
+            if not m or int(m.group(1),16) not in wanted: continue
+            fr=fde_for(a)
+            if not fr or fr in seen: continue
+            seen.add(fr)
+            print(f'### producer FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            # print entire FDE if reasonably sized, otherwise beginning/call contexts only
+            members=[(aa,ii,ll) for aa,ii,ll in ins if fr[0]<=aa<fr[1]]
+            if len(members)<=500:
+              for _,_,ll in members: print('    '+ll)
+            else:
+              for aa,ii,ll in members:
+                mm=re.search(r'\bcall\s+([0-9a-f]+)\b',ll.split('\t')[-1])
+                if mm and int(mm.group(1),16) in wanted:
+                  print_context(ii,45,70)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-object-state-producer.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ad object producer into restriction state"
+          git pull --rebase origin main
+          git push origin HEAD:main
