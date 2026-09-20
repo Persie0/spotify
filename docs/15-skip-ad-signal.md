@@ -193,7 +193,7 @@ An external MediaSession client therefore cannot assume that the appearance of S
 2. prove whether that predicate directly observes `adObject+0x1b8` or a derived copied state,
 3. decode the special branch after the incoming `"skip-ad"` comparison,
 4. decode the secondary `0x12044d8` handler and its `+0x68` virtual call,
-5. link successful native execution to the later `ad_skipped` reporting/event model,
+5. identify the playback-ad reporting event emitted after a successful native skip (the currently recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
 6. map the equivalent path during Connect/remote playback.
 
 Evidence reports:
