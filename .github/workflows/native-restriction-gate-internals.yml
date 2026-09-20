@@ -115,6 +115,7 @@ jobs:
 
           targets={
             'nested owner-state initializer (base = owner+0x38)':0x1088fd0,
+            'lower owner-state copy assignment (contains both gates)':0x1089f9e,
             'subobject mutator called immediately before restriction rebuild':0x10a9fbe,
             'owner subobject initializer called with owner+0x38':0x10a5fec,
             'primary vtable slot +0x38':0x10a8db4,
