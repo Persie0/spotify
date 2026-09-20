@@ -327,7 +327,47 @@ Their main xrefs cluster in the broad `0x10a6xxx` native region. In those neighb
 
 By contrast, `ad.skippable_ad_delay` has no simple direct xref. Because the key is demonstrably propagated into Android `ContextTrack` metadata, the most likely explanation is an indirect/generic metadata lookup rather than non-use.
 
-A follow-up report groups those stripped xrefs by ELF `.eh_frame` function ranges to determine whether the ad and MFT restriction reasons are produced by the same native function.
+The follow-up native reports resolve that function-level question.
+
+`analysis/native-restriction-groups.md` places the main `mft_disallow` and `ad_disallow` xrefs in the same Orbit function:
+
+```text
+0x10a6464..0x10a7f52
+```
+
+That function also constructs reasons such as `already_paused`, `not_paused`, `not_playing_context`, `automix`, `audiobook_capping`, and `not_supported_by_content_type`. It is therefore a general native restriction-set builder.
+
+`analysis/native-restriction-field-map.md` reveals the restriction layout: schema entries are separated by `0x18` bytes, with `disallow_skipping_next_reasons` at slot `base+0x90`. In the builder, the block begins at `r14+0x1410`, giving:
+
+```text
+r14+0x1488 = disallowSkippingPrevReasons
+r14+0x14a0 = disallowSkippingNextReasons
+r14+0x14b8 = repeat-context reasons
+r14+0x14d0 = repeat-track reasons
+r14+0x14e8 = shuffle reasons
+r14+0x1500 = set-queue reasons
+r14+0x1518 = add-to-queue reasons
+```
+
+The decisive writes are:
+
+```text
+0x10a6898: mft_disallow -> r14+0x14a0
+0x10a74ae: ad_disallow  -> r14+0x14a0
+```
+
+Thus Orbit itself constructs both the MFT and advertisement reasons in the **skip-next restriction set**.
+
+The advertisement branch at `0x10a7492..0x10a74d1` requires two bytes to be nonzero before inserting `ad_disallow` into skip-next:
+
+```text
+r14+0x598
+r14+0x470
+```
+
+The `+0x598` flag is broadly reused by the restriction builder and is associated with active/playing-context logic. The `+0x470` flag is only observed in this ad block inside the decoded function, making it the current best anchor for the ad-specific restriction condition.
+
+What is **not** yet proven is what writes `+0x470` or whether its transition is the direct result of `ad.skippable_ad_delay` expiry. The delay key still has no simple RIP-relative native string xref, so the timer/state input may be accessed through generic metadata or another internal object.
 
 ## 8. MediaSession PlaybackState builder recovered from smali
 
