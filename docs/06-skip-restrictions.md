@@ -114,7 +114,33 @@ The Cosmos model also serializes/deserializes:
 
 `disallow_skipping_next_reasons`
 
-This supports the conclusion that restrictions are transported player state, not a UI-only value derived from the countdown metadata.
+Targeted smali extraction closes the conversion chain. In:
+
+`analysis/smali-targets/f5x0.smali`
+
+the protocol mapper calls:
+
+```text
+EsRestrictions$Restrictions.x0()
+    -> Set
+    -> Restrictions.Builder.disallowSkippingNextReasons(...)
+```
+
+The resulting `Restrictions` object is installed by:
+
+`analysis/smali-targets/p4h1.smali`
+
+through:
+
+```text
+EsContextPlayerState.N()
+    -> f5x0.a(EsRestrictions)
+    -> PlayerState.Builder.restrictions(...)
+```
+
+The same mapper separately converts context restrictions.
+
+This confirms that the public skip restriction is transported player state, not a UI-only value derived from the countdown metadata.
 
 ## No local delay -> Restrictions mutation found
 
@@ -136,11 +162,19 @@ PlayerState
         +--> MediaSession action mask
 ```
 
-Strong inference:
+The state source can now be traced one layer deeper.
 
-A deeper player/native/backend layer updates `PlayerState.restrictions` when skipping actually becomes legal. The Android UI merely displays the delay and observes the new player state when it arrives.
+`decompiled/sources/p204p/lrw.java` opens a streaming Esperanto call:
 
-That deeper transition remains the next unresolved layer.
+```text
+spotify.player.esperanto.proto.ContextPlayer / GetState
+```
+
+and maps each streamed `EsContextPlayerState` through `p4h1` into the public `PlayerState`.
+
+Therefore the Android/domain layer does **not** count down and edit the skip restriction itself. A changed `disallowSkippingNextReasons` set arrives in a later ContextPlayer state update.
+
+The remaining uncertainty is below that boundary: whether the native player computes the expiry locally, or receives/derives an already-updated restriction from deeper player/backend state.
 
 ## Exact MediaSession ACTION_SKIP_TO_NEXT generation
 
@@ -233,6 +267,44 @@ pqd0.onSkipToNext()
         +-- prefer cmd 9
         +-- otherwise cmd 8
 ```
+
+## Restricted-command error path
+
+`lrw.java` also streams:
+
+```text
+spotify.player.esperanto.proto.ContextPlayer / GetError
+```
+
+`p204p/g2h1.java` maps the protocol error to `ErrorType.SKIP_TO_NEXT_RESTRICTED`.
+
+Observed reason strings include two distinct concepts:
+
+- `mft_disallow` / `disallow-mft-radio` — mapped to a free-tier/on-demand restriction
+- `ad_disallow` — mapped to an action-not-allowed-in-context restriction
+
+So the player core remains an enforcement layer even if a client attempts a next command.
+
+## Native player boundary
+
+The APK native-library scan is stored in:
+
+`analysis/smali-targets/native-string-scan.txt`
+
+Across the packaged ABIs, `liborbit-jni-spotify.so` contains all of the relevant semantic strings:
+
+```text
+ad.skippable_ad_delay
+ad_disallow
+mft_disallow
+disallow_skipping_next_reasons
+skip_to_next_restricted
+SKIP_TO_NEXT_RESTRICTED
+```
+
+It also contains descriptors for Spotify's Connect/player/Esperanto `Restrictions` messages.
+
+This strongly localizes the unresolved countdown-to-restriction transition to the Orbit/native player side (or state consumed there), rather than Android UI code.
 
 ## Practical consequence for spotify-muter
 
