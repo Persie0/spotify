@@ -1,0 +1,209 @@
+name: Trace ad object source and event subtype 6
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-object-source-event6.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          python3 - <<'PY' > analysis/native-ad-object-source-event6.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return None
+
+          def cstring(va,maxlen=260):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.94:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def strings_in(fr):
+            vals=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]) or '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              s=cstring(int(m.group(1),16))
+              if s and s not in vals:vals.append(s)
+            return vals
+
+          print('# Ad runtime object source + event subtype 6 trace')
+          print()
+          print('Known ad-model constructor 0x14e15e4 installs vptr 0x1879950.')
+          print('Known restriction-owner callback consumes event byte +0x38 == 6.')
+          print()
+
+          targets={
+            'ad-model constructor':0x14e15e4,
+            'nested optional copy wrapper':0x108da66,
+            'nested shared payload copy':0x108da9a,
+            'nested optional assignment':0x108e3d0,
+          }
+          print('## Direct xrefs to constructors/helpers')
+          print()
+          for name,t in targets.items():
+            print(f'### {name}: 0x{t:x}')
+            count=0
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if not m or int(m.group(1),16)!=t:continue
+              count+=1
+              fr=fde_for(a)
+              print(f'- callsite 0x{a:x}; caller {fr}')
+              if fr:
+                ss=strings_in(fr)
+                if ss:print('  strings: '+' | '.join(s.replace('\n','\\n') for s in ss[:60]))
+              for x in lines[max(0,i-14):min(len(lines),i+18)]:print('    '+x)
+              print()
+            print(f'Total direct xrefs: {count}')
+            print()
+
+          print('## Direct vptr stores for 0x1879950')
+          print()
+          for a,i,op,l in ins:
+            if '# 1879950' not in l:continue
+            fr=fde_for(a)
+            print(f'### 0x{a:x}; FDE={fr}')
+            if fr:
+              ss=strings_in(fr)
+              if ss:print('Strings: '+' | '.join(s.replace('\n','\\n') for s in ss[:80]))
+            for x in lines[max(0,i-14):min(len(lines),i+24)]:print('    '+x)
+            print()
+
+          print('## Immediate stores of event subtype 6 to +0x38')
+          print()
+          ev=[]
+          patterns=[
+            re.compile(r'\bmov\s+BYTE PTR \[([a-z][a-z0-9]*)\+0x38\],0x6\b'),
+            re.compile(r'\bmov\s+DWORD PTR \[([a-z][a-z0-9]*)\+0x38\],0x6\b'),
+          ]
+          for a,i,op,l in ins:
+            if any(p.search(op) for p in patterns):
+              ev.append((a,i,op))
+          print(f'Exact immediate +0x38=6 stores: {len(ev)}')
+          for a,i,op in ev:
+            fr=fde_for(a)
+            print(f'### 0x{a:x}: {op}; FDE={fr}')
+            if fr:
+              ss=strings_in(fr)
+              if ss:print('Strings: '+' | '.join(s.replace('\n','\\n') for s in ss[:100]))
+            for x in lines[max(0,i-16):min(len(lines),i+22)]:print('    '+x)
+            print()
+
+          print('## Comparisons of event +0x38 against 6')
+          print()
+          for a,i,op,l in ins:
+            if re.search(r'\bcmp\s+BYTE PTR \[[a-z][a-z0-9]*\+0x38\],0x6\b',op):
+              fr=fde_for(a)
+              print(f'### 0x{a:x}: {op}; FDE={fr}')
+              if fr:
+                ss=strings_in(fr)
+                if ss:print('Strings: '+' | '.join(s.replace('\n','\\n') for s in ss[:80]))
+              for x in lines[max(0,i-12):min(len(lines),i+16)]:print('    '+x)
+              print()
+
+          # Find small factories returning or constructing the ad vptr type by searching
+          # all calls into constructor and their own direct callers one level up.
+          ctor_callers=[]
+          for a,i,op,l in ins:
+            m=re.search(r'\bcall\s+14e15e4\b',op)
+            if m:
+              fr=fde_for(a)
+              if fr and fr not in ctor_callers:ctor_callers.append(fr)
+          print('## One-level callers of ad-model constructor callers')
+          print()
+          for fr in ctor_callers:
+            print(f'### constructor caller {fr}')
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if not m:continue
+              target=int(m.group(1),16)
+              if fr[0]<=target<fr[1]:
+                cfr=fde_for(a)
+                print(f'- 0x{a:x} from {cfr}: {op}')
+                for x in lines[max(0,i-9):min(len(lines),i+12)]:print('    '+x)
+                print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-object-source-event6.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ad object source and event subtype 6"
+          git pull --rebase origin main
+          git push origin HEAD:main
