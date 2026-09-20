@@ -202,7 +202,7 @@ player Restrictions ------------> actual permission
                           player command set
 ```
 
-The exact mechanism that later empties `disallowSkippingNextReasons` appears to be deeper in player/native/backend state and remains open.
+The Android layer never derives that restriction from the countdown. The restriction is supplied by the streamed ContextPlayer state, as traced below.
 
 ## 4. Restrictions are transported player state
 
@@ -225,7 +225,88 @@ The Cosmos model also understands:
 
 So the permission state exists independently in the player protocol/domain model.
 
-## 5. MediaSession PlaybackState builder recovered from smali
+## 5. Exact ContextPlayer -> PlayerState restriction mapping
+
+`decompiled/sources/p204p/lrw.java` subscribes to:
+
+```text
+spotify.player.esperanto.proto.ContextPlayer / GetState
+```
+
+The stream is converted to the public player model by `p4h1`.
+
+Recovered smali gives the exact restriction path:
+
+```text
+EsContextPlayerState.N()
+        |
+        v
+EsRestrictions$Restrictions
+        |
+        v
+f5x0.a(...)
+        |
+        +-- x0() -> Set
+        |           |
+        |           v
+        |    Restrictions.Builder
+        |      .disallowSkippingNextReasons(...)
+        |
+        v
+Restrictions
+        |
+        v
+PlayerState.Builder.restrictions(...)
+```
+
+The context-level restrictions are mapped separately through the same `f5x0` converter.
+
+This means a skip restriction becoming empty is observed as **new ContextPlayer state**, not as a Java/Kotlin UI timer mutating the existing `PlayerState`.
+
+## 6. ContextPlayer restricted-skip errors
+
+`lrw.java` independently streams:
+
+```text
+spotify.player.esperanto.proto.ContextPlayer / GetError
+```
+
+`g2h1.java` maps the protocol error to:
+
+`ErrorType.SKIP_TO_NEXT_RESTRICTED`
+
+Known reason strings distinguish:
+
+```text
+mft_disallow       -> free-tier / on-demand restriction
+disallow-mft-radio -> free-tier / on-demand restriction
+ad_disallow        -> action not allowed in current context
+```
+
+This provides a second enforcement signal from the player core in addition to the state restriction sets.
+
+## 7. Native ownership clue
+
+`analysis/smali-targets/native-string-scan.txt` scans every packaged native ABI.
+
+`liborbit-jni-spotify.so` contains all of:
+
+```text
+ad.skippable_ad_delay
+ad_disallow
+mft_disallow
+disallow_skipping_next_reasons
+skip_to_next_restricted
+SKIP_TO_NEXT_RESTRICTED
+```
+
+It also embeds the Connect/player/Esperanto restriction message descriptors.
+
+Therefore the remaining countdown-to-restriction transition is localized below the Android domain mapper, in the Orbit/native player layer or state consumed by that layer.
+
+A separate native xref report is being generated to narrow this from library-level ownership to function-level neighborhoods.
+
+## 8. MediaSession PlaybackState builder recovered from smali
 
 JADX did not emit a usable `pqd0.java`, but `pqd0.smali` contains:
 
@@ -246,7 +327,7 @@ Relevant mapping:
 
 Other command IDs are mapped to other transport actions, but 8/9 are the critical pair for this investigation.
 
-## 6. Platform export
+## 9. Platform export
 
 The resulting bitmask is put into:
 
@@ -256,7 +337,7 @@ and then propagated to the platform playback state.
 
 Therefore an external `MediaController` sees `ACTION_SKIP_TO_NEXT` only when Spotify's current player command set contains one of the next commands that maps to `0x20`.
 
-## 7. What happens when Android invokes skip-next
+## 10. What happens when Android invokes skip-next
 
 `pqd0.onSkipToNext()` is also fully visible in smali.
 
@@ -278,7 +359,7 @@ selector 9 -> pdp0.mo43854Q()
 
 `ox8.java` shows both methods perform next-item/timeline transitions with slightly different semantics.
 
-## 8. End-to-end skip capability
+## 11. End-to-end skip capability
 
 ```text
 deeper player state
@@ -310,7 +391,7 @@ button/state                      action mask |= 0x20
                              cmd 9               cmd 8
 ```
 
-## 9. Likely time transition
+## 12. Likely time transition
 
 The observed Android code supports this model:
 
@@ -333,9 +414,9 @@ next PlayerState / command update:
   MediaSession exposes ACTION_SKIP_TO_NEXT
 ```
 
-The **timer-to-restriction transition itself was not found in Android Java/Kotlin code**. That makes the native player / player-state transport boundary the next logical trace target.
+The **timer-to-restriction transition itself is not in Android Java/Kotlin code**. A later `ContextPlayer.GetState` update carries the changed restriction into the app. Native string evidence places the relevant delay/restriction vocabulary in `liborbit-jni-spotify.so`.
 
-## 10. Implication for the companion muter
+## 13. Implication for the companion muter
 
 A robust companion app does not need to recreate Spotify's countdown logic.
 
@@ -354,19 +435,21 @@ ACTION_SKIP_TO_NEXT present?
 
 That automatically follows Spotify's own current permission state and remains less brittle than hooking obfuscated internal classes.
 
-## 11. Remaining questions
+## 14. Remaining questions
 
 The three original research questions are now resolved except for one deeper transition:
 
 - exact ad event strings: **resolved**
 - MediaSession skip action generation: **resolved**
-- delay vs Restrictions relation: **resolved at Android layer**
-- exact native/backend mechanism that changes the restriction when the timer expires: **open**
+- delay vs Restrictions relation: **resolved through the Android/Esperanto mapping boundary**
+- `EsContextPlayerState` -> domain `PlayerState`: **resolved**
+- restricted-skip error path: **resolved through `ContextPlayer.GetError`**
+- native library containing the relevant concepts: **resolved as `liborbit-jni-spotify.so`**
+- exact native/backend mechanism that removes `ad_disallow` / skip-next restriction at expiry: **open**
 
 Next targets:
 
-1. player native/JNI boundary
-2. `EsContextPlayerState` -> domain `PlayerState` conversion
-3. available-command set update source
-4. command rejection/error path
-5. Connect-device equivalent path
+1. native function-level xrefs inside `liborbit-jni-spotify.so`
+2. determine local native timer vs deeper/backend-provided state
+3. available-command-set synchronization with the ContextPlayer restriction update
+4. Connect-device equivalent path
