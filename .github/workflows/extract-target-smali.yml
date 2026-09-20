@@ -70,6 +70,28 @@ jobs:
 
           test -f analysis/smali-targets/pqd0.smali
 
+      - name: Build bytecode xref report
+        run: |
+          {
+            echo "# pqd0 method declarations"
+            grep -n '^\.method' analysis/smali-targets/pqd0.smali || true
+            echo
+            echo "# pqd0 action-mask / skip-next references"
+            grep -n -B12 -A18 -E '0x20|setActions|PlaybackStateCompat;->' analysis/smali-targets/pqd0.smali || true
+            echo
+            echo "# ad skippability strings across decoded bytecode"
+            grep -R -n -B6 -A10 -E 'ad\.skippable_ad_delay|ad\.is_skippable' /tmp/spotify-smali/smali* 2>/dev/null || true
+            echo
+            echo "# be11 constructor references near selector 7"
+            grep -R -n -B10 -A12 'Lp/be11;-><init>' /tmp/spotify-smali/smali* 2>/dev/null | grep -B10 -A12 -E '0x7|Lp/be11;-><init>' || true
+            echo
+            echo "# disallowSkippingNext references"
+            grep -R -n -B8 -A12 -E 'disallowSkippingNext|disallow_skipping_next' /tmp/spotify-smali/smali* 2>/dev/null || true
+          } > analysis/smali-targets/xrefs.txt
+
+          # Keep the report manageable while preserving matching context.
+          wc -l analysis/smali-targets/xrefs.txt
+
       - name: Commit target smali
         run: |
           git config user.name "github-actions[bot]"
