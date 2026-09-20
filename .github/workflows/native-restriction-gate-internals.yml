@@ -114,6 +114,7 @@ jobs:
             return vals
 
           targets={
+            'nested owner-state initializer (base = owner+0x38)':0x1088fd0,
             'owner subobject initializer called with owner+0x38':0x10a5fec,
             'primary vtable slot +0x38':0x10a8db4,
             'slot +0x38 helper from owner+0x5e8':0xa9f6ee,
@@ -124,6 +125,7 @@ jobs:
           print()
           print('Known owner allocation: 0x18b0 bytes; primary vptr 0x184c738.')
           print('Known skip-next ad gate: owner+0x598 && owner+0x470.')
+          print('Coordinate transform inside 0x10a5fec: subobject base = owner+0x38, so sub+0x560=owner+0x598 and sub+0x438=owner+0x470.')
           print()
 
           for name,addr in targets.items():
