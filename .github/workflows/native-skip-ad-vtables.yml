@@ -1,0 +1,97 @@
+name: Resolve skip-ad native vtables
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skip-ad-vtables.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/savt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/savt
+
+      - name: Map vtables and constructors
+        run: |
+          set -euo pipefail
+          SO=/tmp/savt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/savt/all.dis
+          readelf -rW "$SO" > /tmp/savt/relocs.txt
+          {
+            echo '# Skip Ad native vtable / owner map'
+            echo
+            echo 'Known method relocation slots:'
+            echo '- 0x1842030 -> 0xfd381a'
+            echo '- 0x18420e8 -> 0xfd38d6'
+            echo '- 0x185c048 -> 0x1204218'
+            echo
+
+            echo '## Relocations around 0x1841f00..0x1842200'
+            awk '
+              /^0[0-9a-f]+/ {
+                x=$1
+                if (x >= "0000000001841f00" && x <= "0000000001842200") print
+              }' /tmp/savt/relocs.txt
+            echo
+
+            echo '## Relocations around 0x185bf00..0x185c180'
+            awk '
+              /^0[0-9a-f]+/ {
+                x=$1
+                if (x >= "000000000185bf00" && x <= "000000000185c180") print
+              }' /tmp/savt/relocs.txt
+            echo
+
+            echo '## Code references into 0x1841f00..0x1842200'
+            grep -E -B20 -A45 '# 184(1f|20|21)[0-9a-f]{2}\b' /tmp/savt/all.dis | head -n 22000 || true
+            echo
+
+            echo '## Code references into 0x185bf00..0x185c180'
+            grep -E -B20 -A45 '# 185(bf|c0|c1)[0-9a-f]{2}\b' /tmp/savt/all.dis | head -n 18000 || true
+            echo
+
+            echo '## Direct references to likely nearby vtable address points'
+            for A in 1841f80 1841f88 1841f90 1841f98 1841fa0 1841fa8 1841fb0 1841fb8 1841fc0 1841fc8 1841fd0 1841fd8 1841fe0 1841fe8 1841ff0 1841ff8 1842000 1842008 1842010 1842018 1842020 1842028 1842030 1842038 1842040 1842048 1842050 1842058 1842060 1842068 1842070 1842078 1842080 1842088 1842090 1842098 18420a0 18420a8 18420b0 18420b8 18420c0 18420c8 18420d0 18420d8 18420e0 18420e8; do
+              HITS="$(grep -n -F "# $A " /tmp/savt/all.dis || true)"
+              if [ -n "$HITS" ]; then
+                echo "### $A"
+                echo "$HITS"
+              fi
+            done
+            echo
+
+            echo '## Method bodies adjacent to fd381a/fd38d6'
+            objdump -d -M intel --start-address=0xfd3300 --stop-address=0xfd3d80 "$SO"
+            echo
+
+            echo '## Direct callers of fd33xx..fd39xx local family'
+            grep -E -B15 -A24 '\b(call|jmp)[[:space:]]+fd(33|34|35|36|37|38|39)[0-9a-f]{2}\b' /tmp/savt/all.dis | head -n 24000 || true
+          } > analysis/native-skip-ad-vtables.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skip-ad-vtables.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve skip-ad native vtables"
+          git pull --rebase origin main
+          git push origin HEAD:main
