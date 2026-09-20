@@ -523,6 +523,14 @@ spotify.player.esperanto.proto.ContextPlayer / Signal
 
 The ordinary next-track variant dispatches separately to `ContextPlayer / SkipNext`, confirming again that timed Skip Ad is not MediaSession skip-next.
 
+The readiness side is also now explicit in Android bytecode. `p4h1.smali` maps `EsContextPlayerState.getSignalsList()` directly into `PlayerState.signals()`. The Skip Ad state reducer in `g511.smali` then performs:
+
+```text
+PlayerState.signals().contains("skip-ad")
+```
+
+and passes that result into the `jk21` UI state object. The button therefore follows the native player's exported available-signal list; it does not infer readiness from the countdown locally.
+
 The unresolved boundary has moved into Orbit/native handling:
 
 > Which native handler consumes signal ID `skip-ad`, what state transition it performs, and how successful execution is reflected in `ad_skipped` state/telemetry?
