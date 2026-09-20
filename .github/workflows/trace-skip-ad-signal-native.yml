@@ -23,10 +23,10 @@ jobs:
 
       - name: Download APK
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p input /tmp/skipadsig
-          gh release download r1 --repo "\${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
           APK=input/spotify-9-1-84-2205.apk
           unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipadsig
           echo "APK=$APK" >> "$GITHUB_ENV"
