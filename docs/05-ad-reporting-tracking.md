@@ -100,7 +100,18 @@ Events such as `PROGRESS` and `VOLUME_CHANGE` are not in the one-shot set and ma
 
 ## Concrete event call sites
 
-Observed examples include:
+The audio-player listener path is now partially traced rather than only named at enum level.
+
+`decompiled/sources/p204p/lfw.java` is an ad-playback listener. In its lifecycle variant:
+
+- `mo40498U(long)` emits `STARTED` when playback first becomes started
+- `mo25537Q(...)` emits `ENDED` for the normal completion state
+- the same completion callback emits `TERMINATED` for several abnormal/non-normal terminal states when the player was not merely paused
+- `mo29150M(...)` / `mo29149G(...)` emit `PAUSED` and `RESUMED`
+
+`decompiled/sources/p204p/f0p0.java` maintains the per-listener `hasStarted` state used to avoid treating every playback callback as a new start.
+
+Additional observed call sites include:
 
 - `p204p/ttr.java` — impression-related emission
 - `p204p/gb9.java` — `IMPRESSION` and `PROGRESS`
@@ -269,6 +280,7 @@ Still not fully traced:
 
 - which specific event family is authoritative for advertiser billing
 - server-side cross-checking against playback telemetry
+- the exact producer/timing source for `FIRST_QUARTILE`, `MIDPOINT`, and `THIRD_QUARTILE` in this build; their wire names and one-shot semantics are confirmed, but no direct Java enum-reference producer was isolated
 - exact audio-ad milestone producer path for every placement
 - Connect-device reporting differences
 - placement-specific completion rules
