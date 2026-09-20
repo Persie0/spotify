@@ -26,7 +26,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p input /tmp/native
-          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
           APK="$(find input -type f -name '*.apk' -print -quit)"
           unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
 
