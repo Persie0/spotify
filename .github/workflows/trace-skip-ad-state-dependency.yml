@@ -1,0 +1,180 @@
+name: Trace skip-ad signal state dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-state-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sastate
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sastate
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Find state constructors and +0x40 provenance
+        run: |
+          SO=/tmp/sastate/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sastate/orbit.dis
+          python3 - <<'PY' > analysis/skip-ad-state-dependency.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/sastate/liborbit-jni-spotify.so')
+          lines=Path('/tmp/sastate/orbit.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def dump(fr,maxins=1800):
+            n=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l); n+=1
+                if n>=maxins:
+                  print('    ... truncated ...'); break
+
+          wanted={0x20,0x30,0x40,0x58,0x60,0x68}
+          writes=defaultdict(lambda:defaultdict(list))
+          reads=defaultdict(lambda:defaultdict(list))
+
+          # Collect exact constant-offset memory operations by function and base register.
+          # Destination memory before first comma => write; otherwise count reads too.
+          memre=re.compile(r'\[([a-z0-9]+)\+0x([0-9a-f]+)\]')
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if not fr:continue
+            ms=list(memre.finditer(op))
+            if not ms:continue
+            first=op.split(',',1)[0]
+            for m in ms:
+              base=m.group(1); off=int(m.group(2),16)
+              if off not in wanted:continue
+              key=(fr,base)
+              if m.group(0) in first:
+                writes[key][off].append((a,op))
+              else:
+                reads[key][off].append((a,op))
+
+          print('# Skip Ad signal state dependency trace')
+          print()
+          print('Target state layout used by fd381a/fd38d6:')
+          print('- +0x20 polymorphic dependency; fd381a calls its +0x70')
+          print('- +0x30 polymorphic dependency; special skip-ad tail calls its +0x20')
+          print('- +0x40 polymorphic dependency; both paths call its +0x140')
+          print('- +0x58/+0x60 range/counter values')
+          print('- +0x68 byte gate')
+          print()
+
+          scored=[]
+          for key,offs in writes.items():
+            fr,base=key
+            score=len(set(offs))
+            if score>=3:
+              scored.append((score,fr,base,offs,reads.get(key,{})))
+          scored.sort(key=lambda x:(-x[0],x[1][0]))
+
+          print('## FDEs writing clusters of the target state offsets')
+          for score,fr,base,offs,rds in scored[:120]:
+            print(f'### score={score}/6 FDE 0x{fr[0]:x}..0x{fr[1]:x} base={base}')
+            print('writes: '+', '.join(f'+0x{o:x}@'+','.join(hex(a) for a,_ in xs[:5]) for o,xs in sorted(offs.items())))
+            if rds:
+              print('reads: '+', '.join(f'+0x{o:x}@'+','.join(hex(a) for a,_ in xs[:5]) for o,xs in sorted(rds.items())))
+            dump(fr)
+            print()
+
+          print('## Copy-like FDEs reading and writing many target offsets')
+          emitted=set()
+          # Aggregate by FDE irrespective of register, then require many read+write offsets.
+          fw=defaultdict(set); frd=defaultdict(set)
+          for (fr,base),offs in writes.items(): fw[fr].update(offs)
+          for (fr,base),offs in reads.items(): frd[fr].update(offs)
+          for fr in fdes:
+            common=fw.get(fr,set()) & frd.get(fr,set())
+            if len(common)>=3:
+              emitted.add(fr)
+              print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}; common offsets={sorted(hex(x) for x in common)}')
+              dump(fr)
+              print()
+
+          print('## All writes to +0x40 in high-scoring state-layout FDEs')
+          high={fr for score,fr,base,offs,rds in scored if score>=3}
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if fr not in high:continue
+            first=op.split(',',1)[0]
+            if re.search(r'\[[a-z0-9]+\+0x40\]',first):
+              print(f'### 0x{a:x} in FDE 0x{fr[0]:x}..0x{fr[1]:x}: {op}')
+              for x in lines[max(0,i-18):min(len(lines),i+28)]:print('    '+x)
+              print()
+
+          print('## Indirect +0x70 / +0x128 call sites')
+          # These are the primary-table slots of the skip-ad adapter, but may occur on other types too.
+          for a,i,op,l in ins:
+            if re.search(r'call\s+QWORD PTR \[[^\]]+\+0x(?:70|128)\]',op):
+              fr=fde_for(a)
+              print(f'### 0x{a:x}: {op}; FDE={fr}')
+              for x in lines[max(0,i-20):min(len(lines),i+30)]:print('    '+x)
+              print()
+
+          print('## Adapter address-point references and nearby storage')
+          for a,i,op,l in ins:
+            if '# 1841fc0 ' in l or '# 18421b0 ' in l:
+              print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}')
+              for x in lines[max(0,i-18):min(len(lines),i+30)]:print('    '+x)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-state-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace skip-ad signal state dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
