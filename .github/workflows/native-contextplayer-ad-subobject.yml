@@ -1,0 +1,186 @@
+name: Trace ContextPlayer ad subobject
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-contextplayer-ad-subobject.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace subobject
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-contextplayer-ad-subobject.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def function_lines(addr):
+            fr=fde_for(addr)
+            if not fr:return None,[]
+            return fr,[(a,i,l) for a,i,l in ins if fr[0]<=a<fr[1]]
+
+          targets={
+            'ContextPlayer init handoff':0x10a157b,
+            'subobject helper':0xb28aa8,
+            'ad restriction event':0x10a9668,
+            'restriction builder':0x10a6464,
+          }
+
+          print('# ContextPlayer +0x418 ad/restriction subobject trace')
+          print()
+          print('ContextPlayer init passes this+0x418 to helper 0xb28aa8.')
+          print('Within that subobject: ContextPlayer+0x438 = +0x20, +0x470 = +0x58, +0x598 = +0x180.')
+          print()
+
+          for name,addr in targets.items():
+            fr,fl=function_lines(addr)
+            print(f'## {name}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); continue
+            print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}')
+            print()
+            for _,_,l in fl:
+              print('    '+l)
+            print()
+
+          print('## Direct call/jump xrefs to subobject helper 0xb28aa8')
+          print()
+          hits=[]
+          for a,i,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+b28aa8\b',l):
+              hits.append((a,i,l,fde_for(a)))
+          for a,i,l,fr in hits:
+            ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{a:x} from {ftxt}')
+            for ctx in lines[max(0,i-12):min(len(lines),i+14)]:
+              print('    '+ctx)
+            print()
+          if not hits:print('- none')
+
+          # Identify exact accesses inside the helper to the compact offsets corresponding
+          # to ContextPlayer fields of interest.
+          fr,fl=function_lines(0xb28aa8)
+          print()
+          print('## Compact subobject field accesses')
+          print()
+          wanted=('0x20','0x58','0x180')
+          for a,i,l in fl:
+            if any(re.search(r'\+'+re.escape(off)+r'\]',l) for off in wanted):
+              print(f'### 0x{a:x}: {l.strip()}')
+              for ctx in lines[max(0,i-8):min(len(lines),i+10)]:
+                print('    '+ctx)
+              print()
+
+          # Find byte reads/writes to ContextPlayer +0x470/+0x598 with nearby accesses to
+          # +0x438. Restrict bases to the same register and classify writes.
+          print('## Candidate ContextPlayer gate writers')
+          print()
+          mem=re.compile(r'\[([a-z][a-z0-9]*)\+0x(438|470|598)\]')
+          stack={'rsp','rbp','esp','ebp','rip'}
+          writeops={'mov','movb','movw','movl','movq','and','or','xor','inc','dec','add','sub','xchg','cmpxchg'}
+          def opcode(l):
+            m=re.match(r'^\s*[0-9a-f]+:\s+(?:[0-9a-f]{2}\s+)+([^\s]+)',l)
+            return m.group(1).lower() if m else ''
+          def asmtext(l):
+            # objdump uses a tab before mnemonic/operands after byte dump
+            p=l.split('\t')
+            return p[-1].strip() if p else l
+          refs={}
+          for a,i,l in ins:
+            text=asmtext(l)
+            for m in mem.finditer(text):
+              base,off=m.group(1),m.group(2)
+              if base in stack:continue
+              fr=fde_for(a)
+              if not fr:continue
+              refs.setdefault((fr,base),[]).append((a,i,l,off,text))
+          for (fr,base),items in sorted(refs.items(),key=lambda kv:kv[0][0][0]):
+            offs={x[3] for x in items}
+            if not ({'470','598'} & offs):continue
+            # Prefer functions touching at least two of the three signature offsets.
+            if len(offs)<2:continue
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x}, base={base}, offsets={sorted(offs)}')
+            for a,i,l,off,text in items:
+              op=opcode(l)
+              dst=text.split(None,1)[1].split(',',1)[0] if ' ' in text else ''
+              wr=(op in writeops and f'[{base}+0x{off}]' in dst)
+              print(f'- 0x{a:x}: +0x{off}' + (' WRITE' if wr else '') + ' :: '+text)
+            print()
+
+          print('## Known skip-next restriction condition')
+          print()
+          print('Native builder 0x10a6464 inserts ad_disallow into r14+0x14a0 (skip-next) only when:')
+          print('    ContextPlayer[+0x598] != 0')
+          print('    ContextPlayer[+0x470] != 0')
+          print('The purpose of this report is to identify where those two bytes originate/change.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-contextplayer-ad-subobject.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ContextPlayer ad subobject"
+          git pull --rebase origin main
+          git push origin HEAD:main
