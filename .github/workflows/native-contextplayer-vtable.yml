@@ -1,4 +1,4 @@
-name: Decode ContextPlayer vtable ownership
+name: Decode restriction-owner vtable ownership
 
 on:
   workflow_dispatch:
@@ -99,8 +99,9 @@ jobs:
               if a<=addr<b:return a,b
             return None
 
-          primary=0x184c360
-          region=(0x184c340,0x184c910)
+          primary=0x184c738
+          secondary=0x184c858
+          region=(0x184c728,0x184c8e8)
 
           reloc_map={}
           for line in relocs:
@@ -108,12 +109,12 @@ jobs:
             if m:
               reloc_map[int(m.group(1),16)]=int(m.group(2),16)
 
-          print('# ContextPlayer vtable / concrete method ownership trace')
+          print('# restriction-owner vtable / concrete method ownership trace')
           print()
-          print('Constructor primary address point: 0x184c360')
+          print('Restriction-owner primary address point: 0x184c738; secondary interface address point: 0x184c858')
           print()
 
-          print('## Raw qwords and relocations around ContextPlayer vtable region')
+          print('## Raw qwords and relocations around restriction-owner vtable region')
           print()
           for va in range(region[0],region[1],8):
             raw=qword(va)
@@ -128,7 +129,7 @@ jobs:
 
           print('## Primary address-point header')
           print()
-          for va in (primary-0x10,primary-0x8,primary,primary+8):
+          for va in (primary-0x10,primary-0x8,primary,primary+8,secondary-0x10,secondary-0x8,secondary,secondary+8):
             print(f'- 0x{va:x}: raw=0x{(qword(va) or 0):x}' + (f' reloc->0x{reloc_map[va]:x}' if va in reloc_map else ''))
           rtti=reloc_map.get(primary-8) or qword(primary-8)
           if rtti:
@@ -162,7 +163,7 @@ jobs:
           for slot,target,fr in methods:
             if fr:owned.setdefault(fr,[]).append((slot,target))
 
-          print('## ContextPlayer-vtable methods touching gate/object fields')
+          print('## restriction-owner-vtable methods touching gate/object fields')
           print()
           field_re=re.compile(r'\[([a-z][a-z0-9]*)\+0x(418|438|470|4c8|598|14a0)\]')
           for fr,entries in sorted(owned.items()):
@@ -184,7 +185,7 @@ jobs:
                   print('    '+line)
                 print()
 
-          print('## Direct gate stores in ContextPlayer-vtable methods')
+          print('## Direct gate stores in restriction-owner-vtable methods')
           print()
           found=0
           writeops={'mov','movb','movw','movl','movq','and','or','xor','xchg','cmpxchg','inc','dec','add','sub'}
@@ -211,6 +212,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add analysis/native-contextplayer-vtable.md
           git diff --cached --quiet && exit 0
-          git commit -m "Decode ContextPlayer vtable ownership"
+          git commit -m "Decode restriction-owner vtable ownership"
           git pull --rebase origin main
           git push origin HEAD:main
