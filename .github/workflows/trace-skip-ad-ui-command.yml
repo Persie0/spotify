@@ -1,0 +1,113 @@
+name: Trace Skip Ad UI command path
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-ui-command.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Spotify APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          echo "APK=input/spotify-9-1-84-2205.apk" >> "$GITHUB_ENV"
+
+      - name: Install apktool
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool
+
+      - name: Decode APK with resources and smali
+        run: |
+          rm -rf /tmp/spotify-full
+          apktool d -f "$APK" -o /tmp/spotify-full
+
+      - name: Build Skip Ad UI xref report
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=analysis/skip-ad-ui-command.md
+          PUB=/tmp/spotify-full/res/values/public.xml
+
+          get_id() {
+            local type="$1" name="$2"
+            grep -E "<public type=\"$type\" name=\"$name\"" "$PUB"               | sed -n 's/.* id="\(0x[0-9a-fA-F]*\)".*/\1/p'               | head -n1
+          }
+
+          BUTTON_ID="$(get_id id skip_ad_button_stub || true)"
+          TITLE_ID="$(get_id string skip_ad_title || true)"
+          DELAY_PLURAL_ID="$(get_id plurals ads_skip_delay_content_description || true)"
+          SUBTEXT_PLURAL_ID="$(get_id plurals advertisement_subtext_skippable_delay || true)"
+
+          {
+            echo "# Skip Ad UI -> command bytecode xrefs"
+            echo
+            echo "Recovered APK resource IDs:"
+            echo "- skip_ad_button_stub: ${BUTTON_ID:-not found}"
+            echo "- skip_ad_title: ${TITLE_ID:-not found}"
+            echo "- ads_skip_delay_content_description: ${DELAY_PLURAL_ID:-not found}"
+            echo "- advertisement_subtext_skippable_delay: ${SUBTEXT_PLURAL_ID:-not found}"
+            echo
+
+            for pair in               "skip_ad_button_stub:$BUTTON_ID"               "skip_ad_title:$TITLE_ID"               "ads_skip_delay_content_description:$DELAY_PLURAL_ID"               "advertisement_subtext_skippable_delay:$SUBTEXT_PLURAL_ID"; do
+              NAME="${pair%%:*}"
+              ID="${pair#*:}"
+              echo "## Smali references: $NAME ($ID)"
+              if [ -n "$ID" ]; then
+                # Dalvik may encode resource IDs as hex literals in const instructions.
+                grep -R -n -B35 -A70 -i --include='*.smali' "$ID" /tmp/spotify-full/smali* 2>/dev/null | head -n 14000 || true
+              else
+                echo "- resource id unavailable"
+              fi
+              echo
+            done
+
+            echo "## Symbolic/string Skip Ad references"
+            grep -R -n -B35 -A70 --include='*.smali' -E               'skip_ad|Skip Ad|ad_skipped|ad_skip|skippable_ad_delay|SKIP_AD'               /tmp/spotify-full/smali* 2>/dev/null | head -n 22000 || true
+            echo
+
+            echo "## Click/listener neighborhoods around button-ID matches"
+            if [ -n "$BUTTON_ID" ]; then
+              MATCHES="$(grep -R -l -i --include='*.smali' "$BUTTON_ID" /tmp/spotify-full/smali* 2>/dev/null || true)"
+              for F in $MATCHES; do
+                echo "### $F"
+                grep -n -B120 -A180 -i "$BUTTON_ID" "$F" | head -n 2500 || true
+                echo
+                echo "#### method declarations"
+                grep -n '^\.method' "$F" || true
+                echo
+                echo "#### listener/click/player calls"
+                grep -n -B12 -A30 -E                   'setOnClickListener|performClick|onClick|PlayerApi|ContextPlayer|skip|next|ads|Esperanto|command|invoke-interface|invoke-virtual'                   "$F" | head -n 3500 || true
+                echo
+              done
+            fi
+          } > "$OUT"
+
+          wc -l "$OUT"
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-ui-command.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad UI command bytecode"
+          git pull --rebase origin main
+          git push origin HEAD:main
