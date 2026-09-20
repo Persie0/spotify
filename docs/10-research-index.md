@@ -260,7 +260,7 @@ Current target:
 - `SignalCommand("skip-ad")` variant dispatch: **resolved through `b8p0 -> zqw`**
 - Esperanto endpoint: **resolved to `spotify.player.esperanto.proto.ContextPlayer / Signal` with `EsSignalRequest`**
 - find the native/Orbit signal handler that consumes signal ID `skip-ad`
-- link command completion to `ad_skipped` event/telemetry
+- identify the normal playback-ad reporting event after successful `skip-ad` execution; the recovered `fr0 -> "ad_skipped"` label is **ad-on-app-open telemetry**, not proof for this player signal
 - determine whether Connect uses the same signal or a remote equivalent
 
 ## 6. Connect-device behavior — OPEN
