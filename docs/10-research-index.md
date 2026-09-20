@@ -208,12 +208,39 @@ skippable_ad_delay > 0
 
 It also proves an important separation: ordinary skip-next `ad_disallow` is still derived from nested-object presence and does not test `+0x1b8`. Spotify's timed **Skip Ad** capability is therefore distinct from ordinary next-track / MediaSession skip-next in this build.
 
+The actual Android Skip Ad command is now identified:
+
+```text
+jo20
+  -> injected p8p0 player-command API
+  -> SignalCommand.create("skip-ad")
+  -> b8p0(SignalCommand)
+  -> p8p0.a(h8p0)
+  -> Single / Completable
+```
+
+This comes from the concrete Skip Ad branch in `la01.smali`. The symbolic resource `skip_ad_button_stub` is only the now-playing host view; it is replaced with Compose content. `skip_ad_title` resolves into the same UI family, while `jo20` is constructed with two playback-state streams and the command API.
+
+So the end-to-end split is now explicit:
+
+```text
+readiness:
+skippable_ad_delay -> native "ad_skip" timer -> subtype 6 -> object+0x1b8 = 1
+
+execution:
+Skip Ad UI -> SignalCommand("skip-ad") -> p8p0 player command API
+
+ordinary next:
+MediaSession/skip-next -> disallowSkippingNextReasons
+```
+
 Current target:
 
-- trace the actual ad-specific skip command invoked after `ad_skip` readiness
-- trace the Android UI click path from the skip-ad button into player/Esperanto/native code
-- identify the native/ContextPlayer endpoint that records or executes an ad skip
-- determine whether Connect uses the same ad-specific command or a remote equivalent
+- resolve `p8p0`, `h8p0`, and `b8p0` to the concrete player/Esperanto implementation
+- trace serialization/dispatch of `SignalCommand("skip-ad")`
+- find the native/ContextPlayer signal handler that executes the ad transition
+- link command completion to `ad_skipped` event/telemetry
+- determine whether Connect uses the same signal or a remote equivalent
 
 ## 6. Connect-device behavior — OPEN
 
