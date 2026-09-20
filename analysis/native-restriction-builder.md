@@ -104,6 +104,68 @@ This one native function contains the main direct xref clusters for both mft_dis
 - disallowed_by_account_manager
 - disallowed_by_user_setting
 
+## Destination restriction containers
+
+- 0x10a6742: mft_disallow -> r14+0x16b0
+- 0x10a6787: mft_plus_disallow -> r14+0x1770
+- 0x10a6852: mft_disallow -> r14+0x1488
+- 0x10a6898: mft_disallow -> r14+0x14a0
+- 0x10a68de: mft_disallow -> r14+0x14b8
+- 0x10a692a: mft_disallow -> r14+0x14e8
+- 0x10a6970: mft_disallow -> r14+0x14d0
+- 0x10a69b6: mft_disallow -> r14+0x1548
+- 0x10a6a07: mft_disallow -> r14+0x1560
+- 0x10a6a4e: mft_disallow -> r14+0x15f0
+- 0x10a6a83: mft_disallow -> r14+0x1620
+- 0x10a6ab8: mft_disallow -> r14+0x1578
+- 0x10a6afb: mft_disallow -> r14+0x1650
+- 0x10a6b30: mft_disallow -> r14+0x1668
+- 0x10a6b73: mft_disallow -> r14+0x1590
+- 0x10a6bc4: no_prev_track -> r14+0x14d0
+- 0x10a6bcd: not_playing_context -> r14+0x14d0
+- 0x10a6c0e: already_paused -> r14+0x1470
+- 0x10a6c37: not_paused -> r14+0x1470
+- 0x10a6c64: not_playing_context -> r14+0x14e8
+- 0x10a6cca: not_playing_context -> r14+0x1470
+- 0x10a6d49: show -> r14+0x1530
+- 0x10a6d89: autoplay -> r14+0x1530
+- 0x10a6e19: episode -> r14+0x1548
+- 0x10a6e51: ad_disallow -> r14+0x1548
+- 0x10a6e87: narration -> r14+0x1548
+- 0x10a6ed5: autoplay -> r14+0x1548
+- 0x10a6f2c: automix -> r14+0x1488
+- 0x10a6f61: automix -> r14+0x14a0
+- 0x10a6f96: automix -> r14+0x14d0
+- 0x10a6fcb: automix -> r14+0x15c0
+- 0x10a7000: automix -> r14+0x1548
+- 0x10a7078: automix -> r14+0x1488
+- 0x10a70a4: automix -> r14+0x15c0
+- 0x10a70d0: automix -> r14+0x1548
+- 0x10a7120: autoplay -> r14+0x1560
+- 0x10a7174: audiobook_capping -> r14+0x1560
+- 0x10a71a9: audiobook_capping -> r14+0x1530
+- 0x10a71de: audiobook_capping -> r14+0x1548
+- 0x10a7213: audiobook_capping -> r14+0x14d0
+- 0x10a7248: audiobook_capping -> r14+0x14e8
+- 0x10a727d: audiobook_capping -> r14+0x14a0
+- 0x10a72b2: audiobook_capping -> r14+0x14b8
+- 0x10a72e7: audiobook_capping -> r14+0x15c0
+- 0x10a7330: narration -> r14+0x15c0
+- 0x10a736f: narration -> r14+0x1488
+- 0x10a73b8: not_supported_by_content_type -> r14+0x1698
+- 0x10a73e2: not_playing_context -> r14+0x1698
+- 0x10a7428: ad_disallow -> r14+0x1500
+- 0x10a745d: ad_disallow -> r14+0x1518
+- 0x10a74ae: ad_disallow -> r14+0x14a0
+- 0x10a74e3: ad_disallow -> r14+0x14b8
+- 0x10a7518: ad_disallow -> r14+0x15c0
+- 0x10a754d: ad_disallow -> r14+0x14d0
+- 0x10a759b: ad_disallow -> r14+0x14e8
+- 0x10a75e9: ad_disallow -> r14+0x1488
+- 0x10a7637: ad_disallow -> r14+0x15a8
+- 0x10a76a0: spotify:search: -> r14+0x15c0
+- 0x10a76b3: local_list -> r14+0x15c0
+
 ## Restriction-reason assignments
 
 ### mft_disallow @ 0x10a6742
