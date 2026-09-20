@@ -306,6 +306,41 @@ It also contains descriptors for Spotify's Connect/player/Esperanto `Restriction
 
 This strongly localizes the unresolved countdown-to-restriction transition to the Orbit/native player side (or state consumed there), rather than Android UI code.
 
+### Native code xrefs
+
+The focused x86_64 report is:
+
+`analysis/native-player-xrefs-fast.md`
+
+Direct native code references found:
+
+| String | Direct xrefs |
+|---|---:|
+| `ad_disallow` | 11 |
+| `mft_disallow` | 18 |
+| `disallow_skipping_next_reasons` | 3 |
+| `ad.skippable_ad_delay` | 0 direct |
+| `SKIP_TO_NEXT_RESTRICTED` | 0 direct |
+| `skip_to_next_restricted` | 0 direct |
+
+The positive counts are important: `ad_disallow` and `mft_disallow` are not present only as protobuf/enum descriptors. Native executable code directly references and constructs those reason strings.
+
+Most `ad_disallow` and `mft_disallow` xrefs cluster in the same broad `0x10a6xxx` Orbit code region, consistent with a related restriction-building subsystem.
+
+A zero in this table does **not** mean a string is unused. `ad.skippable_ad_delay` is known to reach Android metadata, but the native binary can access it through a generic metadata map, generated descriptor table, hash lookup, or other indirection that a simple RIP-relative string-xref scan will not see.
+
+So the evidence now supports:
+
+```text
+Orbit/native code actively builds restriction reasons
+        |
+        +--> ad_disallow
+        +--> mft_disallow
+        +--> disallow_skipping_next_reasons state
+```
+
+What is still not proven is a single native function that directly reads the delay key and removes `ad_disallow` when N seconds elapse.
+
 ## Practical consequence for spotify-muter
 
 The safest automatic-skip strategy remains:
