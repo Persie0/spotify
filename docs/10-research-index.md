@@ -252,6 +252,8 @@ MediaSession/skip-next
   -> disallowSkippingNextReasons + next-command set
 ```
 
+Full focused write-up: [15-skip-ad-signal.md](15-skip-ad-signal.md).
+
 Current target:
 
 - `p8p0` implementation: **resolved to `hrw`**
