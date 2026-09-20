@@ -1,0 +1,124 @@
+name: Trace Skip Ad callback singleton
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-callback.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Decode APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/spotify-callback
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool
+          apktool d -f -r input/spotify-9-1-84-2205.apk -o /tmp/spotify-callback >/dev/null
+
+      - name: Extract ve21 callback and wiring
+        run: |
+          python3 - <<'PY' > analysis/skip-ad-callback-singleton.md
+          from pathlib import Path
+          import re
+          root=Path('/tmp/spotify-callback')
+          smalis=list(root.glob('smali*/**/*.smali'))
+          def locate(c):
+              xs=list(root.glob(f'smali*/p/{c}.smali'))
+              return xs[0] if xs else None
+          def block(txt,start):
+              s=txt.rfind('\n.method',0,start)
+              if s<0:s=0
+              else:s+=1
+              e=txt.find('\n.end method',start)
+              if e<0:e=len(txt)
+              else:e+=len('\n.end method')
+              return txt[s:e]
+          def emit(title,txt):
+              print('## '+title+'\n~~~smali\n'+txt.rstrip()+'\n~~~\n')
+
+          print('# Skip Ad default callback singleton trace\n')
+          p=locate('ve21')
+          print('## ve21 path\n- '+(str(p) if p else 'not found')+'\n')
+          if p:
+              txt=p.read_text(errors='replace')
+              # clinit gives singleton -> selector mapping; invoke gives selector -> effect mapping.
+              for name in ('<clinit>','invoke'):
+                  for m in re.finditer(r'(?m)^\.method[^\n]*'+re.escape(name)+r'[^\n]*',txt):
+                      emit('ve21 '+name,block(txt,m.start()))
+              print('## ve21 field g neighborhoods\n')
+              for m in re.finditer(r'(?m)^.*Lp/ve21;->g:Lp/ve21;.*$',txt):
+                  emit('ve21.g write/read',block(txt,m.start()))
+
+          pats=[
+            'Lp/ve21;->g:Lp/ve21;',
+            'Lp/kk21;->a:Lp/gh00;',
+            'Lp/jo20;-><init>(ILp/eh00;)V',
+            'new-instance',
+          ]
+          for pat in pats[:3]:
+              print('## Xrefs '+pat+'\n')
+              n=0
+              for f in smalis:
+                  try:t=f.read_text(errors='replace')
+                  except:continue
+                  for m in re.finditer(re.escape(pat),t):
+                      n+=1
+                      b=block(t,m.start())
+                      emit(str(f.relative_to(root))+' xref '+str(n),b)
+              if not n:print('- none\n')
+
+          # Also recover classes that read kk21 callback and instantiate jo20 nearby.
+          print('## Candidate renderer methods touching both kk21 and jo20\n')
+          for f in smalis:
+              try:t=f.read_text(errors='replace')
+              except:continue
+              for m in re.finditer(r'(?m)^\.method[^\n]*',t):
+                  b=block(t,m.start())
+                  if 'Lp/kk21;' in b and 'Lp/jo20;' in b:
+                      emit(str(f.relative_to(root)),b)
+
+          # Search downstream event/action names in the ve21 selected branch and adjacent helper classes.
+          print('## Skip-ad semantic string xrefs\n')
+          for needle in ('skip_ad','skip_ads','ad_skipped','skippable_ad_delay'):
+              print('### '+needle)
+              hits=0
+              for f in smalis:
+                  if '/androidx/' in str(f): continue
+                  try:lines=f.read_text(errors='replace').splitlines()
+                  except:continue
+                  for i,l in enumerate(lines):
+                      if needle not in l: continue
+                      hits+=1
+                      print(f'- {f.relative_to(root)}:{i+1}')
+                      print('~~~smali')
+                      for x in lines[max(0,i-14):min(len(lines),i+24)]:print(x)
+                      print('~~~')
+              if not hits:print('- none')
+              print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-callback-singleton.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad callback singleton"
+          git pull --rebase origin main
+          git push origin HEAD:main
