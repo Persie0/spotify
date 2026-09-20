@@ -1,0 +1,65 @@
+name: Decode restriction payload copy constructor
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-payload-copy.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Decode payload copy constructor
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Restriction payload copy constructor"
+            echo
+            echo "Payload base = owner+0x48 when engaged; payload+0x428 = owner+0x470."
+            echo
+            echo "## 0x108d88c copy constructor"
+            echo
+            objdump -d -M intel --start-address=0x108d840 --stop-address=0x108db20 "$SO"
+            echo
+            echo "## 0x108d1ae helper called by payload assignment"
+            echo
+            objdump -d -M intel --start-address=0x108d160 --stop-address=0x108d340 "$SO"
+            echo
+            echo "## Direct +0x428 / +0x430 accesses in helper cluster"
+            echo
+            objdump -d -M intel --start-address=0x108c000 --stop-address=0x108e000 "$SO" | grep -E -B8 -A12 '\+0x(420|428|430|438|548|550)\]' || true
+            echo
+            echo "## Direct xrefs to 0x108d88c"
+            echo
+            objdump -d -M intel "$SO" | grep -E -B10 -A12 '\b(call|jmp)[[:space:]]+108d88c\b' | head -n 1600 || true
+          } > analysis/native-restriction-payload-copy.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-payload-copy.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode restriction payload copy constructor"
+          git pull --rebase origin main
+          git push origin HEAD:main
