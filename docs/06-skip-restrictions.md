@@ -454,7 +454,7 @@ if skippable_ad_delay() > 0:
 return raw_skippable()
 ```
 
-A separate ContextPlayer event handler at `0x10a9668` sets the current-track/ad object's `+0x1b8` byte for event subtype `6`, then rebuilds restrictions.
+A callback on the same Orbit restriction-owner object at `0x10a9668` sets the current-track/ad object's `+0x1b8` byte for event subtype `6`, then rebuilds restrictions.
 
 However, this predicate must **not** be confused with the skip-next gate. Inside the restriction builder, the proven skip-next insertion:
 
@@ -465,11 +465,11 @@ ad_disallow -> r14+0x14a0
 occurs **earlier** and is controlled by:
 
 ```text
-ContextPlayer +0x598 != 0
-ContextPlayer +0x470 != 0
+restriction-owner +0x598 != 0
+restriction-owner +0x470 != 0
 ```
 
-The `+0xd0` derived predicate is consulted later in the ad block for another restriction container. Therefore the remaining skip-next question is now specifically the origin and transition of the two ContextPlayer gate bytes, especially `+0x470`.
+The `+0xd0` derived predicate is consulted later in the ad block for another restriction container. Therefore the remaining skip-next question is now specifically the origin and transition of the two restriction-owner gate bytes, especially `+0x470`.
 
 Evidence:
 
