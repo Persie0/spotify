@@ -1,0 +1,244 @@
+name: Trace ContextPlayer constructor layout
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-contextplayer-constructor.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace ContextPlayer construction
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+          readelf -SW "$SO" > /tmp/sections.txt
+
+          python3 - <<'PY' > analysis/native-contextplayer-constructor.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          relocs=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return va if 0<=va<len(data) else None
+
+          def cstring(va,maxlen=300):
+            off=va2off(va)
+            if off is None:return None
+            end=data.find(b'\0',off,min(len(data),off+maxlen))
+            if end<=off:return None
+            raw=data[off:end]
+            if len(raw)<3:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          ctor_addr=0x109917a
+          fr=fde_for(ctor_addr) or (0x109917a,0x1099d71)
+          fl=[(a,i,l) for a,i,l in ins if fr[0]<=a<fr[1]]
+
+          print('# ContextPlayer native constructor / layout trace')
+          print()
+          print(f'Function range: 0x{fr[0]:x}..0x{fr[1]:x}')
+          print()
+          print('This is the constructor path that initializes members at +0x418, +0x470, +0x4c8 and then calls ContextPlayer init 0x10a1440.')
+          print()
+
+          print('## Object identity anchors')
+          print()
+          for a,i,l in fl:
+            if (
+              re.search(r'\+0x(?:408|418|438|470|4c8|598)\]',l)
+              or re.search(r'\b10a1440\b',l)
+              or re.search(r'\bb2828e\b',l)
+              or re.search(r'\bb6572a\b',l)
+            ):
+              print('    '+l)
+          print()
+
+          print('## Full constructor disassembly')
+          print()
+          for _,_,l in fl:
+            print('    '+l)
+          print()
+
+          print('## Printable strings referenced by constructor')
+          print()
+          refs=[]
+          for a,i,l in fl:
+            if '#' not in l:continue
+            m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+            if not m:continue
+            dst=int(m.group(1),16)
+            s=cstring(dst)
+            if s and s not in [x[2] for x in refs]:
+              refs.append((a,dst,s))
+          if not refs: print('- none')
+          for a,dst,s in refs:
+            print(f'- 0x{a:x} -> 0x{dst:x}: {s.replace(chr(10),"\\n")}')
+          print()
+
+          print('## Direct calls into ContextPlayer 0x10a... region')
+          print()
+          calls=[]
+          for a,i,l in fl:
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',l)
+            if not m:continue
+            dst=int(m.group(1),16)
+            if 0x10a0000<=dst<0x10b0000:
+              calls.append((a,dst,l))
+          if not calls:print('- none')
+          for a,dst,l in calls:
+            dfr=fde_for(dst)
+            ftxt=f'0x{dfr[0]:x}..0x{dfr[1]:x}' if dfr else 'unknown'
+            print(f'- 0x{a:x} -> 0x{dst:x} ({ftxt})')
+          print()
+
+          print('## +0x470 member lifecycle inside constructor')
+          print()
+          # Show every use of the register that holds &object+0x470 after the LEA.
+          for n,(a,i,l) in enumerate(fl):
+            if re.search(r'\+0x470\]',l):
+              print(f'### reference @ 0x{a:x}')
+              for _,_,ctx in fl[max(0,n-12):min(len(fl),n+35)]:
+                print('    '+ctx)
+              print()
+
+          print('## +0x598 initialization/access inside constructor')
+          print()
+          hit=False
+          for n,(a,i,l) in enumerate(fl):
+            if re.search(r'\+0x598\]',l):
+              hit=True
+              print(f'### reference @ 0x{a:x}')
+              for _,_,ctx in fl[max(0,n-12):min(len(fl),n+30)]:
+                print('    '+ctx)
+              print()
+          if not hit:print('- no direct +0x598 access in this constructor FDE')
+          print()
+
+          print('## Direct callers/jumpers of constructor function')
+          print()
+          hits=[]
+          for a,i,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+'+format(fr[0],'x')+r'\b',l):
+              hits.append((a,i,l,fde_for(a)))
+          if not hits:print('- none')
+          for a,i,l,cfr in hits:
+            ftxt=f'0x{cfr[0]:x}..0x{cfr[1]:x}' if cfr else 'unknown'
+            print(f'### 0x{a:x} from {ftxt}')
+            for ctx in dis[max(0,i-10):min(len(dis),i+14)]:
+              print('    '+ctx)
+            print()
+
+          print('## Vptr / RTTI-looking stores in constructor')
+          print()
+          for n,(a,i,l) in enumerate(fl):
+            if 'lea' not in l or '#' not in l:continue
+            m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+            if not m:continue
+            dst=int(m.group(1),16)
+            if not (0x17f4000<=dst<0x18b7af0):continue
+            print(f'### 0x{a:x} loads data.rel.ro address 0x{dst:x}')
+            for _,_,ctx in fl[max(0,n-3):min(len(fl),n+8)]:
+              print('    '+ctx)
+            print()
+
+          print('## Relocations in constructor-associated data addresses')
+          print()
+          # include relocations around any data.rel.ro address explicitly referenced by this constructor
+          addrs=set()
+          for a,i,l in fl:
+            if '#' not in l:continue
+            m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+            if m:
+              dst=int(m.group(1),16)
+              if 0x17f4000<=dst<0x18b7af0:addrs.add(dst)
+          count=0
+          for line in relocs:
+            m=re.match(r'^([0-9a-fA-F]+)\s+',line.strip())
+            if not m:continue
+            slot=int(m.group(1),16)
+            if any(abs(slot-x)<=0x100 for x in addrs):
+              print('    '+line); count+=1
+          if count==0:print('- none')
+          print()
+
+          print('## Known downstream consumer')
+          print()
+          print('Restriction builder 0x10a6464 reads byte [this+0x598] and byte [this+0x470] before adding ad_disallow to skip-next.')
+          print('This report should be used to establish object identity before treating any other +0x470/+0x598 writer as relevant.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-contextplayer-constructor.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ContextPlayer constructor layout"
+          git pull --rebase origin main
+          git push origin HEAD:main
