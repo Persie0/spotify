@@ -341,6 +341,74 @@ Orbit/native code actively builds restriction reasons
 
 What is still not proven is a single native function that directly reads the delay key and removes `ad_disallow` when N seconds elapse.
 
+
+### Native skip-next field mapping
+
+The native trace now goes beyond string co-location.
+
+`analysis/native-restriction-field-map.md` shows that Orbit registers the restriction fields in fixed `0x18`-byte slots. The relevant sequence is:
+
+```text
+base + 0x78 = disallow_skipping_prev_reasons
+base + 0x90 = disallow_skipping_next_reasons
+base + 0xa8 = disallow_toggling_repeat_context_reasons
+base + 0xc0 = disallow_toggling_repeat_track_reasons
+base + 0xd8 = disallow_toggling_shuffle_reasons
+base + 0xf0 = disallow_set_queue_reasons
+base + 0x108 = disallow_add_to_queue_reasons
+```
+
+The restriction-builder object uses the corresponding block beginning at `r14+0x1410`. Therefore:
+
+```text
+r14+0x1488 = skip-prev
+r14+0x14a0 = skip-next
+r14+0x14b8 = repeat-context
+r14+0x14d0 = repeat-track
+r14+0x14e8 = shuffle
+r14+0x1500 = set-queue
+r14+0x1518 = add-to-queue
+```
+
+`analysis/native-restriction-builder.md` then gives direct reason-to-container writes:
+
+```text
+0x10a6898: mft_disallow -> r14+0x14a0
+0x10a74ae: ad_disallow  -> r14+0x14a0
+```
+
+So both the free-tier reason and the ad reason are proven to be inserted into **the native skip-next restriction set**.
+
+The ad write is guarded by:
+
+```text
+[r14+0x598] != 0
+[r14+0x470] != 0
+```
+
+The first flag is used widely across the same builder and participates in `not_playing_context` logic, so it is a broad active/playing-context state. The second flag appears only in this ad-restriction block in the decoded function and is therefore the ad-specific guard for this family of restrictions.
+
+This strengthens the ownership conclusion:
+
+```text
+Orbit/native restriction builder
+        |
+        +-- evaluates player/ad state
+        |
+        +-- inserts ad_disallow into skip-next set
+        |
+        v
+EsRestrictions.disallow_skipping_next_reasons
+        |
+        v
+ContextPlayer.GetState
+        |
+        v
+Android PlayerState.restrictions
+```
+
+What remains unresolved is narrower: the exact producer/meaning of the native ad guard at `+0x470`, and whether its transition is driven by elapsed `ad.skippable_ad_delay`, another native timer/state machine, or a deeper player-state event.
+
 ## Practical consequence for spotify-muter
 
 The safest automatic-skip strategy remains:
