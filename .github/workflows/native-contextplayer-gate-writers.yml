@@ -1,0 +1,216 @@
+name: Trace ContextPlayer gate writers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-contextplayer-gate-writers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace candidate writers
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-contextplayer-gate-writers.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          relocs=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+            return va if 0<=va<len(data) else None
+
+          def cstring(va,maxlen=240):
+            off=va2off(va)
+            if off is None or off>=len(data): return None
+            end=data.find(b'\0',off,min(len(data),off+maxlen))
+            if end<0 or end==off:return None
+            raw=data[off:end]
+            if len(raw)<3:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<0.95:return None
+            try:return raw.decode()
+            except:return raw.decode('latin1','replace')
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          candidates={
+            'byte +0x470 writer':0xcba8e9,
+            'byte +0x598 writer / +0x438 pointer owner':0x13bd9a0,
+            'other byte +0x598 writer':0x13ace52,
+            'initializer touching all three offsets':0x13bbced,
+          }
+
+          print('# ContextPlayer gate-writer candidates')
+          print()
+          print('Skip-next ad_disallow is gated by byte fields ContextPlayer+0x598 and ContextPlayer+0x470.')
+          print('This report compares the strongest same-layout writer candidates and avoids treating same numeric offsets in unrelated objects as proof.')
+          print()
+
+          ranges={}
+          for label,addr in candidates.items():
+            ranges[label]=fde_for(addr)
+
+          for label,addr in candidates.items():
+            fr=ranges[label]
+            print(f'## {label}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); continue
+            print(f'Function range: 0x{fr[0]:x}..0x{fr[1]:x} (size 0x{fr[1]-fr[0]:x})')
+            print()
+            # Field accesses for the same base register in this function.
+            fl=[(a,i,l) for a,i,l in ins if fr[0]<=a<fr[1]]
+            print('### Signature field accesses')
+            for a,i,l in fl:
+              if re.search(r'\+0x(?:438|470|598)\]',l):
+                print('    '+l)
+            print()
+
+            # Print concise context around the exact writer.
+            idx=next((i for a,i,l in ins if a==addr),None)
+            print('### Writer neighborhood')
+            if idx is not None:
+              for l in dis[max(0,idx-18):min(len(dis),idx+30)]:
+                print('    '+l)
+            print()
+
+            # Printable strings directly referenced by this function.
+            refs=[]
+            for a,i,l in fl:
+              if '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              dst=int(m.group(1),16)
+              s=cstring(dst)
+              if s is not None and s not in [x[2] for x in refs]:
+                refs.append((a,dst,s))
+            print('### Printable RIP-relative strings')
+            if refs:
+              for a,dst,s in refs[:120]:
+                print(f'- 0x{a:x} -> 0x{dst:x}: {s.replace(chr(10),"\\n")}')
+            else:
+              print('- none')
+            print()
+
+            # Direct callers/jumpers of the FDE entry.
+            hits=[]
+            target=fr[0]
+            pat=re.compile(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b')
+            for a,i,l in ins:
+              if pat.search(l):hits.append((a,i,l,fde_for(a)))
+            print('### Direct callers/jumpers of function entry')
+            if not hits:
+              print('- none')
+            for a,i,l,cfr in hits[:80]:
+              ctxt=f'0x{cfr[0]:x}..0x{cfr[1]:x}' if cfr else 'unknown'
+              print(f'- 0x{a:x} from {ctxt}')
+            print()
+
+          print('## Event callback table neighborhood around relocation 0x184c840')
+          print()
+          for line in relocs:
+            m=re.match(r'^([0-9a-fA-F]+)\s+',line.strip())
+            if not m:continue
+            off=int(m.group(1),16)
+            if 0x184c780 <= off <= 0x184c900:
+              print('    '+line)
+          print()
+
+          print('## Relocations to candidate function regions')
+          print()
+          needles=[]
+          for fr in ranges.values():
+            if fr:
+              needles.extend(range(fr[0],min(fr[1],fr[0]+0x20)))
+          for line in relocs:
+            low=line.lower()
+            # Print relocations whose addend is in one of the candidate FDEs.
+            toks=low.split()
+            if not toks:continue
+            try:
+              add=int(toks[-1],16)
+            except:
+              continue
+            if any(fr and fr[0] <= add < fr[1] for fr in ranges.values()):
+              print('    '+line)
+
+          print()
+          print('## Known authoritative consumer')
+          print()
+          print('0x10a7492: test ContextPlayer+0x598')
+          print('0x10a74a0: test ContextPlayer+0x470')
+          print('0x10a74ae: construct ad_disallow')
+          print('0x10a74c2: insert into r14+0x14a0 = disallowSkippingNextReasons')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-contextplayer-gate-writers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ContextPlayer gate writers"
+          git pull --rebase origin main
+          git push origin HEAD:main
