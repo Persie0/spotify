@@ -23,10 +23,10 @@ jobs:
 
       - name: Download Spotify r1 APK
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p input
-          gh release download r1 --repo "\${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
           echo "APK=$(find input -type f -name '*.apk' -print -quit)" >> "$GITHUB_ENV"
 
       - name: Extract orbit libraries
