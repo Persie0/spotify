@@ -409,6 +409,76 @@ Android PlayerState.restrictions
 
 What remains unresolved is narrower: the exact producer/meaning of the native ad guard at `+0x470`, and whether its transition is driven by elapsed `ad.skippable_ad_delay`, another native timer/state machine, or a deeper player-state event.
 
+
+### Native `skippable_ad_delay` predicate decoded
+
+The indirect native consumer of the delay key is now resolved.
+
+Orbit maps the external track key:
+
+```text
+ad.skippable_ad_delay
+```
+
+to the internal metadata key:
+
+```text
+skippable_ad_delay
+```
+
+and exposes a small ad-model virtual interface. ELF relocation entries reconstruct the relevant runtime vtable base at:
+
+```text
+0x1879950
+```
+
+with:
+
+```text
++0xc8 -> 0x14e2472  raw "skippable" metadata getter
++0xd0 -> 0x14e248a  derived skippable/timing predicate
++0xe8 -> 0x14e24e8  skippable_ad_delay integer parser
+```
+
+The delay parser first requires the raw `skippable` property, then reads `skippable_ad_delay` from the current ad metadata and parses it as an integer.
+
+The derived predicate at `0x14e248a` is equivalent to:
+
+```text
+if object[+0x1b8] != 0:
+    return true
+
+if skippable_ad_delay() > 0:
+    return false
+
+return raw_skippable()
+```
+
+A separate ContextPlayer event handler at `0x10a9668` sets the current-track/ad object's `+0x1b8` byte for event subtype `6`, then rebuilds restrictions.
+
+However, this predicate must **not** be confused with the skip-next gate. Inside the restriction builder, the proven skip-next insertion:
+
+```text
+ad_disallow -> r14+0x14a0
+```
+
+occurs **earlier** and is controlled by:
+
+```text
+ContextPlayer +0x598 != 0
+ContextPlayer +0x470 != 0
+```
+
+The `+0xd0` derived predicate is consulted later in the ad block for another restriction container. Therefore the remaining skip-next question is now specifically the origin and transition of the two ContextPlayer gate bytes, especially `+0x470`.
+
+Evidence:
+
+- `analysis/native-delay-xrefs.md`
+- `analysis/native-skippable-vtable.md`
+- `analysis/native-ad-method-table-xrefs.md`
+- `analysis/native-ad-runtime-vtable.md`
+
+
 ## Practical consequence for spotify-muter
 
 The safest automatic-skip strategy remains:
