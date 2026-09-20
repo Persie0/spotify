@@ -407,10 +407,10 @@ A ContextPlayer event handler at `0x10a9668..0x10a969c` performs:
 
 ```text
 if event[+0x38] == 6:
-    if ContextPlayer[+0x598] != 0
-       and ContextPlayer[+0x470] != 0
-       and ContextPlayer[+0x438] != null:
-        ContextPlayer[+0x438][+0x1b8] = 1
+    if restrictionOwner[+0x598] != 0
+       and restrictionOwner[+0x470] != 0
+       and restrictionOwner[+0x438] != null:
+        restrictionOwner[+0x438][+0x1b8] = 1
 
     rebuild restrictions
 ```
@@ -420,11 +420,11 @@ This is the first concrete native link between a ContextPlayer event and the ad 
 It does **not** by itself prove that subtype `6` is the countdown-expiry event or that `+0x1b8` removes the skip-next restriction. The skip-next `ad_disallow` insertion at `r14+0x14a0` occurs earlier in the restriction builder and is gated directly by:
 
 ```text
-ContextPlayer[+0x598] != 0
-ContextPlayer[+0x470] != 0
+restrictionOwner[+0x598] != 0
+restrictionOwner[+0x470] != 0
 ```
 
-The derived virtual method at `+0xd0` is consulted later for a different ad restriction container. The remaining skip-next transition is therefore narrowed to the two ContextPlayer gate bytes, especially `+0x470`.
+The derived virtual method at `+0xd0` is consulted later for a different ad restriction container. The remaining skip-next transition is therefore narrowed to the two restriction-owner gate bytes, especially `+0x470`.
 
 Reports:
 
