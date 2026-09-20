@@ -533,7 +533,9 @@ and passes that result into the `jk21` UI state object. The button therefore fol
 
 The unresolved boundary has moved into Orbit/native handling:
 
-> Which native handler consumes signal ID `skip-ad`, what state transition it performs, and how successful execution is reflected in `ad_skipped` state/telemetry?
+> Which native handler consumes signal ID `skip-ad`, what state transition it performs, and which normal playback-ad reporting event follows successful execution?
+
+A reporting-label correction is important here: the recovered helper `fr0.m42457a(6) -> "ad_skipped"` is only called through `is0`, whose logger is explicitly created as `ad-on-app-open` / `android-ad-on-app-open`. That label therefore belongs to the separate app-open ad feature and is **not** evidence that `ContextPlayer/Signal("skip-ad")` emits the same event.
 
 Reports:
 
