@@ -1,0 +1,216 @@
+name: Decode ContextPlayer vtable ownership
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-contextplayer-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode vtables and owned field accesses
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-contextplayer-vtable.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          relocs=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return None
+
+          def qword(va):
+            o=va2off(va)
+            return struct.unpack_from('<Q',data,o)[0] if o is not None and o+8<=len(data) else None
+
+          def cstring(va,maxlen=300):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          primary=0x184c360
+          region=(0x184c340,0x184c910)
+
+          reloc_map={}
+          for line in relocs:
+            m=re.match(r'^([0-9a-fA-F]+)\s+.*R_X86_64_(?:RELATIVE|64).*?\s([0-9a-fA-F]+)(?:\s|$)',line.strip())
+            if m:
+              reloc_map[int(m.group(1),16)]=int(m.group(2),16)
+
+          print('# ContextPlayer vtable / concrete method ownership trace')
+          print()
+          print('Constructor primary address point: 0x184c360')
+          print()
+
+          print('## Raw qwords and relocations around ContextPlayer vtable region')
+          print()
+          for va in range(region[0],region[1],8):
+            raw=qword(va)
+            rel=reloc_map.get(va)
+            extra=''
+            target=rel if rel is not None else raw
+            if target:
+              s=cstring(target)
+              if s:extra=' string='+repr(s[:160])
+            print(f'- 0x{va:x}: raw=0x{(raw or 0):x}' + (f' reloc->0x{rel:x}' if rel is not None else '') + extra)
+          print()
+
+          print('## Primary address-point header')
+          print()
+          for va in (primary-0x10,primary-0x8,primary,primary+8):
+            print(f'- 0x{va:x}: raw=0x{(qword(va) or 0):x}' + (f' reloc->0x{reloc_map[va]:x}' if va in reloc_map else ''))
+          rtti=reloc_map.get(primary-8) or qword(primary-8)
+          if rtti:
+            print(f'RTTI candidate: 0x{rtti:x}')
+            print('RTTI qwords:')
+            for off in range(0,0x40,8):
+              va=rtti+off
+              raw=qword(va)
+              rel=reloc_map.get(va)
+              txt=''
+              target=rel if rel is not None else raw
+              if target:
+                s=cstring(target)
+                if s:txt=' string='+repr(s[:220])
+              print(f'  +0x{off:x}: raw=0x{(raw or 0):x}' + (f' reloc->0x{rel:x}' if rel is not None else '') + txt)
+          print()
+
+          methods=[]
+          for slot,target in sorted(reloc_map.items()):
+            if region[0] <= slot < region[1] and 0x900000 <= target < 0x17f0000:
+              methods.append((slot,target,fde_for(target)))
+
+          print('## Vtable executable entries')
+          print()
+          for slot,target,fr in methods:
+            ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'- slot 0x{slot:x} -> 0x{target:x} ({ftxt})')
+          print()
+
+          owned={}
+          for slot,target,fr in methods:
+            if fr:owned.setdefault(fr,[]).append((slot,target))
+
+          print('## ContextPlayer-vtable methods touching gate/object fields')
+          print()
+          field_re=re.compile(r'\[([a-z][a-z0-9]*)\+0x(418|438|470|4c8|598|14a0)\]')
+          for fr,entries in sorted(owned.items()):
+            hits=[]
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                ms=list(field_re.finditer(op))
+                if ms:hits.append((a,i,op,[(m.group(1),m.group(2)) for m in ms]))
+            if not hits:continue
+            slots=', '.join(f'0x{s:x}->0x{t:x}' for s,t in entries)
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x} ({slots})')
+            for a,i,op,refs in hits:
+              print(f'- 0x{a:x}: {op} :: '+', '.join(f'{b}+0x{o}' for b,o in refs))
+            print()
+            for a,i,op,refs in hits:
+              if any(o in {'470','598'} for _,o in refs):
+                print(f'Context around gate access @ 0x{a:x}:')
+                for line in dis[max(0,i-10):min(len(dis),i+13)]:
+                  print('    '+line)
+                print()
+
+          print('## Direct gate stores in ContextPlayer-vtable methods')
+          print()
+          found=0
+          writeops={'mov','movb','movw','movl','movq','and','or','xor','xchg','cmpxchg','inc','dec','add','sub'}
+          for fr,entries in sorted(owned.items()):
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              parts=op.split(None,1)
+              opc=parts[0].lower() if parts else ''
+              if opc not in writeops or len(parts)<2:continue
+              dst=parts[1].split(',',1)[0]
+              m=re.search(r'\[([a-z][a-z0-9]*)\+0x(470|598)\]',dst)
+              if not m:continue
+              found+=1
+              print(f'### 0x{a:x} in 0x{fr[0]:x}..0x{fr[1]:x}: {op}')
+              for ctx in dis[max(0,i-12):min(len(dis),i+14)]:
+                print('    '+ctx)
+              print()
+          if not found:print('- none as direct same-base stores in vtable-owned FDEs')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-contextplayer-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode ContextPlayer vtable ownership"
+          git pull --rebase origin main
+          git push origin HEAD:main
