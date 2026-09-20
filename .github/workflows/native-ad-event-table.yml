@@ -1,0 +1,165 @@
+name: Decode Orbit ad event callback table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-event-table.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode callback table
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          readelf -rW "$SO" > /tmp/relocs.txt
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          python3 - <<'PY' > analysis/native-ad-event-table.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          rel=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return va if 0<=va<len(data) else None
+          def cstring(va,maxlen=300):
+            off=va2off(va)
+            if off is None:return None
+            end=data.find(b'\0',off,min(len(data),off+maxlen))
+            if end<=off:return None
+            raw=data[off:end]
+            if len(raw)<3:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          entries=[]
+          print('# Orbit callback table containing ad-state transition 0x10a9668')
+          print()
+          print('Known relocation: table slot 0x184c840 -> 0x10a9668.')
+          print()
+          print('## Relocations 0x184c780..0x184c900')
+          print()
+          for line in rel:
+            m=re.match(r'^([0-9a-fA-F]+)\s+\S+\s+\S+\s+([0-9a-fA-F]+)',line.strip())
+            if not m:continue
+            slot=int(m.group(1),16)
+            if not 0x184c780<=slot<=0x184c900:continue
+            toks=line.split()
+            try:add=int(toks[-1],16)
+            except:continue
+            entries.append((slot,add,line))
+            print('    '+line)
+          print()
+
+          for slot,target,line in entries:
+            fr=fde_for(target)
+            print(f'## Slot 0x{slot:x} -> 0x{target:x}')
+            if not fr:
+              print('- target is not a text FDE'); print(); continue
+            print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}')
+            fl=[(a,i,l) for a,i,l in ins if fr[0]<=a<fr[1]]
+            # Keep huge functions compact.
+            if len(fl)<=120:
+              for _,_,l in fl:print('    '+l)
+            else:
+              print(f'- {len(fl)} instructions; showing semantic refs and comparisons only')
+              for a,i,l in fl:
+                if re.search(r'\+0x38\]|cmp|test|#',l):
+                  print('    '+l)
+            refs=[]
+            for a,i,l in fl:
+              if '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              dst=int(m.group(1),16); s=cstring(dst)
+              if s and s not in [x[2] for x in refs]:refs.append((a,dst,s))
+            print()
+            print('Printable strings:')
+            if refs:
+              for a,dst,s in refs[:80]:
+                print(f'- 0x{a:x}: {s.replace(chr(10),"\\n")}')
+            else:print('- none')
+            print()
+
+          # Direct code references to the known thunk/handler pair.
+          print('## Direct xrefs to 0x10a9668 and nearby thunk 0x10a96b0')
+          print()
+          for target in (0x10a9668,0x10a96b0):
+            print(f'### 0x{target:x}')
+            for a,i,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b',l):
+                fr=fde_for(a); fs=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+                print(f'- 0x{a:x} from {fs}: {l.strip()}')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-event-table.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Orbit ad event callback table"
+          git pull --rebase origin main
+          git push origin HEAD:main
