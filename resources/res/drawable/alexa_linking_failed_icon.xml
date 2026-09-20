@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/alexa_linking_failed_icon_base"/>
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/alexa_logo"/>
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/set_as_default_icon_spotify_logo"/>
+</layer-list>

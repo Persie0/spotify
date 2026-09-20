@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="card_row_columns">3</integer>
+    <integer name="design_snackbar_text_max_lines">1</integer>
+    <integer name="hugs_grid_columns">3</integer>
+    <integer name="hugs_grid_columns_land">5</integer>
+    <integer name="social_listening_ipl_onboarding_header_default_columns">6</integer>
+    <integer name="your_library_dense_span_count">3</integer>
+</resources>

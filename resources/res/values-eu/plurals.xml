@@ -1,0 +1,1287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s entzule hilero</item>
+        <item quantity="other">%1$s entzule hilero</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">Taldekatutako %1$d bozgorailu</item>
+        <item quantity="other">Taldekatutako %1$d bozgorailu</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">5 izarretatik %1$d izar</item>
+        <item quantity="other">5 izarretatik %1$d izar</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">5 izarretatik %1$d izar</item>
+        <item quantity="other">5 izarretatik %1$d izar</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">hautatu %1$d izar</item>
+        <item quantity="other">hautatu %1$d izar</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d izar</item>
+        <item quantity="other">%1$d izar</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">Beste %1$d kontu</item>
+        <item quantity="other">Beste %1$d kontu</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">eta beste %1$d kontu</item>
+        <item quantity="other">eta beste %1$d kontu</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">%1$d elementu aurkitu da</item>
+        <item quantity="other">%1$d elementu aurkitu dira</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s karpeta</item>
+        <item quantity="other">%1$s karpeta</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s zerrenda</item>
+        <item quantity="other">%1$s zerrenda</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s audio-liburu</item>
+        <item quantity="other">%1$s audio-liburu</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s kapitulu</item>
+        <item quantity="other">%1$s kapitulu</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s ebakin</item>
+        <item quantity="other">%1$s ebakin</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s atal</item>
+        <item quantity="other">%1$s atal</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s abesti</item>
+        <item quantity="other">%1$s abesti</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s abesti</item>
+        <item quantity="other">%1$s abesti</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d segundo iragarkia saltatzeko, tenporizadorea</item>
+        <item quantity="other">%1$d segundo iragarkia saltatzeko, tenporizadorea</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Saltatu %1$d s barru</item>
+        <item quantity="other">Saltatu %1$d s barru</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Iragarkia • Saltatu %1$d s barru</item>
+        <item quantity="other">Iragarkia • Saltatu %1$d s barru</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Adi! Ez dituzu Spotify erabiltzeko nahikoa urte. Beraz, kontua blokeatuta dago eta %1$s egun barru desaktibatuko da. Zerbait gaizki egin dugu? Berretsi zure adina nortasun-agiriarekin.</item>
+        <item quantity="other">Adi! Ez dituzu Spotify erabiltzeko nahikoa urte. Beraz, kontua blokeatuta dago eta %1$s egun barru desaktibatuko da. Zerbait gaizki egin dugu? Berretsi zure adina nortasun-agiriarekin.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Antza denez, ez dituzu Spotify-ko kontua erabiltzeko nahikoa urte. Hala ere, guraso edo tutore batek baimena ematen badizu, kontu kudeatu bat izan dezakezu.\n\nZure kontua %1$s egun barru desaktibatuko da.</item>
+        <item quantity="other">Antza denez, ez dituzu Spotify-ko kontua erabiltzeko nahikoa urte. Hala ere, guraso edo tutore batek baimena ematen badizu, kontu kudeatu bat izan dezakezu.\n\nZure kontua %1$s egun barru desaktibatuko da.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Kontua berraktibatzeko, berretsi zure adina nortasun-agiriarekin. Egiaztapenak Spotify erabiltzeko nahikoa urte ez dituzula berresten badu edo %1$s eguneko epean ezer egiten ez baduzu, zure kontua betiko ezabatuko da.</item>
+        <item quantity="other">Kontua berraktibatzeko, berretsi zure adina nortasun-agiriarekin. Egiaztapenak Spotify erabiltzeko nahikoa urte ez dituzula berresten badu edo %1$s eguneko epean ezer egiten ez baduzu, zure kontua betiko ezabatuko da.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">%1$d urte baino gutxiago duzu. Beraz, ezin duzu eman gurasoaren baimena.\n\nHorrez gain, ez dauzkazu erabilgarri eduki eta eginbide batzuk zure adina dela eta, eta ezkutatu egin ditugu.</item>
+        <item quantity="other">%1$d urte baino gutxiago dituzu. Beraz, ezin duzu eman gurasoaren baimena.\n\nHorrez gain, ez dauzkazu erabilgarri eduki eta eginbide batzuk zure adina dela eta, eta ezkutatu egin ditugu.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d abesti • %2$s</item>
+        <item quantity="other">%1$d abesti • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d hautatu da</item>
+        <item quantity="other">%1$d hautatu dira</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d hautatu da</item>
+        <item quantity="other">%1$d hautatu dira</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$d hautatuta. Hautatu gutxienez beste %2$d aurrera egiteko.</item>
+        <item quantity="other">%1$d hautatuta. Hautatu gutxienez beste %2$d aurrera egiteko.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">%1$d karaktere idatzi duzu mugaren gainetik.</item>
+        <item quantity="other">%1$d karaktere idatzi dituzu mugaren gainetik.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">eta beste %1$d</item>
+        <item quantity="other">eta beste %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d kaleratze</item>
+        <item quantity="other">%1$,d kaleratze</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d abesti</item>
+        <item quantity="other">%1$,d abesti</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s gertaera zugandik gertu</item>
+        <item quantity="other">%1$s gertaera zugandik gertu</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d kaleratze</item>
+        <item quantity="other">%1$d kaleratze</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">&quot;%1$s&quot; kontsultak %2$d elementu aurkitu du</item>
+        <item quantity="other">&quot;%1$s&quot; kontsultak %2$d elementu aurkitu ditu</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d audio-liburu gehitu da</item>
+        <item quantity="other">%1$d audio-liburu gehitu dira</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d audio-liburu entzun duzu</item>
+        <item quantity="other">%1$d audio-liburu entzun dituzu</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s atal berri saio bakoitzeko</item>
+        <item quantity="other">%1$s atal berri saio bakoitzeko</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podcasta • %1$d atal</item>
+        <item quantity="other">Podcasta • %1$d atal</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d ordu</item>
+        <item quantity="other">%1$d ordu</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s pertsona taldean</item>
+        <item quantity="other">%1$s pertsona taldean</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">Duela %1$d egun</item>
+        <item quantity="other">Duela %1$d egun</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">Duela %1$d ordu</item>
+        <item quantity="other">Duela %1$d ordu</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">Duela %1$d minutu</item>
+        <item quantity="other">Duela %1$d minutu</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d argazki</item>
+        <item quantity="other">%1$d argazki</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d bideo</item>
+        <item quantity="other">%1$d bideo</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s pertsona</item>
+        <item quantity="other">%1$s pertsona</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s lagun</item>
+        <item quantity="other">%1$s lagun</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">%1$d egun barru berrezarriko da. Itzuli orduan. Bitartean, AAko zerrendak eginbidea erabil dezakezu, edo zeuk bat sortu.</item>
+        <item quantity="other">%1$d egun barru berrezarriko da. Itzuli orduan. Bitartean, AAko zerrendak eginbidea erabil dezakezu, edo zeuk bat sortu.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">%1$d egun barru berrezarriko da. Itzuli orduan. Bitartean, Istanteko zerrendak erabil ditzakezu, edo zeuk bat sortu.</item>
+        <item quantity="other">%1$d egun barru berrezarriko da. Itzuli orduan. Bitartean, Istanteko zerrendak erabil ditzakezu, edo zeuk bat sortu.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">%1$d ordu barru berrezarriko da. Itzuli orduan. Bitartean, AAko zerrendak eginbidea erabil dezakezu, edo zeuk bat sortu.</item>
+        <item quantity="other">%1$d ordu barru berrezarriko da. Itzuli orduan. Bitartean, AAko zerrendak eginbidea erabil dezakezu, edo zeuk bat sortu.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">%1$d ordu barru berrezarriko da. Itzuli orduan. Bitartean, Istanteko zerrendak erabil ditzakezu, edo zeuk bat sortu.</item>
+        <item quantity="other">%1$d ordu barru berrezarriko da. Itzuli orduan. Bitartean, Istanteko zerrendak erabil ditzakezu, edo zeuk bat sortu.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d sarrera berri</item>
+        <item quantity="other">%1$,d sarrera berri</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s erabiltzaileak ezingo dizu zuzenean bidali mezurik. Txatetik irten zaitezke harekin interakziorik izan nahi ez baduzu.</item>
+        <item quantity="other">%1$s erabiltzaileek ezingo dizute zuzenean bidali mezurik. Txatetik irten zaitezke haiekin interakziorik izan nahi ez baduzu.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">Beste %1$d</item>
+        <item quantity="other">Beste %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Taldea • %1$d pertsona</item>
+        <item quantity="other">Taldea • %1$d pertsona</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d zain)</item>
+        <item quantity="other">(%1$d zain)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">Deskargatu da %1$d argazki</item>
+        <item quantity="other">Deskargatu dira %1$d argazki</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Ezin izan da deskargatu %1$d argazki</item>
+        <item quantity="other">Ezin izan dira deskargatu %1$d argazki</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">%1$s txat honetan dago, baina blokeatuta daukazu. Taldeko mezuaren eskaera hau ezaba dezakezu harekin interakziorik izan nahi ez baduzu.</item>
+        <item quantity="other">%1$s txat honetan daude, baina blokeatuta dauzkazu. Taldeko mezuaren eskaera hau ezaba dezakezu haiekin interakziorik izan nahi ez baduzu.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Taldeek gehienez %1$d pertsona izan ditzakete</item>
+        <item quantity="other">Taldeek gehienez %1$d pertsona izan ditzakete</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">%1$s erabiltzaileak gonbidapena onartzen duenean, gonbidatu zutenetik txatera bidalitako mezu guztiak ikusi ahal izango ditu.</item>
+        <item quantity="other">Norbaitek gonbidapena onartzen duenean, gonbidatu zutenetik txatera bidalitako mezu guztiak ikusi ahal izango ditu.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">%1$s txat honetara gonbidatu nahi duzu?</item>
+        <item quantity="other">Hautatutako pertsonak txat honetara gonbidatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d bideo deskargatu da</item>
+        <item quantity="other">%1$d bideo deskargatu dira</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Ezin izan da deskargatu %1$d bideo</item>
+        <item quantity="other">Ezin izan dira deskargatu %1$d bideo</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d funtzio</item>
+        <item quantity="other">+ %1$d funtzio</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">Duela %1$d egun</item>
+        <item quantity="other">Duela %1$d egun</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">Duela %1$d ordu</item>
+        <item quantity="other">Duela %1$d ordu</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">Duela %1$d minutu</item>
+        <item quantity="other">Duela %1$d minutu</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">Duela %1$d hilabete</item>
+        <item quantity="other">Duela %1$d hilabete</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s erantzun</item>
+        <item quantity="other">%1$s erantzun</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s pertsonak ere erreakzionatu du.</item>
+        <item quantity="other">%1$s pertsonak ere erreakzionatu dute.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s pertsonak erreakzionatu du iruzkin honen aurrean.</item>
+        <item quantity="other">%1$s pertsonak erreakzionatu dute iruzkin honen aurrean.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s erantzun</item>
+        <item quantity="other">%1$s erantzun</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">%1$s erantzun gehiago. Ikusteko, sakatu birritan.</item>
+        <item quantity="other">%1$s erantzun gehiago. Ikusteko, sakatu birritan.</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">Duela %1$d aste</item>
+        <item quantity="other">Duela %1$d aste</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">Duela %1$d urte</item>
+        <item quantity="other">Duela %1$d urte</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d abesti</item>
+        <item quantity="other">%1$,d abesti</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d entzule</item>
+        <item quantity="other">%1$d entzule</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d ordu</item>
+        <item quantity="other">%1$d ordu</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d minutu</item>
+        <item quantity="other">%1$d minutu</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d abesti elkarrekin</item>
+        <item quantity="other">%1$d abesti elkarrekin</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d abesti elkarrekin</item>
+        <item quantity="other">%1$d abesti elkarrekin</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d egun</item>
+        <item quantity="other">%1$d egun</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s entzule hilero</item>
+        <item quantity="other">%1$s entzule hilero</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Egilea: %1$s</item>
+        <item quantity="other">Egileak: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s + beste %2$d</item>
+        <item quantity="other">%1$s + beste %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">%1$s honen eduki gehiagora eramaten zaitu</item>
+        <item quantity="other">%1$s guztien zerrenda bat bistaratzen du</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">%1$d egun behar da prestatzeko</item>
+        <item quantity="other">%1$d egun behar dira prestatzeko</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d egun</item>
+        <item quantity="other">%1$d egun</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;egun&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;egun&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">%1$d egun barru kaleratuko da</item>
+        <item quantity="other">%1$d egun barru kaleratuko da</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d egun falta da entzute-orduak iraungitzeko</item>
+        <item quantity="other">%1$d egun falta dira entzute-orduak iraungitzeko</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d egun barru berrituko dira entzute-orduak</item>
+        <item quantity="other">%1$d egun barru berrituko dira entzute-orduak</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">%1$d argazki ezabatu nahi duzu?</item>
+        <item quantity="other">%1$d argazki ezabatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">%1$d elementu ezabatu nahi duzu?</item>
+        <item quantity="other">%1$d elementu ezabatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">%1$d bideo ezabatu nahi duzu?</item>
+        <item quantity="other">%1$d bideo ezabatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d karakteretatik %2$d</item>
+        <item quantity="other">%1$d karakteretatik %2$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d ordu barru</item>
+        <item quantity="other">%1$d ordu barru</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d minutu barru</item>
+        <item quantity="other">%1$d minutu barru</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s eta beste %2$d</item>
+        <item quantity="other">%1$s eta beste %2$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d hautatu da</item>
+        <item quantity="other">%1$d hautatu dira</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">%2$d egunean behin %1$d aldiz soilik alda dezakezu erabiltzaile-izena.</item>
+        <item quantity="other">%2$d egunean behin %1$d aldiz soilik alda dezakezu erabiltzaile-izena.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Saiatu berriro %1$d egun barru.</item>
+        <item quantity="other">Saiatu berriro %1$d egun barru.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">%2$d egunean behin %1$d aldiz alda dezakezu erabiltzaile-izena.</item>
+        <item quantity="other">%2$d egunean behin %1$d aldiz alda dezakezu erabiltzaile-izena.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s pertsonak gorde du</item>
+        <item quantity="other">%1$s pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Ehuneko %1$d deskargatu da</item>
+        <item quantity="other">Ehuneko %1$d deskargatu da</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d atal gehitu da</item>
+        <item quantity="other">%1$d atal gehitu dira</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d atal erreproduzitu da</item>
+        <item quantity="other">%1$d atal erreproduzitu dira</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Itxaron %1$d segundo beste kode bat eskatu aurretik.</item>
+        <item quantity="other">Itxaron %1$d segundo beste kode bat eskatu aurretik.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Saiatu berriro %1$d segundo barru</item>
+        <item quantity="other">Saiatu berriro %1$d segundo barru</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d ekitaldi</item>
+        <item quantity="other">%1$d ekitaldi</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Erakutsi beste %1$d ordainketa-metodo</item>
+        <item quantity="other">Erakutsi beste %1$d ordainketa-metodo</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">5 izarretatik %1$s Spotify-n, %2$s baloraziotan oinarrituta</item>
+        <item quantity="other">5 izarretatik %1$s Spotify-n, %2$s baloraziotan oinarrituta</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d izar: ehuneko %2$d</item>
+        <item quantity="other">%1$d izar: ehuneko %2$d</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d entzule</item>
+        <item quantity="other">%1$d entzule</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d pertsona entzuten</item>
+        <item quantity="other">%1$d pertsona entzuten</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">%1$s erabiltzailearen Nahas-mahasa – %2$d elkarrekin entzuten</item>
+        <item quantity="other">%1$s erabiltzailearen Nahas-mahasa – %2$d elkarrekin entzuten</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s pertsonak gorde du</item>
+        <item quantity="other">%1$s pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;ordu&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;ordu&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d ordu falta da entzute-orduak iraungitzeko</item>
+        <item quantity="other">%1$d ordu falta dira entzute-orduak iraungitzeko</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d ordu barru berrituko dira entzute-orduak</item>
+        <item quantity="other">%1$d ordu barru berrituko dira entzute-orduak</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">Ehuneko %1$d</item>
+        <item quantity="other">Ehuneko %1$d</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s erreprodukzio</item>
+        <item quantity="other">%1$s erreprodukzio</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s sartu da zure Nahas-mahasean</item>
+        <item quantity="other">%2$d sartu dira zure Nahas-mahasean</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s karpeta</item>
+        <item quantity="other">%1$s karpeta</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s zerrenda</item>
+        <item quantity="other">%1$s zerrenda</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s abesti</item>
+        <item quantity="other">%1$s abesti</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Zerrenda • %1$s pista</item>
+        <item quantity="other">Zerrenda • %1$s pista</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s pista</item>
+        <item quantity="other">%1$s pista</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s atal deskargatu da • %2$s</item>
+        <item quantity="other">%1$s atal deskargatu dira • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s atal deskargatu da</item>
+        <item quantity="other">%1$s atal deskargatu dira</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$d elementu gehitu duzu</item>
+        <item quantity="other">%1$d elementu gehitu dituzu</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$d elementu entzun duzu</item>
+        <item quantity="other">%1$d elementu entzun dituzu</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">%1$s erabiltzaileak nahas-mahaska aritzeko bidali duen eskaera jaso duzu %1$s erabiltzailearekin erreprodukzio-jarduerak partekatzen ari zarelako.</item>
+        <item quantity="other">%1$s erabiltzaileak eta beste %2$d erabiltzailek nahas-mahaska aritzeko bidali duten eskaera jaso duzu haiekin erreprodukzio-jarduerak partekatzen ari zarelako.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Nahas-mahasean sartzeko %1$s erabiltzailearen eskaera jaso duzu Nahas-mahasetan sartzeko gonbidapen automatikoak aktibatuta dauzkazulako eta:</item>
+        <item quantity="other">Nahas-mahasean sartzeko %1$s erabiltzailearen eta beste %2$d erabiltzaileren eskaerak jaso dituzu Nahas-mahasetan sartzeko gonbidapen automatikoak aktibatuta dauzkazulako eta:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+ beste %1$d</item>
+        <item quantity="other">+ beste %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d lerro hautatu duzu</item>
+        <item quantity="other">%1$d lerro hautatu dituzu</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d atal</item>
+        <item quantity="other">%1$d atal</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d elementu</item>
+        <item quantity="other">%1$d elementu</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d pertsona</item>
+        <item quantity="other">%1$d pertsona</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d entzule</item>
+        <item quantity="other">%1$d entzule</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Erabili duzu hileroko planak audio-liburuak entzuteko eskaintzen dizun %1$d ordua.</item>
+        <item quantity="other">Erabili dituzu hileroko planak audio-liburuak entzuteko eskaintzen dizkizun %1$d orduak.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Hileroko planarekin, %1$d orduz entzun ahal izango dituzu gure harpidedunentzako katalogoko audio-liburuak.</item>
+        <item quantity="other">Hileroko planarekin, %1$d orduz entzun ahal izango dituzu gure harpidedunentzako katalogoko audio-liburuak.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d entzute-ordu</item>
+        <item quantity="other">%1$d entzute-ordu</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Antolatzailea: %1$s%2$s + %3$d</item>
+        <item quantity="other">Antolatzailea: %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d egun</item>
+        <item quantity="other">%1$d egun</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s s</item>
+        <item quantity="other">%1$s s</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d boto</item>
+        <item quantity="other">%1$d boto</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d kolaboratzaile</item>
+        <item quantity="other">%1$d kolaboratzaile</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d lagin</item>
+        <item quantity="other">%1$d lagin</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d lerro hautatu duzu</item>
+        <item quantity="other">%1$d lerro hautatu dituzu</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">Duela %1$d egun</item>
+        <item quantity="other">Duela %1$d egun</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Duela %1$d hilabete</item>
+        <item quantity="other">Duela %1$d hilabete</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Duela %1$d aste</item>
+        <item quantity="other">Duela %1$d aste</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Duela %1$d urte</item>
+        <item quantity="other">Duela %1$d urte</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">%1$d argazki deskargatu nahi duzu?</item>
+        <item quantity="other">%1$d argazki deskargatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">%1$d elementu deskargatu nahi duzu?</item>
+        <item quantity="other">%1$d elementu deskargatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">%1$d bideo deskargatu nahi duzu?</item>
+        <item quantity="other">%1$d bideo deskargatu nahi dituzu?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Gehienez %1$d bideo inporta dezakezu aldi berean.</item>
+        <item quantity="other">Gehienez %1$d bideo inporta ditzakezu aldi berean.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d argazki</item>
+        <item quantity="other">%1$d argazki</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d elementu</item>
+        <item quantity="other">%1$d elementu</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d bideo</item>
+        <item quantity="other">%1$d bideo</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;minutu&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;minutu&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d jakinarazpen berri</item>
+        <item quantity="other">%d jakinarazpen berri</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">%1$d karaktere geratzen da, mugara hurbiltzen</item>
+        <item quantity="other">%1$d karaktere geratzen dira, mugara hurbiltzen</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">%1$d karaktere geratzen da</item>
+        <item quantity="other">%1$d karaktere geratzen dira</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%2$,d/%1$,d (%% %3$,d osatuta)</item>
+        <item quantity="other">%2$,d/%1$,d (%% %3$,d osatuta)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%2$,d/%1$,d (%% %3$,d osatuta)</item>
+        <item quantity="other">%2$,d/%1$,d (%% %3$,d osatuta)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Bizkortu da minutuko %1$d alditara</item>
+        <item quantity="other">Bizkortu da minutuko %1$d alditara</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Moteldu da minutuko %1$d alditara</item>
+        <item quantity="other">Moteldu da minutuko %1$d alditara</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$s deskarga eskuragarri</item>
+        <item quantity="other">%1$s deskarga eskuragarri</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d elementu hautatuta</item>
+        <item quantity="other">%1$d elementu hautatuta</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s liburu</item>
+        <item quantity="other">%1$s liburu</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s atal</item>
+        <item quantity="other">%1$s atal</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s elementu</item>
+        <item quantity="other">%1$s elementu</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s ekitaldi</item>
+        <item quantity="other">%1$s ekitaldi</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d entzunaldi</item>
+        <item quantity="other">%1$,d entzunaldi</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d abesti</item>
+        <item quantity="other">%1$,d abesti</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Album hau berria da; beraz, beste %1$d egunez nahi duzun ordenan entzun ditzakezu bertako abestiak. Premium-ekin, askatasun hori betirako da.</item>
+        <item quantity="other">Album hau berria da; beraz, beste %1$d egunez nahi duzun ordenan entzun ditzakezu bertako abestiak. Premium-ekin, askatasun hori betirako da.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Entzun abestiak edozein ordenatan beste %1$d egunez</item>
+        <item quantity="other">Entzun abestiak edozein ordenatan beste %1$d egunez</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Entzun Spotify wifi-konexiorik gabe eta aurreztu datu-konexioan. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 orduz.</item>
+        <item quantity="other">Entzun Spotify wifi-konexiorik gabe eta aurreztu datu-konexioan. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Aukeratu edonoiz eta nahi duzun ordenan entzun nahi dituzun abestiak. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 orduz.</item>
+        <item quantity="other">Aukeratu edonoiz eta nahi duzun ordenan entzun nahi dituzun abestiak. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Aldatu ilararen ordena eta gehiago. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 orduz.</item>
+        <item quantity="other">Aldatu ilararen ordena eta gehiago. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Zeure esku bakarrik egongo da entzuten duzuna. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 egunez.</item>
+        <item quantity="other">Zeure esku bakarrik egongo da entzuten duzuna. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Entzun edozein ordenatan edo erreproduzitu ausaz. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 orduz.</item>
+        <item quantity="other">Entzun edozein ordenatan edo erreproduzitu ausaz. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Probatu doan 24 orduz nahi beste saltatzeko aukera eta Premium-en abantaila gehiago.</item>
+        <item quantity="other">Probatu doan %1$d egunez nahi beste saltatzeko aukera eta Premium-en abantaila gehiago.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Zeure esku bakarrik egongo da entzuten duzuna. Probatu abantaila hori eta Premium-en abantaila gehiago doan 24 orduz.</item>
+        <item quantity="other">Zeure esku bakarrik egongo da entzuten duzuna. Probatu abantaila hori eta Premium-en abantaila gehiago doan %1$d egunez.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Premium-en abantaila batzuk probatuko dituzu datozen 24 orduetan.</item>
+        <item quantity="other">Premium-en abantaila batzuk probatuko dituzu datozen %1$d egunetan.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">%1$d digituko kode bat bidali dugu %2$s zenbakira.</item>
+        <item quantity="other">%1$d digituko kode bat bidali dugu %2$s zenbakira.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">%1$d urte baino gutxiago duzu. Beraz, ezin duzu eman gurasoaren baimena.\n\nHorrez gain, ez dauzkazu erabilgarri eduki eta eginbide batzuk zure adina dela eta, eta ezkutatu egin ditugu.</item>
+        <item quantity="other">%1$d urte baino gutxiago dituzu. Beraz, ezin duzu eman gurasoaren baimena.\n\nHorrez gain, ez dauzkazu erabilgarri eduki eta eginbide batzuk zure adina dela eta, eta ezkutatu egin ditugu.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">PINa ez da zuzena. Saiatu berriro %1$d minutu barru.</item>
+        <item quantity="other">PINa ez da zuzena. Saiatu berriro %1$d minutu barru.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">PINa ez da zuzena. Saiatu berriro %1$d segundo barru.</item>
+        <item quantity="other">PINa ez da zuzena. Saiatu berriro %1$d segundo barru.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">Premium-eko %1$d kontu</item>
+        <item quantity="other">Premium-eko %1$d kontu</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundo</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s + beste %2$d</item>
+        <item quantity="other">%1$s + beste %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s + beste %2$d · Nahastuta</item>
+        <item quantity="other">%1$s + beste %2$d · Nahastuta</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s + beste %2$d</item>
+        <item quantity="other">%1$s + beste %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">%1$s eta beste %2$d erabiltzailek nahastu dute</item>
+        <item quantity="other">%1$s eta beste %2$d erabiltzailek nahastu dute</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Egileak: %1$s eta beste %2$d</item>
+        <item quantity="other">Egileak: %1$s eta beste %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Egileak: %1$s eta beste %2$d</item>
+        <item quantity="other">Egileak: %1$s eta beste %2$d</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d atal</item>
+        <item quantity="other">%1$d atal</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d ATAL</item>
+        <item quantity="other">%1$,d ATAL</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d ABESTI</item>
+        <item quantity="other">%1$,d ABESTI</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d egun</item>
+        <item quantity="other">%1$d egun</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">%1$d ordu gelditzen da</item>
+        <item quantity="other">%1$d ordu amaitzeko</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">%1$d minutu gelditzen da</item>
+        <item quantity="other">%1$d minutu amaitzeko</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d boto • %2$s</item>
+        <item quantity="other">%1$d boto • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">Premium-eko %1$d egun</item>
+        <item quantity="other">Premium-eko %1$d egun</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">Premium-eko %1$d hilabete</item>
+        <item quantity="other">Premium-eko %1$d hilabete</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">Premium-eko %1$d aste</item>
+        <item quantity="other">Premium-eko %1$d aste</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">Premium-eko %1$d urte</item>
+        <item quantity="other">Premium-eko %1$d urte</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s pertsonak gorde du</item>
+        <item quantity="other">%1$s pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d jarraitzaile</item>
+        <item quantity="other">%1$d jarraitzaile</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d pertsonari jarraitzen</item>
+        <item quantity="other">%1$d pertsonari jarraitzen</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d lagun</item>
+        <item quantity="other">%1$d lagun</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d jarraitzaile</item>
+        <item quantity="other">%1$,d jarraitzaile</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d pertsonak gorde du</item>
+        <item quantity="other">%1$,d pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d pertsonak gorde du</item>
+        <item quantity="other">%1$,d pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d jarraitzaile</item>
+        <item quantity="other">%1$,d jarraitzaile</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">Gehitu da %1$d abesti</item>
+        <item quantity="other">Gehitu dira %1$d abesti</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">Kendu da %1$d abesti</item>
+        <item quantity="other">Kendu dira %1$d abesti</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d erreakzio</item>
+        <item quantity="other">%1$d erreakzio</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Audio-liburuaren %1$d. minutua entzun ondoren izango duzu erabilgarri laburpena.</item>
+        <item quantity="other">Audio-liburuaren lehen %1$d minutuak entzun ondoren izango duzu erabilgarri laburpena.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d entzule</item>
+        <item quantity="other">%1$d entzule</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d pertsonak entzun du</item>
+        <item quantity="other">%1$d pertsonak entzun dute</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d pertsonak gorde du</item>
+        <item quantity="other">%1$d pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d lagunek ikusi du</item>
+        <item quantity="other">%1$d lagunek ikusi dute</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Premium-en sarbide esklusiboa %1$d egun barru</item>
+        <item quantity="other">Premium-en sarbide esklusiboa %1$d egun barru</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">%1$d egun barru kaleratuko da</item>
+        <item quantity="other">%1$d egun barru kaleratuko da</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d grabaketa</item>
+        <item quantity="other">%1$d grabaketa</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Aktibo duela %1$d egun</item>
+        <item quantity="other">Aktibo duela %1$d egun</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Gehienez %1$d gailutan deskarga dezakezu edukia.</item>
+        <item quantity="other">Gehienez %1$d gailutan deskarga dezakezu edukia.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Zerrenda • %1$d abesti</item>
+        <item quantity="other">Zerrenda • %1$d abesti</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s erantzun. Ikusteko, sakatu birritan.</item>
+        <item quantity="other">%1$s erantzun. Ikusteko, sakatu birritan.</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s pertsonak gorde du</item>
+        <item quantity="other">%1$s pertsonak gorde dute</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;segundo&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;segundo&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d lerro hautatu duzu</item>
+        <item quantity="other">%1$d lerro hautatu dituzu</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d audio-liburu</item>
+        <item quantity="other">%1$d audio-liburu</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d elementu</item>
+        <item quantity="other">%1$d elementu</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Sarera konektatu beharko duzu %1$,d egun barru</item>
+        <item quantity="other">Sarera konektatu beharko duzu %1$,d egun barru</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Falta den denbora: %1$d egun</item>
+        <item quantity="other">Falta den denbora: %1$d egun</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">%1$s lagunek partekatu du</item>
+        <item quantity="other">%1$s lagunek partekatu dute</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d partekatze</item>
+        <item quantity="other">%1$d eduki partekatu</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Zure jaiotza-dataren arabera, %1$d urte duzu.</item>
+        <item quantity="other">Zure jaiotza-dataren arabera, %1$d urte dituzu.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">%1$d urte al duzu?</item>
+        <item quantity="other">%1$d urte al dituzu?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">Duela %1$d egun</item>
+        <item quantity="other">Duela %1$d egun</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">Duela %1$d ordu</item>
+        <item quantity="other">Duela %1$d ordu</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">Duela %1$d minutu</item>
+        <item quantity="other">Duela %1$d minutu</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Duela %1$d hilabete</item>
+        <item quantity="other">Duela %1$d hilabete</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Duela %1$d aste</item>
+        <item quantity="other">Duela %1$d aste</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Duela %1$d urte</item>
+        <item quantity="other">Duela %1$d urte</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s abesti elkarrekin</item>
+        <item quantity="other">%1$s abesti elkarrekin</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">&lt;b&gt;%1$s abesti&lt;/b&gt; grabatu du</item>
+        <item quantity="other">&lt;b&gt;%1$s abesti&lt;/b&gt; grabatu ditu</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Abesti nagusia: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Abesti nagusiak: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Abesti nagusia &lt;b&gt;%1$s artistarekin: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Abesti nagusiak &lt;b&gt;%1$s artistarekin: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">&lt;b&gt;%1$s artistarekin&lt;/b&gt; lan egin du</item>
+        <item quantity="other">&lt;b&gt;%1$s artistarekin&lt;/b&gt; lan egin du</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s laguntzaile</item>
+        <item quantity="other">%1$s laguntzaile</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s abesti</item>
+        <item quantity="other">%1$s abesti</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s abesti</item>
+        <item quantity="other">%1$s abesti</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s laguntzaile</item>
+        <item quantity="other">%1$s laguntzaile</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Ikusi %1$s abesti elkarrekin</item>
+        <item quantity="other">Ikusi %1$s abesti elkarrekin</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s eta beste %2$d</item>
+        <item quantity="other">%1$s eta beste %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d kolaboratzaile</item>
+        <item quantity="other">%1$d kolaboratzaile</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d lagin</item>
+        <item quantity="other">%1$d lagin</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s erreprodukzio</item>
+        <item quantity="other">%1$s erreprodukzio</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d minutu</item>
+        <item quantity="other">%1$d minutu</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundo</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Funtzioa: %1$s</item>
+        <item quantity="other">Funtzioak: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d sarrera berri</item>
+        <item quantity="other">%1$,d sarrera berri</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d abesti gehitu da</item>
+        <item quantity="other">%1$d abesti gehitu dira</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$d abesti entzun duzu</item>
+        <item quantity="other">%1$d abesti entzun dituzu</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Bizkortu da minutuko %1$d alditara</item>
+        <item quantity="other">Bizkortu da minutuko %1$d alditara</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Moteldu da minutuko %1$d alditara</item>
+        <item quantity="other">Moteldu da minutuko %1$d alditara</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d lagun entzuten ari da orain</item>
+        <item quantity="other">%1$d lagun entzuten ari dira orain</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d elementu</item>
+        <item quantity="other">%1$d elementu</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d esaldi hautatu da</item>
+        <item quantity="other">%1$s, %2$s, %3$d esaldi hautatu dira</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d ordu</item>
+        <item quantity="other">%1$d ordu</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d ordu eta %2$d minutu</item>
+        <item quantity="other">%1$d ordu eta %2$d minutu</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundo</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">%1$d ordu geratzen da</item>
+        <item quantity="other">%1$d ordu geratzen dira</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">%1$d ordu eta %2$d minutu geratzen dira</item>
+        <item quantity="other">%1$d ordu eta %2$d minutu geratzen dira</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s erabiltzaileak Nahas-mahas batean sartu nahi du zurekin!</item>
+        <item quantity="other">%1$s eta beste %2$d erabiltzailek zure Nahas-mahasean sartu nahi dute!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s erabiltzaileak zure Nahas-mahasean sartu nahi du!</item>
+        <item quantity="other">%1$s eta beste %2$d erabiltzailek zure Nahas-mahasean sartu nahi dute!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%1$s/%2$d orduz entzun dira</item>
+        <item quantity="other">%1$s/%2$d orduz entzun dira</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">%1$d egun barru kaleratuko da</item>
+        <item quantity="other">%1$d egun barru kaleratuko da</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Premium-en sarbide esklusiboarekin, %1$d egun barru</item>
+        <item quantity="other">Premium-en sarbide esklusiboarekin, %1$d egun barru</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d minutu</item>
+        <item quantity="other">%1$d minutu</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d minutu</item>
+        <item quantity="other">%1$d minutu</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">%1$s saiotarako aktibatuta</item>
+        <item quantity="other">%1$s saiotarako aktibatuta</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d abesti</item>
+        <item quantity="other">%1$d abesti</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d/%2$d abesti</item>
+        <item quantity="other">%1$d/%2$d abesti</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Abian, ehuneko %1$d osatu da</item>
+        <item quantity="other">Abian, ehuneko %1$d osatu da</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">%1$d elementu bakarrik aingura dezakezu aldi berean.</item>
+        <item quantity="other">%1$d elementu bakarrik aingura ditzakezu aldi berean.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">%1$d elementu bakarrik aingura dezakezu aldi berean.</item>
+        <item quantity="other">%1$d elementu bakarrik aingura ditzakezu aldi berean.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Entzuten amaitu zen aurretik, abian da, eta ehuneko %1$d entzun da</item>
+        <item quantity="other">Entzuten amaitu zen aurretik, abian da, eta ehuneko %1$d entzun da</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d ordu</item>
+        <item quantity="other">%1$d ordu</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d minutu</item>
+        <item quantity="other">%1$d minutu</item>
+    </plurals>
+</resources>

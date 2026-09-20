@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.legacyglue.viewgroup.PasteLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/podcast_charts_header"
+    android:paddingLeft="@dimen/std_16dp"
+    android:paddingTop="@dimen/podcast_charts_88dp_padding"
+    android:paddingRight="@dimen/std_16dp"
+    android:paddingBottom="@dimen/std_16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/std_16dp"
+    android:paddingEnd="@dimen/std_16dp">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@color/white"
+        android:gravity="start"
+        android:id="@+id/podcast_charts_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textAlignment="viewStart"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleLarge"
+        android:textColor="@color/white"
+        android:gravity="start"
+        android:id="@+id/podcast_charts_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="viewStart"/>
+</com.spotify.legacyglue.viewgroup.PasteLinearLayout>

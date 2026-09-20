@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingLeft="@dimen/spacer_8"
+    android:paddingTop="@dimen/spacer_8"
+    android:paddingRight="@dimen/spacer_8"
+    android:paddingBottom="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/spacer_8"
+    android:paddingVertical="@dimen/spacer_8">
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:id="@+id/recommendations_page_close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/close_button_content_description"
+        app:backgroundTint="@color/dark_base_background_elevated_base"
+        app:icon="@drawable/encore_icon_chevron_down"
+        app:iconTint="@color/dark_base_essential_base"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/Encore.Button.Tertiary.Small.IconOnly"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:gravity="center"
+        android:id="@+id/recommendations_page_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/smart_shuffle_recommendations_page_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/free_space"
+        app:layout_constraintStart_toEndOf="@+id/recommendations_page_close_button"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <Space
+        android:id="@+id/free_space"
+        android:layout_width="@dimen/header_button_size"
+        android:layout_height="@dimen/header_button_size"
+        android:layout_marginEnd="@dimen/header_button_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

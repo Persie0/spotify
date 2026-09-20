@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/assisted_curation_search_entity_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+        android:gravity="center_vertical"
+        android:id="@+id/search_entity_header_container"
+        android:background="?attr/baseBackgroundElevatedBase"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <com.spotify.encoreconsumermobile.elements.backbutton.BackButtonView
+            android:id="@+id/back_button"
+            android:layout_width="@dimen/encore_back_button_size"
+            android:layout_height="@dimen/encore_back_button_size"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginStart="@dimen/back_button_start_margin"
+            android:layout_marginVertical="4dp"/>
+        <com.spotify.encoremobile.component.textview.EncoreTextView
+            android:layout_gravity="center"
+            android:id="@+id/search_entity_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/assisted_curation_search_toolbar_title_horizontal_margin"
+            android:layout_marginRight="@dimen/assisted_curation_search_toolbar_title_horizontal_margin"
+            android:layout_marginHorizontal="@dimen/assisted_curation_search_toolbar_title_horizontal_margin"
+            style="@style/Encore.Components.Headers.ToolbarTitle"/>
+    </FrameLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/search_entity_header_container"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

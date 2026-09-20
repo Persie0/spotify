@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:theme="@style/Theme.Glue"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:id="@+id/toast"
+    android:background="@drawable/vtec_customerror_toast_bg"
+    android:padding="16dp"
+    android:visibility="invisible"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="24dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:textColor="@color/gray_7"
+        android:id="@+id/toast_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/gray_7"
+        android:gravity="center_horizontal"
+        android:id="@+id/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="3"/>
+</LinearLayout>

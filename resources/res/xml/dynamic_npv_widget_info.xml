@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/npv_widget_description"
+    android:minWidth="@dimen/widget_npv_recs_default_width"
+    android:minHeight="@dimen/widget_npv_recs_min_height"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_authenticated_layout_medium"
+    android:previewImage="@drawable/npv_widget_preview"
+    android:resizeMode="vertical|horizontal"
+    android:minResizeWidth="@dimen/widget_npv_recs_min_width"
+    android:minResizeHeight="@dimen/widget_npv_recs_min_resize_height"
+    android:widgetCategory="home_screen"
+    android:maxResizeWidth="@dimen/widget_npv_recs_max_width"
+    android:maxResizeHeight="@dimen/widget_npv_recs_max_height"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"/>

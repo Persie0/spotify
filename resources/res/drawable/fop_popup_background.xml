@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/gray_20"/>
+            <corners android:radius="@dimen/fop_popup_corner_radius"/>
+            <stroke
+                android:width="2px"
+                android:color="@color/gray_50"/>
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="footer_bottom_padding">16dp</dimen>
+    <dimen name="footer_button_margin">224dp</dimen>
+    <dimen name="onboarding_settings_info_margin_bottom">64dp</dimen>
+    <dimen name="peek_height">40dp</dimen>
+    <dimen name="playback_controls_margin">232dp</dimen>
+    <dimen name="seekbar_margin_horizontal">224dp</dimen>
+    <dimen name="social_listening_v2_onboarding_host_title_text_size">64sp</dimen>
+    <dimen name="widgets_container_horizontal_padding">240dp</dimen>
+</resources>

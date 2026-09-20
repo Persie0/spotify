@@ -1,0 +1,1295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s ماہانہ سُنن آلا</item>
+        <item quantity="other">%1$s ماہانہ سُنن آلے</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d گروپ سپیکر</item>
+        <item quantity="other">%1$d گروپ سپیکرز</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">5 وچوں %1$d ستارہ</item>
+        <item quantity="other">5 وچوں 5 ستارے</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">5 وچوں %1$d ستارہ</item>
+        <item quantity="other">5 وچوں 5 ستارے</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">%1$d ستارہ منتخب کرو</item>
+        <item quantity="other">5 ستارے منتخب کرو</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d ستارہ</item>
+        <item quantity="other">%1$d ستارے</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">%1$d ہور اکاؤنٹ</item>
+        <item quantity="other">%1$d ہور اکاؤنٹس</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">تے %1$d ہور اکاؤنٹ</item>
+        <item quantity="other">تے %1$d ہور اکاؤنٹس</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">%1$d آئٹم لبھی اے</item>
+        <item quantity="other">%1$d آئٹمز لبھیاں نیں</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s فولڈر</item>
+        <item quantity="other">%1$s فولڈرز</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s پلے لسٹ</item>
+        <item quantity="other">%1$s پلے لسٹاں</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s آڈیو بک</item>
+        <item quantity="other">%1$s آڈیو بکس</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s باب</item>
+        <item quantity="other">%1$s ابواب</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s کلپ</item>
+        <item quantity="other">%1$s کلپس</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s قسط</item>
+        <item quantity="other">%1$s قسطاں</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s گانا</item>
+        <item quantity="other">%1$s گانے</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s ٹریک</item>
+        <item quantity="other">%1$s ٹریکس</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">اشتہار چھڈن لئی %1$d سیکنڈ، ٹائمر</item>
+        <item quantity="other">اشتہار، ٹائمر چھڈن لئی %1$d سیکنڈ</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">%1$d سیکنڈ بعد چھڈ دیو</item>
+        <item quantity="other">%1$d سیکنڈز بعد چھڈ دیو</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">اشتہار • %1$d سیکنڈ توں بعد چھڈ دیو</item>
+        <item quantity="other">اشتہار • %1$d سیکنڈز توں بعد چھڈ دیو</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">خبر دار! تمہاری عمر Spotify استعمال کرنے کے لیے کافی نہیں ہے، اس لیے تمہارا اکاؤنٹ بلاک ہو گیا ہے اور %1$s دن میں غیر فعال ہو جائے گا۔ کیا ہم غلط سمجھے؟ شناختی کارڈ کے ساتھ اپنی عمر کی تصدیق کرنے کی کوشش کرو۔</item>
+        <item quantity="other">سر چک! تہاڈی عمر Spotify استعمال کرن لئی نئیں اے، اس لیی تہاڈا اکاؤنٹ بلاک ہو گیا اے تے %1$s دناں چ غیر فعال ہو جائے گا۔ کی اسی غلط سمجھیا؟ شناختی کارڈ دے نال اپنی عمر دی تصدیق کرن دی کوشش کرو۔</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">لگدا اے تہاڈی عمر اپنے Spotify اکاؤنٹ لئی نئیں اے۔ پر جے تہاڈے ماں پیو یا سرپرست کہندے نیں کہ ایہ ٹھیک اے تے تہاڈا اک نظم کردہ اکاؤنٹ ہو سکدا اے۔ تہاڈا اکاؤنٹ %1$s دن چ ڈی ایکٹیو ہو جائے گا۔</item>
+        <item quantity="other">لگدا اے تہاڈی عمر اپنے Spotify اکاؤنٹ لئی نئیں اے۔ پر جے تہاڈے ماں پے یا سرپرست کہندے نیں کہ ایہ ٹھیک اے تے تہاڈا اک نظم کردہ اکاؤنٹ ہو سکدا اے۔ تہاڈا اکاؤنٹ %1$s دناں چ غیر فعال ہو جائے گا۔</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">اپنے اکاؤنٹ نو دوبارہ چالو کرن دے لئی، شناختی کارڈ دے نال اپنی عمر دی تصدیق کرو۔ اگر عمر دی جانچ توں ایہ تصدیق نئیں ہوندی کہ تُسی Spotify استعمال کرن دے قابل او، یا جے %1$s دن دے اندر کوئی کارروائی نئیں کیتی جاندی، تے تہاڈا اکاؤنٹ مستقل طور تے ڈیلیٹ کر دتا جائے گا۔</item>
+        <item quantity="other">اپنے اکاؤنٹ نو دوبارہ چالو کرن دے لئی، شناختی کارڈ دے نال اپنی عمر دی تصدیق کرو۔ اگر عمر دی جانچ پڑتال توں ایہ تصدیق نئیں ہوندی کہ تُسی Spotify استعمال کرن دے قابل او، یا جے %1$s دناں دے اندر کوئی کارروائی نئیں کیتی جاندی، تے تہاڈا اکاؤنٹ مستقل طور تے ڈیلیٹ کر دتا جائے گا۔</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">کیونکہ تسی اک سال توں گھٹ عمر دے او، تسی ماں پیو دی رضامندی دین دے اہل نئیں او۔ نالے، تہاڈی عمر دی بنیاد تے کجھ مواد تے خصوصیات ہلے تیکر دستیاب نئیں ہن۔ اسیں اوہناں نوں لکا لیا اے۔</item>
+        <item quantity="other">کیونکہ تہاڈی عمر %1$d سال توں گھٹ اے، تسی ماں پیو دی رضامندی دین دے اہل نئیں او۔ نالے، تہاڈی عمر دی بنیاد تے کجھ مواد تے خصوصیات ہلے تیکر دستیاب نئیں ہن۔ اسیں اوہناں نوں لکا لیا اے۔</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d گانا • %2$s</item>
+        <item quantity="other">%1$d گانے • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d منتخب</item>
+        <item quantity="other">%1$d منتخب ہو گئے</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d منتخب ہو گیا</item>
+        <item quantity="other">%1$d منتخب ہو گئے</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$d منتخب ہو گیا۔ جاری رکھن لئی گھٹ توں گھٹ %2$d ہور منتخب کرو۔</item>
+        <item quantity="other">%1$d منتخب ہو گئے۔ جاری رکھن لئی گھٹ توں گھٹ %2$d ہور منتخب کرو۔</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d گھنٹے</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹ</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">تسی %1$d کردار دی حد توں ودھ او۔</item>
+        <item quantity="other">تسی %1$d کردار دی حد توں ودھ او۔</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ %1$d ہور</item>
+        <item quantity="other">+ %1$d ہور</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d ریلیز</item>
+        <item quantity="other">%1$,d ریلیزز</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d گانا</item>
+        <item quantity="other">%1$,d گانے</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">تہاڈے نیڑے %1$s ایونٹ</item>
+        <item quantity="other">تہاڈے نیڑے %1$s ایونٹس</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d ریلیز</item>
+        <item quantity="other">%1$d ریلیزز</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">سوال %1$s توں متعلق %2$d آئٹم لبھیا</item>
+        <item quantity="other">سوال %1$s توں متعلق %2$d آئٹمز لبھے</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$dمنٹ</item>
+        <item quantity="other">%1$dمنٹس</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d آڈیو بک شامل ہو گئی</item>
+        <item quantity="other">%1$d آڈیو بکس شامل ہو گئیاں</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d آڈیو بک چلائی گئی</item>
+        <item quantity="other">%1$d آڈیو بکس چلائیاں گیاں</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">فی شو %1$s نویں قسط</item>
+        <item quantity="other">فی شو %1$s نویاں قسطاں</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">پوڈکاسٹ • %1$d قسط</item>
+        <item quantity="other">پوڈکاسٹ • %1$d قسطاں</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈ</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_seconds">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈ</item>
+    </plurals>
+    <plurals name="campfire_agent_summary_worked_on_tasks">
+        <item quantity="one">اک کم تے کم کیتا</item>
+        <item quantity="other">%1$d کماں تے کم کیتا</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s بندہ گروپ وچ شامل کیتا گیا سی</item>
+        <item quantity="other">%1$s بندے گروپ وچ شامل کیتے گئے سی</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">%1$d دن پہلاں</item>
+        <item quantity="other">%1$d دن پہلاں</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">%1$d گھنٹہ پہلے</item>
+        <item quantity="other">%1$d گھنٹے پہلے</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">%1$d منٹ پہلے</item>
+        <item quantity="other">%1$d منٹ پہلے</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d تصویر</item>
+        <item quantity="other">%1$d تصویراں</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d ویڈیو</item>
+        <item quantity="other">%1$d ویڈیوز</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s بندہ</item>
+        <item quantity="other">%1$s لوکی</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s سجن</item>
+        <item quantity="other">%1$s سجناں</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">ایہ %1$d دن چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی AI پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+        <item quantity="other">ایہ %1$d دناں چ ری سیٹ ہو جائے گا، اس لئی فیر واپس آؤ۔ ایس دوران تسی AI پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">ایہ %1$d دن چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی انسٹینٹ پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+        <item quantity="other">ایہ %1$d دناں چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی انسٹینٹ پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">ایہ %1$d گھنٹے چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی AI پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+        <item quantity="other">ایہ %1$d گھنٹیاں چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی AI پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">ایہ %1$d گھنٹے چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی انسٹینٹ پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+        <item quantity="other">ایہ %1$d گھنٹیاں چ ری سیٹ ہو جائے گا، اس لی فیر واپس آؤ۔ ایس دوران تسی انسٹینٹ پلے لسٹ استعمال کر سکدے او، یا آپ بنا سکدے او۔</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d نویں انٹری</item>
+        <item quantity="other">%1$,d نویں انٹریاں</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s تہانوں براہ راست میسج نئیں کر سکے گا۔ جے تسی اوہناں نال گل بات نئیں کرنا چاہندے تے تسی چیٹ چھڈ سکدے او۔</item>
+        <item quantity="other">%1$s تہانوں براہ راست میسج نئیں کر سکن گے۔ جے تسی اوہناں نال گل بات نئیں کرنا چاہندے تے تسی چیٹ چھڈ سکدے او۔</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">%1$d ہور</item>
+        <item quantity="other">%1$d ہور</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">گروپ • %1$d بندہ</item>
+        <item quantity="other">گروپ • %1$d لوک</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d زیر التواء)</item>
+        <item quantity="other">(%1$d زیر التواء)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d تصویر ڈاؤن لوڈ کیتی گئی</item>
+        <item quantity="other">%1$d تصویراں ڈاؤن لوڈ کیتیاں گئیاں</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">اک تصویر ڈاؤن لوڈ نئیں کر سکی</item>
+        <item quantity="other">%1$d تصویراں ڈاؤن لوڈ نئیں کر سکیاں</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">%1$s، جس نوں تسی بلاک کیتا اے، اس چیٹ وچ اے۔ جے تسی اوہناں نال گل بات نئیں کرنا چاہندے تے تسی ایس گروپ چیٹ دی درخواست نو ڈیلیٹ کر سکدے او۔</item>
+        <item quantity="other">%1$s، جنہاں نو تسی بلاک کیتا اے، اس چیٹ چ ہن۔ جے تسی اوہناں نال گل بات نئیں کرنا چاہندے تے تسی ایس گروپ چیٹ دی درخواست نو ڈیلیٹ کر سکدے او۔</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">گروپاں وچ ودھ توں ودھ %1$d بندہ ہو سکدا اے</item>
+        <item quantity="other">گروپاں وچ ودھ توں ودھ %1$d بندے ہو سکدے نیں</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">اک واری جدوں کوئی قبول کر لیندا اے، تے اوہ چیٹ چ بھیجے گئے سارے سنیہے ویکھ سکے گا جدوں توں اوہنوں دعوت دتی گئی اے۔</item>
+        <item quantity="other">اک واری جدوں کوئی قبول کر لیندا اے، تے اوہ چیٹ چ بھیجے گئے سارے سنیہے ویکھ سکے گا جدوں توں اوہنوں دعوت دتی گئی اے۔</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">چنے ہوئے لوکاں نوں ایس گل بات وچ دعوت دیو؟</item>
+        <item quantity="other">چنے ہوئے لوکاں نوں ایس گل بات وچ دعوت دیو؟</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d ویڈیو ڈاؤن لوڈ ہو گئی</item>
+        <item quantity="other">%1$d ویڈیوز ڈاؤن لوڈ ہو گئیاں</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">%1$d ویڈیو ڈاؤن لوڈ نہیں ہو سکی</item>
+        <item quantity="other">%1$d ویڈیوز ڈاؤن لوڈ نہیں ہو سکیاں</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d کردار</item>
+        <item quantity="other">+ %1$d کردار</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">%1$d دن پہلاں</item>
+        <item quantity="other">%1$d دن پہلاں</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">%1$d گھنٹہ پہلے</item>
+        <item quantity="other">%1$d گھنٹے پہلے</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">%1$d منٹ پہلے</item>
+        <item quantity="other">%1$d منٹ پہلے</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d مہینہ پہلاں</item>
+        <item quantity="other">%1$d مہینیاں پہلاں</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s جواب</item>
+        <item quantity="other">%1$s جوابات</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s بندے وی ردعمل دتا اے۔</item>
+        <item quantity="other">%1$s لوکاں وی ردِعمل دتا اے۔</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s بندے نے ایس تبصرے اتے ردِعمل دتا اے۔</item>
+        <item quantity="other">%1$s لوکاں نے ایس تبصرے اتے ردِعمل دتا اے۔</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s جواب</item>
+        <item quantity="other">%1$s جوابات</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">%1$s ہور جواب۔ وکھاون لئی دو واری ٹیپ کرو</item>
+        <item quantity="other">%1$s ہور جوابات۔ وکھاون لئی دو واری ٹیپ کرو</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d ہفتے پہلاں</item>
+        <item quantity="other">%1$d ہفتیاں پہلاں</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">%1$d سال پہلاں</item>
+        <item quantity="other">%1$d سالاں پہلاں</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d گانا</item>
+        <item quantity="other">%1$,d گانے</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$dسنن والا</item>
+        <item quantity="other">%1$d سنن والے</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹ</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d گانا اکٹھے</item>
+        <item quantity="other">%1$d گانے اکٹھے</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d گانا اکٹھے</item>
+        <item quantity="other">%1$d گانے اکٹھے</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d دن</item>
+        <item quantity="other">%1$d دن</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d گھنٹے</item>
+        <item quantity="other">%1$d گھنٹہ</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈ</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s ماہانہ سُنن آلا</item>
+        <item quantity="other">%1$s ماہانہ سُنن آلے</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">لکھاری: %1$s</item>
+        <item quantity="other">لکھاری: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s + %2$d ہور</item>
+        <item quantity="other">%1$s + %2$d ہور</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">ایس %1$s دے ہور مواد اتے نیویگیٹ کردا اے</item>
+        <item quantity="other">سارے %1$s دی نیویگیبل لسٹ نوں وکھاندا اے</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">تیاری دا ویلا %1$d دن</item>
+        <item quantity="other">تیاری دا ویلا %1$d دن</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d دن</item>
+        <item quantity="other">%1$d دن</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;دن&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;دناں&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">%1$d دن وچ ریلیز ہووے گا</item>
+        <item quantity="other">%1$d دناں وچ ریلیز ہووے گا</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">سنن دے گھنٹے معیاد مک جان تک %1$d دن</item>
+        <item quantity="other">سنن دے گھنٹیاں دی معیاد مک جان تک %1$d دن</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">سنن دے گھنٹیاں دی تجدید ہون اچ %1$d دن باقی</item>
+        <item quantity="other">سنن دے گھنٹیاں دی تجدید ہون اچ %1$d دن باقی</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">%1$d تصویریں ڈیلیٹ کرو؟</item>
+        <item quantity="other">%1$d فوٹوز ڈیلیٹ کر دیئے؟</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">%1$d آئٹم ڈیلیٹ کرو؟</item>
+        <item quantity="other">%1$d آئٹم ڈیلیٹ کرو؟</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">%1$d ویڈیو ڈیلیٹ کرو؟</item>
+        <item quantity="other">%1$d ویڈیوز ڈیلیٹ کرو؟</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d حروف وچوں %2$d</item>
+        <item quantity="other">%1$d حروف وچوں %2$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s تے %2$d ہور</item>
+        <item quantity="other">%1$s تے %2$d دوجے</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d منتخب ہو گیا</item>
+        <item quantity="other">%1$d منتخب ہو گئے</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">تُسی %2$d دناں دے اندر صرف اک وار اپنا یوزر نیم بدل سکدے او۔</item>
+        <item quantity="other">تُسی %2$d دناں دے اندر صرف نو وار اپنا یوزر نیم بدل سکدے او۔</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">%1$d دن وچ فیر کوشش کرو۔</item>
+        <item quantity="other">%1$d دناں وچ فیر کوشش کرو۔</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">تُسی ہر %2$d دناں وچ %1$d واری اپنا یوزر نیم بدل سکدے او۔</item>
+        <item quantity="other">تُسی ہر %2$d دناں وچ %1$d واری اپنا یوزر نیم بدل سکدے او۔</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s محفوظ کیتا</item>
+        <item quantity="other">%1$s محفوظ کیتے</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">%1$d فیصد ڈاؤن لوڈ کیتا</item>
+        <item quantity="other">%1$d فیصد ڈاؤن لوڈ کیتا</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d قسط شامل ہو گئی اے</item>
+        <item quantity="other">%1$d قسطاں شامل ہو گئیاں نیں</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d قسط چلائی گئی</item>
+        <item quantity="other">%1$d قسطاں چلائیاں گئیاں</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">%1$d سیکنڈ اڈیکو، فیر نویں کوڈ دی درخواست کرو۔</item>
+        <item quantity="other">%1$d سیکنڈ اڈیکو، فیر نویں کوڈ دی درخواست کرو۔</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">%1$d سیکنڈ وچ فیر کوشش کرو</item>
+        <item quantity="other">%1$d سیکنڈاں وچ فیر کوشش کرو</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d ایونٹ</item>
+        <item quantity="other">%1$d ایونٹس</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">ادائیگی دا ۱ ہور طریقہ وکھاؤ</item>
+        <item quantity="other">ادائیگی دے ۹ ہور طریقے وکھاؤ</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">سپورٹیفائی اُتے 5 وچوں %1$s ستارہ، %2$s ریٹنگ دی بنیاد اُتے۔</item>
+        <item quantity="other">سپورٹیفائی اُتے 5 وچوں %1$s ستارے، %2$s ریٹنگز دی بنیاد اُتے۔</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d ستارہ: %2$d%%</item>
+        <item quantity="other">%1$d ستارے: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d سن رئیا اے</item>
+        <item quantity="other">%1$d سن رئیا اے</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d بندہ سن رئیا اے</item>
+        <item quantity="other">%1$d لوکی سن رئے ہین</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">%1$s دا جیم – %2$d نال سُن رہا ہے</item>
+        <item quantity="other">%1$s دا جیم – %2$d نال سُن رہے نے</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s محفوظ کیتا</item>
+        <item quantity="other">%1$s محفوظ کیتے</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;گھنٹہ&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;گھنٹے&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">سنن دے گھنٹے معیاد مک جان تک %1$d گھنٹہ</item>
+        <item quantity="other">سنن دے گھنٹے معیاد مک جان تک %1$d گھنٹے</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">سنن دے گھنٹیاں دی تجدید ہون وچ %1$d گھنٹہ باقی</item>
+        <item quantity="other">سنن دے گھنٹیاں دی تجدید ہون وچ %1$d گھنٹے باقی</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d فیصد</item>
+        <item quantity="other">%1$d فیصد</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s پلے دی تعداد</item>
+        <item quantity="other">%1$s پلیز دی تعداد</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s شخص تہاڈے Jam وچ شامل ہویا اے</item>
+        <item quantity="other">%2$d ہور لوکی تہاڈے Jam وچ شامل ہوئے نیں</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s فولڈر</item>
+        <item quantity="other">%1$s فولڈرز</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s پلے لسٹ</item>
+        <item quantity="other">%1$s پلے لسٹاں</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s گانا</item>
+        <item quantity="other">%1$s گانے</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">پلے لسٹ • %1$s ٹریک</item>
+        <item quantity="other">پلے لسٹ • %1$s ٹریکس</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s ٹریک</item>
+        <item quantity="other">%1$s ٹریکس</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s ڈاؤن لوڈ کردہ قسط • %2$s</item>
+        <item quantity="other">%1$s ڈاؤن لوڈ کردہ قسطاں • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s ڈاؤن لوڈ کردہ قسط</item>
+        <item quantity="other">%1$s ڈاؤن لوڈ کردہ قسطاں</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$d آئٹم شامل کیتا گیا اے</item>
+        <item quantity="other">%1$d آئٹمز شامل کیتے گئے نیں</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$d آئٹم چلایا گیا اے</item>
+        <item quantity="other">%1$d آئٹمز چلائے گئے نیں</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">تہانوں اپنے نال Jam کرن دی %1$s درخواست ملی اے کیونکہ تسی %1$s دے نال سنن دی سرگرمی شیئر کر رئے او۔</item>
+        <item quantity="other">تہانوں اپنے نال Jam کرن لئی %1$s تے %2$d دوجیاں دی درخواستاں موصول ہوئیاں کیونکہ تسی اوہناں دے نال سنن دی سرگرمی دا اشتراک کر رئے او۔</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">تہانوں تہاڈے Jam وچ شامل ہون لئی %1$s دی درخواست موصول ہوئی اے کیوں جے تہاڈے Jam دیاں خودکار دعوتاں آن نیں تے یا فیر:</item>
+        <item quantity="other">تہانوں تہاڈے Jam وچ شامل ہون لئی %1$s تے %2$d ہوراں دیاں درخواستاں موصول ہوئیاں نیں کیوں جے تہاڈے Jam دیاں خودکار دعوتاں آن نیں تے یا فیر:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+ %1$d دوجا</item>
+        <item quantity="other">+ %1$d دوجے</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d لائن منتخب ہو گئی</item>
+        <item quantity="other">%1$d لائنز منتخب ہو گئیاں</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d قسط</item>
+        <item quantity="other">%1$d قسطاں</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d آئٹم</item>
+        <item quantity="other">%1$d آئٹمز</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d بندہ</item>
+        <item quantity="other">%1$d لوکی</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d سن رئیا اے</item>
+        <item quantity="other">%1$d سن رئیا اے</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">تسی آڈیو بکس دا سارا %1$d گھنٹہ سن چکے او، ، جیہڑے تہاڈے ماہانہ پلان اچ شامل نیں۔</item>
+        <item quantity="other">تسی آڈیو بکس دے سارے %1$d گھنٹے سن چکے او، ، جیہڑے تہاڈے ماہانہ پلان اچ شامل نیں۔</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">ساڈی سبسکرائبر کیٹلاگ اچوں %1$d گھنٹے دی آڈیو بکس سنو، جیہڑی تہاڈے ماہانہ پلان اچ شامل اے۔</item>
+        <item quantity="other">ساڈی سبسکرائبر کیٹلاگ اچوں %1$d گھنٹیاں دی آڈیو بکس سنو، جیہڑی تہاڈے ماہانہ پلان اچ شامل اے۔</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">سنن دے ویلے دا %1$d-گھنٹہ</item>
+        <item quantity="other">سنن دے ویلے دے %1$d-گھنٹے</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">%1$s%2$s + %3$dکی میزبانی میں</item>
+        <item quantity="other">%1$s%2$s + %3$dکی میزبانی میں</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d دن</item>
+        <item quantity="other">%1$d دن</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s سیکنڈ</item>
+        <item quantity="other">%1$s سیکنڈز</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d ووٹ</item>
+        <item quantity="other">%1$d ووٹس</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d معاون</item>
+        <item quantity="other">%1$d معاونین</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d نمونہ</item>
+        <item quantity="other">%1$d نمونے</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d لائن منتخب ہو گئی</item>
+        <item quantity="other">%1$d لائنز منتخب ہو گئیاں</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">%1$d دن پہلاں</item>
+        <item quantity="other">%1$d دن پہلاں</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">%1$d مہینہ پہلاں</item>
+        <item quantity="other">%1$d مہینے پہلاں</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">%1$d ہفتہ پہلاں</item>
+        <item quantity="other">%1$d ہفتے پہلاں</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">%1$d سال پہلاں</item>
+        <item quantity="other">%1$d سال پہلاں</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">%1$d تصویر ڈاؤن لوڈ کرو؟</item>
+        <item quantity="other">%1$d تصویراں ڈاؤن لوڈ کرو؟</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">%1$d آئٹم ڈاؤن لوڈ کرو؟</item>
+        <item quantity="other">%1$d آئٹمز ڈاؤن لوڈ کرو؟</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">%1$d ویڈیو ڈاؤن لوڈ کرو؟</item>
+        <item quantity="other">%1$d ویڈیوز ڈاؤن لوڈ کرو؟</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">تُسی اک وقت وچ %1$d ویڈیو بھیج سکدے او۔</item>
+        <item quantity="other">تُسی اک وقت وچ %1$d تک ویڈیوز بھیج سکدے او۔</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d تصویر</item>
+        <item quantity="other">%1$d تصویراں</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d آئٹم</item>
+        <item quantity="other">%1$d آئٹمز</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d ویڈیو</item>
+        <item quantity="other">%1$d ویڈیوز</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;منٹ&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;منٹس&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">%1$d کریکٹرز باقی نیں، حد دے نیڑے</item>
+        <item quantity="other">%1$d کریکٹرز باقی نیں، حد دے نیڑے آ رہے نیں</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">اک کریکٹر باقی اے</item>
+        <item quantity="other">%1$d کریکٹرز باقی نیں</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%2$,d وچوں %1$,d (مکمل %3$,d%%)</item>
+        <item quantity="other">%2$,d وچوں %1$,d (مکمل %3$,d%%)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%2$,d وچوں %1$,d (مکمل %3$,d%%)</item>
+        <item quantity="other">%2$,d وچوں %1$,d (مکمل %3$,d%%)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">%1$d بیٹس فی منٹ تک تیز کر دتا</item>
+        <item quantity="other">%1$d بیٹس فی منٹ تک تیز کر دتا</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">%1$d بیٹس فی منٹ تک ہولا کر دتا</item>
+        <item quantity="other">%1$d بیٹس فی منٹ تک ہولا کر دتا</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$dمنٹ</item>
+        <item quantity="other">%1$dمنٹس</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$s ڈاؤن لوڈ دستیاب اے</item>
+        <item quantity="other">%1$s ڈاؤن لوڈز دستیاب نیں</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d آئٹم چنی گئی</item>
+        <item quantity="other">%1$d آئٹمز چنے گئے</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s کتاب</item>
+        <item quantity="other">%1$s کتاباں</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s قسط</item>
+        <item quantity="other">%1$s قسطاں</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s آئٹم</item>
+        <item quantity="other">%1$s آئٹمز</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s ایونٹ</item>
+        <item quantity="other">%1$s ایونٹس</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d سنو</item>
+        <item quantity="other">%1$,d واری سنیا گیا</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d گانا</item>
+        <item quantity="other">%1$,d گانے</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">ایہہ البم نواں اے، ایس لئی تُسی ایہنوں %1$d ہور دِن لئی کسے وی ترتیب وچ چلا سکدے او۔ Premium نال، ایہہ آزادی کدی نئیں مُکدی۔</item>
+        <item quantity="other">ایہہ البم نواں اے، ایس لئی تُسی ایہنوں %1$d ہور دِناں لئی کسے وی ترتیب وچ چلا سکدے او۔ Premium نال، ایہہ آزادی کدی نئیں مُکدی۔</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">%1$d ہور دن لئی کسے وی ترتیب وچ چلاؤ</item>
+        <item quantity="other">%1$d ہور دناں لئی کسے وی ترتیب وچ چلاؤ</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">وائی فائی توں بغیر سُنو تے اپنا موبائل ڈیٹا بچاؤ۔ ایہنوں نالے ہور Premium فائدیاں نوں 24 گھنٹیاں لئی مفت آزماؤ۔</item>
+        <item quantity="other">وائی فائی توں بغیر سُنو تے آپنا موبائل ڈیٹا بچاؤ۔ %1$d دِناں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">کسے وی ویلے اتے کسی وی ترتیب وچ گانے چلانے لئی چُنو۔ 24 گھنٹیاں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">کسے وی ویلے تے کسے وی ترتیب وچ گانے چلانے لئی چُنو۔ %1$d دِناں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">اپنی قطار نوں دوبارہ ترتیب دیو تے ہور وی بہت کجھ۔ 24 گھنٹیاں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">اپنی قطار دا دوبارہ بندوبست کرو تے ہور بوہت کچھ۔ تُسی %1$d دِناں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">آپنی سُنن دی سہولت دا مکمل کنٹرول لئو۔ 24 گھنٹیاں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">اپنی سُنن دی سہولت دا مکمل کنٹرول لئو۔ %1$d دِناں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">کسے وی ترتیب وچ چلاؤ یا شفل کرو۔ 24 گھنٹیاں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">کسے وی ترتیب وچ چلاؤ یا شفل کرو۔ ایہنوں نالے ہور Premium فائیدیاں نوں، %1$d دِناں لئی مفت وچ آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">24 گھنٹیاں لئی مفت وچ، لا محدود واری چھڈ دیو، نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">%1$d دِناں لئی مفت وچ، لا محدود واری چھڈ دیو، نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">آپنی سُنن دی سہولت دا مکمل کنٹرول لئو۔ 24 گھنٹیاں لئی مفت وچ، ایہنوں نالے ہور Premium فائیدیاں نوں آزماؤ۔</item>
+        <item quantity="other">اپنی سُنن دی سہولت دا مکمل کنٹرول لئو۔ ایہنوں نالے ہور Premium فائیدیاں نوں %1$d دِناں لئی مفت وچ آزماؤ۔</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">تہاڈے کول اگلے 24 گھنٹیاں لئی کجھ Premium فائدے موجود نیں۔</item>
+        <item quantity="other">تہاڈے کول اگلے %1$d دناں لئی کجھ Premium فائدے موجود نیں۔</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">اسی اک %1$d عددی کوڈ %2$s اتے بھیجیا اے۔</item>
+        <item quantity="other">اسی اک %1$d عددی کوڈ %2$s اتے بھیجیا اے۔</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">کیونکہ تسی اک سال توں گھٹ عمر دے او، تسی ماں پیو دی رضامندی دین دے اہل نئیں او۔ نالے، تہاڈی عمر دی بنیاد تے کجھ مواد تے خصوصیات ہلے تیکر دستیاب نئیں ہن۔ اسیں اوہناں نوں لکا لیا اے۔</item>
+        <item quantity="other">کیونکہ تہاڈی عمر %1$d سال توں گھٹ اے، تسی ماں پیو دی رضامندی دین دے اہل نئیں او۔ نالے، تہاڈی عمر دی بنیاد تے کجھ مواد تے خصوصیات ہلے تیکر دستیاب نئیں ہن۔ اسیں اوہناں نوں لکا لیا اے۔</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">غلط PIN، %1$d منٹ وچ فیر کوشش کرو۔</item>
+        <item quantity="other">غلط PIN، %1$d منٹس وچ فیر کوشش کرو۔</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">غلط PIN، %1$d سیکنڈ وچ فیر کوشش کرو۔</item>
+        <item quantity="other">غلط PIN، %1$d سیکنڈاں وچ فیر کوشش کرو۔</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d Premium اکاؤنٹ</item>
+        <item quantity="other">%1$d Premium اکاؤنٹس</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈز</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s + %2$d ہور</item>
+        <item quantity="other">%1$s + %2$d ہور</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s +%2$d ہور · مخلوط</item>
+        <item quantity="other">%1$s +%2$d دوجے · مخلوط</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s + %2$d ہور</item>
+        <item quantity="other">%1$s + %2$d ہور</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">مکس کردہ بذریعہ %1$s + %2$d دوجے نال</item>
+        <item quantity="other">%1$s + %2$d دوجیاں ولوں مکس کردہ</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">%1$s تے %2$d دوجے ولوں بنائی گئی</item>
+        <item quantity="other">%1$s تے %2$d دوجے ولوں بنائی گئی</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">%1$s تے %2$d دوجے ولوں بنائی گئی</item>
+        <item quantity="other">%1$s تے %2$d دوجے ولوں بنائی گئی</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d قسط</item>
+        <item quantity="other">%1$d قسطاں</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d قسط</item>
+        <item quantity="other">%1$,d قسطاں</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d گانا</item>
+        <item quantity="other">%1$,d گانے</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d دن</item>
+        <item quantity="other">%1$d دن</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">%1$d گھنٹہ باقی اے</item>
+        <item quantity="other">%1$d گھنٹے باقی نیں</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">%1$d منٹ باقی اے</item>
+        <item quantity="other">%1$d منٹس باقی نیں</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d ووٹ • %2$s</item>
+        <item quantity="other">%1$d ووٹس • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">Premium دا %1$d دن</item>
+        <item quantity="other">Premium دے %1$d دن</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">Premium دا %1$d مہینہ</item>
+        <item quantity="other">Premium دے %1$d مہینے</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">Premium دا %1$d ہفتہ</item>
+        <item quantity="other">Premium دے %1$d ہفتے</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">Premium دا %1$d سال</item>
+        <item quantity="other">Premium دے %1$d سال</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s پیشگی محفوظ کاری</item>
+        <item quantity="other">%1$s پیشگی محفوظ کاریاں</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d فالوؤر</item>
+        <item quantity="other">%1$d فالوؤرز</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d نوں فالو کر رہے نیں</item>
+        <item quantity="other">%1$d نوں فالو کر رئیے نیں</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d سجن</item>
+        <item quantity="other">%1$d سجناں</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d فالوؤر</item>
+        <item quantity="other">%1$,d فالوؤرز</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d محفوظ کیتا</item>
+        <item quantity="other">%1$,d محفوظ کیتے</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d محفوظ کیتا</item>
+        <item quantity="other">%1$,d محفوظ کیتے</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d فالوؤر</item>
+        <item quantity="other">%1$,d فالوؤرز</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d ٹریک شامل کیتا گیا</item>
+        <item quantity="other">%1$d ٹریک شامل کیتے گئے</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d ٹریک ہٹا دتا گیا</item>
+        <item quantity="other">%1$d ٹریک ہٹا دتے گئے</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d ردِعمل</item>
+        <item quantity="other">%1$d دے ردِعمل</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">جدوں تُسی ایس آڈیو بک دا پہلا %1$d منٹ چلا لوو گے تاں تہاڈا ری کیپ دستیاب ہو جاوے گا۔</item>
+        <item quantity="other">جدوں تُسی ایس آڈیو بک دے پہلے %1$d منٹس چلا لوو گے تاں تہاڈا ری کیپ دستیاب ہو جاوے گا۔</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d سن رئیا اے</item>
+        <item quantity="other">%1$d سن رئیا اے</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d چلایا گیا</item>
+        <item quantity="other">%1$d چلایا گیا</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d محفوظ کیتے</item>
+        <item quantity="other">%1$d محفوظ کیتے</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d ویکھیا گیا</item>
+        <item quantity="other">%1$d ویکھے گئے</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">%1$d دن وچ پریمیم پیشگی رسائی</item>
+        <item quantity="other">%1$d دناں وچ پریمیم پیشگی رسائی</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">%1$d دن وچ ریلیز ہووے گا</item>
+        <item quantity="other">%1$d دناں وچ ریلیز ہووے گا</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d ریکارڈنگ</item>
+        <item quantity="other">%1$d ریکارڈنگز</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">آخری واری فعال %1$d دن پہلاں</item>
+        <item quantity="other">آخری واری فعال %1$d دن پہلاں</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">تسی ودھ توں ودھ %1$d ڈیوائس تے ڈاؤن لوڈ کر سکدے او۔</item>
+        <item quantity="other">تسی ودھ توں ودھ %1$d آلات تے ڈاؤن لوڈ کر سکدے او۔</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">پلے لسٹ · %1$d گانا</item>
+        <item quantity="other">پلے لسٹ · %1$d گانے</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s جواب۔ وکھاون لئی دو واری ٹیپ کرو</item>
+        <item quantity="other">%1$s جوابات۔ وکھاون لئی دو واری ٹیپ کرو</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s محفوظ کیتا</item>
+        <item quantity="other">%1$s محفوظ کیتے</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;سیکنڈ&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;سیکنڈز&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d لائن منتخب ہو گئی</item>
+        <item quantity="other">%1$d لائنز منتخب ہو گئیاں</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d آڈیو بک</item>
+        <item quantity="other">%1$d آڈیو بکاں</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d آئٹم</item>
+        <item quantity="other">%1$d آئٹمز</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">کنے دناں بعد آن لائن واپس جانا ضروری اے: %1$,d دن</item>
+        <item quantity="other">کنے دناں بعد آن لائن واپس جانا ضروری اے: %1$,d دناں</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">باقی ویلا: %1$d دن</item>
+        <item quantity="other">باقی ویلا: %1$d دن</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">%1$s سجن ولوں شئیر کیتی</item>
+        <item quantity="other">%1$s سجناں ولوں شئیر کیتی</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d شئیر</item>
+        <item quantity="other">%1$d شئیر کرو</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">تہاڈی تاریخ پیدائش دی بنیاد تے، تسی ایس ویلے %1$d سال دے او۔</item>
+        <item quantity="other">تہاڈی پیدائش دی تاریخ دی بنیاد تے، تسی ایس ویلے %1$d سال دے او۔</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">لگدا اے تسی %1$d سال دے ہو؟</item>
+        <item quantity="other">لگدا اے توں %1$d سال دا ایں؟</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">%1$d دن پہلاں</item>
+        <item quantity="other">%1$d دن پہلاں</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">%1$d گھنٹہ پہلے</item>
+        <item quantity="other">%1$d گھنٹے پہلے</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">%1$d منٹ پہلے</item>
+        <item quantity="other">%1$d منٹ پہلے</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">%1$d مہینہ پہلاں</item>
+        <item quantity="other">%1$d مہینے پہلاں</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">%1$d ہفتہ پہلاں</item>
+        <item quantity="other">%1$d ہفتے پہلاں</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">%1$d سال پہلاں</item>
+        <item quantity="other">%1$d سال پہلاں</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s گانا اکٹھے</item>
+        <item quantity="other">%1$s گانے اکٹھے</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">&lt;b&gt;%1$s گانے&lt;/b&gt; ریکارڈ کیے گئے</item>
+        <item quantity="other">&lt;b&gt;%1$s گانے&lt;/b&gt;ریکارڈ کیتے</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">ٹاپ گانا: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">ٹاپ گانے: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">&lt;b&gt;%1$s دے نال ٹاپ گانے: %2$s&lt;/b&gt;</item>
+        <item quantity="other">&lt;b&gt;%1$s دے نال ٹاپ گانے: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">&lt;b&gt;%1$s آرٹسٹ&lt;/b&gt; دے نال کم کیتا</item>
+        <item quantity="other">&lt;b&gt;%1$s آرٹسٹاں&lt;/b&gt;دے نال کم کیتا</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s شراکت دار</item>
+        <item quantity="other">%1$s شراکت داران</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s گانا</item>
+        <item quantity="other">%1$s گانے</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s گانا</item>
+        <item quantity="other">%1$s گانے</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s شراکت دار</item>
+        <item quantity="other">%1$s شراکت داران</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">%1$s گانا رل کے ویکھو</item>
+        <item quantity="other">رل کے %1$s گانے ویکھو</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + %2$d ہور</item>
+        <item quantity="other">%1$s + %2$d ہور</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d معاون</item>
+        <item quantity="other">%1$d معاونین</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d نمونہ</item>
+        <item quantity="other">%1$d نمونے</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s پلے دی تعداد</item>
+        <item quantity="other">%1$s پلیز دی تعداد</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈز</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">کردار: %1$s</item>
+        <item quantity="other">کردار: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d نویں انٹری</item>
+        <item quantity="other">%1$,d نویں انٹریاں</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d گانا شامل کیتا گیا اے</item>
+        <item quantity="other">%1$d گانے شامل کیتے گئے نیں</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$d گانا چلایا گیا</item>
+        <item quantity="other">%1$d گانے چلائے گئے</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">%1$d بیٹ فی منٹ تک تیز کیتا گیا</item>
+        <item quantity="other">%1$d بیٹس فی منٹ تک تیز کیتا گیا</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">رفتار %1$d بیٹ فی منٹ تک ہولی ہو گئی</item>
+        <item quantity="other">رفتار %1$d بیٹس فی منٹ تک ہولی ہو گئی</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d یار ہن کھیڈ ریا اے</item>
+        <item quantity="other">%1$d یار ہن کھیڈ رئے نے</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d آئٹم</item>
+        <item quantity="other">%1$d آئٹمز</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s، %2$s، %3$d جملہ منتخب کیتا گیا۔</item>
+        <item quantity="other">%1$s، %2$s، %3$d جملے منتخب کیتے گئے۔</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d گھنٹہ %2$d منٹ</item>
+        <item quantity="other">%1$d گھنٹہ %2$d منٹس</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d سیکنڈ</item>
+        <item quantity="other">%1$d سیکنڈز</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">%1$d گھنٹہ باقی اے</item>
+        <item quantity="other">%1$d گھنٹے باقی نیں</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">%1$d گھنٹہ %2$d منٹ باقی اے</item>
+        <item quantity="other">%1$d گھنٹہ %2$d منٹس باقی</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s تہاڈے نال اک Jam چ شامل ہونا چاہندا اے!</item>
+        <item quantity="other">%1$s اتے %2$d ہور تہاڈے Jam وچ شامل ہونا چاہندے نیں!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s تہاڈے Jam وچ شامل ہونا چاہندے نیں!</item>
+        <item quantity="other">%1$s اتے %2$d ہور تہاڈے Jam وچ شامل ہونا چاہندے نیں!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%1$s/%2$d گھنٹہ سنیا</item>
+        <item quantity="other">%1$s/%2$d گھنٹے سنیا</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">%1$d دن وچ ریلیز ہووے گا</item>
+        <item quantity="other">%1$d دناں وچ ریلیز ہووے گا</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">%1$d دن وچ پریمیم لئی پیشگی رسائی</item>
+        <item quantity="other">%1$d دناں وچ پریمیم لئی پیشگی رسائی</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">%1$s شو لئی آن نیں</item>
+        <item quantity="other">%1$s شوز لئی آن نیں</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d گانا</item>
+        <item quantity="other">%1$d گانے</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d وچوں %2$d گانا</item>
+        <item quantity="other">%2$d گانیاں وچوں %1$d</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">جاری اے، %1$d فیصد مکمل ہو گئی اے</item>
+        <item quantity="other">جاری اے، %1$d فیصد مکمل ہو گئیاں نیں</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">اک ویلے وچ تسی صرف %1$d شے پن کر سکدے او۔</item>
+        <item quantity="other">اک ویلے وچ تسی صرف %1$d شیواں پن کر سکدے او۔</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">اک ویلے وچ تسی صرف %1$d شے پن کر سکدے او۔</item>
+        <item quantity="other">اک ویلے وچ تسی صرف %1$d شیواں پن کر سکدے او۔</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">پہلے ختم ہوئی، %1$d فیصد تکمیل دے نال جاری اے</item>
+        <item quantity="other">پہلے ختم ہوئیاں، %1$d فیصد تکمیل دے نال جاری نیں</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d گھنٹہ</item>
+        <item quantity="other">%1$d گھنٹے</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d منٹ</item>
+        <item quantity="other">%1$d منٹس</item>
+    </plurals>
+</resources>

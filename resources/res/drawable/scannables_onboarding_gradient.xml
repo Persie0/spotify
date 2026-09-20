@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/gray_background"/>  
+            <corners
+                android:topLeftRadius="@dimen/scannables_onboarding_raidus"
+                android:topRightRadius="@dimen/scannables_onboarding_raidus"
+                android:bottomLeftRadius="@dimen/scannables_onboarding_raidus"
+                android:bottomRightRadius="@dimen/scannables_onboarding_raidus"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/bg_scannables_onboarding_start_color"
+                android:endColor="@color/bg_scannables_onboarding_end_color"
+                android:angle="90"
+                android:type="linear"/>  
+            <corners
+                android:topLeftRadius="@dimen/scannables_onboarding_raidus"
+                android:topRightRadius="@dimen/scannables_onboarding_raidus"
+                android:bottomLeftRadius="@dimen/scannables_onboarding_raidus"
+                android:bottomRightRadius="@dimen/scannables_onboarding_raidus"/>
+        </shape>
+    </item>
+</layer-list>

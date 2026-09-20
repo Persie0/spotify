@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoreconsumermobile.elements.entityaction.EntityActionView
+        android:id="@+id/entity_action_short_row_start_action"
+        android:layout_width="@dimen/entity_action_row_action_size"
+        android:layout_height="@dimen/entity_action_row_action_size"/>
+    <com.spotify.encoreconsumermobile.elements.entityaction.EntityActionView
+        android:id="@+id/entity_action_short_row_end_action"
+        android:layout_width="@dimen/entity_action_row_action_size"
+        android:layout_height="@dimen/entity_action_row_action_size"/>
+</merge>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.cardview.widget.CardView
+        android:layout_gravity="center"
+        android:id="@+id/explorer_button_wrapper"
+        android:layout_width="@dimen/explorer_button_rectangular_width"
+        android:layout_height="@dimen/explorer_button_height"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:cardCornerRadius="@dimen/rectangular_button_wrapper_corner_radius">
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/explorer_lottie_view"
+            android:layout_width="@dimen/explorer_button_rectangular_width"
+            android:layout_height="@dimen/explorer_button_height"
+            app:lottie_loop="false"/>
+        <androidx.cardview.widget.CardView
+            android:layout_gravity="center"
+            android:id="@+id/explorer_outer_card"
+            android:layout_width="@dimen/outer_card_rectangular_width"
+            android:layout_height="@dimen/outer_card_height"
+            app:cardBackgroundColor="?attr/baseBackgroundBase"
+            app:cardCornerRadius="@dimen/rectangular_content_corner_radius"/>
+        <androidx.cardview.widget.CardView
+            android:layout_gravity="center"
+            android:id="@+id/explorer_card_content"
+            android:layout_width="@dimen/card_content_rectangular_width"
+            android:layout_height="@dimen/card_content_height"
+            app:cardCornerRadius="@dimen/rectangular_content_corner_inner_radius">
+            <com.spotify.betamax.player.VideoSurfaceView
+                android:id="@+id/explorer_video_surface"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+            <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+                android:id="@+id/explorer_thumbnail_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"/>
+        </androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView>
+</merge>

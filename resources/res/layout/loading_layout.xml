@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:paddingTop="60dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.encoreconsumermobile.elements.loading.LoadingProgressBarView
+        android:layout_gravity="center_horizontal"
+        android:id="@+id/progress"
+        android:layout_width="@dimen/spacer_40"
+        android:layout_height="@dimen/spacer_40"/>
+</FrameLayout>

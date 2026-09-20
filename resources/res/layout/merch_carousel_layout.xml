@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacer_24"
+        android:layout_marginBottom="@dimen/spacer_12"
+        android:layout_marginStart="@dimen/spacer_16"
+        style="@style/Encore.Components.SectionHeading.Title"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/merch_carousel_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

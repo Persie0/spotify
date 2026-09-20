@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:id="@+id/row_root"
+    android:paddingLeft="@dimen/spacer_16"
+    android:paddingTop="@dimen/spacer_8"
+    android:paddingRight="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:paddingHorizontal="@dimen/spacer_16"
+    android:paddingVertical="@dimen/spacer_8">
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="?attr/baseTextSubdued"
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/premium_plan_card_pin_change"
+        android:textDirection="locale"/>
+</LinearLayout>

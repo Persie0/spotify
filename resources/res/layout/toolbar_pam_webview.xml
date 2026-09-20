@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:paste="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:background="@color/gray_7"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize">
+    <com.spotify.legacyglue.icons.SpotifyIconView
+        android:id="@+id/btn_close"
+        android:background="?android:attr/selectableItemBackground"
+        android:layout_width="40dp"
+        android:layout_height="match_parent"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/generic_content_description_close"
+        paste:iconSize="@dimen/toolbar_icon_size"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:id="@+id/premium_signup_title"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:maxLines="1"
+        android:layout_weight="1"/>
+    <android.widget.Space
+        android:layout_width="40dp"
+        android:layout_height="match_parent"/>
+</LinearLayout>

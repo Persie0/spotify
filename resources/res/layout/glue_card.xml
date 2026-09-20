@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.legacyglue.imageview.SquareImageView
+        android:id="@android:id/icon"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:layout_weight="1"/>
+    <TextView
+        android:textAppearance="?attr/pasteTextAppearanceBodySmallBold"
+        android:textColor="@color/glue_card_title_color"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:id="@+id/title"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:maxLines="3"
+        app:lineHeight="16dp"/>
+    <TextView
+        android:textAppearance="?attr/pasteTextAppearanceBodySmall"
+        android:textColor="@color/glue_card_subtitle_color"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:id="@+id/subtitle"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:maxLines="1"
+        app:lineHeight="16dp"/>
+</merge>

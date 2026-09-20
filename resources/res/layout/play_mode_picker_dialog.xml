@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:theme="@style/ThemeOverlay.Encore.Base"
+    android:orientation="vertical"
+    android:id="@+id/play_mode_picker_content"
+    android:paddingBottom="@dimen/spacer_32"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:textColor="?attr/baseTextBase"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/spacer_48"
+        android:text="@string/play_mode_picker_title"
+        android:textAlignment="center"/>
+    <View
+        android:background="?attr/baseBackgroundTintedHighlight"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_marginBottom="@dimen/spacer_8"/>
+</LinearLayout>

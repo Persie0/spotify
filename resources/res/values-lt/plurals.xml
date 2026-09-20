@@ -1,0 +1,1609 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s klausytojas per mėnesį</item>
+        <item quantity="few">%1$s klausytojai per mėnesį</item>
+        <item quantity="other">%1$s klausytojų per mėnesį</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d sugrupuota garso kolonėlė</item>
+        <item quantity="few">%1$d sugrupuotos garso kolonėlės</item>
+        <item quantity="other">%1$d sugrupuotų garso kolonėlių</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d žvaigždutė iš 5</item>
+        <item quantity="few">%1$d žvaigždutės iš 5</item>
+        <item quantity="other">%1$d žvaigždučių iš 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d žvaigždutė iš 5</item>
+        <item quantity="few">%1$d žvaigždutės iš 5</item>
+        <item quantity="other">%1$d žvaigždučių iš 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">pasirink %1$d žvaigždutę</item>
+        <item quantity="few">pasirink %1$d žvaigždutes</item>
+        <item quantity="other">pasirink %1$d žvaigždučių</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d žvaigždutė</item>
+        <item quantity="few">%1$d žvaigždutės</item>
+        <item quantity="other">%1$d žvaigždučių</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">Dar %1$d paskyra</item>
+        <item quantity="few">Dar %1$d paskyros</item>
+        <item quantity="other">Dar %1$d paskyrų</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">Ir dar %1$d paskyra</item>
+        <item quantity="few">Ir dar %1$d paskyros</item>
+        <item quantity="other">Ir dar %1$d paskyrų</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">Rastas %1$d elementas</item>
+        <item quantity="few">Rasti %1$d elementai</item>
+        <item quantity="other">Rasta %1$d elementų</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s aplankas</item>
+        <item quantity="few">%1$s aplankai</item>
+        <item quantity="other">%1$s aplankų</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s grojaraštis</item>
+        <item quantity="few">%1$s grojaraščiai</item>
+        <item quantity="other">%1$s grojaraščių</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s garsinė knyga</item>
+        <item quantity="few">%1$s garsinės knygos</item>
+        <item quantity="other">%1$s garsinių knygų</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s skyrius</item>
+        <item quantity="few">%1$s skyriai</item>
+        <item quantity="other">%1$s skyrių</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s iškarpa</item>
+        <item quantity="few">%1$s iškarpos</item>
+        <item quantity="other">%1$s iškarpų</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s serija</item>
+        <item quantity="few">%1$s serijos</item>
+        <item quantity="other">%1$s serijų</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s daina</item>
+        <item quantity="few">%1$s dainos</item>
+        <item quantity="other">%1$s dainų</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s takelis</item>
+        <item quantity="few">%1$s takeliai</item>
+        <item quantity="other">%1$s takelių</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">Reklamą bus galima praleisti po %1$d sekundės, laikmatis</item>
+        <item quantity="few">Reklamą bus galima praleisti po %1$d sekundžių, laikmatis</item>
+        <item quantity="other">Reklamą bus galima praleisti po %1$d sekundžių, laikmatis</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Galima praleisti po %1$d sek.</item>
+        <item quantity="few">Galima praleisti po %1$d sek.</item>
+        <item quantity="other">Galima praleisti po %1$d sek.</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Reklama • Galima praleisti po %1$d sek.</item>
+        <item quantity="few">Reklama • Galima praleisti po %1$d sek.</item>
+        <item quantity="other">Reklama • Galima praleisti po %1$d sek.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Dėmesio! Nesi tinkamo amžiaus naudotis „Spotify“, todėl tavo paskyra užblokuota ir bus išjungta po %1$s d. Neteisingai supratome? Pabandyk patvirtinti savo amžių su asmens tapatybės dokumentu.</item>
+        <item quantity="few">Dėmesio! Nesi tinkamo amžiaus naudotis „Spotify“, todėl tavo paskyra užblokuota ir bus išjungta po %1$s d. Neteisingai supratome? Pabandyk patvirtinti savo amžių su asmens tapatybės dokumentu.</item>
+        <item quantity="other">Dėmesio! Nesi tinkamo amžiaus naudotis „Spotify“, todėl tavo paskyra užblokuota ir bus išjungta po %1$s d. Neteisingai supratome? Pabandyk patvirtinti savo amžių su asmens tapatybės dokumentu.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Atrodo, kad neatitinki amžiaus reikalavimo, todėl negali turėti savo „Spotify“ paskyros. Tačiau gali turėti kontroliuojamą paskyrą, jei tavo tėvai arba globėjas su tuo sutiks.\n\nTavo paskyra bus deaktyvuota po %1$s dienos.</item>
+        <item quantity="few">Atrodo, kad neatitinki amžiaus reikalavimo, todėl negali turėti savo „Spotify“ paskyros. Tačiau gali turėti kontroliuojamą paskyrą, jei tavo tėvai arba globėjas su tuo sutiks.\n\nTavo paskyra bus deaktyvuota po %1$s dienų.</item>
+        <item quantity="other">Atrodo, kad neatitinki amžiaus reikalavimo, todėl negali turėti savo „Spotify“ paskyros. Tačiau gali turėti kontroliuojamą paskyrą, jei tavo tėvai arba globėjas su tuo sutiks.\n\nTavo paskyra bus deaktyvuota po %1$s dienų.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Jei nori aktyvuoti paskyrą iš naujo, patvirtink savo amžių su asmens tapatybės dokumentu. Jei per amžiaus patikrinimą nepatvirtinsi, kad esi tinkamo amžiaus naudotis „Spotify“, arba jei nesiimsi veiksmų per %1$s d., tavo paskyra bus panaikinta visam laikui.</item>
+        <item quantity="few">Jei nori aktyvuoti paskyrą iš naujo, patvirtink savo amžių su asmens tapatybės dokumentu. Jei per amžiaus patikrinimą nepatvirtinsi, kad esi tinkamo amžiaus naudotis „Spotify“, arba jei nesiimsi veiksmų per %1$s d., tavo paskyra bus panaikinta visam laikui.</item>
+        <item quantity="other">Jei nori aktyvuoti paskyrą iš naujo, patvirtink savo amžių su asmens tapatybės dokumentu. Jei per amžiaus patikrinimą nepatvirtinsi, kad esi tinkamo amžiaus naudotis „Spotify“, arba jei nesiimsi veiksmų per %1$s d., tavo paskyra bus panaikinta visam laikui.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+        <item quantity="few">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+        <item quantity="other">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">Dainų: %1$d • %2$s</item>
+        <item quantity="few">Dainų: %1$d • %2$s</item>
+        <item quantity="other">Dainų: %1$d • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">pasirinkta %1$d</item>
+        <item quantity="few">pasirinkta %1$d</item>
+        <item quantity="other">pasirinkta %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">pasirinkta %1$d</item>
+        <item quantity="few">pasirinkta %1$d</item>
+        <item quantity="other">pasirinkta %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">Pasirinkta: %1$d. Jei nori tęsti, pasirink dar bent tiek: %2$d.</item>
+        <item quantity="few">Pasirinkta: %1$d. Jei nori tęsti, pasirink dar bent tiek: %2$d.</item>
+        <item quantity="other">Pasirinkta: %1$d. Jei nori tęsti, pasirink dar bent tiek: %2$d.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Limitas viršytas %1$d simboliu.</item>
+        <item quantity="few">Limitas viršytas %1$d simboliais.</item>
+        <item quantity="other">Limitas viršytas %1$d simbolių.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ dar %1$d</item>
+        <item quantity="few">+ dar %1$d</item>
+        <item quantity="other">+ dar %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d leidimas</item>
+        <item quantity="few">%1$,d leidimai</item>
+        <item quantity="other">%1$,d leidimų</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d daina</item>
+        <item quantity="few">%1$,d dainos</item>
+        <item quantity="other">%1$,d dainų</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s renginys netoli tavęs</item>
+        <item quantity="few">%1$s renginiai netoli tavęs</item>
+        <item quantity="other">%1$s renginių netoli tavęs</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d leidimas</item>
+        <item quantity="few">%1$d leidimai</item>
+        <item quantity="other">%1$d leidimų</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">Pagal užklausą %1$s rastas %2$d elementas</item>
+        <item quantity="few">Pagal užklausą %1$s rasti %2$d elementai</item>
+        <item quantity="other">Pagal užklausą %1$s rasta %2$d elementų</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">Įtraukta %1$d garsinė knyga</item>
+        <item quantity="few">Įtrauktos %1$d garsinės knygos</item>
+        <item quantity="other">Įtraukta %1$d garsinių knygų</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">Leista %1$d garsinė knyga</item>
+        <item quantity="few">Leistos %1$d garsinės knygos</item>
+        <item quantity="other">Leista %1$d garsinių knygų</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s nauja serialo serija</item>
+        <item quantity="few">%1$s naujos serialo serijos</item>
+        <item quantity="other">%1$s naujų serialo serijų</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Tinklalaidė • %1$d serija</item>
+        <item quantity="few">Tinklalaidė • %1$d serijos</item>
+        <item quantity="other">Tinklalaidė • %1$d serijų</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d sek.</item>
+        <item quantity="few">%1$d sek.</item>
+        <item quantity="other">%1$d sek.</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s žmogus į grupę</item>
+        <item quantity="few">%1$s žmonės į grupę</item>
+        <item quantity="other">%1$s žmonių į grupę</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">prieš %1$d d.</item>
+        <item quantity="few">prieš %1$d d.</item>
+        <item quantity="other">prieš %1$d d.</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">prieš %1$d val.</item>
+        <item quantity="few">prieš %1$d val.</item>
+        <item quantity="other">prieš %1$d val.</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">prieš %1$d min.</item>
+        <item quantity="few">prieš %1$d min.</item>
+        <item quantity="other">prieš %1$d min.</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d nuotrauka</item>
+        <item quantity="few">%1$d nuotraukos</item>
+        <item quantity="other">%1$d nuotraukų</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d vaizdo įrašas</item>
+        <item quantity="few">%1$d vaizdo įrašas</item>
+        <item quantity="other">%1$d vaizdo įrašas</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s žmogus</item>
+        <item quantity="few">%1$s žmonės</item>
+        <item quantity="other">%1$s žmonių</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s draugo</item>
+        <item quantity="few">%1$s draugų</item>
+        <item quantity="other">%1$s draugų</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Limitas bus nustatytas iš naujo po %1$d dienos, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį pats.</item>
+        <item quantity="few">Limitas bus nustatytas iš naujo po %1$d dienų, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį pats.</item>
+        <item quantity="other">Limitas bus nustatytas iš naujo po %1$d dienų, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį pats.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Limitas bus nustatytas iš naujo po %1$d dienos, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="few">Limitas bus nustatytas iš naujo po %1$d dienų, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="other">Limitas bus nustatytas iš naujo po %1$d dienų, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Limitas bus nustatytas iš naujo po %1$d valandos, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="few">Limitas bus nustatytas iš naujo po %1$d valandų, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="other">Limitas bus nustatytas iš naujo po %1$d valandų, tad grįžk čia vėliau. Tuo tarpu gali naudoti DI sudarytą grojaraštį arba susikurti jį savaip.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Limitas bus nustatytas iš naujo po %1$d valandos, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="few">Limitas bus nustatytas iš naujo po %1$d valandų, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+        <item quantity="other">Limitas bus nustatytas iš naujo po %1$d valandų, tad grįžk čia vėliau. Tuo tarpu gali naudoti momentinį grojaraštį arba susikurti jį savaip.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d naujas įrašas</item>
+        <item quantity="few">%1$,d nauji įrašai</item>
+        <item quantity="other">%1$,d naujų įrašų</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s negalės tiesiogiai tau siųsti žinučių. Jei su juo bendrauti nenori, gali išeiti iš pokalbio.</item>
+        <item quantity="few">%1$s negalės tiesiogiai tau siųsti žinučių. Jei su jais bendrauti nenori, gali išeiti iš pokalbio.</item>
+        <item quantity="other">%1$s negalės tiesiogiai tau siųsti žinučių. Jei su jais bendrauti nenori, gali išeiti iš pokalbio.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">dar %1$d</item>
+        <item quantity="few">dar %1$d</item>
+        <item quantity="other">dar %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Grupė • %1$d žmogus</item>
+        <item quantity="few">Grupė • %1$d žmonės</item>
+        <item quantity="other">Grupė • %1$d žmonių</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d laukia)</item>
+        <item quantity="few">(%1$d laukia)</item>
+        <item quantity="other">(%1$d laukia)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d nuotrauka atsisiųsta</item>
+        <item quantity="few">%1$d nuotraukos atsisiųstos</item>
+        <item quantity="other">%1$d nuotraukų atsisiųsta</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Nepavyko atsisiųsti %1$d nuotraukos</item>
+        <item quantity="few">Nepavyko atsisiųsti %1$d nuotraukų</item>
+        <item quantity="other">Nepavyko atsisiųsti %1$d nuotraukų</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">Naudotojas %1$s, kurį užblokavai, yra šiame pokalbyje. Jei su juo bendrauti nenori, gali panaikinti šį grupinio pokalbio žinutės prašymą.</item>
+        <item quantity="few">%1$s, kuriuos užblokavai, yra šiame pokalbyje. Jei su jais bendrauti nenori, gali panaikinti šį grupinio pokalbio žinutės prašymą.</item>
+        <item quantity="other">%1$s, kuriuos užblokavai, yra šiame pokalbyje. Jei su jais bendrauti nenori, gali panaikinti šį grupinio pokalbio žinutės prašymą.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Grupes gali sudaryti ne daugiau kaip %1$d žmogus</item>
+        <item quantity="few">Grupes gali sudaryti ne daugiau kaip %1$d žmonės</item>
+        <item quantity="other">Grupes gali sudaryti ne daugiau kaip %1$d žmonių</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Kai %1$s priims kvietimą, galės matyti visas pokalbio žinutes, išsiųstas nuo tada, kai šis asmuo buvo pakviestas.</item>
+        <item quantity="few">Kai asmuo priims kvietimą, galės matyti visas pokalbio žinutes, išsiųstas nuo nuo tada, kai šis asmuo buvo pakviestas.</item>
+        <item quantity="other">Kai asmuo priims kvietimą, galės matyti visas pokalbio žinutes, išsiųstas nuo tada, kai šis asmuo buvo pakviestas.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Pakviesti %1$s į šį pokalbį?</item>
+        <item quantity="few">Pakviesti pasirinktus žmones į šį pokalbį?</item>
+        <item quantity="other">Pakviesti pasirinktus žmones į šį pokalbį?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">Atsisiųstas %1$d vaizdo įrašas</item>
+        <item quantity="few">Atsisiųsti %1$d vaizdo įrašai</item>
+        <item quantity="other">Atsisiųsta %1$d vaizdo įrašų</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Nepavyko atsisiųsti %1$d vaizdo įrašo</item>
+        <item quantity="few">Nepavyko atsisiųsti %1$d vaizdo įrašų</item>
+        <item quantity="other">Nepavyko atsisiųsti %1$d vaizdo įrašų</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">ir dar %1$d vaidmuo</item>
+        <item quantity="few">ir dar %1$d vaidmenys</item>
+        <item quantity="other">ir dar %1$d vaidmenų</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">prieš %1$d d.</item>
+        <item quantity="few">prieš %1$d d.</item>
+        <item quantity="other">prieš %1$d d.</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">prieš %1$d val.</item>
+        <item quantity="few">prieš %1$d val.</item>
+        <item quantity="other">prieš %1$d val.</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">prieš %1$d min.</item>
+        <item quantity="few">prieš %1$d min.</item>
+        <item quantity="other">prieš %1$d min.</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">prieš %1$d mėnesį</item>
+        <item quantity="few">prieš %1$d mėnesius</item>
+        <item quantity="other">prieš %1$d mėnesių</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s atsakymas</item>
+        <item quantity="few">%1$s atsakymai</item>
+        <item quantity="other">%1$s atsakymų</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">Taip pat sureagavo %1$s žmogus.</item>
+        <item quantity="few">Taip pat sureagavo %1$s žmonės.</item>
+        <item quantity="other">Taip pat sureagavo %1$s žmonių.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s žmogus sureagavo į šį komentarą.</item>
+        <item quantity="few">%1$s žmonės sureagavo į šį komentarą.</item>
+        <item quantity="other">%1$s žmonių sureagavo į šį komentarą.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s atsakymas</item>
+        <item quantity="few">%1$s atsakymai</item>
+        <item quantity="other">%1$s atsakymų</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Dar %1$s atsakymas. Dukart paliesk, jei nori peržiūrėti</item>
+        <item quantity="few">Dar %1$s atsakymai. Dukart paliesk, jei nori peržiūrėti</item>
+        <item quantity="other">Dar %1$s atsakymų. Dukart paliesk, jei nori peržiūrėti</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">prieš %1$d savaitę</item>
+        <item quantity="few">prieš %1$d savaites</item>
+        <item quantity="other">prieš %1$d savaičių</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">Prieš %1$d m.</item>
+        <item quantity="few">Prieš %1$d m.</item>
+        <item quantity="other">Prieš %1$d m.</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d daina</item>
+        <item quantity="few">%1$,d dainos</item>
+        <item quantity="other">%1$,d dainų</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d klausytojas</item>
+        <item quantity="few">%1$d klausytojai</item>
+        <item quantity="other">%1$d klausytojų</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d daina kartu</item>
+        <item quantity="few">%1$d dainos kartu</item>
+        <item quantity="other">%1$d dainų kartu</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d daina kartu</item>
+        <item quantity="few">%1$d dainos kartu</item>
+        <item quantity="other">%1$d dainų kartu</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d diena</item>
+        <item quantity="few">%1$d dienos</item>
+        <item quantity="other">%1$d dienų</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d sek.</item>
+        <item quantity="few">%1$d sek.</item>
+        <item quantity="other">%1$d sek.</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s klausytojas per mėnesį</item>
+        <item quantity="few">%1$s klausytojai per mėnesį</item>
+        <item quantity="other">%1$s klausytojų per mėnesį</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Autorius: %1$s</item>
+        <item quantity="few">Autoriai: %1$s</item>
+        <item quantity="other">Autorių: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s ir dar %2$d</item>
+        <item quantity="few">%1$s ir dar %2$d</item>
+        <item quantity="other">%1$s ir dar %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Atidaro daugiau šio %1$s turinio</item>
+        <item quantity="few">Parodo visų %1$s sąrašą, po kurį galima naršyti</item>
+        <item quantity="other">Parodo visų %1$s sąrašą, po kurį galima naršyti</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Paruošimo laikas: %1$d d.</item>
+        <item quantity="few">Paruošimo laikas: %1$d d.</item>
+        <item quantity="other">Paruošimo laikas: %1$d d.</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d diena</item>
+        <item quantity="few">%1$d dienos</item>
+        <item quantity="other">%1$d dienų</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;diena&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;dienos&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;dienų&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Iki išleidimo liko %1$d d.</item>
+        <item quantity="few">Iki išleidimo liko %1$d d.</item>
+        <item quantity="other">Iki išleidimo liko %1$d d.</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">Iki klausymosi laiko galiojimo pabaigos liko %1$d diena</item>
+        <item quantity="few">Iki klausymosi laiko galiojimo pabaigos liko %1$d dienos</item>
+        <item quantity="other">Iki klausymosi laiko galiojimo pabaigos liko %1$d dienų</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">Iki klausymosi valandų atnaujinimo liko %1$d diena</item>
+        <item quantity="few">Iki klausymosi valandų atnaujinimo liko %1$d dienos</item>
+        <item quantity="other">Iki klausymosi valandų atnaujinimo liko %1$d dienų</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Panaikinti %1$d nuotrauką?</item>
+        <item quantity="few">Panaikinti %1$d nuotraukas?</item>
+        <item quantity="other">Panaikinti %1$d nuotraukų?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Panaikinti %1$d elementą?</item>
+        <item quantity="few">Panaikinti %1$d elementus?</item>
+        <item quantity="other">Panaikinti %1$d elementų?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Panaikinti %1$d vaizdo įrašą?</item>
+        <item quantity="few">Panaikinti %1$d vaizdo įrašus?</item>
+        <item quantity="other">Panaikinti %1$d vaizdo įrašų?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d iš %2$d simbolio</item>
+        <item quantity="few">%1$d iš %2$d simbolių</item>
+        <item quantity="other">%1$d iš %2$d simbolių</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s ir dar %2$d</item>
+        <item quantity="few">%1$s ir dar %2$d</item>
+        <item quantity="other">%1$s ir dar %2$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">Pasirinkta: %1$d</item>
+        <item quantity="few">Pasirinkta: %1$d</item>
+        <item quantity="other">Pasirinkta: %1$d</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Naudotojo vardą galima pakeisti tik %1$d kartą per %2$d d.</item>
+        <item quantity="few">Naudotojo vardą galima pakeisti tik %1$d kartus per %2$d d.</item>
+        <item quantity="other">Naudotojo vardą galima pakeisti tik %1$d kartų per %2$d d.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Bandyk dar kartą po %1$d dienos.</item>
+        <item quantity="few">Bandyk dar kartą po %1$d dienų.</item>
+        <item quantity="other">Bandyk dar kartą po %1$d dienų.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Naudotojo vardą galima pakeisti %1$d kartą per %2$d d.</item>
+        <item quantity="few">Naudotojo vardą galima pakeisti %1$d kartus per %2$d d.</item>
+        <item quantity="other">Naudotojo vardą galima pakeisti %1$d kartų per %2$d d.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s įsirašymas</item>
+        <item quantity="few">%1$s įsirašymai</item>
+        <item quantity="other">%1$s įsirašymų</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Atsisiųstas %1$d procentas</item>
+        <item quantity="few">Atsisiųsti %1$d procentai</item>
+        <item quantity="other">Atsisiųsta %1$d procentų</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">Pridėta %1$d serija</item>
+        <item quantity="few">Pridėtos %1$d serijos</item>
+        <item quantity="other">Pridėta %1$d serijų</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">Leista %1$d serija</item>
+        <item quantity="few">Leistos %1$d serijos</item>
+        <item quantity="other">Leista %1$d serijų</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Palauk %1$d sek., tada paprašyk naujo kodo.</item>
+        <item quantity="few">Palauk %1$d sek., tada paprašyk naujo kodo.</item>
+        <item quantity="other">Palauk %1$d sek., tada paprašyk naujo kodo.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Bandyk dar kartą po %1$d sek.</item>
+        <item quantity="few">Bandyk dar kartą po %1$d sek.</item>
+        <item quantity="other">Bandyk dar kartą po %1$d sek.</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d renginys</item>
+        <item quantity="few">%1$d renginiai</item>
+        <item quantity="other">%1$d renginių</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Rodyti dar %1$d mokėjimo metodą</item>
+        <item quantity="few">Rodyti dar %1$d mokėjimo metodus</item>
+        <item quantity="other">Rodyti dar %1$d mokėjimo metodų</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s iš 5 žvaigždučių „Spotify“ platformoje, %2$s įvertinimas</item>
+        <item quantity="few">%1$s iš 5 žvaigždučių „Spotify“ platformoje, %2$s įvertinimai</item>
+        <item quantity="other">%1$s iš 5 žvaigždučių „Spotify“ platformoje, %2$s įvertinimų</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d žvaigždutė: %2$d %%</item>
+        <item quantity="few">%1$d žvaigždutės: %2$d %%</item>
+        <item quantity="other">%1$d žvaigždučių: %2$d %%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">Klausosi %1$d</item>
+        <item quantity="few">Klausosi %1$d</item>
+        <item quantity="other">Klausosi %1$d</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">Klausosi %1$d žmogus</item>
+        <item quantity="few">Klausosi %1$d žmonės</item>
+        <item quantity="other">Klausosi %1$d žmonių</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">%1$s muzikinis kambarys – %2$d dalyvis klausosi kartu</item>
+        <item quantity="few">%1$s muzikinis kambarys – %2$d dalyviai klausosi kartu</item>
+        <item quantity="other">%1$s muzikinis kambarys – %2$d dalyvių klausosi kartu</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s įrašas</item>
+        <item quantity="few">%1$s įrašai</item>
+        <item quantity="other">%1$s įrašų</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;valanda&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;valandos&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;valandų&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">Iki klausymosi laiko galiojimo pabaigos liko %1$d valanda</item>
+        <item quantity="few">Iki klausymosi laiko galiojimo pabaigos liko %1$d valandos</item>
+        <item quantity="other">Iki klausymosi laiko galiojimo pabaigos liko %1$d valandų</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">Iki klausymosi valandų atnaujinimo liko %1$d valanda</item>
+        <item quantity="few">Iki klausymosi valandų atnaujinimo liko %1$d valandos</item>
+        <item quantity="other">Iki klausymosi valandų atnaujinimo liko %1$d valandų</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d procentas</item>
+        <item quantity="few">%1$d procentai</item>
+        <item quantity="other">%1$d procentų</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s perklausa</item>
+        <item quantity="few">%1$s perklausos</item>
+        <item quantity="other">%1$s perklausų</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s prisijungė prie tavo muzikinio kambario</item>
+        <item quantity="few">Dar %2$d prisijungė prie tavo muzikinio kambario</item>
+        <item quantity="other">Dar %2$d prisijungė prie tavo muzikinio kambario</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s aplankas</item>
+        <item quantity="few">%1$s aplankai</item>
+        <item quantity="other">%1$s aplankų</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s grojaraštis</item>
+        <item quantity="few">%1$s grojaraščiai</item>
+        <item quantity="other">%1$s grojaraščių</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s daina</item>
+        <item quantity="few">%1$s dainos</item>
+        <item quantity="other">%1$s dainų</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Grojaraštis • %1$s takelis</item>
+        <item quantity="few">Grojaraštis • %1$s takeliai</item>
+        <item quantity="other">Grojaraštis • %1$s takelių</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s takelis</item>
+        <item quantity="few">%1$s takeliai</item>
+        <item quantity="other">%1$s takelių</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s atsisiųsta serija • %2$s</item>
+        <item quantity="few">%1$s atsisiųstos serijos • %2$s</item>
+        <item quantity="other">%1$s atsisiųstų serijų • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s atsisiųsta serija</item>
+        <item quantity="few">%1$s atsisiųstos serijos</item>
+        <item quantity="other">%1$s atsisiųstų serijų</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">Pridėtas %1$d elementas</item>
+        <item quantity="few">Pridėti %1$d elementai</item>
+        <item quantity="other">Pridėta %1$d elementų</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">Leistas %1$d elementas</item>
+        <item quantity="few">Leisti %1$d elementai</item>
+        <item quantity="other">Leista %1$d elementų</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Gavai %1$s užklausą prisijungti prie muzikinio kambario su tavimi, nes su %1$s daliniesi tuo, ko klausaisi.</item>
+        <item quantity="few">Gavai %1$s ir dar %2$d asmenų užklausas prisijungti prie muzikinio kambario su tavimi, nes su jais daliniesi tuo, ko klausaisi.</item>
+        <item quantity="other">Gavai %1$s ir dar %2$d asmenų užklausas prisijungti prie muzikinio kambario su tavimi, nes su jais daliniesi tuo, ko klausaisi.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Gavai %1$s užklausą prisijungti prie tavo muzikinio kambario, nes įjungti automatiniai kvietimai į muzikinį kambarį ir:</item>
+        <item quantity="few">Gavai %1$s ir dar %2$d užklausas prisijungti prie tavo muzikinio kambario, nes įjungti automatiniai kvietimai į muzikinį kambarį ir:</item>
+        <item quantity="other">Gavai %1$s ir dar %2$d užklausų prisijungti prie tavo muzikinio kambario, nes įjungti automatiniai kvietimai į muzikinį kambarį ir:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">ir dar %1$d</item>
+        <item quantity="few">ir dar %1$d</item>
+        <item quantity="other">ir dar %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">Pasirinkta %1$d eilutė</item>
+        <item quantity="few">Pasirinktos %1$d eilutės</item>
+        <item quantity="other">Pasirinkta %1$d eilučių</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d serija</item>
+        <item quantity="few">%1$d serijos</item>
+        <item quantity="other">%1$d serijų</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d elementas</item>
+        <item quantity="few">%1$d elementai</item>
+        <item quantity="other">%1$d elementų</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d žmogus</item>
+        <item quantity="few">%1$d žmonės</item>
+        <item quantity="other">%1$d žmonių</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">Klausosi %1$d</item>
+        <item quantity="few">Klausosi %1$d</item>
+        <item quantity="other">Klausosi %1$d</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Perklausei %1$d valandą garsinių knygų, esančių tavo mėnesiniame plane.</item>
+        <item quantity="few">Perklausei %1$d valandas garsinių knygų, esančių tavo mėnesiniame plane.</item>
+        <item quantity="other">Perklausei %1$d valandų garsinių knygų, esančių tavo mėnesiniame plane.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">%1$d valandą klausykis garsinių knygų iš mūsų prenumeratos katalogo, kuris yra tavo mėnesinio plano dalis.</item>
+        <item quantity="few">%1$d valandas klausykis garsinių knygų iš mūsų prenumeratos katalogo, kuris yra tavo mėnesinio plano dalis.</item>
+        <item quantity="other">%1$d valandų klausykis garsinių knygų iš mūsų prenumeratos katalogo, kuris yra tavo mėnesinio plano dalis.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d val. klausymosi laiko</item>
+        <item quantity="few">%1$d val. klausymosi laiko</item>
+        <item quantity="other">%1$d val. klausymosi laiko</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Veda: %1$s%2$s ir dar %3$d</item>
+        <item quantity="few">Veda: %1$s%2$s ir dar %3$d</item>
+        <item quantity="other">Veda: %1$s%2$s ir dar %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d diena</item>
+        <item quantity="few">%1$d dienos</item>
+        <item quantity="other">%1$d dienų</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s sek.</item>
+        <item quantity="few">%1$s sek.</item>
+        <item quantity="other">%1$s sek.</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d balsas</item>
+        <item quantity="few">%1$d balsai</item>
+        <item quantity="other">%1$d balsų</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d prisidėjęs asmuo</item>
+        <item quantity="few">%1$d prisidėję asmenys</item>
+        <item quantity="other">%1$d prisidėjusių asmenų</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d garsų ruošinys</item>
+        <item quantity="few">%1$d garsų ruošiniai</item>
+        <item quantity="other">%1$d garsų ruošinių</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">Pasirinkta %1$d eilutė</item>
+        <item quantity="few">Pasirinktos %1$d eilutės</item>
+        <item quantity="other">Pasirinkta %1$d eilučių</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">Prieš %1$d dieną</item>
+        <item quantity="few">Prieš %1$d dienas</item>
+        <item quantity="other">Prieš %1$d dienų</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Prieš %1$d mėnesį</item>
+        <item quantity="few">Prieš %1$d mėnesius</item>
+        <item quantity="other">Prieš %1$d mėnesių</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Prieš %1$d savaitę</item>
+        <item quantity="few">Prieš %1$d savaites</item>
+        <item quantity="other">Prieš %1$d savaičių</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Prieš %1$d metus</item>
+        <item quantity="few">Prieš %1$d metus</item>
+        <item quantity="other">Prieš %1$d metų</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Atsisiųsti %1$d nuotrauką?</item>
+        <item quantity="few">Atsisiųsti %1$d nuotraukas?</item>
+        <item quantity="other">Atsisiųsti %1$d nuotraukų?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Atsisiųsti %1$d elementą?</item>
+        <item quantity="few">Atsisiųsti %1$d elementus?</item>
+        <item quantity="other">Atsisiųsti %1$d elementų?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Atsisiųsti %1$d vaizdo įrašą?</item>
+        <item quantity="few">Atsisiųsti %1$d vaizdo įrašus?</item>
+        <item quantity="other">Atsisiųsti %1$d vaizdo įrašų?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Vienu metu gali išsiųsti %1$d vaizdo įrašą.</item>
+        <item quantity="few">Vienu metu gali išsiųsti ne daugiau nei %1$d vaizdo įrašus.</item>
+        <item quantity="other">Vienu metu gali išsiųsti ne daugiau nei %1$d vaizdo įrašų.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d nuotrauka</item>
+        <item quantity="few">%1$d nuotraukos</item>
+        <item quantity="other">%1$d nuotraukų</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d elementas</item>
+        <item quantity="few">%1$d elementai</item>
+        <item quantity="other">%1$d elementų</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d vaizdo įrašas</item>
+        <item quantity="few">%1$d vaizdo įrašai</item>
+        <item quantity="other">%1$d vaizdo įrašų</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;minutė&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;minutės&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;minučių&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d naujas pranešimas</item>
+        <item quantity="few">%d nauji pranešimai</item>
+        <item quantity="many">%d naujo pranešimo</item>
+        <item quantity="other">%d naujų pranešimų</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">Liko %1$d simbolis, greitai bus pasiektas limitas</item>
+        <item quantity="few">Liko %1$d simboliai, greitai bus pasiektas limitas</item>
+        <item quantity="other">Liko %1$d simbolių, greitai bus pasiektas limitas</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">Liko %1$d simbolis</item>
+        <item quantity="few">Liko %1$d simboliai</item>
+        <item quantity="other">Liko %1$d simbolių</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+        <item quantity="few">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+        <item quantity="other">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+        <item quantity="few">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+        <item quantity="other">%1$,d iš %2$,d (atsisiųsta %3$,d %%)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Pagreitinta iki %1$d BPM</item>
+        <item quantity="few">Pagreitinta iki %1$d BPM</item>
+        <item quantity="other">Pagreitinta iki %1$d BPM</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Sulėtinta iki %1$d BPM</item>
+        <item quantity="few">Sulėtinta iki %1$d BPM</item>
+        <item quantity="other">Sulėtinta iki %1$d BPM</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">Pasiekiamas %1$s atsisiuntimas</item>
+        <item quantity="few">Pasiekiami %1$s atsisiuntimai</item>
+        <item quantity="other">Pasiekiama %1$s atsisiuntimų</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">Pasirinktas %1$d elementas</item>
+        <item quantity="few">Pasirinkti %1$d elementai</item>
+        <item quantity="other">Pasirinkta %1$d elementų</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s knyga</item>
+        <item quantity="few">%1$s knygos</item>
+        <item quantity="other">%1$s knygų</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s serija</item>
+        <item quantity="few">%1$s serijos</item>
+        <item quantity="other">%1$s serijų</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s elementas</item>
+        <item quantity="few">%1$s elementai</item>
+        <item quantity="other">%1$s elementų</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s renginys</item>
+        <item quantity="few">%1$s renginiai</item>
+        <item quantity="other">%1$s renginių</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d perklausa</item>
+        <item quantity="few">%1$,d perklausos</item>
+        <item quantity="other">%1$,d perklausų</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d daina</item>
+        <item quantity="few">%1$,d dainos</item>
+        <item quantity="other">%1$,d dainų</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Tai naujas albumas, todėl dar %1$d dieną galėsi jį leisti bet kokia tvarka. Su „Premium“ galėtum tai daryti visada.</item>
+        <item quantity="few">Tai naujas albumas, todėl dar %1$d dienas galėsi jį leisti bet kokia tvarka. Su „Premium“ galėtum tai daryti visada.</item>
+        <item quantity="other">Tai naujas albumas, todėl dar %1$d dienų galėsi jį leisti bet kokia tvarka. Su „Premium“ galėtum tai daryti visada.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Leisk dainas bet kokia tvarka dar %1$d dieną</item>
+        <item quantity="few">Leisk dainas bet kokia tvarka dar %1$d dienas</item>
+        <item quantity="other">Leisk dainas bet kokia tvarka dar %1$d dienų</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Klausykis be „Wi-Fi“ ryšio ir taupyk mobiliuosius duomenis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Klausykis be „Wi-Fi“ ryšio ir taupyk mobiliuosius duomenis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Klausykis be „Wi-Fi“ ryšio ir taupyk mobiliuosius duomenis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Pasirink dainas ir klausykis jų kada nori. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Pasirink dainas ir klausykis jų kada nori. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Pasirink dainas ir klausykis jų kada nori. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Pertvarkyk eilę ir mėgaukis kitomis galimybėmis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Pertvarkyk eilę ir mėgaukis kitomis galimybėmis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Pertvarkyk eilę ir mėgaukis kitomis galimybėmis. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Leisk dainas bet kokia tvarka arba maišyk. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Leisk dainas bet kokia tvarka arba maišyk. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Leisk dainas bet kokia tvarka arba maišyk. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Išbandyk neribotus praleidimus ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Išbandyk neribotus praleidimus ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Išbandyk neribotus praleidimus ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai 24 valandas.</item>
+        <item quantity="few">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienas.</item>
+        <item quantity="other">Valdyk, ko klausaisi. Išbandyk šią ir daugiau „Premium“ privilegijų nemokamai %1$d dienų.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Galėsi išbandyti kai kurias „Premium“ privilegijas kitas 24 valandas.</item>
+        <item quantity="few">Galėsi išbandyti kai kurias „Premium“ privilegijas kitas %1$d dienas.</item>
+        <item quantity="other">Galėsi išbandyti kai kurias „Premium“ privilegijas kitas %1$d dienų.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Išsiuntėme %1$d skaitm. kodą telefonu %2$s.</item>
+        <item quantity="few">Išsiuntėme %1$d skaitm. kodą telefonu %2$s.</item>
+        <item quantity="other">Išsiuntėme %1$d skaitm. kodą telefonu %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+        <item quantity="few">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+        <item quantity="other">Tau dar nėra %1$d m., todėl negali duoti tėvų sutikimo.\n\nBe to, dėl tavo amžiaus tam tikras turinys ir funkcijos kol kas nepasiekiami. Paslėpėme juos.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Neteisingas PIN kodas, bandyk dar kartą po %1$d minutės.</item>
+        <item quantity="few">Neteisingas PIN kodas, bandyk dar kartą po %1$d minučių.</item>
+        <item quantity="other">Neteisingas PIN kodas, bandyk dar kartą po %1$d minučių.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Neteisingas PIN kodas. Bandyk dar kartą po %1$d sekundės.</item>
+        <item quantity="few">Neteisingas PIN kodas. Bandyk dar kartą po %1$d sekundžių.</item>
+        <item quantity="other">Neteisingas PIN kodas. Bandyk dar kartą po %1$d sekundžių.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d „Premium“ paskyra</item>
+        <item quantity="few">%1$d „Premium“ paskyros</item>
+        <item quantity="other">%1$d „Premium“ paskyrų</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d sek.</item>
+        <item quantity="few">%1$d sek.</item>
+        <item quantity="other">%1$d sek.</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s ir dar %2$d</item>
+        <item quantity="few">%1$s ir dar %2$d</item>
+        <item quantity="other">%1$s ir dar %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s ir dar %2$d · Sumiksuota</item>
+        <item quantity="few">%1$s ir dar %2$d · Sumiksuota</item>
+        <item quantity="other">%1$s ir dar %2$d · Sumiksuota</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s ir dar %2$d</item>
+        <item quantity="few">%1$s ir dar %2$d</item>
+        <item quantity="other">%1$s ir dar %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Sumiksavo %1$s ir dar %2$d bendrakūrėjas</item>
+        <item quantity="few">Sumiksavo %1$s ir dar %2$d bendrakūrėjai</item>
+        <item quantity="other">Sumiksavo %1$s ir dar %2$d bendrakūrėjų</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Sukūrė %1$s ir %2$d kitas</item>
+        <item quantity="few">Sukūrė %1$s ir %2$d kiti</item>
+        <item quantity="other">Sukūrė %1$s ir %2$d kitų</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Sukūrė %1$s ir %2$d kitas</item>
+        <item quantity="few">Sukūrė %1$s ir %2$d kiti</item>
+        <item quantity="other">Sukūrė %1$s ir %2$d kitų</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d serija</item>
+        <item quantity="few">%1$d serijos</item>
+        <item quantity="other">%1$d serijų</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d SERIJA</item>
+        <item quantity="few">%1$,d SERIJOS</item>
+        <item quantity="other">%1$,d SERIJŲ</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d DAINA</item>
+        <item quantity="few">%1$,d DAINOS</item>
+        <item quantity="other">%1$,d DAINŲ</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d diena</item>
+        <item quantity="few">%1$d dienos</item>
+        <item quantity="other">%1$d dienų</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">Liko %1$d val.</item>
+        <item quantity="few">Liko %1$d val.</item>
+        <item quantity="other">Liko %1$d val.</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">Liko %1$d min.</item>
+        <item quantity="few">Liko %1$d min.</item>
+        <item quantity="other">Liko %1$d min.</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d balsas • %2$s</item>
+        <item quantity="few">%1$d balsai • %2$s</item>
+        <item quantity="other">%1$d balsų • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d d. „Premium“</item>
+        <item quantity="few">%1$d d. „Premium“</item>
+        <item quantity="other">%1$d d. „Premium“</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d mėn. „Premium“</item>
+        <item quantity="few">%1$d mėn. „Premium“</item>
+        <item quantity="other">%1$d mėn. „Premium“</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d sav. „Premium“</item>
+        <item quantity="few">%1$d sav. „Premium“</item>
+        <item quantity="other">%1$d sav. „Premium“</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d m. „Premium“</item>
+        <item quantity="few">%1$d m. „Premium“</item>
+        <item quantity="other">%1$d m. „Premium“</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s įrašymas iš anksto</item>
+        <item quantity="few">%1$s įrašymai iš anksto</item>
+        <item quantity="other">%1$s įrašymų iš anksto</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d stebėtojas</item>
+        <item quantity="few">%1$d stebėtojai</item>
+        <item quantity="other">%1$d stebėtojų</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">Stebi %1$d</item>
+        <item quantity="few">Stebi %1$d</item>
+        <item quantity="other">Stebi %1$d</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d draugas</item>
+        <item quantity="few">%1$d draugai</item>
+        <item quantity="other">%1$d draugų</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d stebėtojas</item>
+        <item quantity="few">%1$,d stebėtojai</item>
+        <item quantity="other">%1$,d stebėtojų</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d įsirašymas</item>
+        <item quantity="few">%1$,d įsirašymai</item>
+        <item quantity="other">%1$,d įsirašymų</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d įrašas</item>
+        <item quantity="few">%1$,d įrašai</item>
+        <item quantity="other">%1$,d įrašų</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d stebėtojas</item>
+        <item quantity="few">%1$,d stebėtojai</item>
+        <item quantity="other">%1$,d stebėtojų</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">Pridėta %1$d daina</item>
+        <item quantity="few">Pridėtos %1$d dainos</item>
+        <item quantity="other">Pridėta %1$d dainų</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">Pašalinta %1$d daina</item>
+        <item quantity="few">Pašalintos %1$d dainos</item>
+        <item quantity="other">Pašalinta %1$d dainų</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d reakcija</item>
+        <item quantity="few">%1$d reakcijos</item>
+        <item quantity="other">%1$d reakcijų</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Santrauka bus pasiekiama, kai pasiklausysi pirmąją %1$d šios garsinės knygos minutę.</item>
+        <item quantity="few">Santrauka bus pasiekiama, kai pasiklausysi pirmąsias %1$d šios garsinės knygos minutes.</item>
+        <item quantity="other">Santrauka bus pasiekiama, kai pasiklausysi pirmųjų %1$d šios garsinės knygos minučių.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">Klausosi %1$d</item>
+        <item quantity="few">Klausosi %1$d</item>
+        <item quantity="other">Klausosi %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">Paleido %1$d</item>
+        <item quantity="few">Paleido %1$d</item>
+        <item quantity="other">Paleido %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">Įsirašė %1$d</item>
+        <item quantity="few">Įsirašė %1$d</item>
+        <item quantity="other">Įsirašė %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">Perskaitė %1$d</item>
+        <item quantity="few">Perskaitė %1$d</item>
+        <item quantity="other">Perskaitė %1$d</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Išankstinė prieiga su „Spotify Premium“ po %1$d dienos</item>
+        <item quantity="few">Išankstinė prieiga su „Spotify Premium“ po %1$d dienų</item>
+        <item quantity="other">Išankstinė prieiga su „Spotify Premium“ po %1$d dienų</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Iki išleidimo liko %1$d diena</item>
+        <item quantity="few">Iki išleidimo liko %1$d dienos</item>
+        <item quantity="other">Iki išleidimo liko %1$d dienų</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d įrašas</item>
+        <item quantity="few">%1$d įrašai</item>
+        <item quantity="other">%1$d įrašų</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Įrenginys paskutinį kartą buvo aktyvus prieš %1$d d.</item>
+        <item quantity="few">Įrenginys paskutinį kartą buvo aktyvus prieš %1$d d.</item>
+        <item quantity="other">Įrenginys paskutinį kartą buvo aktyvus prieš %1$d d.</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Gali atsisiųsti į ne daugiau nei %1$d įrenginį.</item>
+        <item quantity="few">Gali atsisiųsti į ne daugiau nei %1$d įrenginius.</item>
+        <item quantity="other">Gali atsisiųsti į ne daugiau nei %1$d įrenginių.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Grojaraštis • %1$d daina</item>
+        <item quantity="few">Grojaraštis • %1$d dainos</item>
+        <item quantity="other">Grojaraštis • %1$d dainų</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s atsakymas. Dukart paliesk, jei nori peržiūrėti</item>
+        <item quantity="few">%1$s atsakymai. Dukart paliesk, jei nori peržiūrėti</item>
+        <item quantity="other">%1$s atsakymų. Dukart paliesk, jei nori peržiūrėti</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s įrašas</item>
+        <item quantity="few">%1$s įrašai</item>
+        <item quantity="other">%1$s įrašų</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;sekundė&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;sekundės&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;sekundžių&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">Pasirinkta %1$d eilutė</item>
+        <item quantity="few">Pasirinktos %1$d eilutės</item>
+        <item quantity="other">Pasirinkta %1$d eilučių</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d garsinė knyga</item>
+        <item quantity="few">%1$d garsinės knygos</item>
+        <item quantity="other">%1$d garsinių knygų</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d elementas</item>
+        <item quantity="few">%1$d elementai</item>
+        <item quantity="other">%1$d elementų</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Turi vėl prisijungti prie interneto per: %1$,d dieną</item>
+        <item quantity="few">Turi vėl prisijungti prie interneto per: %1$,d dienas</item>
+        <item quantity="other">Turi vėl prisijungti prie interneto per: %1$,d dienų</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Liko laiko: %1$d diena</item>
+        <item quantity="few">Liko laiko: %1$d dienos</item>
+        <item quantity="other">Liko laiko: %1$d dienų</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Bendrino %1$s draugas</item>
+        <item quantity="few">Bendrino %1$s draugai</item>
+        <item quantity="other">Bendrino %1$s draugų</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d pasidalinimas</item>
+        <item quantity="few">%1$d pasidalinimai</item>
+        <item quantity="other">%1$d pasidalinimų</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Remiantis tavo gimimo data, tau šiuo metu yra %1$d metai.</item>
+        <item quantity="few">Remiantis tavo gimimo data, tau šiuo metu yra %1$d metai.</item>
+        <item quantity="other">Remiantis tavo gimimo data, tau šiuo metu yra %1$d metų.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Ar tau %1$d metai?</item>
+        <item quantity="few">Ar tau %1$d metai?</item>
+        <item quantity="other">Ar tau %1$d metų?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">Prieš %1$d dieną</item>
+        <item quantity="few">Prieš %1$d dienas</item>
+        <item quantity="other">Prieš %1$d dienų</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">prieš %1$d val.</item>
+        <item quantity="few">prieš %1$d val.</item>
+        <item quantity="other">prieš %1$d val.</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">prieš %1$d min.</item>
+        <item quantity="few">prieš %1$d min.</item>
+        <item quantity="other">prieš %1$d min.</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Prieš %1$d mėnesį</item>
+        <item quantity="few">Prieš %1$d mėnesius</item>
+        <item quantity="other">Prieš %1$d mėnesių</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Prieš %1$d savaitę</item>
+        <item quantity="few">Prieš %1$d savaites</item>
+        <item quantity="other">Prieš %1$d savaičių</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Prieš %1$d metus</item>
+        <item quantity="few">Prieš %1$d metus</item>
+        <item quantity="other">Prieš %1$d metų</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s daina kartu</item>
+        <item quantity="few">%1$s dainos kartu</item>
+        <item quantity="other">%1$s dainų kartu</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Įrašė &lt;b&gt;%1$s dainą&lt;/b&gt;</item>
+        <item quantity="few">Įrašė &lt;b&gt;%1$s dainas&lt;/b&gt;</item>
+        <item quantity="other">Įrašė &lt;b&gt;%1$s dainų&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Populiariausia daina: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="few">Populiariausios dainos: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Populiariausios dainos: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Populiariausia daina su &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="few">Populiariausios dainos su &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Populiariausios dainos su &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Bendradarbiavo su &lt;b&gt;%1$s atlikėju&lt;/b&gt;</item>
+        <item quantity="few">Bendradarbiavo su &lt;b&gt;%1$s atlikėjais&lt;/b&gt;</item>
+        <item quantity="other">Bendradarbiavo su &lt;b&gt;%1$s atlikėjų&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s bendrakūrėjas</item>
+        <item quantity="few">%1$s bendrakūrėjai</item>
+        <item quantity="other">%1$s bendrakūrėjų</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s daina</item>
+        <item quantity="few">%1$s dainos</item>
+        <item quantity="other">%1$s dainų</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s daina</item>
+        <item quantity="few">%1$s dainos</item>
+        <item quantity="other">%1$s dainų</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s bendrakūrėjas</item>
+        <item quantity="few">%1$s bendrakūrėjai</item>
+        <item quantity="other">%1$s bendrakūrėjų</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Peržiūrėti %1$s abiejų kūrėjų dainą</item>
+        <item quantity="few">Peržiūrėti %1$s abiejų kūrėjų dainas</item>
+        <item quantity="other">Peržiūrėti %1$s abiejų kūrėjų dainų</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + dar %2$d</item>
+        <item quantity="few">%1$s + dar %2$d</item>
+        <item quantity="other">%1$s + dar %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d prisidėjęs asmuo</item>
+        <item quantity="few">%1$d prisidėję asmenys</item>
+        <item quantity="other">%1$d prisidėjusių asmenų</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d garsų ruošinys</item>
+        <item quantity="few">%1$d garsų ruošiniai</item>
+        <item quantity="other">%1$d garsų ruošinių</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s perklausa</item>
+        <item quantity="few">%1$s perklausos</item>
+        <item quantity="other">%1$s perklausų</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d minutė</item>
+        <item quantity="few">%1$d minutės</item>
+        <item quantity="other">%1$d minučių</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d sekundė</item>
+        <item quantity="few">%1$d sekundės</item>
+        <item quantity="other">%1$d sekundžių</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Vaidmuo: %1$s</item>
+        <item quantity="few">Vaidmenys: %1$s</item>
+        <item quantity="other">Vaidmenys: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d naujas įrašas</item>
+        <item quantity="few">%1$,d nauji įrašai</item>
+        <item quantity="other">%1$,d naujų įrašų</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">Įtraukta %1$d daina</item>
+        <item quantity="few">Įtrauktos %1$d dainos</item>
+        <item quantity="other">Įtraukta %1$d dainų</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">Leista %1$d daina</item>
+        <item quantity="few">Leistos %1$d dainos</item>
+        <item quantity="other">Leista %1$d dainų</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="few">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Pagreitinta iki %1$d BPM</item>
+        <item quantity="few">Pagreitinta iki %1$d BPM</item>
+        <item quantity="other">Pagreitinta iki %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Sulėtinta iki %1$d BPM</item>
+        <item quantity="few">Sulėtinta iki %1$d BPM</item>
+        <item quantity="other">Sulėtinta iki %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="few">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">Dabar klausosi %1$d draugas</item>
+        <item quantity="few">Dabar klausosi %1$d draugai</item>
+        <item quantity="other">Dabar klausosi %1$d draugų</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d elementas</item>
+        <item quantity="few">%1$d elementai</item>
+        <item quantity="other">%1$d elementų</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, pasirinktas %3$d sakinys</item>
+        <item quantity="few">%1$s, %2$s, pasirinkti %3$d sakiniai</item>
+        <item quantity="other">%1$s, %2$s, pasirinkta %3$d sakinių</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d val.</item>
+        <item quantity="few">%1$d val.</item>
+        <item quantity="other">%1$d val.</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d valanda %2$d minutė</item>
+        <item quantity="few">%1$d valanda %2$d minutės</item>
+        <item quantity="other">%1$d valanda %2$d minučių</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d sek.</item>
+        <item quantity="few">%1$d sek.</item>
+        <item quantity="other">%1$d sek.</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">Liko %1$d val.</item>
+        <item quantity="few">Liko %1$d val.</item>
+        <item quantity="other">Liko %1$d val.</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Liko %1$d valanda %2$d minutė</item>
+        <item quantity="few">Liko %1$d valanda %2$d minutės</item>
+        <item quantity="other">Liko %1$d valanda %2$d minučių</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s nori prisijungti prie muzikinio kambario su tavimi!</item>
+        <item quantity="few">%1$s ir dar %2$d žmonės nori prisijungti prie tavo muzikinio kambario!</item>
+        <item quantity="other">%1$s ir dar %2$d žmonių nori prisijungti prie tavo muzikinio kambario!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s nori prisijungti prie tavo muzikinio kambario!</item>
+        <item quantity="few">%1$s ir dar %2$d žmonės nori prisijungti prie tavo muzikinio kambario!</item>
+        <item quantity="other">%1$s ir dar %2$d žmonių nori prisijungti prie tavo muzikinio kambario!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">Klausytasi %1$s valandą iš %2$d val.</item>
+        <item quantity="few">Klausytasi %1$s valandas iš %2$d val.</item>
+        <item quantity="other">Klausytasi %1$s valandų iš %2$d val.</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Iki išleidimo liko %1$d d.</item>
+        <item quantity="few">Iki išleidimo liko %1$d d.</item>
+        <item quantity="other">Iki išleidimo liko %1$d d.</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Išankstinė prieiga su „Spotify Premium“ po %1$d dienos</item>
+        <item quantity="few">Išankstinė prieiga su „Spotify Premium“ po %1$d dienų</item>
+        <item quantity="other">Išankstinė prieiga su „Spotify Premium“ po %1$d dienų</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d minutė</item>
+        <item quantity="few">%1$d minutės</item>
+        <item quantity="other">%1$d minučių</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d minutė</item>
+        <item quantity="few">%1$d minutės</item>
+        <item quantity="other">%1$d minučių</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Įjungta %1$s serialui</item>
+        <item quantity="few">Įjungta %1$s serialams</item>
+        <item quantity="other">Įjungta %1$s serialų</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d daina</item>
+        <item quantity="few">%1$d dainos</item>
+        <item quantity="other">%1$d dainų</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">Dainos: %1$d iš %2$d</item>
+        <item quantity="few">Dainos: %1$d iš %2$d</item>
+        <item quantity="other">Dainos: %1$d iš %2$d</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Klausomasi, atlikta %1$d procentas</item>
+        <item quantity="few">Klausomasi, atlikta %1$d procentai</item>
+        <item quantity="other">Klausomasi, atlikta %1$d procentų</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Vienu metu gali prisegti tik %1$d elementą.</item>
+        <item quantity="few">Vienu metu gali prisegti tik %1$d elementus.</item>
+        <item quantity="other">Vienu metu gali prisegti tik %1$d elementų.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Vienu metu gali prisegti tik %1$d elementą.</item>
+        <item quantity="few">Vienu metu gali prisegti tik %1$d elementus.</item>
+        <item quantity="other">Vienu metu gali prisegti tik %1$d elementų.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Baigta anksčiau, klausomasi – atlikta %1$d procentas</item>
+        <item quantity="few">Baigta anksčiau, klausomasi – atlikta %1$d procentai</item>
+        <item quantity="other">Baigta anksčiau, klausomasi – atlikta %1$d procentų</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d valanda</item>
+        <item quantity="few">%1$d valandos</item>
+        <item quantity="other">%1$d valandų</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d minutė</item>
+        <item quantity="few">%1$d minutės</item>
+        <item quantity="other">%1$d minučių</item>
+    </plurals>
+</resources>

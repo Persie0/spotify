@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.nowplayingqueue.bottomsheet.view.QueueInteractionLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:importantForAccessibility="no">
+    <LinearLayout
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical"
+        android:id="@+id/queue_sheet"
+        android:background="@drawable/core_bottom_sheet_background"
+        android:descendantFocusability="afterDescendants"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:maxWidth="@dimen/core_bottom_sheet_max_width">
+        <com.spotify.nowplayingqueue.bottomsheet.view.JamHeaderContainerView
+            android:id="@+id/jam_header_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/queue_header_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:importantForAccessibility="yes"/>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/queue_recycler_view"
+                android:paddingBottom="@dimen/spacer_4"
+                android:clipToPadding="false"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/queue_placeholder"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </FrameLayout>
+    </LinearLayout>
+</com.spotify.nowplayingqueue.bottomsheet.view.QueueInteractionLayout>

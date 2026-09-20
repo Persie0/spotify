@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.spotify.encoremobile.widgets.CancellableSeekBar
+        android:id="@+id/seek_bar"
+        android:focusable="true"
+        android:clickable="true"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/nowplayingmini_content_description_seekbar"
+        android:layoutDirection="ltr"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/SeekBar"/>
+    <TextView
+        android:gravity="left"
+        android:id="@+id/position"
+        android:paddingLeft="@dimen/mini_seek_bar_padding"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/duration"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/SeekBarTimestamps"/>
+    <TextView
+        android:gravity="right"
+        android:id="@+id/duration"
+        android:paddingRight="@dimen/mini_seek_bar_padding"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toRightOf="@+id/position"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/SeekBarTimestamps"/>
+</merge>

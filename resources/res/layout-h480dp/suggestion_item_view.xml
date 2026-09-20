@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/suggestion_item"
+    android:background="@drawable/prompt_bg"
+    android:layout_width="198dp"
+    android:layout_height="match_parent"
+    android:layout_marginEnd="@dimen/suggestions_item_margin_end"
+    android:elevation="8dp">
+    <ImageView
+        android:id="@+id/suggestion_icon"
+        android:paddingTop="@dimen/suggestions_item_icon_padding"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_suggestion_star"
+        android:importantForAccessibility="no"
+        android:paddingStart="@dimen/suggestions_item_icon_padding"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:textColor="@color/dark_base_text_subdued"
+        android:ellipsize="end"
+        android:id="@+id/suggestion"
+        android:paddingLeft="@dimen/suggestions_item_text_padding"
+        android:paddingTop="@dimen/suggestions_item_text_padding_top"
+        android:paddingRight="@dimen/suggestions_item_text_padding"
+        android:paddingBottom="@dimen/suggestions_item_text_padding"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="@integer/suggestion_item_max_lines"
+        android:textAlignment="textStart"
+        android:paddingHorizontal="@dimen/suggestions_item_text_padding"/>
+</LinearLayout>

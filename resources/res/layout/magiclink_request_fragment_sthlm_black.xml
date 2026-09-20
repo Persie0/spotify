@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/login_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.spotify.legacyglue.icons.SpotifyIconView
+            android:id="@+id/back_button"
+            android:padding="@dimen/std_16dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/content_description_toolbar_back_button"
+            app:iconSize="24dp"
+            app:iconType="icon_arrow_left"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <TextView
+            android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+            android:textColor="@color/sthlm_blk_white"
+            android:layout_gravity="start"
+            android:id="@+id/request_magiclink_heading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/magiclink_heading_text_1"
+            app:layout_constraintBottom_toBottomOf="@+id/back_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/back_button"/>
+        <ViewAnimator
+            android:id="@+id/view_animator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:animateFirstView="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/back_button"
+            app:layout_constraintWidth_max="@dimen/adaptive_layout_max_width">
+            <include layout="@layout/do_request_sthlm_black"/>
+            <include layout="@layout/request_sent"/>
+        </ViewAnimator>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

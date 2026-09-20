@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:paddingBottom="@dimen/std_16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:id="@+id/image"
+        android:padding="@dimen/std_8dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/title"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/allboarding_item_image_tint_statelist"
+        app:tintMode="src_atop"/>
+    <ImageView
+        android:id="@+id/checkmark"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:alpha="0"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/allboarding_item_banner_checkmark_32dp_statelist"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:ellipsize="end"
+        android:gravity="top|center_horizontal"
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/std_8dp"
+        android:layout_marginRight="@dimen/std_8dp"
+        android:maxLines="2"
+        android:textAlignment="center"
+        android:layout_marginHorizontal="@dimen/std_8dp"
+        app:layout_constraintEnd_toEndOf="@+id/image"
+        app:layout_constraintStart_toStartOf="@+id/image"
+        app:layout_constraintTop_toBottomOf="@+id/image"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

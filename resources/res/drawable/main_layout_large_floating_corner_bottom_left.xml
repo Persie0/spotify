@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="@dimen/main_layout_large_floating_corner_radius_double_negative"
+        android:top="-100dp"
+        android:right="-100dp"
+        android:bottom="@dimen/main_layout_large_floating_corner_radius_double_negative">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/main_layout_large_floating_corner_radius_double"/>
+            <stroke
+                android:width="@dimen/main_layout_large_floating_corner_radius_double"
+                android:color="@color/black"/>
+        </shape>
+    </item>
+</layer-list>

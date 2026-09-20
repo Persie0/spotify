@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.encoremobile.component.buttons.EncoreButton xmlns:android="http://schemas.android.com/apk/res/android"
+    android:theme="@style/ThemeOverlay.Encore.Inverted"
+    android:id="@+id/floating_anchor_chip"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:elevation="8dp"
+    style="@style/Encore.Button.Primary.Small"/>

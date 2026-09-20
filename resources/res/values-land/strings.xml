@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ads_video_overlay_container_ratio">16:9</string>
+    <string name="header_dimens_ratio">21:9</string>
+    <string name="prerelease_header_video_ratio">21:9</string>
+</resources>

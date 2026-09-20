@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="adaptive_ui_content_area_horizontal_margin">24dp</dimen>
+    <dimen name="adaptive_ui_header_play_button_end_margin">36dp</dimen>
+    <dimen name="content_area_horizontal_margin">24dp</dimen>
+    <dimen name="header_action_row_end_margin">32dp</dimen>
+    <dimen name="header_action_row_start_margin">28dp</dimen>
+    <dimen name="header_content_end_margin">40dp</dimen>
+    <dimen name="header_content_start_margin">40dp</dimen>
+    <dimen name="tabs_row_margin">24dp</dimen>
+</resources>

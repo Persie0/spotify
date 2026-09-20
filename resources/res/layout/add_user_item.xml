@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <View
+        android:id="@+id/button_bg"
+        android:background="@drawable/add_account_button_bg"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.component.icons.IconPlus
+        android:id="@+id/plus_icon"
+        android:duplicateParentState="true"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:tint="#a7a7a7"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="@+id/button_bg"
+        app:layout_constraintEnd_toEndOf="@+id/button_bg"
+        app:layout_constraintStart_toStartOf="@+id/button_bg"
+        app:layout_constraintTop_toTopOf="@+id/button_bg"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/white"
+        android:gravity="center"
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/account_picker_add_user_text"
+        android:layout_marginStart="@dimen/spacer_12"
+        app:layout_constraintBottom_toBottomOf="@+id/button_bg"
+        app:layout_constraintStart_toEndOf="@+id/button_bg"
+        app:layout_constraintTop_toTopOf="@+id/button_bg"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

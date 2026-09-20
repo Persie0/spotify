@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@drawable/find_tickets_bg_bottom_sheet"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <View
+        android:layout_gravity="center"
+        android:id="@+id/handle"
+        android:background="@drawable/bg_bottom_sheet_handle"
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:contentDescription="@string/bottom_sheet_handle_content_description"
+        android:layout_marginVertical="10dp"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:textColor="?attr/textBase"
+        android:gravity="center_horizontal"
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacer_16"
+        android:layout_marginBottom="@dimen/spacer_4"
+        android:text="@string/find_tickets_sheet_title"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/find_tickets_recycler"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

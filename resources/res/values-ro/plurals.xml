@@ -1,0 +1,1608 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s ascultător pe lună</item>
+        <item quantity="few">%1$s ascultători pe lună</item>
+        <item quantity="other">%1$s de ascultători pe lună</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d boxă grupată</item>
+        <item quantity="few">%1$d boxe grupate</item>
+        <item quantity="other">%1$d de boxe grupate</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d stea din 5</item>
+        <item quantity="few">%1$d stele din 5</item>
+        <item quantity="other">%1$d stele din 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d stea din 5</item>
+        <item quantity="few">%1$d stele din 5</item>
+        <item quantity="other">%1$d stele din 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">selectează %1$d stea</item>
+        <item quantity="few">selectează %1$d stele</item>
+        <item quantity="other">selectează %1$d stele</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d stea</item>
+        <item quantity="few">%1$d stele</item>
+        <item quantity="other">%1$d stele</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">încă %1$d cont</item>
+        <item quantity="few">încă %1$d conturi</item>
+        <item quantity="other">încă %1$d de conturi</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">Și încă %1$d cont</item>
+        <item quantity="few">Și încă %1$d conturi</item>
+        <item quantity="other">Și încă %1$d de conturi</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">S-a găsit %1$d element</item>
+        <item quantity="few">S-au găsit %1$d elemente</item>
+        <item quantity="other">S-au găsit %1$d de elemente</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s dosar</item>
+        <item quantity="few">%1$s dosare</item>
+        <item quantity="other">%1$s de dosare</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s playlist</item>
+        <item quantity="few">%1$s playlisturi</item>
+        <item quantity="other">%1$s de playlisturi</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s carte audio</item>
+        <item quantity="few">%1$s cărți audio</item>
+        <item quantity="other">%1$s de cărți audio</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s capitol</item>
+        <item quantity="few">%1$s capitole</item>
+        <item quantity="other">%1$s de capitole</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s selecție</item>
+        <item quantity="few">%1$s selecții</item>
+        <item quantity="other">%1$s de selecții</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s episod</item>
+        <item quantity="few">%1$s episoade</item>
+        <item quantity="other">%1$s de episoade</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d secundă până la omiterea anunțului, temporizator</item>
+        <item quantity="few">%1$d secunde până la omiterea anunțului, temporizator</item>
+        <item quantity="other">%1$d de secunde până la omiterea anunțului, temporizator</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Omite după %1$d s</item>
+        <item quantity="few">Omite după %1$d s</item>
+        <item quantity="other">Omite după %1$d s</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Anunț • Se omite după %1$d s</item>
+        <item quantity="few">Anunț • Se omite după %1$d s</item>
+        <item quantity="other">Anunț • Se omite după %1$d s</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Atenție! Nu ai vârsta necesară pentru a folosi Spotify; prin urmare, contul tău a fost blocat și va fi dezactivat în termen de %1$s zi. Am făcut o greșeală? Încearcă să-ți confirmi vârsta folosind actul de identitate.</item>
+        <item quantity="few">Atenție! Nu ai vârsta necesară pentru a folosi Spotify; prin urmare, contul tău a fost blocat și va fi dezactivat în termen de %1$s zile. Am făcut o greșeală? Încearcă să-ți confirmi vârsta folosind actul de identitate.</item>
+        <item quantity="other">Atenție! Nu ai vârsta necesară pentru a folosi Spotify; prin urmare, contul tău a fost blocat și va fi dezactivat în termen de %1$s de zile. Am făcut o greșeală? Încearcă să-ți confirmi vârsta folosind actul de identitate.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Se pare că nu ai vârsta necesară pentru a avea propriul tău cont Spotify. Dar poți avea un cont administrat dacă părintele sau tutorele tău spune că este OK.\n\nContul tău va fi dezactivat peste %1$s zi.</item>
+        <item quantity="few">Se pare că nu ai vârsta necesară pentru a avea propriul tău cont Spotify. Dar poți avea un cont administrat dacă părintele sau tutorele tău spune că este OK.\n\nContul tău va fi dezactivat peste %1$s zile.</item>
+        <item quantity="other">Se pare că nu ai vârsta necesară pentru a avea propriul tău cont Spotify. Dar poți avea un cont administrat dacă părintele sau tutorele tău spune că este OK.\n\nContul tău va fi dezactivat peste %1$s de zile.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Pentru a reactiva contul, confirmă-ți vârsta folosind actul de identitate. Dacă verificarea nu confirmă faptul că ai vârsta necesară pentru a folosi Spotify sau dacă nu iei nicio măsură în termen de %1$s zi, contul tău va fi șters definitiv.</item>
+        <item quantity="few">Pentru a reactiva contul, confirmă-ți vârsta folosind actul de identitate. Dacă verificarea nu confirmă faptul că ai vârsta necesară pentru a folosi Spotify sau dacă nu iei nicio măsură în termen de %1$s zile, contul tău va fi șters definitiv.</item>
+        <item quantity="other">Pentru a reactiva contul, confirmă-ți vârsta folosind actul de identitate. Dacă verificarea nu confirmă faptul că ai vârsta necesară pentru a folosi Spotify sau dacă nu iei nicio măsură în termen de %1$s de zile, contul tău va fi șters definitiv.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Deoarece ai sub %1$d an, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+        <item quantity="few">Deoarece ai sub %1$d ani, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+        <item quantity="other">Deoarece ai sub %1$d de ani, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d melodie • %2$s</item>
+        <item quantity="few">%1$d melodii • %2$s</item>
+        <item quantity="other">%1$d de melodii • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d selectat</item>
+        <item quantity="few">%1$d selectați</item>
+        <item quantity="other">%1$d selectați</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d selectat</item>
+        <item quantity="few">%1$d selectați</item>
+        <item quantity="other">%1$d selectați</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$d selectate. Pentru a continua, selectează cel puțin încă %2$d element.</item>
+        <item quantity="few">%1$d selectate. Pentru a continua, selectează cel puțin încă %2$d elemente.</item>
+        <item quantity="other">%1$d selectate. Pentru a continua, selectează cel puțin încă %2$d de elemente.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d ore</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d minute</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Ai depășit limita cu %1$d caracter.</item>
+        <item quantity="few">Ai depășit limita cu %1$d caractere.</item>
+        <item quantity="other">Ai depășit limita cu %1$d de caractere.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">și încă %1$d</item>
+        <item quantity="few">și încă %1$d</item>
+        <item quantity="other">și încă %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d lansare</item>
+        <item quantity="few">%1$,d lansări</item>
+        <item quantity="other">%1$,d de lansări</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d melodie</item>
+        <item quantity="few">%1$,d melodii</item>
+        <item quantity="other">%1$,d de melodii</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s eveniment în apropiere de tine</item>
+        <item quantity="few">%1$s evenimente în apropiere de tine</item>
+        <item quantity="other">%1$s de evenimente în apropiere de tine</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d lansare</item>
+        <item quantity="few">%1$d lansări</item>
+        <item quantity="other">%1$d de lansări</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">Interogarea %1$s a găsit %2$d element</item>
+        <item quantity="few">Interogarea %1$s a găsit %2$d elemente</item>
+        <item quantity="other">Interogarea %1$s a găsit %2$d de elemente</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d carte audio adăugată</item>
+        <item quantity="few">%1$d cărți audio adăugate</item>
+        <item quantity="other">%1$d de cărți audio adăugate</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d carte audio redată</item>
+        <item quantity="few">%1$d cărți audio redate</item>
+        <item quantity="other">%1$d de cărți audio redate</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s episod nou pe emisiune</item>
+        <item quantity="few">%1$s episoade noi pe emisiune</item>
+        <item quantity="other">%1$s de episoade noi pe emisiune</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podcast • %1$d episod</item>
+        <item quantity="few">Podcast • %1$d episoade</item>
+        <item quantity="other">Podcast • %1$d de episoade</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d secundă</item>
+        <item quantity="few">%1$d secunde</item>
+        <item quantity="other">%1$d de secunde</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s persoană în grup</item>
+        <item quantity="few">%1$s persoane în grup</item>
+        <item quantity="other">%1$s de persoane în grup</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">Acum %1$d zi</item>
+        <item quantity="few">Acum %1$d zile</item>
+        <item quantity="other">Acum %1$d de zile</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">Acum %1$d oră</item>
+        <item quantity="few">Acum %1$d ore</item>
+        <item quantity="other">Acum %1$d de ore</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">Acum %1$d minut</item>
+        <item quantity="few">Acum %1$d minute</item>
+        <item quantity="other">Acum %1$d de minute</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d fotografie</item>
+        <item quantity="few">%1$d fotografii</item>
+        <item quantity="other">%1$d de fotografii</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d videoclip</item>
+        <item quantity="few">%1$d videoclipuri</item>
+        <item quantity="other">%1$d de videoclipuri</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s persoană</item>
+        <item quantity="few">%1$s persoane</item>
+        <item quantity="other">%1$s de persoane</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s prieten</item>
+        <item quantity="few">%1$s prieteni</item>
+        <item quantity="other">%1$s de prieteni</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Se va reseta peste %1$d zi, deci revino atunci. Între timp, poți folosi playlistul cu opțiuni AI sau poți crea chiar tu unul.</item>
+        <item quantity="few">Se va reseta peste %1$d zile, deci revino atunci. Între timp, poți folosi playlistul cu opțiuni AI sau poți crea chiar tu unul.</item>
+        <item quantity="other">Se va reseta peste %1$d de zile, deci revino atunci. Între timp, poți folosi playlistul cu opțiuni AI sau poți crea chiar tu unul.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Se va reseta peste %1$d zi, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+        <item quantity="few">Se va reseta peste %1$d zile, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+        <item quantity="other">Se va reseta peste %1$d de zile, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Se va reseta peste %1$d oră, deci revino atunci. Între timp, poți folosi playlistul cu opțiuni AI sau poți crea chiar tu unul.</item>
+        <item quantity="few">Se va reseta peste %1$d ore, deci revino atunci. Între timp, poți folosi playlistul cu opțiuni AI sau poți crea chiar tu unul.</item>
+        <item quantity="other">Se va reseta peste %1$d de ore, deci revino atunci. Între timp, poți folosi playlistul AI sau poți crea chiar tu unul.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Se va reseta peste %1$d oră, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+        <item quantity="few">Se va reseta peste %1$d ore, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+        <item quantity="other">Se va reseta peste %1$d de ore, deci revino atunci. Între timp, poți folosi playlistul instantaneu sau poți crea chiar tu unul.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d intrare nouă</item>
+        <item quantity="few">%1$,d intrări noi</item>
+        <item quantity="other">%1$,d de intrări noi</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s nu va putea să-ți trimită mesaje direct. Poți părăsi chatul dacă nu dorești să interacționezi cu persoana respectivă.</item>
+        <item quantity="few">%1$s nu vor putea să-ți trimită mesaje direct. Poți părăsi chatul dacă nu dorești să interacționezi cu persoanele respective.</item>
+        <item quantity="other">%1$s nu vor putea să-ți trimită mesaje direct. Poți părăsi chatul dacă nu dorești să interacționezi cu persoanele respective.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">și încă %1$d</item>
+        <item quantity="few">și încă %1$d</item>
+        <item quantity="other">și încă %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Grup • %1$d persoană</item>
+        <item quantity="few">Grup • %1$d persoane</item>
+        <item quantity="other">Grup • %1$d de persoane</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d în așteptare)</item>
+        <item quantity="few">(%1$d în așteptare)</item>
+        <item quantity="other">(%1$d în așteptare)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d fotografie s-a descărcat</item>
+        <item quantity="few">%1$d fotografii s-au descărcat</item>
+        <item quantity="other">%1$d de fotografii s-au descărcat</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Nu s-a putut descărca %1$d fotografie</item>
+        <item quantity="few">Nu s-au putut descărca %1$d fotografii</item>
+        <item quantity="other">Nu s-au putut descărca %1$d de fotografii</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">Utilizatorul %1$s, pe care l-ai blocat, se află în acest chat. Poți șterge această solicitare privind mesajele de grup dacă nu dorești să interacționezi cu persoana respectivă.</item>
+        <item quantity="few">Utilizatorii %1$s, pe care i-ai blocat, se află în acest chat. Poți șterge această solicitare privind mesajele de grup dacă nu dorești să interacționezi cu persoanele respective.</item>
+        <item quantity="other">Utilizatorii %1$s, pe care i-ai blocat, se află în acest chat. Poți șterge această solicitare privind mesajele de grup dacă nu dorești să interacționezi cu persoanele respective.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Grupurile pot avea maximum %1$d persoană</item>
+        <item quantity="few">Grupurile pot avea maximum %1$d persoane</item>
+        <item quantity="other">Grupurile pot avea maximum %1$d de persoane</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">După ce %1$s acceptă, va putea vedea toate mesajele trimise în chat de când a primit invitația.</item>
+        <item quantity="few">După ce una din persoane acceptă, va putea vedea toate mesajele trimise în chat de când a primit invitația.</item>
+        <item quantity="other">După ce una din persoane acceptă, va putea vedea toate mesajele trimise în chat de când a primit invitația.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Inviți %1$s la acest chat?</item>
+        <item quantity="few">Inviți persoanele selectate la acest chat?</item>
+        <item quantity="other">Inviți persoanele selectate la acest chat?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d videoclip descărcat</item>
+        <item quantity="few">%1$d videoclipuri descărcate</item>
+        <item quantity="other">%1$d de videoclipuri descărcate</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Nu s-a putut descărca %1$d videoclip</item>
+        <item quantity="few">Nu s-au putut descărca %1$d videoclipuri</item>
+        <item quantity="other">Nu s-au putut descărca %1$d de videoclipuri</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d rol</item>
+        <item quantity="few">+ %1$d roluri</item>
+        <item quantity="other">+ %1$d de roluri</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">Acum %1$d zi</item>
+        <item quantity="few">Acum %1$d zile</item>
+        <item quantity="other">Acum %1$d de zile</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">Acum %1$d oră</item>
+        <item quantity="few">Acum %1$d ore</item>
+        <item quantity="other">Acum %1$d de ore</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">Acum %1$d minut</item>
+        <item quantity="few">Acum %1$d minute</item>
+        <item quantity="other">Acum %1$d de minute</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d lună în urmă</item>
+        <item quantity="few">%1$d luni în urmă</item>
+        <item quantity="other">%1$d de luni în urmă</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s răspuns</item>
+        <item quantity="few">%1$s răspunsuri</item>
+        <item quantity="other">%1$s de răspunsuri</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">A reacționat încă %1$s persoană.</item>
+        <item quantity="few">Au reacționat încă %1$s persoane.</item>
+        <item quantity="other">Au reacționat încă %1$s de persoane.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">A reacționat încă %1$s persoană la acest comentariu.</item>
+        <item quantity="few">Au reacționat încă %1$s persoane la acest comentariu.</item>
+        <item quantity="other">Au reacționat încă %1$s de persoane la acest comentariu.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s răspuns</item>
+        <item quantity="few">%1$s răspunsuri</item>
+        <item quantity="other">%1$s de răspunsuri</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Încă %1$s răspuns. Apasă de două ori pentru a afișa</item>
+        <item quantity="few">Încă %1$s răspunsuri. Apasă de două ori pentru a afișa</item>
+        <item quantity="other">Încă %1$s de răspunsuri. Apasă de două ori pentru a afișa</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d săptămână în urmă</item>
+        <item quantity="few">%1$d săptămâni în urmă</item>
+        <item quantity="other">%1$d de săptămâni în urmă</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">Acum %1$d an</item>
+        <item quantity="few">Acum %1$d ani</item>
+        <item quantity="other">Acum %1$d de ani</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d melodie</item>
+        <item quantity="few">%1$,d melodii</item>
+        <item quantity="other">%1$,d de melodii</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d ascultător</item>
+        <item quantity="few">%1$d ascultători</item>
+        <item quantity="other">%1$d de ascultători</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d melodie împreună</item>
+        <item quantity="few">%1$d melodii împreună</item>
+        <item quantity="other">%1$d de melodii împreună</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d melodie împreună</item>
+        <item quantity="few">%1$d melodii împreună</item>
+        <item quantity="other">%1$d de melodii împreună</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d zi</item>
+        <item quantity="few">%1$d zile</item>
+        <item quantity="other">%1$d de zile</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d secundă</item>
+        <item quantity="few">%1$d secunde</item>
+        <item quantity="other">%1$d de secunde</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s ascultător pe lună</item>
+        <item quantity="few">%1$s ascultători pe lună</item>
+        <item quantity="other">%1$s de ascultători pe lună</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Autor: %1$s</item>
+        <item quantity="few">Autori: %1$s</item>
+        <item quantity="other">Autori: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s și încă %2$d</item>
+        <item quantity="few">%1$s și încă %2$d</item>
+        <item quantity="other">%1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Navighează la mai mult conținut de la %1$s</item>
+        <item quantity="few">Afișează o listă completă cu %1$s în care poți naviga</item>
+        <item quantity="other">Afișează o listă completă cu %1$s în care poți naviga</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Timp de pregătire: %1$d zi</item>
+        <item quantity="few">Timp de pregătire: %1$d zile</item>
+        <item quantity="other">Timp de pregătire: %1$d de zile</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d zi</item>
+        <item quantity="few">%1$d zile</item>
+        <item quantity="other">%1$d de zile</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;zi&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;zile&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;de zile&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Se lansează în %1$d zile</item>
+        <item quantity="few">Se lansează în %1$d zile</item>
+        <item quantity="other">Se lansează în %1$d zile</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d zi până când orele de ascultare expiră</item>
+        <item quantity="few">%1$d zile până când orele de ascultare expiră</item>
+        <item quantity="other">%1$d de zile până când orele de ascultare expiră</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d zi până când orele de ascultare se reînnoiesc</item>
+        <item quantity="few">%1$d zile până când orele de ascultare se reînnoiesc</item>
+        <item quantity="other">%1$d de zile până când orele de ascultare se reînnoiesc</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Ștergi %1$d fotografie?</item>
+        <item quantity="few">Ștergi %1$d fotografii?</item>
+        <item quantity="other">Ștergi %1$d de fotografii?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Ștergi %1$d element?</item>
+        <item quantity="few">Ștergi %1$d elemente?</item>
+        <item quantity="other">Ștergi %1$d de elemente?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Ștergi %1$d videoclip?</item>
+        <item quantity="few">Ștergi %1$d videoclipuri?</item>
+        <item quantity="other">Ștergi %1$d de videoclipuri?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d caracter din %2$d</item>
+        <item quantity="few">%1$d caractere din %2$d</item>
+        <item quantity="other">%1$d de caractere din %2$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s și încă %2$d</item>
+        <item quantity="few">%1$s și încă %2$d</item>
+        <item quantity="other">%1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d element selectat</item>
+        <item quantity="few">%1$d elemente selectate</item>
+        <item quantity="other">%1$d de elemente selectate</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Îți poți schimba numele de utilizator doar %1$d dată în decurs de %2$d zile.</item>
+        <item quantity="few">Îți poți schimba numele de utilizator doar de %1$d ori în decurs de %2$d zile.</item>
+        <item quantity="other">Îți poți schimba numele de utilizator doar de %1$d de ori în decurs de %2$d zile.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Încearcă din nou peste %1$d zi.</item>
+        <item quantity="few">Încearcă din nou peste %1$d zile.</item>
+        <item quantity="other">Încearcă din nou peste %1$d de zile.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Îți poți schimba numele de utilizator %1$d dată la fiecare %2$d zile.</item>
+        <item quantity="few">Îți poți schimba numele de utilizator de %1$d ori la fiecare %2$d zile.</item>
+        <item quantity="other">Îți poți schimba numele de utilizator de %1$d de ori la fiecare %2$d zile.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s salvare</item>
+        <item quantity="few">%1$s salvări</item>
+        <item quantity="other">%1$s de salvări</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">%1$d la sută descărcare</item>
+        <item quantity="few">%1$d la sută descărcare</item>
+        <item quantity="other">%1$d la sută descărcare</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d episod adăugat</item>
+        <item quantity="few">%1$d episoade adăugate</item>
+        <item quantity="other">%1$d de episoade adăugate</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d episod redat</item>
+        <item quantity="few">%1$d episoade redate</item>
+        <item quantity="other">%1$d de episoade redate</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Așteaptă %1$d secundă, apoi solicită un cod nou.</item>
+        <item quantity="few">Așteaptă %1$d secunde, apoi solicită un cod nou.</item>
+        <item quantity="other">Așteaptă %1$d secunde, apoi solicită un cod nou.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Încearcă din nou peste %1$d secundă</item>
+        <item quantity="few">Încearcă din nou peste %1$d secunde</item>
+        <item quantity="other">Încearcă din nou peste %1$d de secunde</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d eveniment</item>
+        <item quantity="few">%1$d evenimente</item>
+        <item quantity="other">%1$d de evenimente</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Afișează încă %1$d metodă de plată</item>
+        <item quantity="few">Afișează încă %1$d metode de plată</item>
+        <item quantity="other">Afișează încă %1$d de metode de plată</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s din 5 stele pe Spotify, pe baza unui număr de %2$s evaluare</item>
+        <item quantity="few">%1$s din 5 stele pe Spotify, pe baza unui număr de %2$s evaluări</item>
+        <item quantity="other">%1$s din 5 stele pe Spotify, pe baza unui număr de %2$s de evaluări</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d stea: %2$d%%</item>
+        <item quantity="few">%1$d stele: %2$d%%</item>
+        <item quantity="other">%1$d stele: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d ascultă</item>
+        <item quantity="few">%1$d ascultă</item>
+        <item quantity="other">%1$d ascultă</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d persoană ascultă</item>
+        <item quantity="few">%1$d persoane ascultă</item>
+        <item quantity="other">%1$d de persoane ascultă</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Sesiunea Jam a utilizatorului %1$s – încă %2$d participant ascultă</item>
+        <item quantity="few">Sesiunea Jam a utilizatorului %1$s – încă %2$d participanți ascultă</item>
+        <item quantity="other">Sesiunea Jam a utilizatorului %1$s – încă %2$d de participanți ascultă</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s salvare</item>
+        <item quantity="few">%1$s salvări</item>
+        <item quantity="other">%1$s de salvări</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;oră&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;ore&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;de ore&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d oră până când orele de ascultare expiră</item>
+        <item quantity="few">%1$d ore până când orele de ascultare expiră</item>
+        <item quantity="other">%1$d de ore până când orele de ascultare expiră</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d oră până când orele de ascultare se reînnoiesc</item>
+        <item quantity="few">%1$d ore până când orele de ascultare se reînnoiesc</item>
+        <item quantity="other">%1$d de ore până când orele de ascultare se reînnoiesc</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d procent</item>
+        <item quantity="few">%1$d procente</item>
+        <item quantity="other">%1$d de procente</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s redare</item>
+        <item quantity="few">%1$s redări</item>
+        <item quantity="other">%1$s de redări</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s s-a alăturat sesiunii tale Jam</item>
+        <item quantity="few">Alți %2$d s-au alăturat sesiunii tale Jam</item>
+        <item quantity="other">Alți %2$d s-au alăturat sesiunii tale Jam</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s dosar</item>
+        <item quantity="few">%1$s dosare</item>
+        <item quantity="other">%1$s de dosare</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s playlist</item>
+        <item quantity="few">%1$s playlisturi</item>
+        <item quantity="other">%1$s de playlisturi</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Playlist • %1$s piesă</item>
+        <item quantity="few">Playlist • %1$s piese</item>
+        <item quantity="other">Playlist • %1$s de piese</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s episod descărcat • %2$s</item>
+        <item quantity="few">%1$s episoade descărcate • %2$s</item>
+        <item quantity="other">%1$s de episoade descărcate • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s episod descărcat</item>
+        <item quantity="few">%1$s episoade descărcate</item>
+        <item quantity="other">%1$s de episoade descărcate</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$d element adăugat</item>
+        <item quantity="few">%1$d elemente adăugate</item>
+        <item quantity="other">%1$d de elemente adăugate</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$d element adăugat</item>
+        <item quantity="few">%1$d elemente adăugate</item>
+        <item quantity="other">%1$d de elemente adăugate</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Ai primit de la %1$s solicitarea de a participa la o sesiune Jam împreună cu tine, deoarece îți distribui muzica ascultată către încă %1$s.</item>
+        <item quantity="few">Ai primit de la %1$s și de la încă %2$d solicitări de a participa la o sesiune Jam împreună cu tine, deoarece îți distribui muzica ascultată către acești utilizatori.</item>
+        <item quantity="other">Ai primit de la %1$s și de la încă %2$d solicitări de a participa la o sesiune Jam împreună cu tine, deoarece îți distribui muzica ascultată către acești utilizatori.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Ai primit de la %1$s o solicitare de alăturare la sesiunea ta Jam, deoarece ai invitațiile automate activate și:</item>
+        <item quantity="few">Ai primit de la %1$s și încă %2$d persoane solicitări de alăturare la sesiunea ta Jam, deoarece ai invitațiile automate activate și:</item>
+        <item quantity="other">Ai primit de la %1$s și încă %2$d de persoane solicitări de alăturare la sesiunea ta Jam, deoarece ai invitațiile automate activate și:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">și încă %1$d</item>
+        <item quantity="few">și încă %1$d</item>
+        <item quantity="other">și încă %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d vers selectat</item>
+        <item quantity="few">%1$d versuri selectate</item>
+        <item quantity="other">%1$d de versuri selectate</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d episod</item>
+        <item quantity="few">%1$d episoade</item>
+        <item quantity="other">%1$d de episoade</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d element</item>
+        <item quantity="few">%1$d elemente</item>
+        <item quantity="other">%1$d de elemente</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d persoană</item>
+        <item quantity="few">%1$d persoane</item>
+        <item quantity="other">%1$d de persoane</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d ascultă</item>
+        <item quantity="few">%1$d ascultă</item>
+        <item quantity="other">%1$d ascultă</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Ai epuizat timpul de ascultare a cărților audio, de %1$d oră, inclus în abonamentul tău lunar.</item>
+        <item quantity="few">Ai epuizat timpul de ascultare a cărților audio, de %1$d ore, inclus în abonamentul tău lunar.</item>
+        <item quantity="other">Ai epuizat timpul de ascultare a cărților audio, de %1$d de ore, inclus în abonamentul tău lunar.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Asculți %1$d oră cărți audio din catalogul nostru pentru abonați, inclusă în abonamentul tău lunar.</item>
+        <item quantity="few">Asculți %1$d ore cărți audio din catalogul nostru pentru abonați, incluse în abonamentul tău lunar.</item>
+        <item quantity="other">Asculți %1$d de ore cărți audio din catalogul nostru pentru abonați, incluse în abonamentul tău lunar.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d oră de timp de ascultare</item>
+        <item quantity="few">%1$d ore de timp de ascultare</item>
+        <item quantity="other">%1$d de ore de timp de ascultare</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Găzduită de %1$s%2$s + %3$d</item>
+        <item quantity="few">Găzduită de %1$s%2$s + %3$d</item>
+        <item quantity="other">Găzduită de %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d zi</item>
+        <item quantity="few">%1$d zile</item>
+        <item quantity="other">%1$d de zile</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s secundă</item>
+        <item quantity="few">%1$s secunde</item>
+        <item quantity="other">%1$s de secunde</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d vot</item>
+        <item quantity="few">%1$d voturi</item>
+        <item quantity="other">%1$d de voturi</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d contributor</item>
+        <item quantity="few">%1$d contributori</item>
+        <item quantity="other">%1$d de contributori</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d sample</item>
+        <item quantity="few">%1$d sample-uri</item>
+        <item quantity="other">%1$d de sample-uri</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d vers selectat</item>
+        <item quantity="few">%1$d versuri selectate</item>
+        <item quantity="other">%1$d de versuri selectate</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">Acum %1$d zi</item>
+        <item quantity="few">Acum %1$d zile</item>
+        <item quantity="other">Acum %1$d de zile</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Acum %1$d lună</item>
+        <item quantity="few">Acum %1$d luni</item>
+        <item quantity="other">Acum %1$d de luni</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Acum %1$d săptămână</item>
+        <item quantity="few">Acum %1$d săptămâni</item>
+        <item quantity="other">Acum %1$d de săptămâni</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Acum %1$d an</item>
+        <item quantity="few">Acum %1$d ani</item>
+        <item quantity="other">Acum %1$d de ani</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Descarci %1$d fotografie?</item>
+        <item quantity="few">Descarci %1$d fotografii?</item>
+        <item quantity="other">Descarci %1$d de fotografii?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Descarci %1$d element?</item>
+        <item quantity="few">Descarci %1$d elemente?</item>
+        <item quantity="other">Descarci %1$d de elemente?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Descarci %1$d videoclip?</item>
+        <item quantity="few">Descarci %1$d videoclipuri?</item>
+        <item quantity="other">Descarci %1$d de videoclipuri?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Poți trimite maximum %1$d videoclip.</item>
+        <item quantity="few">Poți trimite maximum %1$d videoclipuri simultan.</item>
+        <item quantity="other">Poți trimite maximum %1$d de videoclipuri simultan.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d fotografie</item>
+        <item quantity="few">%1$d fotografii</item>
+        <item quantity="other">%1$d de fotografii</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d element</item>
+        <item quantity="few">%1$d elemente</item>
+        <item quantity="other">%1$d de elemente</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d videoclip</item>
+        <item quantity="few">%1$d videoclipuri</item>
+        <item quantity="other">%1$d de videoclipuri</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;minut&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;minute&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;de minute&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d notificare nouă</item>
+        <item quantity="few">%d notificări noi</item>
+        <item quantity="other">%d de notificări noi</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">%1$d caracter rămas, te apropii de limită</item>
+        <item quantity="few">%1$d caractere rămase, te apropii de limită</item>
+        <item quantity="other">%1$d de caractere rămase, te apropii de limită</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">%1$d caracter rămas</item>
+        <item quantity="few">%1$d caractere rămase</item>
+        <item quantity="other">%1$d de caractere rămase</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+        <item quantity="few">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+        <item quantity="other">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+        <item quantity="few">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+        <item quantity="other">%1$,d din %2$,d (%3$,d%% finalizat)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Accelerat la %1$d bătaie pe minut</item>
+        <item quantity="few">Accelerat la %1$d bătăi pe minut</item>
+        <item quantity="other">Accelerat la %1$d de bătăi pe minut</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Încetinit la %1$d bătaie pe minut</item>
+        <item quantity="few">Încetinit la %1$d bătăi pe minut</item>
+        <item quantity="other">Încetinit la %1$d de bătăi pe minut</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$s descărcare disponibilă</item>
+        <item quantity="few">%1$s descărcări disponibile</item>
+        <item quantity="other">%1$s de descărcări disponibile</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d element selectat</item>
+        <item quantity="few">%1$d elemente selectate</item>
+        <item quantity="other">%1$d de elemente selectate</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s carte</item>
+        <item quantity="few">%1$s cărți</item>
+        <item quantity="other">%1$s de cărți</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s episod</item>
+        <item quantity="few">%1$s episoade</item>
+        <item quantity="other">%1$s episoade</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s element</item>
+        <item quantity="few">%1$s elemente</item>
+        <item quantity="other">%1$s de elemente</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s eveniment</item>
+        <item quantity="few">%1$s evenimente</item>
+        <item quantity="other">%1$s de evenimente</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d ascultare</item>
+        <item quantity="few">%1$,d ascultări</item>
+        <item quantity="other">%1$,d de ascultări</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d melodie</item>
+        <item quantity="few">%1$,d melodii</item>
+        <item quantity="other">%1$,d de melodii</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Acest album este nou, deci îl poți reda în orice ordine timp de încă %1$d zi. Cu Premium, te poți bucura mereu de această libertate.</item>
+        <item quantity="few">Acest album este nou, deci îl poți reda în orice ordine timp de încă %1$d zile. Cu Premium, te poți bucura mereu de această libertate.</item>
+        <item quantity="other">Acest album este nou, deci îl poți reda în orice ordine timp de încă %1$d de zile. Cu Premium, te poți bucura mereu de această libertate.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Redă în orice ordine timp de încă %1$d zi</item>
+        <item quantity="few">Redă în orice ordine timp de încă %1$d zile</item>
+        <item quantity="other">Redă în orice ordine timp de încă %1$d de zile</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Ascultă fără rețea Wi-Fi și economisește datele mobile. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Ascultă fără rețea Wi-Fi și economisește datele mobile. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Ascultă fără rețea Wi-Fi și economisește datele mobile. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Alege melodii pe care să le redai oricând și în orice ordine. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Alege melodii pe care să le redai oricând și în orice ordine. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Alege melodii pe care să le redai oricând și în orice ordine. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Reordonează coada de ascultare și multe altele. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Reordonează coada de ascultare și multe altele. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Reordonează coada de ascultare și multe altele. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Redă în orice ordine sau sortează aleatoriu. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Redă în orice ordine sau sortează aleatoriu. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Redă în orice ordine sau sortează aleatoriu. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Încearcă omiterile nelimitate și multe alte avantaje Premium gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Încearcă omiterile nelimitate și multe alte avantaje Premium gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Încearcă omiterile nelimitate și multe alte avantaje Premium gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de 24 de ore.</item>
+        <item quantity="few">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d zile.</item>
+        <item quantity="other">Preia controlul deplin asupra audiției. Încearcă acest beneficiu Premium și multe altele gratuit, timp de %1$d de zile.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Ai primit anumite beneficii Premium pentru următoarele 24 de ore.</item>
+        <item quantity="few">Ai primit anumite beneficii Premium pentru următoarele %1$d zile.</item>
+        <item quantity="other">Ai primit anumite beneficii Premium pentru următoarele %1$d de zile.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Am trimis un cod din %1$d cifre către %2$s.</item>
+        <item quantity="few">Am trimis un cod din %1$d cifre către %2$s.</item>
+        <item quantity="other">Am trimis un cod din %1$d cifre către %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Deoarece ai sub %1$d an, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+        <item quantity="few">Deoarece ai sub %1$d ani, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+        <item quantity="other">Deoarece ai sub %1$d de ani, nu poți oferi consimțământ parental.\n\nDe asemenea, din cauza vârstei, anumite conținuturi și funcții încă nu sunt disponibile. Le-am ascuns.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Cod PIN greșit, încearcă din nou după %1$d minut.</item>
+        <item quantity="few">Cod PIN greșit, încearcă din nou după %1$d minute.</item>
+        <item quantity="other">Cod PIN greșit, încearcă din nou după %1$d de minute.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Cod PIN greșit, încearcă din nou după %1$d secundă.</item>
+        <item quantity="few">Cod PIN greșit, încearcă din nou după %1$d secunde.</item>
+        <item quantity="other">Cod PIN greșit, încearcă din nou după %1$d de secunde.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d cont Premium</item>
+        <item quantity="few">%1$d conturi Premium</item>
+        <item quantity="other">%1$d de conturi Premium</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d secundă</item>
+        <item quantity="few">%1$d secunde</item>
+        <item quantity="other">%1$d de secunde</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s și încă %2$d</item>
+        <item quantity="few">%1$s și încă %2$d</item>
+        <item quantity="other">%1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s și încă %2$d · Mixat</item>
+        <item quantity="few">%1$s și încă %2$d · Mixat</item>
+        <item quantity="other">%1$s și încă %2$d · Mixat</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s și încă %2$d</item>
+        <item quantity="few">%1$s și încă %2$d</item>
+        <item quantity="other">%1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Mixat de %1$s și încă %2$d</item>
+        <item quantity="few">Mixat de %1$s și încă %2$d</item>
+        <item quantity="other">Mixat de %1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Creat de %1$s și încă %2$d</item>
+        <item quantity="few">Creat de %1$s și încă %2$d</item>
+        <item quantity="other">Creat de %1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Creat de %1$s și încă %2$d</item>
+        <item quantity="few">Creat de %1$s și încă %2$d</item>
+        <item quantity="other">Creat de %1$s și încă %2$d</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d episod</item>
+        <item quantity="few">%1$d episoade</item>
+        <item quantity="other">%1$d de episoade</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d EPISOD</item>
+        <item quantity="few">%1$,d EPISOADE</item>
+        <item quantity="other">%1$,d DE EPISOADE</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d MELODIE</item>
+        <item quantity="few">%1$,d MELODII</item>
+        <item quantity="other">%1$,d DE MELODII</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d zi</item>
+        <item quantity="few">%1$d zile</item>
+        <item quantity="other">%1$d de zile</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">A mai rămas %1$d oră</item>
+        <item quantity="few">Au mai rămas %1$d ore</item>
+        <item quantity="other">Au mai rămas %1$d de ore</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">A mai rămas %1$d minut</item>
+        <item quantity="few">Au mai rămas %1$d minute</item>
+        <item quantity="other">Au mai rămas %1$d de minute</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d vot • %2$s</item>
+        <item quantity="few">%1$d voturi • %2$s</item>
+        <item quantity="other">%1$d de voturi • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d zi de Premium</item>
+        <item quantity="few">%1$d zile de Premium</item>
+        <item quantity="other">%1$d de zile de Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d lună de Premium</item>
+        <item quantity="few">%1$d luni de Premium</item>
+        <item quantity="other">%1$d de luni de Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d săptămână de Premium</item>
+        <item quantity="few">%1$d săptămâni de Premium</item>
+        <item quantity="other">%1$d de săptămâni de Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d an de Premium</item>
+        <item quantity="few">%1$d ani de Premium</item>
+        <item quantity="other">%1$d de ani de Premium</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s salvare anticipată</item>
+        <item quantity="few">%1$s salvări anticipate</item>
+        <item quantity="other">%1$s de salvări anticipate</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d urmăritor</item>
+        <item quantity="few">%1$d urmăritori</item>
+        <item quantity="other">%1$d de urmăritori</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">Urmărește %1$d</item>
+        <item quantity="few">Urmărește %1$d</item>
+        <item quantity="other">Urmărește %1$d</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d prieten</item>
+        <item quantity="few">%1$d prieteni</item>
+        <item quantity="other">%1$d de prieteni</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d urmăritor</item>
+        <item quantity="few">%1$,d urmăritori</item>
+        <item quantity="other">%1$,d de urmăritori</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d salvare</item>
+        <item quantity="few">%1$,d salvări</item>
+        <item quantity="other">%1$,d de salvări</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d salvare</item>
+        <item quantity="few">%1$,d salvări</item>
+        <item quantity="other">%1$,d de salvări</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d urmăritor</item>
+        <item quantity="few">%1$,d urmăritori</item>
+        <item quantity="other">%1$,d de urmăritori</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d piesă adăugată</item>
+        <item quantity="few">%1$d piese adăugate</item>
+        <item quantity="other">%1$d de piese adăugate</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d piesă eliminată</item>
+        <item quantity="few">%1$d piese eliminate</item>
+        <item quantity="other">%1$d de piese eliminate</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d reacție</item>
+        <item quantity="few">%1$d reacții</item>
+        <item quantity="other">%1$d de reacții</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Recapitularea va fi disponibilă după ce vei reda %1$d minut din această carte audio.</item>
+        <item quantity="few">Recapitularea va fi disponibilă după ce vei reda primele %1$d minute din această carte audio.</item>
+        <item quantity="other">Recapitularea va fi disponibilă după ce vei reda primele %1$d de minute din această carte audio.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d ascultă</item>
+        <item quantity="few">%1$d ascultă</item>
+        <item quantity="other">%1$d ascultă</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d a redat</item>
+        <item quantity="few">%1$d au redat</item>
+        <item quantity="other">%1$d au redat</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d a salvat</item>
+        <item quantity="few">%1$d au salvat</item>
+        <item quantity="other">%1$d au salvat</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d a văzut</item>
+        <item quantity="few">%1$d au văzut</item>
+        <item quantity="other">%1$d au văzut</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Acces anticipat Premium peste %1$d zi</item>
+        <item quantity="few">Acces anticipat Premium peste %1$d zile</item>
+        <item quantity="other">Acces anticipat Premium peste %1$d de zile</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Se lansează în %1$d zi</item>
+        <item quantity="few">Se lansează în %1$d zile</item>
+        <item quantity="other">Se lansează în %1$d de zile</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d înregistrare</item>
+        <item quantity="few">%1$d înregistrări</item>
+        <item quantity="other">%1$d de înregistrări</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Ultima activitate acum %1$d zi</item>
+        <item quantity="few">Ultima activitate acum %1$d zile</item>
+        <item quantity="other">Ultima activitate acum %1$d de zile</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Poți descărca pe maximum %1$d dispozitiv.</item>
+        <item quantity="few">Poți descărca pe maximum %1$d dispozitive.</item>
+        <item quantity="other">Poți descărca pe maximum %1$d de dispozitive.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Playlist · %1$d melodie</item>
+        <item quantity="few">Playlist · %1$d melodii</item>
+        <item quantity="other">Playlist · %1$d de melodii</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s răspuns. Apasă de două ori pentru a afișa</item>
+        <item quantity="few">%1$s răspunsuri. Apasă de două ori pentru a afișa</item>
+        <item quantity="other">%1$s de răspunsuri. Apasă de două ori pentru a afișa</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s salvare</item>
+        <item quantity="few">%1$s salvări</item>
+        <item quantity="other">%1$s de salvări</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;secundă&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;secunde&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;de secunde&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d vers selectat</item>
+        <item quantity="few">%1$d versuri selectate</item>
+        <item quantity="other">%1$d de versuri selectate</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d carte audio</item>
+        <item quantity="few">%1$d cărți audio</item>
+        <item quantity="other">%1$d de cărți audio</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d element</item>
+        <item quantity="few">%1$d elemente</item>
+        <item quantity="other">%1$d de elemente</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Trebuie să revii online peste: %1$,d zi</item>
+        <item quantity="few">Trebuie să revii online peste: %1$,d zile</item>
+        <item quantity="other">Trebuie să revii online peste: %1$,d de zile</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Timp rămas: %1$d zi</item>
+        <item quantity="few">Timp rămas: %1$d zile</item>
+        <item quantity="other">Timp rămas: %1$d de zile</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Conținut distribuit de %1$s prieten</item>
+        <item quantity="few">Conținut distribuit de %1$s prieteni</item>
+        <item quantity="other">Conținut distribuit de %1$s de prieteni</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d element distribuit</item>
+        <item quantity="few">%1$d elemente distribuite</item>
+        <item quantity="other">%1$d de elemente distribuite</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">În funcție de data nașterii, în prezent ai vârsta de %1$d an.</item>
+        <item quantity="few">În funcție de data nașterii, în prezent ai vârsta de %1$d ani.</item>
+        <item quantity="other">În funcție de data nașterii, în prezent ai vârsta de %1$d de ani.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Se pare că ai vârsta de %1$d an.</item>
+        <item quantity="few">Se pare că ai vârsta de %1$d ani.</item>
+        <item quantity="other">Se pare că ai vârsta de %1$d de ani.</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">Acum %1$d zi</item>
+        <item quantity="few">Acum %1$d zile</item>
+        <item quantity="other">Acum %1$d de zile</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">Acum %1$d oră</item>
+        <item quantity="few">Acum %1$d ore</item>
+        <item quantity="other">Acum %1$d de ore</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">Acum %1$d minut</item>
+        <item quantity="few">Acum %1$d minute</item>
+        <item quantity="other">Acum %1$d de minute</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Acum %1$d lună</item>
+        <item quantity="few">Acum %1$d luni</item>
+        <item quantity="other">Acum %1$d de luni</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Acum %1$d săptămână</item>
+        <item quantity="few">Acum %1$d săptămâni</item>
+        <item quantity="other">Acum %1$d de săptămâni</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Acum %1$d an</item>
+        <item quantity="few">Acum %1$d ani</item>
+        <item quantity="other">Acum %1$d de ani</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s melodie împreună</item>
+        <item quantity="few">%1$s melodii împreună</item>
+        <item quantity="other">%1$s de melodii împreună</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">A înregistrat &lt;b&gt;%1$s melodie&lt;/b&gt;</item>
+        <item quantity="few">A înregistrat &lt;b&gt;%1$s melodii&lt;/b&gt;</item>
+        <item quantity="other">A înregistrat &lt;b&gt;%1$s de melodii&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Melodie de top: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="few">Melodii de top: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Melodii de top: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Melodie de top cu &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="few">Melodii de top cu &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Melodii de top cu &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">A colaborat cu &lt;b&gt;%1$s artist&lt;/b&gt;</item>
+        <item quantity="few">A colaborat cu &lt;b&gt;%1$s artiști&lt;/b&gt;</item>
+        <item quantity="other">A colaborat cu &lt;b&gt;%1$s de artiști&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s colaborator</item>
+        <item quantity="few">%1$s colaboratori</item>
+        <item quantity="other">%1$s de colaboratori</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s melodie</item>
+        <item quantity="few">%1$s melodii</item>
+        <item quantity="other">%1$s de melodii</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s colaborator</item>
+        <item quantity="few">%1$s colaboratori</item>
+        <item quantity="other">%1$s de colaboratori</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Vedeți %1$s melodie împreună</item>
+        <item quantity="few">Vedeți %1$s melodii împreună</item>
+        <item quantity="other">Vedeți %1$s de melodii împreună</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + încă %2$d</item>
+        <item quantity="few">%1$s + încă %2$d</item>
+        <item quantity="other">%1$s + încă %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d contributor</item>
+        <item quantity="few">%1$d contributori</item>
+        <item quantity="other">%1$d de contributori</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d sample</item>
+        <item quantity="few">%1$d sample-uri</item>
+        <item quantity="other">%1$d de sample-uri</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s redare</item>
+        <item quantity="few">%1$s redări</item>
+        <item quantity="other">%1$s de redări</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d secundă</item>
+        <item quantity="few">%1$d secunde</item>
+        <item quantity="other">%1$d de secunde</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Rol: %1$s</item>
+        <item quantity="few">Roluri: %1$s</item>
+        <item quantity="other">Roluri: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d intrare nouă</item>
+        <item quantity="few">%1$,d intrări noi</item>
+        <item quantity="other">%1$,d de intrări noi</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d melodie adăugată</item>
+        <item quantity="few">%1$d melodii adăugate</item>
+        <item quantity="other">%1$d de melodii adăugate</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$d melodie redată</item>
+        <item quantity="few">%1$d melodii redate</item>
+        <item quantity="other">%1$d de melodii redate</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="few">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Accelerat la %1$d bătaie pe minut</item>
+        <item quantity="few">Accelerat la %1$d bătăi pe minut</item>
+        <item quantity="other">Accelerat la %1$dde bătăi pe minut</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Încetinit la %1$d bătaie pe minut</item>
+        <item quantity="few">Încetinit la %1$d bătăi pe minut</item>
+        <item quantity="other">Încetinit la %1$d de bătăi pe minut</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="few">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d prieten redă acum</item>
+        <item quantity="few">%1$d prieteni redau acum</item>
+        <item quantity="other">%1$d de prieteni redau acum</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d element</item>
+        <item quantity="few">%1$d elemente</item>
+        <item quantity="other">%1$d de elemente</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d propoziție selectată</item>
+        <item quantity="few">%1$s, %2$s, %3$d propoziții selectate</item>
+        <item quantity="other">%1$s, %2$s, %3$d de propoziții selectate</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d h %2$d min</item>
+        <item quantity="few">%1$d h %2$d min</item>
+        <item quantity="other">%1$d h %2$d min</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d secundă</item>
+        <item quantity="few">%1$d secunde</item>
+        <item quantity="other">%1$d de secunde</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">A mai rămas %1$d oră</item>
+        <item quantity="few">Au mai rămas %1$d ore</item>
+        <item quantity="other">Au mai rămas %1$d de ore</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Timp rămas: %1$d h %2$d min</item>
+        <item quantity="few">Timp rămas: %1$d h %2$d min</item>
+        <item quantity="other">Timp rămas: %1$d h %2$d min</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s dorește să se alăture unei sesiuni Jam împreună cu tine!</item>
+        <item quantity="few">%1$s și încă %2$d doresc să se alăture sesiunii tale Jam!</item>
+        <item quantity="other">%1$s și încă %2$d doresc să se alăture sesiunii tale Jam!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s dorește să se alăture sesiunii tale Jam!</item>
+        <item quantity="few">%1$s și încă %2$d doresc să se alăture sesiunii tale Jam!</item>
+        <item quantity="other">%1$s și încă %2$d doresc să se alăture sesiunii tale Jam!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%1$s/%2$d oră ascultată</item>
+        <item quantity="few">%1$s/%2$d ore ascultate</item>
+        <item quantity="other">%1$s/%2$d de ore ascultate</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Se lansează în %1$d zile</item>
+        <item quantity="few">Se lansează în %1$d zile</item>
+        <item quantity="other">Se lansează în %1$d zile</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Acces anticipat Premium peste %1$d zi</item>
+        <item quantity="few">Acces anticipat Premium peste %1$d zile</item>
+        <item quantity="other">Acces anticipat Premium peste %1$d de zile</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Pornite pentru %1$s emisiune</item>
+        <item quantity="few">Pornite pentru %1$s emisiuni</item>
+        <item quantity="other">Pornite pentru %1$s de emisiuni</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d melodie</item>
+        <item quantity="few">%1$d melodii</item>
+        <item quantity="other">%1$d de melodii</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d din %2$d melodie</item>
+        <item quantity="few">%1$d din %2$d melodii</item>
+        <item quantity="other">%1$d din %2$d de melodii</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">În desfășurare, %1$d la sută finalizat</item>
+        <item quantity="few">În desfășurare, %1$d la sută finalizat</item>
+        <item quantity="other">În desfășurare, %1$d la sută finalizat</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Poți avea fixat doar %1$d element la un moment dat.</item>
+        <item quantity="few">Poți avea fixate doar %1$d elemente la un moment dat.</item>
+        <item quantity="other">Poți avea fixate doar %1$d de elemente la un moment dat.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Poți avea fixat doar %1$d element la un moment dat.</item>
+        <item quantity="few">Poți avea fixate doar %1$d elemente la un moment dat.</item>
+        <item quantity="other">Poți avea fixate doar %1$d de elemente la un moment dat.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Terminat anterior, în desfășurare, %1$d%% finalizat</item>
+        <item quantity="few">Terminat anterior, în desfășurare, %1$d%% finalizat</item>
+        <item quantity="other">Terminat anterior, în desfășurare, %1$d%% finalizat</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d oră</item>
+        <item quantity="few">%1$d ore</item>
+        <item quantity="other">%1$d de ore</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d minut</item>
+        <item quantity="few">%1$d minute</item>
+        <item quantity="other">%1$d de minute</item>
+    </plurals>
+</resources>

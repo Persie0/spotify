@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include
+        domain="sharedpref"
+        path="."/>
+    <exclude
+        domain="sharedpref"
+        path="my_secret_shared_pref_data.xml"/>
+    <exclude
+        domain="sharedpref"
+        path="my_com.ravelin.core_shared_pref_data.xml"/>
+</full-backup-content>

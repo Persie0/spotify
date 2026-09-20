@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/row_root"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/row_horizontal_padding"
+    android:paddingVertical="8dp"
+    app:layout_constrainedWidth="true">
+    <com.spotify.legacyglue.icons.SpotifyIconView
+        android:id="@+id/icon_view"
+        android:padding="@dimen/std_12dp"
+        android:layout_width="@dimen/row_button_clickable_size"
+        android:layout_height="@dimen/row_button_clickable_size"
+        app:iconColor="@color/white"
+        app:iconSize="@dimen/row_icon_size_default"
+        app:iconType="icon_search"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:id="@+id/query"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:textDirection="locale"
+        android:textAlignment="textStart"
+        android:layout_marginStart="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tap_ahead_button"
+        app:layout_constraintStart_toEndOf="@+id/icon_view"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="@dimen/row_horizontal_padding"/>
+    <com.spotify.encoremobile.component.icons.IconArrowTopLeft
+        android:id="@+id/tap_ahead_button"
+        android:padding="16dp"
+        android:layout_width="@dimen/row_button_clickable_size"
+        android:layout_height="@dimen/row_button_clickable_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/tap_ahead_color"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

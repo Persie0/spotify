@@ -1,0 +1,1299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">Msikilizaji %1$s wa kila mwezi</item>
+        <item quantity="other">Wasikilizaji %1$s wa kila mwezi</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">Spika %1$d aliyeunganishwa kikundi</item>
+        <item quantity="other">Spika %1$d zilizopangwa katika vikundi</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">nyota %1$d kati ya 5</item>
+        <item quantity="other">nyota %1$d kati ya 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">Nyota %1$d kati ya 5</item>
+        <item quantity="other">Nyota %1$d kati ya 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">chagua nyota %1$d</item>
+        <item quantity="other">chagua nyota 5</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">Nyota %1$d</item>
+        <item quantity="other">Nyota %1$d</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">akaunti %1$d zaidi</item>
+        <item quantity="other">akaunti %1$d zaidi</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">Na akaunti %1$d zaidi</item>
+        <item quantity="other">Na akaunti %1$d zaidi</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">Imepata kipengee %1$d</item>
+        <item quantity="other">Imepata vipengee %1$d</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">Folda %1$s</item>
+        <item quantity="other">Folda %1$s</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">Orodha %1$s ya kucheza</item>
+        <item quantity="other">Orodha %1$s za kucheza</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">Kitabu %1$s cha kusikiliza</item>
+        <item quantity="other">Vitabu %1$s vya kusikiliza</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">Sura %1$s</item>
+        <item quantity="other">Sura %1$s</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">Klipu %1$s</item>
+        <item quantity="other">Klipu %1$s</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">Kipindi %1$s</item>
+        <item quantity="other">Vipindi %1$s</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">Sekunde %1$d ili uruke tangazo, kipima muda</item>
+        <item quantity="other">Sekunde %1$d ili uruke tangazo, kipima muda</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Ruka baada ya sekunde %1$d</item>
+        <item quantity="other">Ruka baada ya sekunde %1$d</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Tangazo • Ruka baada ya sekunde %1$d</item>
+        <item quantity="other">Tangazo • Ruka baada ya sekunde %1$d</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Tahadhari! Hujafikisha umri wa kutumia Spotify, hivyo akaunti yako imezuiwa na itafungwa baada ya siku %1$s. Je, tumekosea? Jaribu kuthibitisha umri wako kwa kitambulisho.</item>
+        <item quantity="other">Tahadhari! Hujafikisha umri wa kutumia Spotify, hivyo akaunti yako imezuiwa na itafungwa baada ya siku %1$s. Je, tumekosea? Jaribu kuthibitisha umri wako kwa kitambulisho.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Inaonekana hujafikisha umri wa kutumia akaunti yako mwenyewe ya Spotify. Lakini unaweza kuwa na akaunti inayosimamiwa ikiwa mzazi au mlezi wako atasema ni sawa. Akaunti yako itafungwa baada ya siku %1$s.</item>
+        <item quantity="other">Inaonekana hujafikisha umri wa kutumia akaunti yako mwenyewe ya Spotify. Lakini unaweza kuwa na akaunti inayosimamiwa ikiwa mzazi au mlezi wako atasema ni sawa. Akaunti yako itafungwa baada ya siku %1$s.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Ili uwezeshe tena akaunti yako, thibitisha umri wako ukitumia kitambulisho. Iwapo ukaguzi wa umri hautathibitisha kuwa umefikisha umri wa kutumia Spotify au usipochukua hatua yoyote ndani ya siku %1$s, akaunti yako itafutwa kabisa.</item>
+        <item quantity="other">Ili uwezeshe tena akaunti yako, thibitisha umri wako ukitumia kitambulisho. Iwapo ukaguzi wa umri hautathibitisha kuwa umefikisha umri wa kutumia Spotify au usipochukua hatua yoyote ndani ya siku %1$s, akaunti yako itafutwa kabisa.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Kwa sababu una umri wa chini ya mwaka %1$d, hujatimiza masharti ya kutoa idhini ya mzazi. Pia, baadhi ya maudhui na vipengele bado havipatikani kulingana na umri wako. Tumezificha.</item>
+        <item quantity="other">Kwa sababu una umri wa chini ya miaka %1$d, hujatimiza masharti ya kutoa idhini ya mzazi. Pia, baadhi ya maudhui na vipengele bado havipatikani kulingana na umri wako. Tumezificha.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">Wimbo %1$d • %2$s</item>
+        <item quantity="other">Nyimbo %1$d • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">Umechagua %1$d</item>
+        <item quantity="other">Umechagua %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">Umechagua %1$d</item>
+        <item quantity="other">Umechagua %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">Umechagua %1$d. Chagua angalau %2$d zaidi ili uendelee.</item>
+        <item quantity="other">Umechagua %1$d. Chagua angalau %2$d zaidi ili uendelee.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Umezidi kikomo kwa herufi %1$d.</item>
+        <item quantity="other">Umezidi kikomo kwa herufi %1$d.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ %1$d zaidi</item>
+        <item quantity="other">+ %1$d zaidi</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">Toleo %1$,d</item>
+        <item quantity="other">Matoleo %1$,d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">Wimbo %1$,d</item>
+        <item quantity="other">Nyimbo %1$,d</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">Tukio %1$s karibu nawe</item>
+        <item quantity="other">Matukio %1$s karibu nawe</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">Toleo %1$d</item>
+        <item quantity="other">Matoleo %1$d</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">Hoja %1$s imepata kipengee %2$d</item>
+        <item quantity="other">Hoja %1$s imepata vipengee %2$d</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">Kitabu %1$d cha kusikiliza kimeongezwa</item>
+        <item quantity="other">Vitabu %1$d vya kusikiliza vimeongezwa</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">Umecheza kitabu %1$d cha kusikiliza</item>
+        <item quantity="other">Umecheza vitabu %1$d vya kusikiliza</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">Kipindi %1$s kipya kwa kila onyesho</item>
+        <item quantity="other">Vipindi %1$s vipya kwa kila onyesho</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podikasti • Kipindi %1$d</item>
+        <item quantity="other">Podikasti • vipindi %1$d</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">Dak %1$d</item>
+        <item quantity="other">Dak %1$d</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">Sek %1$d</item>
+        <item quantity="other">Sek %1$d</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_minutes">
+        <item quantity="one">Dak %1$d</item>
+        <item quantity="other">Dak %1$d</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_seconds">
+        <item quantity="one">Sek %1$d</item>
+        <item quantity="other">Sek %1$d</item>
+    </plurals>
+    <plurals name="campfire_agent_summary_worked_on_tasks">
+        <item quantity="one">Alifanya kazi kwenye kazi %1$d</item>
+        <item quantity="other">Nilifanya kazi %1$d</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">Mtu %1$s kwenye kikundi</item>
+        <item quantity="other">Watu %1$s kwenye kikundi</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">siku %1$d iliyopita</item>
+        <item quantity="other">siku %1$d zilizopita</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">saa %1$d iliyopita</item>
+        <item quantity="other">saa %1$d zilizopita</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">dakika %1$d iliyopita</item>
+        <item quantity="other">dakika %1$d zilizopita</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">Picha %1$d</item>
+        <item quantity="other">Picha %1$d</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">Video %1$d</item>
+        <item quantity="other">Video %1$d</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">Watu %1$s</item>
+        <item quantity="other">Watu %1$s</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">Rafiki %1$s</item>
+        <item quantity="other">Marafiki %1$s</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Kikomo hiki kitawekwa upya baada ya siku %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya AI au utengeneze orodha wewe mwenyewe.</item>
+        <item quantity="other">Kikomo hiki kitawekwa upya baada ya siku %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya AI au utengeneze orodha wewe mwenyewe.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Kikomo hiki kitawekwa upya baada ya siku %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya Kucheza Papo Hapo au utengeneze orodha wewe mwenyewe.</item>
+        <item quantity="other">Kikomo hiki kitawekwa upya baada ya siku %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya Kucheza Papo Hapo au utengeneze orodha wewe mwenyewe.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Kikomo hiki kitawekwa upya baada ya saa %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya AI au utengeneze orodha wewe mwenyewe.</item>
+        <item quantity="other">Kikomo hiki kitawekwa upya baada ya saa %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya AI au utengeneze orodha wewe mwenyewe.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Kikomo hiki kitawekwa upya baada ya saa %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya Kucheza Papo Hapo au utengeneze orodha wewe mwenyewe.</item>
+        <item quantity="other">Kikomo hiki kitawekwa upya baada ya saa %1$d, hivyo rudi wakati huo. Kwa sasa unaweza kutumia Orodha ya Kucheza Papo Hapo au utengeneze orodha wewe mwenyewe.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">Kipengee %1$,d Kipya</item>
+        <item quantity="other">Vipengee %1$,d Vipya</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s hataweza kukutumia ujumbe moja kwa moja. Unaweza kuondoka kwenye gumzo ikiwa hutaki kuwasiliana naye.</item>
+        <item quantity="other">%1$s hataweza kukutumia ujumbe moja kwa moja. Unaweza kuondoka kwenye gumzo ikiwa hutaki kuwasiliana naye.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">Mwingine %1$d</item>
+        <item quantity="other">Wengine %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Kikundi • Mtu %1$d</item>
+        <item quantity="other">Kikundi • Watu %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d wanasubiri)</item>
+        <item quantity="other">(%1$d wanasubiri)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">Picha %1$d imepakuliwa</item>
+        <item quantity="other">Picha %1$d zimepakuliwa</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Imeshindwa kupakua picha %1$d</item>
+        <item quantity="other">Imeshindwa kupakua picha %1$d</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">%1$s, uliyemzuia, yupo kwenye gumzo hili. Unaweza kufuta ombi hili la ujumbe wa kikundi ikiwa hutaki kuwasiliana nae.</item>
+        <item quantity="other">%1$s, uliowazuia, wapo kwenye gumzo hili. Unaweza kufuta ombi hili la ujumbe wa kikundi ikiwa hutaki kuwasiliana nao.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Vikundi vinaweza kuwa na idadi ya juu ya mtu %1$d</item>
+        <item quantity="other">Vikundi vinaweza kuwa na idadi ya juu ya watu %1$d</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Mtu akikubali, ataweza tazama yote ujumbe uliotumwa kwenye gumzo tangu alipoalikwa.</item>
+        <item quantity="other">Mtu akikubali, ataweza tazama yote ujumbe uliotumwa kwenye gumzo tangu alipoalikwa.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Alika watu waliochaguliwa kwenye gumzo hili?</item>
+        <item quantity="other">Alika watu waliochaguliwa kwenye gumzo hili?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d video imepakuliwa</item>
+        <item quantity="other">%1$d video zimepakuliwa</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Hatuwezi kupakua video %1$d</item>
+        <item quantity="other">Hatuwezi kupakua video %1$d</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ jukumu %1$d</item>
+        <item quantity="other">+ Majukumu %1$d</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">siku %1$d iliyopita</item>
+        <item quantity="other">siku %1$d zilizopita</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">saa %1$d iliyopita</item>
+        <item quantity="other">saa %1$d zilizopita</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">dakika %1$d iliyopita</item>
+        <item quantity="other">dakika %1$d zilizopita</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">Mwezi %1$d uliopita</item>
+        <item quantity="other">Miezi %1$d iliyopita</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">Jibu %1$s</item>
+        <item quantity="other">Majibu %1$s</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">Mtu %1$s pia ametoa maoni.</item>
+        <item quantity="other">Watu %1$s pia wametoa maoni.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">Mtu %1$s ametoa maoni kwenye maoni haya.</item>
+        <item quantity="other">Watu %1$s wametoa maoni kwenye maoni haya.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">Jibu %1$s</item>
+        <item quantity="other">Majibu %1$s</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Jibu %1$s zaidi. Gusa mara mbili ili ulionyeshe</item>
+        <item quantity="other">Majibu %1$s zaidi. Gusa mara mbili ili uyaonyeshe</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">Wiki %1$d iliyopita</item>
+        <item quantity="other">Wiki %1$d zilizopita</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">Mwaka %1$d uliopita</item>
+        <item quantity="other">Miaka %1$d iliyopita</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">Wimbo %1$,d</item>
+        <item quantity="other">Nyimbo %1$,d</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">Msikilizaji %1$d</item>
+        <item quantity="other">Wasikilizaji %1$d</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">Wimbo %1$d pamoja</item>
+        <item quantity="other">Nyimbo %1$d pamoja</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">Wimbo %1$d pamoja</item>
+        <item quantity="other">Nyimbo %1$d pamoja</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">Siku %1$d</item>
+        <item quantity="other">Siku %1$d</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">Dak %1$d</item>
+        <item quantity="other">Dak %1$d</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">Sek %1$d</item>
+        <item quantity="other">Sek %1$d</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">Msikilizaji %1$s wa kila mwezi</item>
+        <item quantity="other">Wasikilizaji %1$s wa kila mwezi</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Mwandishi: %1$s</item>
+        <item quantity="other">Waandishi: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s na mwingine %2$d</item>
+        <item quantity="other">%1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Huelekeza kwenye maudhui zaidi kutoka kwa %1$s hawa</item>
+        <item quantity="other">Huonyesha orodha inayoweza kusogezwa ya %1$s wote</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Muda wa maandalizi ni siku %1$d</item>
+        <item quantity="other">Muda wa maandalizi ni siku %1$d</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">Siku %1$d</item>
+        <item quantity="other">Siku %1$d</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">&lt;b&gt;Siku&lt;/b&gt;&lt;br/&gt;%1$s</item>
+        <item quantity="other">&lt;b&gt;Siku&lt;/b&gt;&lt;br/&gt;%1$s</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Itatolewa baada ya siku %1$d</item>
+        <item quantity="other">Itatolewa baada ya siku %1$d</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">Imesalia siku %1$d hadi saa za kusikiliza ziishe</item>
+        <item quantity="other">Zimesalia siku %1$d hadi saa za kusikiliza ziishe</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">Siku %1$d hadi kusasishwa kwa saa za kusikiliza</item>
+        <item quantity="other">Siku %1$d hadi kusasishwa kwa saa za kusikiliza</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Ungependa kufuta picha %1$d?</item>
+        <item quantity="other">Ungependa kufuta picha %1$d?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Futa kipengee %1$d?</item>
+        <item quantity="other">Futa vipengee %1$d?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Futa video %1$d?</item>
+        <item quantity="other">Futa video %1$d?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">Herufi %1$d kati ya %2$d</item>
+        <item quantity="other">Herufi %1$d kati ya %2$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s na mwingine %2$d</item>
+        <item quantity="other">%1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">Umechagua %1$d</item>
+        <item quantity="other">Umechagua %1$d</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Unaweza kubadilisha jina lako la mtumiaji mara moja tu ndani ya siku %2$d.</item>
+        <item quantity="other">Unaweza kubadilisha jina lako la mtumiaji mara tisa tu ndani ya siku %2$d.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Jaribu tena baada ya siku %1$d.</item>
+        <item quantity="other">Jaribu tena baada ya siku %1$d.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Unaweza kubadilisha jina lako la mtumiaji mara moja kila siku %2$d.</item>
+        <item quantity="other">Unaweza kubadilisha jina lako la mtumiaji mara %1$d kila baada ya siku %2$d.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">Imehifadhiwa mara %1$s</item>
+        <item quantity="other">Imehifadhiwa mara %1$s</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Imepakua asilimia %1$d</item>
+        <item quantity="other">Imepakua asilimia %1$d</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">Kipindi %1$d kimeongezwa</item>
+        <item quantity="other">Vipindi %1$d vimeongezwa</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">Umecheza kipindi %1$d</item>
+        <item quantity="other">Umecheza vipindi %1$d</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Subiri kwa sekunde %1$d, kisha uombe nambari mpya ya kuthibitisha.</item>
+        <item quantity="other">Subiri kwa sekunde %1$d, kisha uombe nambari mpya ya kuthibitisha.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Jaribu tena baada ya sekunde %1$d</item>
+        <item quantity="other">Jaribu tena baada ya sekunde %1$d</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">Tukio %1$d</item>
+        <item quantity="other">Matukio %1$d</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Onyesha %1$d zaidi ya njia ya kulipa</item>
+        <item quantity="other">Onyesha Njia Nyingine %1$d Za Malipo</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">Nyota %1$s kati ya 5 kwenye Spotify, kulingana na ukadiriaji %2$s</item>
+        <item quantity="other">Nyota %1$s kati ya 5 kwenye Spotify, kulingana na ukadiriaji %2$s</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">Nyota %1$d: %2$d%%</item>
+        <item quantity="other">Nyota %1$d: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d anasikiliza</item>
+        <item quantity="other">%1$d wanasikiliza</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">Mtu %1$d anasikiliza</item>
+        <item quantity="other">Watu %1$d wanasikiliza</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Jam ya %1$s – %2$d anasikiliza pamoja</item>
+        <item quantity="other">Jam ya %1$s – %2$d wanasikiliza pamoja</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">Imehifadhiwa mara %1$s</item>
+        <item quantity="other">Imehifadhiwa mara %1$s</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">&lt;b&gt;Saa&lt;/b&gt;&lt;br/&gt;%1$s</item>
+        <item quantity="other">&lt;b&gt;Saa&lt;/b&gt;&lt;br/&gt;%1$s</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">Imesalia saa %1$d hadi saa za kusikiliza ziishe</item>
+        <item quantity="other">Zimesalia saa %1$d hadi saa za kusikiliza ziishe</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">Imesalia saa %1$d hadi kusasishwa kwa saa za kusikiliza</item>
+        <item quantity="other">Zimesalia saa %1$d hadi kusasishwa kwa saa za kusikiliza</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">asilimia %1$d</item>
+        <item quantity="other">asilimia %1$d</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">Umechezwa mara %1$s</item>
+        <item quantity="other">Umechezwa mara %1$s</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s amejiunga na Jam yako</item>
+        <item quantity="other">Wengine %2$d wamejiunga na Jam yako</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">Folda %1$s</item>
+        <item quantity="other">Folda %1$s</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">Orodha %1$s ya kucheza</item>
+        <item quantity="other">Orodha %1$s za kucheza</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Orodha ya kucheza • wimbo %1$s</item>
+        <item quantity="other">Orodha ya kucheza • nyimbo %1$s</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">Kipindi %1$s kilichopakuliwa • %2$s</item>
+        <item quantity="other">Vipindi %1$s vilivyopakuliwa • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">Kipindi %1$s kimepakuliwa</item>
+        <item quantity="other">Vipindi %1$s vimepakuliwa</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">Umeweka kipengee %1$d</item>
+        <item quantity="other">Umeweka vipengee %1$d</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">Umecheza kipengee %1$d</item>
+        <item quantity="other">Umecheza vipengee %1$d</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Umepokea ombi la %1$s la kufanya Jam na wewe kwa sababu unashiriki shughuli ya kusikiliza na %1$s.</item>
+        <item quantity="other">Umepokea maombi ya %1$s na wengine %2$d ya kufanya Jam na wewe kwa sababu unashiriki nao shughuli za kusikiliza.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Umepokea ombi la %1$s la kujiunga na Jam yako kwa sababu umewasha mialiko ya kiotomatiki ya Jam na:</item>
+        <item quantity="other">Umepokea maombi ya %1$s na wengine %2$d ya kujiunga na Jam yako kwa sababu umewasha mialiko kiotomatiki ya Jam na:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">na mwingine %1$d</item>
+        <item quantity="other">na wengine %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">Umechagua mstari %1$d</item>
+        <item quantity="other">Umechagua mistari %1$d</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">Kipindi %1$d</item>
+        <item quantity="other">Vipindi %1$d</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">Kipengee %1$d</item>
+        <item quantity="other">Vipengee %1$d</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">Watu %1$d</item>
+        <item quantity="other">Watu %1$d</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d anasikiliza</item>
+        <item quantity="other">%1$d wanasikiliza</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Umesikiliza saa yote %1$d ya vitabu vya kusikiliza vilivyojumuishwa katika kifurushi chako cha kila mwezi.</item>
+        <item quantity="other">Umesikiliza saa zote %1$d za vitabu vya kusikiliza vilivyojumuishwa katika kifurushi chako cha kila mwezi.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Sikiliza saa %1$d ya vitabu vya kusikiliza kutoka kwenye katalogi yetu ya waliojisajili, iliyojumuishwa katika kifurushi chako cha kila mwezi.</item>
+        <item quantity="other">Sikiliza saa %1$d za vitabu vya kusikiliza kutoka kwenye katalogi yetu ya waliojisajili, iliyojumuishwa katika kifurushi chako cha kila mwezi.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">Saa %1$d za muda wa kusikiliza</item>
+        <item quantity="other">Saa %1$d za muda wa kusikiliza</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Imeandaliwa na %1$s%2$s + %3$d</item>
+        <item quantity="other">Imeandaliwa na %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">Siku %1$d</item>
+        <item quantity="other">Siku %1$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">Dak %1$d</item>
+        <item quantity="other">Dak %1$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">Sek %1$s</item>
+        <item quantity="other">Sek %1$s</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">Kura %1$d</item>
+        <item quantity="other">Kura %1$d</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">mchangiaji %1$d</item>
+        <item quantity="other">wachangiaji %1$d</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">Sampuli %1$d</item>
+        <item quantity="other">Sampuli %1$d</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">Umechagua mstari %1$d</item>
+        <item quantity="other">Umechagua mistari %1$d</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">siku %1$d iliyopita</item>
+        <item quantity="other">siku %1$d zilizopita</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Mwezi %1$d uliopita</item>
+        <item quantity="other">Miezi %1$d iliyopita</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Wiki %1$d iliyopita</item>
+        <item quantity="other">Wiki %1$d zilizopita</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Mwaka %1$d uliopita</item>
+        <item quantity="other">Miaka %1$d iliyopita</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Ungependa kupakua picha %1$d?</item>
+        <item quantity="other">Ungependa kupakua picha %1$d?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Pakua kipengee %1$d?</item>
+        <item quantity="other">Pakua vipengee %1$d?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Pakua %1$d video</item>
+        <item quantity="other">Pakua %1$d video</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Unaweza kutuma video %1$d kwa wakati mmoja.</item>
+        <item quantity="other">Unaweza kutuma hadi video %1$d kwa wakati mmoja.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">Picha %1$d</item>
+        <item quantity="other">Picha %1$d</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">Kipengee %1$d</item>
+        <item quantity="other">Vipengee %1$d</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d video</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">&lt;b&gt;Dakika&lt;/b&gt;&lt;br/&gt;%1$s</item>
+        <item quantity="other">&lt;b&gt;Dakika&lt;/b&gt;&lt;br/&gt;%1$s</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">Arifa %d mpya</item>
+        <item quantity="other">Arifa %d mpya</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">Herufi %1$d zimesalia, ukaribia ukomo</item>
+        <item quantity="other">Zimesalia herufi %1$d, kikomo kinakaribia</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">imesalia herufi moja</item>
+        <item quantity="other">zimesalia herufi %1$d</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d kati ya %2$,d (%3$,d%% imekamilika)</item>
+        <item quantity="other">%1$,d kati ya %2$,d (%3$,d%% imekamilika)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d kati ya %2$,d (%3$,d%% imekamilika)</item>
+        <item quantity="other">%1$,d kati ya %2$,d (%3$,d%% imekamilika)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Imeharakishwa hadi mdundo %1$d kwa dakika</item>
+        <item quantity="other">Imeharakishwa hadi midundo %1$d kwa dakika</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Imecheleweshwa hadi mdundo %1$d kwa dakika</item>
+        <item quantity="other">Imecheleweshwa hadi midundo %1$d kwa dakika</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">kipakuliwa %1$s kinapatikana</item>
+        <item quantity="other">vipakuliwa %1$s vinapatikana</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">Umechagua kipengee %1$d</item>
+        <item quantity="other">Umechagua vipengee %1$d</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">Kitabu %1$s</item>
+        <item quantity="other">Vitabu %1$s</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">Kipindi %1$s</item>
+        <item quantity="other">Vipindi %1$s</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">Kipengee %1$s</item>
+        <item quantity="other">Vipengee %1$s</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">Tukio %1$s</item>
+        <item quantity="other">Matukio %1$s</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">Umesikiliza mara %1$,d</item>
+        <item quantity="other">Umesikiliza mara %1$,d</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">Wimbo %1$,d</item>
+        <item quantity="other">Nyimbo %1$,d</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Albamu hii ni mpya, hivyo kwa siku %1$d zaidi unaweza kuicheza katika mpangilio wowote. Ukiwa na Premium, uhuru huo hauna kikomo.</item>
+        <item quantity="other">Albamu hii ni mpya, hivyo kwa siku %1$d zaidi unaweza kuicheza katika mpangilio wowote. Ukiwa na Premium, uhuru huo hauna kikomo.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Cheza katika mpangilio wowote kwa siku %1$d zaidi</item>
+        <item quantity="other">Cheza katika mpangilio wowote kwa siku %1$d zaidi</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Sikiliza bila Wi-Fi na uokoe data yako ya mtandao wa simu. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Sikiliza bila Wi-Fi na uokoe data yako ya mtandao wa simu. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Chagua nyimbo za kucheza wakati wowote na kwa utaratibu wowote. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Chagua nyimbo za kucheza wakati wowote na kwa mpangilio wowote. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Panga upya foleni yako na zaidi. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Panga upya foleni yako na zaidi. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Pata udhibiti kamili wa usikilizaji wako. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Pata udhibiti kamili wa usikilizaji wako. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Cheza kwa mpangilio wowote au changanya. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Cheza katika mpangilio wowote au changanya. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Jaribu kuruka bila kikomo, pamoja na manufaa zaidi ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Jaribu kuruka bila kikomo, pamoja na manufaa zaidi ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Pata udhibiti kamili wa usikilizaji wako. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa saa 24.</item>
+        <item quantity="other">Pata udhibiti kamili wa usikilizaji wako. Jaribu manufaa haya pamoja na mengine ya Premium, bila malipo kwa siku %1$d.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Una baadhi ya manufaa ya Premium kwa saa 24 zijazo.</item>
+        <item quantity="other">Una manufaa ya Premium kwa siku %1$d zijazo.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Tumekutumia msimbo wenye tarakimu %1$d kwenda %2$s.</item>
+        <item quantity="other">Tumekutumia msimbo wenye tarakimu %1$d kwenda %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Kwa sababu una umri wa chini ya mwaka %1$d, hujatimiza masharti ya kutoa idhini ya mzazi. Pia, baadhi ya maudhui na vipengele bado havipatikani kulingana na umri wako. Tumezificha.</item>
+        <item quantity="other">Kwa sababu una umri wa chini ya miaka %1$d, hujatimiza masharti ya kutoa idhini ya mzazi. Pia, baadhi ya maudhui na vipengele bado havipatikani kulingana na umri wako. Tumezificha.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">PIN si sahihi, jaribu tena baada ya dakika %1$d.</item>
+        <item quantity="other">PIN si sahihi, jaribu tena baada ya dakika %1$d.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">PIN si sahihi, jaribu tena baada ya sekunde %1$d.</item>
+        <item quantity="other">PIN si sahihi, jaribu tena baada ya sekunde %1$d.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">Akaunti %1$d ya Premium</item>
+        <item quantity="other">Akaunti %1$d za Premium</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">Sekunde %1$d</item>
+        <item quantity="other">Sekunde %1$d</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s na mwingine %2$d</item>
+        <item quantity="other">%1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s na mwingine%2$d · Umechanganywa</item>
+        <item quantity="other">%1$s na wengine%2$d · Umechanganywa</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s na mwingine %2$d</item>
+        <item quantity="other">%1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Uliandaliwa na %1$s na mwingine %2$d</item>
+        <item quantity="other">Uliandaliwa na %1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Ilitengenezwa na %1$s na mwingine %2$d</item>
+        <item quantity="other">Ilitengenezwa na %1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Ilitengenezwa na %1$s na mwingine %2$d</item>
+        <item quantity="other">Ilitengenezwa na %1$s na wengine %2$d</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">Kipindi %1$d</item>
+        <item quantity="other">Vipindi %1$d</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">KIPINDI %1$,d</item>
+        <item quantity="other">VIPINDI %1$,d</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">WIMBO %1$,d</item>
+        <item quantity="other">NYIMBO %1$,d</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">Siku %1$d</item>
+        <item quantity="other">Siku %1$d</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">Imesalia saa %1$d</item>
+        <item quantity="other">Zimesalia saa %1$d</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">Imesalia dakika %1$d</item>
+        <item quantity="other">Zimesalia dakika %1$d</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d kura • %2$s</item>
+        <item quantity="other">%1$d kura • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">Siku %1$d ya Premium</item>
+        <item quantity="other">Siku %1$d za Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">Mwezi %1$d wa Premium</item>
+        <item quantity="other">Miezi %1$d ya Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">Wiki %1$d ya Premium</item>
+        <item quantity="other">Wiki %1$d za Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">Mwaka %1$d wa Premium</item>
+        <item quantity="other">Miaka %1$d ya Premium</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s uliohifadhi mapema</item>
+        <item quantity="other">%1$s ulizohifadhi mapema</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">Mtu %1$d anayefuatilia</item>
+        <item quantity="other">Watu %1$d wanaofuatilia</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">Unaofuatilia %1$d</item>
+        <item quantity="other">Unaowafuatilia %1$d</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">Rafiki %1$d</item>
+        <item quantity="other">Marafiki %1$d</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">Mtu %1$,d anayefuatilia</item>
+        <item quantity="other">Watu %1$,d wanaofuatilia</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">Imehifadhiwa mara %1$,d</item>
+        <item quantity="other">Imehifadhiwa mara %1$,d</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">Imehifadhiwa mara %1$,d</item>
+        <item quantity="other">Imehifadhiwa mara %1$,d</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">Mtu %1$,d anayefuatilia</item>
+        <item quantity="other">Watu %1$,d wanaofuatilia</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">Wimbo %1$d umeongezwa</item>
+        <item quantity="other">Nyimbo %1$d zimeongezwa</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">Wimbo %1$d umeondolewa</item>
+        <item quantity="other">Nyimbo %1$d zimeondolewa</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">Majibizo %1$d</item>
+        <item quantity="other">Majibizo %1$d</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Muhtasari wako utapatikana utakapocheza dakika %1$d ya kwanza ya kitabu hiki cha kusikiliza.</item>
+        <item quantity="other">Muhtasari wako utapatikana utakapocheza dakika %1$d za kwanza za kitabu hiki cha kusikiliza.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d anasikiliza</item>
+        <item quantity="other">%1$d wanasikiliza</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">Imecheza %1$d</item>
+        <item quantity="other">Imecheza %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">Imehifadhiwa mara %1$d</item>
+        <item quantity="other">Imehifadhiwa mara %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d imeonekana</item>
+        <item quantity="other">%1$d zimeonekana</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Ufikiaji wa mapema wa Premium katika siku %1$d</item>
+        <item quantity="other">Ufikiaji wa mapema wa Premium katika siku %1$d</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Itatolewa baada ya siku %1$d</item>
+        <item quantity="other">Itatolewa baada ya siku %1$d</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">rekodi %1$d</item>
+        <item quantity="other">rekodi %1$d</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Ilitumika mara ya mwisho siku %1$d iliyopita</item>
+        <item quantity="other">Ilitumika mara ya mwisho siku %1$d zilizopita</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Unaweza kupakua kwenye kifaa kisichozidi %1$d.</item>
+        <item quantity="other">Unaweza kupakua kwenye vifaa visivyozidi %1$d.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Orodha ya kucheza · Wimbo %1$d</item>
+        <item quantity="other">Orodha ya kucheza · Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">Jibu %1$s. Gusa mara mbili ili ulionyeshe</item>
+        <item quantity="other">Majibu %1$s. Gusa mara mbili ili uyaonyeshe</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">Imehifadhiwa mara %1$s</item>
+        <item quantity="other">Imehifadhiwa mara %1$s</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">&lt;b&gt;Sekunde&lt;/b&gt;&lt;br/&gt;%1$s</item>
+        <item quantity="other">&lt;b&gt;Sekunde&lt;/b&gt;&lt;br/&gt;%1$s</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">Umechagua mstari %1$d</item>
+        <item quantity="other">Umechagua mistari %1$d</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d kitabu cha kusikiliza</item>
+        <item quantity="other">%1$d Vitabu vya kusikiliza</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">Kipengee %1$d</item>
+        <item quantity="other">Vipengee %1$d</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Ni sharti uingie tena mtandaoni baada ya: siku %1$,d</item>
+        <item quantity="other">Ni sharti uingie tena mtandaoni baada ya: siku %1$,d</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Muda uliosalia: siku %1$d</item>
+        <item quantity="other">Muda uliosalia: siku %1$d</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Imeshirikiwa na rafiki %1$s</item>
+        <item quantity="other">Imeshirikiwa na marafiki %1$s</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">Kipengee %1$d kimeshirikiwa</item>
+        <item quantity="other">Vipengee %1$d vimeshirikiwa</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Kulingana na tarehe yako ya kuzaliwa, kwa sasa una umri wa mwaka %1$d.</item>
+        <item quantity="other">Kulingana na tarehe yako ya kuzaliwa, kwa sasa una umri wa miaka %1$d.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Inaonekana una umri wa mwaka %1$d?</item>
+        <item quantity="other">Inaonekana una umri wa miaka %1$d?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">siku %1$d iliyopita</item>
+        <item quantity="other">siku %1$d zilizopita</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">saa %1$d iliyopita</item>
+        <item quantity="other">saa %1$d zilizopita</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">dakika %1$d iliyopita</item>
+        <item quantity="other">dakika %1$d zilizopita</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Mwezi %1$d uliopita</item>
+        <item quantity="other">Miezi %1$d iliyopita</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Wiki %1$d iliyopita</item>
+        <item quantity="other">Wiki %1$d zilizopita</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Mwaka %1$d uliopita</item>
+        <item quantity="other">Miaka %1$d iliyopita</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">Wimbo %1$s pamoja</item>
+        <item quantity="other">Nyimbo %1$s pamoja</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Amerekodi &lt;b&gt;wimbo %1$s&lt;/b&gt;</item>
+        <item quantity="other">Amerekodi &lt;b&gt;nyimbo %1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Wimbo maarufu: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Nyimbo maarufu: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Wimbo maarufu na &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Nyimbo maarufu na &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Alifanya kazi na &lt;b&gt;msanii %1$s&lt;/b&gt;</item>
+        <item quantity="other">Alifanya kazi na &lt;b&gt;wasanii %1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">mshirika %1$s</item>
+        <item quantity="other">washirika %1$s</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">Wimbo %1$s</item>
+        <item quantity="other">Nyimbo %1$s</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">mshirika %1$s</item>
+        <item quantity="other">washirika %1$s</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Tazama wimbo %1$s pamoja</item>
+        <item quantity="other">Tazama nyimbo %1$s pamoja</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s na %2$d zaidi</item>
+        <item quantity="other">%1$s na %2$d zaidi</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">mchangiaji %1$d</item>
+        <item quantity="other">wachangiaji %1$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">Sampuli %1$d</item>
+        <item quantity="other">Sampuli %1$d</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">Umechezwa mara %1$s</item>
+        <item quantity="other">Umechezwa mara %1$s</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">Sekunde %1$d</item>
+        <item quantity="other">Sekunde %1$d</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Jukumu: %1$s</item>
+        <item quantity="other">Majukumu: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">Kipengee %1$,d Kipya</item>
+        <item quantity="other">Vipengee %1$,d Vipya</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">Wimbo %1$d umeongezwa</item>
+        <item quantity="other">Nyimbo %1$d zimeongezwa</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">Umecheza wimbo %1$d</item>
+        <item quantity="other">Umecheza nyimbo %1$d</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">Bpm %1$d</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Imeharakishwa hadi pigo %1$d kwa dakika</item>
+        <item quantity="other">Imeongezwa kasi hadi mapigo %1$d kwa dakika</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Imepunguzwa kasi hadi mpigo %1$d kwa dakika</item>
+        <item quantity="other">Imepunguzwa kasi hadi mpigo %1$d kwa dakika</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">Bpm %1$d</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">Rafiki %1$d anacheza sasa</item>
+        <item quantity="other">Marafiki %1$d wanaocheza sasa</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">Kipengee %1$d</item>
+        <item quantity="other">Vipengee %1$d</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d sentensi imechaguliwa</item>
+        <item quantity="other">%1$s, %2$s, %3$d sentensi zimechaguliwa</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">Saa %1$d dakika %2$d</item>
+        <item quantity="other">Saa %1$d dakika %2$d</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">Sekunde %1$d</item>
+        <item quantity="other">Sekunde %1$d</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">Imesalia saa %1$d</item>
+        <item quantity="other">Zimesalia saa %1$d</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Imesalia saa %1$d dak %2$d</item>
+        <item quantity="other">Zimesalia saa %1$d dak %2$d</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s anataka kujiunga na Jam na wewe!</item>
+        <item quantity="other">%1$s na wengine %2$d wanaomba kujiunga na Jam yako!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s anataka kujiunga na Jam yako!</item>
+        <item quantity="other">%1$s na wengine %2$d wanaomba kujiunga na Jam yako!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">Umesikiliza saa %1$s/%2$d</item>
+        <item quantity="other">Umesikiliza saa %1$s/%2$d</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Itatolewa baada ya siku %1$d</item>
+        <item quantity="other">Itatolewa baada ya siku %1$d</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Ufikiaji wa mapema wa Premium siku %1$d kutoka sasa</item>
+        <item quantity="other">Ufikiaji wa mapema wa Premium siku %1$d kutoka sasa</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">Dak %1$d</item>
+        <item quantity="other">Dak %1$d</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Imewashwa kwa onyesho %1$s</item>
+        <item quantity="other">Imewashwa kwa maonyesho %1$s</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">Wimbo %1$d</item>
+        <item quantity="other">Nyimbo %1$d</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d kati ya %2$d nyimbo</item>
+        <item quantity="other">%1$d kati ya nyimbo %2$d</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Inaendelea, asilimia %1$d imekamilika</item>
+        <item quantity="other">Inaendelea, asilimia %1$d imekamilika</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Unaweza kubandika kipengee %1$d tu kwa wakati mmoja.</item>
+        <item quantity="other">Unaweza kubandika vipengee %1$d tu kwa wakati mmoja.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Unaweza kubandika kipengee %1$d tu kwa wakati mmoja.</item>
+        <item quantity="other">Unaweza kubandika vipengee %1$d tu kwa wakati mmoja.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Ilikamilika hapo awali, inaendelea huku asilimia %1$d imekamilika</item>
+        <item quantity="other">Ilikamilika hapo awali, inaendelea huku asilimia %1$d imekamilika</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">Saa %1$d</item>
+        <item quantity="other">Saa %1$d</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">Dakika %1$d</item>
+        <item quantity="other">Dakika %1$d</item>
+    </plurals>
+</resources>

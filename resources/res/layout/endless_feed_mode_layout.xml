@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/content"
+    android:background="?attr/pasteColorBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.nowplaying.scroll.view.PeekScrollView
+        android:id="@+id/scroll_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:peekHeight="@dimen/peek_height">
+        <com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView
+            android:id="@+id/overlay_controls_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <com.spotify.encoremobile.viewstub.EncoreViewStub
+                android:id="@+id/track_carousel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+            <include
+                android:id="@+id/player_overlay"
+                layout="@layout/endless_feed_mode_overlay"/>
+        </com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView>
+        <com.spotify.nowplaying.scroll.container.ScrollCardsContainer
+            android:id="@+id/widgets_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </com.spotify.nowplaying.scroll.view.PeekScrollView>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:layout_gravity="top"
+        android:id="@+id/endless_feed_sticky_header"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

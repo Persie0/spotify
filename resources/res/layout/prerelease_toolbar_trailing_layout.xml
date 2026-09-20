@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="end|center_vertical"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.prerelease.uiusecases.mutebutton.MuteButtonView
+        android:id="@+id/mute_button"
+        android:layout_width="@dimen/encore_back_button_size"
+        android:layout_height="@dimen/encore_back_button_size"/>
+    <com.spotify.encoreconsumermobile.elements.contextmenu.ContextMenuButton
+        android:id="@+id/toolbar_context_menu_button"
+        android:layout_width="@dimen/encore_back_button_size"
+        android:layout_height="@dimen/encore_back_button_size"
+        style="@style/Prerelease.ToolbarContextMenu"/>
+</LinearLayout>

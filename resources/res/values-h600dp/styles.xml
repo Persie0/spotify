@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Blend.Story.TextView.Body" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.Encore.BodyMedium</item>
+    </style>
+    <style name="Blend.Story.TextView.Subtitle" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.Encore.BodyMedium</item>
+    </style>
+    <style name="Blend.Story.TextView.Title" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.Encore.HeadlineMedium</item>
+    </style>
+</resources>

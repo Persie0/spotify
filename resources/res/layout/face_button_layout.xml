@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.spotify.encoremobile.facepile.FaceView
+        android:id="@+id/face_view"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        app:border_mask_thickness="0dp"
+        app:face_size="20dp"
+        app:face_view_count="1"
+        app:show_additional_count="false"/>
+</merge>

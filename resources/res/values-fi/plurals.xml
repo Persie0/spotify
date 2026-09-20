@@ -1,0 +1,1287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s kuuntelija kuukaudessa</item>
+        <item quantity="other">%1$s kuuntelijaa kuukaudessa</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d ryhmitelty kaiutin</item>
+        <item quantity="other">%1$d ryhmiteltyä kaiutinta</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d tähti viidestä</item>
+        <item quantity="other">%1$d tähteä viidestä</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d tähti viidestä</item>
+        <item quantity="other">%1$d tähteä viidestä</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">valitse %1$d tähti</item>
+        <item quantity="other">valitse %1$d tähteä</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d tähti</item>
+        <item quantity="other">%1$d tähteä</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">%1$d tili lisää</item>
+        <item quantity="other">%1$d tiliä lisää</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">Ja %1$d tili lisää</item>
+        <item quantity="other">Ja %1$d tiliä lisää</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">%1$d kohde löytyi</item>
+        <item quantity="other">%1$d kohdetta löytyi</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s kansio</item>
+        <item quantity="other">%1$s kansiota</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s soittolista</item>
+        <item quantity="other">%1$s soittolistaa</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s äänikirja</item>
+        <item quantity="other">%1$s äänikirjaa</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s osa</item>
+        <item quantity="other">%1$s osaa</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s Klippi</item>
+        <item quantity="other">%1$s Klippiä</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s jakso</item>
+        <item quantity="other">%1$s jaksoa</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d sekunti mainoksen skippaamiseen, ajastin</item>
+        <item quantity="other">%1$d sekuntia mainoksen skippaamiseen, ajastin</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Ohita %1$d sekunnin kuluttua</item>
+        <item quantity="other">Ohita %1$d sekunnin kuluttua</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Mainos • Ohita %1$d s jälkeen</item>
+        <item quantity="other">Mainos • Ohita %1$d s jälkeen</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Huomio! Et ole riittävän vanha käyttämään Spotifyta, joten tilisi on estetty ja poistetaan käytöstä %1$s päivän päästä. Käsitimmekö väärin? Kokeile vahvistaa ikäsi henkilötodistuksella.</item>
+        <item quantity="other">Huomio! Et ole riittävän vanha käyttämään Spotifyta, joten tilisi on estetty ja poistetaan käytöstä %1$s päivän päästä. Käsitimmekö väärin? Kokeile vahvistaa ikäsi henkilötodistuksella.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Vaikuttaa siltä, että et ole tarpeeksi vanha omaa Spotify-tiliä varten. Voit kuitenkin käyttää valvottua tiliä, jos vanhempasi tai huoltajasi hyväksyy sen.\n\nTilisi poistetaan käytöstä %1$s päivän kuluttua</item>
+        <item quantity="other">Vaikuttaa siltä, että et ole tarpeeksi vanha omaa Spotify-tiliä varten. Voit kuitenkin käyttää valvottua tiliä, jos vanhempasi tai huoltajasi hyväksyy sen.\n\nTilisi poistetaan käytöstä %1$s päivän kuluttua.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Jos haluat aktivoida tilisi uudelleen, vahvista ikäsi henkilötodistuksella. Jos iän tarkistuksella ei voida vahvistaa, että olet riittävän vanha käyttämään Spotifyta, tai jos et tee mitään %1$s päivän kuluessa, tilisi poistetaan pysyvästi.</item>
+        <item quantity="other">Jos haluat aktivoida tilisi uudelleen, vahvista ikäsi henkilötodistuksella. Jos iän tarkistuksella ei voida vahvistaa, että olet riittävän vanha käyttämään Spotifyta, tai jos et tee mitään %1$s päivän kuluessa, tilisi poistetaan pysyvästi.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Koska olet alle %1$d-vuotias, et voi antaa vanhemman suostumusta.\n\nOsa sisällöstä ja ominaisuuksista ei myöskään ole vielä saatavillasi ikäsi perusteella. Olemme piilottaneet ne.</item>
+        <item quantity="other">Koska olet alle %1$d-vuotias, et voi antaa vanhemman suostumusta.\n\nOsa sisällöstä ja ominaisuuksista ei myöskään ole vielä saatavillasi ikäsi perusteella. Olemme piilottaneet ne.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d kappale • %2$s</item>
+        <item quantity="other">%1$d kappaletta • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d valittu</item>
+        <item quantity="other">%1$d valittu</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d valittu</item>
+        <item quantity="other">%1$d valittu</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$d valittu. Valitse vielä vähintään %2$d, jotta voit jatkaa.</item>
+        <item quantity="other">%1$d valittu. Valitse vielä vähintään %2$d, jotta voit jatkaa.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d t</item>
+        <item quantity="other">%1$d t</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Olet ylittänyt rajan %1$d merkillä.</item>
+        <item quantity="other">Olet ylittänyt rajan %1$d merkillä.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ %1$d muu</item>
+        <item quantity="other">+ %1$d muuta</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d julkaisu</item>
+        <item quantity="other">%1$,d julkaisua</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d kappale</item>
+        <item quantity="other">%1$,d kappaletta</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s tapahtuma lähellä sinua</item>
+        <item quantity="other">%1$s tapahtumaa lähellä sinua</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d julkaisu</item>
+        <item quantity="other">%1$d julkaisua</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">Hakusanalla %1$s löytyi %2$d tulos</item>
+        <item quantity="other">Hakusanalla %1$s löytyi %2$d tulosta</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d äänikirja lisätty</item>
+        <item quantity="other">%1$d äänikirjaa lisätty</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d äänikirja kuunneltu</item>
+        <item quantity="other">%1$d äänikirjaa kuunneltu</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s uusi jakso ohjelmaa kohden</item>
+        <item quantity="other">%1$s uutta jaksoa ohjelmaa kohden</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podcast • %1$d jakso</item>
+        <item quantity="other">Podcast • %1$d jaksoa</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s henkilö ryhmään</item>
+        <item quantity="other">%1$s henkilöä ryhmään</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">%1$d päivä sitten</item>
+        <item quantity="other">%1$d päivää sitten</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">%1$d tunti sitten</item>
+        <item quantity="other">%1$d tuntia sitten</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">%1$d minuutti sitten</item>
+        <item quantity="other">%1$d minuuttia sitten</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d kuva</item>
+        <item quantity="other">%1$d kuvaa</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d videota</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s henkilö</item>
+        <item quantity="other">%1$s henkilöä</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s kaveri</item>
+        <item quantity="other">%1$s kaveria</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Rajan nollautumiseen on %1$d päivä, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää AI-soittolistaa tai luoda soittolistan itse.</item>
+        <item quantity="other">Rajan nollautumiseen on %1$d päivää, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää AI-soittolistaa tai luoda soittolistan itse.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Rajan nollautumiseen on %1$d päivä, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää pikasoittolistaa tai luoda soittolistan itse.</item>
+        <item quantity="other">Rajan nollautumiseen on %1$d päivää, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää pikasoittolistaa tai luoda soittolistan itse.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Rajan nollautumiseen on %1$d tunti, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää AI-soittolistaa tai luoda soittolistan itse.</item>
+        <item quantity="other">Rajan nollautumiseen on %1$d tuntia, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää AI-soittolistaa tai luoda soittolistan itse.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Rajan nollautumiseen on %1$d tunti, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää pikasoittolistaa tai luoda soittolistan itse.</item>
+        <item quantity="other">Rajan nollautumiseen on %1$d tuntia, joten palaa sen jälkeen takaisin. Odotellessasi voit käyttää pikasoittolistaa tai luoda soittolistan itse.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d uusi merkintä</item>
+        <item quantity="other">%1$,d uutta merkintää</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s ei voi lähettää viestejä suoraan sinulle. Voit poistua keskustelusta, jos et halua olla vuorovaikutuksessa hänen kanssaan.</item>
+        <item quantity="other">%1$s eivät voi lähettää viestejä suoraan sinulle. Voit poistua keskustelusta, jos et halua olla vuorovaikutuksessa heidän kanssaan.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">%1$d muu</item>
+        <item quantity="other">%1$d muuta</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Ryhmä • %1$d henkilö</item>
+        <item quantity="other">Ryhmä • %1$d henkilöä</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d odottaa)</item>
+        <item quantity="other">(%1$d odottaa)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d kuva on ladattu.</item>
+        <item quantity="other">%1$d kuvaa on ladattu.</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">%1$d kuvaa ei voitu ladata.</item>
+        <item quantity="other">%1$d kuvaa ei voitu ladata.</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">%1$s, jonka olet estänyt, on tässä keskustelussa. Voit poistaa tämän ryhmäviestipyynnön, jos et halua olla vuorovaikutuksessa hänen kanssaan.</item>
+        <item quantity="other">%1$s, jotka olet estänyt, ovat tässä keskustelussa. Voit poistaa tämän ryhmäviestipyynnön, jos et halua olla vuorovaikutuksessa heidän kanssaan.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Ryhmissä voi olla enintään %1$d henkilö</item>
+        <item quantity="other">Ryhmissä voi olla enintään %1$d henkilöä</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Kun %1$s hyväksyy, hän näkee kaikki viestit, jotka on lähetetty chatissa kutsun jälkeen.</item>
+        <item quantity="other">Kun joku hyväksyy, hän näkee kaikki viestit, jotka on lähetetty chatissa kutsun jälkeen.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Kutsutaanko %1$s tähän keskusteluun?</item>
+        <item quantity="other">Kutsutaanko valitut henkilöt tähän keskusteluun?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d video on ladattu.</item>
+        <item quantity="other">%1$d videota on ladattu.</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">%1$d videota ei voitu ladata.</item>
+        <item quantity="other">%1$d videota ei voitu ladata.</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d rooli</item>
+        <item quantity="other">+ %1$d roolia</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">%1$d päivä sitten</item>
+        <item quantity="other">%1$d päivää sitten</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">%1$d tunti sitten</item>
+        <item quantity="other">%1$d tuntia sitten</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">%1$d minuutti sitten</item>
+        <item quantity="other">%1$d minuuttia sitten</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d kuukausi sitten</item>
+        <item quantity="other">%1$d kuukautta sitten</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s vastaus</item>
+        <item quantity="other">%1$s vastausta</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s henkilö reagoi myös.</item>
+        <item quantity="other">%1$s henkilöä reagoi myös.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s henkilö reagoi tähän kommenttiin.</item>
+        <item quantity="other">%1$s henkilöä reagoi tähän kommenttiin.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s vastaus</item>
+        <item quantity="other">%1$s vastausta</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">%1$s vastaus lisää. Näytä napauttamalla kahdesti.</item>
+        <item quantity="other">%1$s vastausta lisää. Näytä napauttamalla kahdesti.</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d viikko sitten</item>
+        <item quantity="other">%1$d viikkoa sitten</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">%1$d vuosi sitten</item>
+        <item quantity="other">%1$d vuotta sitten</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d kappale</item>
+        <item quantity="other">%1$,d kappaletta</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d kuuntelija</item>
+        <item quantity="other">%1$d kuuntelijaa</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d tunti</item>
+        <item quantity="other">%1$d tuntia</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d minuutti</item>
+        <item quantity="other">%1$d minuuttia</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d kappale yhdessä</item>
+        <item quantity="other">%1$d kappaletta yhdessä</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d kappale yhdessä</item>
+        <item quantity="other">%1$d kappaletta yhdessä</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d päivä</item>
+        <item quantity="other">%1$d päivää</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s kuuntelija kuukaudessa</item>
+        <item quantity="other">%1$s kuuntelijaa kuukaudessa</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Tekijä: %1$s</item>
+        <item quantity="other">Tekijät: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s ja %2$d muu</item>
+        <item quantity="other">%1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Siirtyy muuhun tämän %1$s sisältöön</item>
+        <item quantity="other">Näyttää kaikkien %1$s luettelon</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Valmisteluaika %1$d päivä</item>
+        <item quantity="other">Valmisteluaika %1$d päivää</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d päivä</item>
+        <item quantity="other">%1$d päivää</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;päivä&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;päivää&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Julkaistaan %1$d päivän kuluttua</item>
+        <item quantity="other">Julkaistaan %1$d päivän kuluttua</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d päivä kuunteluajan vanhenemiseen</item>
+        <item quantity="other">%1$d päivää kuunteluajan vanhenemiseen</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d päivä kuunteluajan uusiutumiseen</item>
+        <item quantity="other">%1$d päivää kuunteluajan uusiutumiseen</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Poistetaanko %1$d kuva?</item>
+        <item quantity="other">Poistetaanko %1$d kuvaa?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Poistetaanko %1$d kohde?</item>
+        <item quantity="other">Poistetaanko %1$d kohdetta?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Poistetaanko %1$d video?</item>
+        <item quantity="other">Poistetaanko %1$d videota?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d/%2$d merkkiä</item>
+        <item quantity="other">%1$d/%2$d merkkiä</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s ja %2$d muu</item>
+        <item quantity="other">%1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d valittu</item>
+        <item quantity="other">%1$d valittu</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Voit vaihtaa käyttäjätunnuksen vain %1$d kerran %2$d päivän aikana.</item>
+        <item quantity="other">Voit vaihtaa käyttäjätunnuksen vain %1$d kertaa %2$d päivän aikana.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Yritä uudelleen %1$d päivän kuluttua.</item>
+        <item quantity="other">Yritä uudelleen %1$d päivän kuluttua.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Voit vaihtaa käyttäjätunnuksen %1$d kerran %2$d päivän aikana.</item>
+        <item quantity="other">Voit vaihtaa käyttäjätunnuksen %1$d kertaa %2$d päivän aikana.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s tallennus</item>
+        <item quantity="other">%1$s tallennusta</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">%1$d prosentti ladattu</item>
+        <item quantity="other">%1$d prosenttia ladattu</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d jakso lisätty</item>
+        <item quantity="other">%1$d jaksoa lisätty</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d jakso kuunneltu</item>
+        <item quantity="other">%1$d jaksoa kuunneltu</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Odota %1$d sekunti ja tilaa sitten uusi koodi.</item>
+        <item quantity="other">Odota %1$d sekuntia ja tilaa sitten uusi koodi.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Yritä uudelleen %1$d sekunnin kuluttua</item>
+        <item quantity="other">Yritä uudelleen %1$d sekunnin kuluttua</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d tapahtuma</item>
+        <item quantity="other">%1$d tapahtumaa</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Näytä %1$d muu maksutapa</item>
+        <item quantity="other">Näytä %1$d muuta maksutapaa</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s/5 tähteä Spotifyssa %2$s arvostelun perusteella</item>
+        <item quantity="other">%1$s/5 tähteä Spotifyssa %2$s arvostelun perusteella</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d tähti: %2$d %%</item>
+        <item quantity="other">%1$d tähteä: %2$d %%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d kuuntelee</item>
+        <item quantity="other">%1$d kuuntelee</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d henkilö kuuntelee</item>
+        <item quantity="other">%1$d henkilöä kuuntelee</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Käyttäjän %1$s Jam – %2$d kuuntelee mukana</item>
+        <item quantity="other">Käyttäjän %1$s Jam – %2$d kuuntelee mukana</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s tallennus</item>
+        <item quantity="other">%1$s tallennusta</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;tunti&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;tuntia&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d tunti kuunteluajan vanhenemiseen</item>
+        <item quantity="other">%1$d tuntia kuunteluajan vanhenemiseen</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d tunti kuunteluajan uusiutumiseen</item>
+        <item quantity="other">%1$d tuntia kuunteluajan uusiutumiseen</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d prosentti</item>
+        <item quantity="other">%1$d prosenttia</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s kuuntelukerta</item>
+        <item quantity="other">%1$s kuuntelukertaa</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s liittyi Jamiin</item>
+        <item quantity="other">%2$d muuta liittyi Jamiin</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s kansio</item>
+        <item quantity="other">%1$s kansiota</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s soittolista</item>
+        <item quantity="other">%1$s soittolistaa</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Soittolista • %1$s kappale</item>
+        <item quantity="other">Soittolista • %1$s kappaletta</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s ladattu jakso • %2$s</item>
+        <item quantity="other">%1$s ladattua jaksoa • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s ladattu jakso</item>
+        <item quantity="other">%1$s ladattua jaksoa</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$d kohde lisätty</item>
+        <item quantity="other">%1$d kohdetta lisätty</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$d kohde kuunneltu</item>
+        <item quantity="other">%1$d kohdetta kuunneltu</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Sait käyttäjältä %1$s pyynnön liittyä Jamiin kanssasi, koska jaat kuuntelutapahtumat käyttäjän %1$s kanssa.</item>
+        <item quantity="other">Sait käyttäjältä %1$s ja %2$d muulta pyynnön liittyä Jamiin kanssasi, koska jaat kuuntelutapahtumat heidän kanssaan.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Sait Jam-liittymispyynnön käyttäjältä %1$s, koska automaattiset Jam-kutsut ovat päällä ja jompikumpi seuraavista pätee:</item>
+        <item quantity="other">Sait Jam-liittymispyyntöjä käyttäjältä %1$s ja %2$d muulta, koska automaattiset Jam-kutsut ovat päällä ja jompikumpi seuraavista pätee:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">ja %1$d muu</item>
+        <item quantity="other">ja %1$d muuta</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d rivi valittu</item>
+        <item quantity="other">%1$d riviä valittu</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d jakso</item>
+        <item quantity="other">%1$d jaksoa</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d kohde</item>
+        <item quantity="other">%1$d kohdetta</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d henkilö</item>
+        <item quantity="other">%1$d henkilöä</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d kuuntelee</item>
+        <item quantity="other">%1$d kuuntelee</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Olet käyttänyt koko %1$d tunnin kuukausitilaukseesi sisältyvää äänikirjojen kuunteluaikaa.</item>
+        <item quantity="other">Olet käyttänyt kaikki %1$d tuntia kuukausitilaukseesi sisältyvää äänikirjojen kuunteluaikaa.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Kuuntele %1$d tunnin ajan äänikirjoja tilaajien katalogistamme, joka sisältyy kuukausitilaukseesi.</item>
+        <item quantity="other">Kuuntele %1$d tunnin ajan äänikirjoja tilaajien katalogistamme, joka sisältyy kuukausitilaukseesi.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d tunti kuunteluaikaa</item>
+        <item quantity="other">%1$d tuntia kuunteluaikaa</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Järjestäjänä %1$s%2$s + %3$d</item>
+        <item quantity="other">Järjestäjänä %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d päivä</item>
+        <item quantity="other">%1$d päivää</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s s</item>
+        <item quantity="other">%1$s s</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d ääni</item>
+        <item quantity="other">%1$d ääntä</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d tekijä</item>
+        <item quantity="other">%1$d tekijää</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d sample</item>
+        <item quantity="other">%1$d samplea</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d rivi valittu</item>
+        <item quantity="other">%1$d riviä valittu</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">%1$d päivä sitten</item>
+        <item quantity="other">%1$d päivää sitten</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">%1$d kuukausi sitten</item>
+        <item quantity="other">%1$d kuukautta sitten</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">%1$d viikko sitten</item>
+        <item quantity="other">%1$d viikkoa sitten</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">%1$d vuosi sitten</item>
+        <item quantity="other">%1$d vuotta sitten</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Ladataanko %1$d kuva?</item>
+        <item quantity="other">Ladataanko %1$d kuvaa?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Ladataanko %1$d kohde?</item>
+        <item quantity="other">Ladataanko %1$d kohdetta?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Ladataanko %1$d video?</item>
+        <item quantity="other">Ladataanko %1$d videota?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Voit lähettää %1$d videon kerrallaan.</item>
+        <item quantity="other">Voit lähettää enintään %1$d videota kerrallaan.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d kuva</item>
+        <item quantity="other">%1$d kuvaa</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d kohde</item>
+        <item quantity="other">%1$d kohdetta</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d videota</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;minuutti&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;minuuttia&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d uusi ilmoitus</item>
+        <item quantity="other">%d uutta ilmoitusta</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">%1$d merkki jäljellä, raja lähestyy</item>
+        <item quantity="other">%1$d merkkiä jäljellä, raja lähestyy</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">%1$d merkki jäljellä</item>
+        <item quantity="other">%1$d merkkiä jäljellä</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d/%2$,d (%3$,d %% valmiina)</item>
+        <item quantity="other">%1$,d/%2$,d (%3$,d %% valmiina)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d/%2$,d (%3$,d %% valmis)</item>
+        <item quantity="other">%1$,d/%2$,d (%3$,d %% valmis)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Nopeutettu tempoon %1$d BPM</item>
+        <item quantity="other">Nopeutettu tempoon %1$d BPM</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Hidastettu tempoon %1$d BPM</item>
+        <item quantity="other">Hidastettu tempoon %1$d BPM</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$s lataus saatavilla</item>
+        <item quantity="other">%1$s latausta saatavilla</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d kohde valittu</item>
+        <item quantity="other">%1$d kohdetta valittu</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s kirja</item>
+        <item quantity="other">%1$s kirjaa</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s jakso</item>
+        <item quantity="other">%1$s jaksoa</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s kohde</item>
+        <item quantity="other">%1$s kohdetta</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s tapahtuma</item>
+        <item quantity="other">%1$s tapahtumaa</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d kuuntelukerta</item>
+        <item quantity="other">%1$,d kuuntelukertaa</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d kappale</item>
+        <item quantity="other">%1$,d kappaletta</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Tämä albumi on uusi, joten voit kuunnella sitä missä tahansa järjestyksessä vielä %1$d päivän ajan. Premiumilla tämä vapaus ei lopu koskaan.</item>
+        <item quantity="other">Tämä albumi on uusi, joten voit kuunnella sitä missä tahansa järjestyksessä vielä %1$d päivän ajan. Premiumilla tämä vapaus ei lopu koskaan.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Kuuntele missä tahansa järjestyksessä vielä %1$d päivän ajan</item>
+        <item quantity="other">Kuuntele missä tahansa järjestyksessä vielä %1$d päivän ajan</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Kuuntele ilman Wi‑Fi-yhteyttä ja käyttämättä mobiilidataa. Kokeile tätä ja muita Premium-etuja 24 tuntia maksutta.</item>
+        <item quantity="other">Kuuntele ilman Wi‑Fi-yhteyttä ja käyttämättä mobiilidataa. Kokeile tätä ja muita Premium-etuja %1$d päivää maksutta.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Valitse aina itse, mitä kappaleita kuuntelet ja missä järjestyksessä. Kokeile tätä ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Valitse aina itse, mitä kappaleita kuuntelet ja missä järjestyksessä. Kokeile tätä ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Muuta jonon järjestystä ja paljon muuta. Kokeile tätä ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Muuta jonon järjestystä ja paljon muuta. Kokeile tätä ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Ota kuuntelusi ohjat käsiisi. Kokeile tätä ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Ota kuuntelusi ohjat käsiisi. Kokeile tätä ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Kuuntele kappaleita missä tahansa järjestyksessä tai satunnaistoistona. Kokeile tätä ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Kuuntele kappaleita missä tahansa järjestyksessä tai satunnaistoistona. Kokeile tätä ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Kokeile rajattomia skippauksia ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Kokeile rajattomia skippauksia ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Ota kuuntelusi ohjat käsiisi. Kokeile tätä ja muita Premium-etuja maksutta 24 tunnin ajan.</item>
+        <item quantity="other">Ota kuuntelusi ohjat käsiisi. Kokeile tätä ja muita Premium-etuja maksutta %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Käytössäsi on joitakin Premium-etuja seuraavien 24 tunnin ajan.</item>
+        <item quantity="other">Käytössäsi on joitakin Premium-etuja seuraavien %1$d päivän ajan.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Lähetimme %1$d-numeroisen koodin numeroon %2$s.</item>
+        <item quantity="other">Lähetimme %1$d-numeroisen koodin numeroon %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Koska olet alle %1$d-vuotias, et voi antaa vanhemman suostumusta.\n\nOsa sisällöstä ja ominaisuuksista ei myöskään ole vielä saatavillasi ikäsi perusteella. Olemme piilottaneet ne.</item>
+        <item quantity="other">Koska olet alle %1$d-vuotias, et voi antaa vanhemman suostumusta.\n\nOsa sisällöstä ja ominaisuuksista ei myöskään ole vielä saatavillasi ikäsi perusteella. Olemme piilottaneet ne.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Virheellinen PIN-koodi. Yritä uudelleen %1$d minuutin kuluttua.</item>
+        <item quantity="other">Virheellinen PIN-koodi. Yritä uudelleen %1$d minuutin kuluttua.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Virheellinen PIN-koodi. Yritä uudelleen %1$d sekunnin kuluttua.</item>
+        <item quantity="other">Virheellinen PIN-koodi. Yritä uudelleen %1$d sekunnin kuluttua.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d Premium-tili</item>
+        <item quantity="other">%1$d Premium-tiliä</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d sekunti</item>
+        <item quantity="other">%1$d sekuntia</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s ja %2$d muu</item>
+        <item quantity="other">%1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s ja %2$d muu · Miksattu</item>
+        <item quantity="other">%1$s + %2$d muuta · Miksattu</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s ja %2$d muu</item>
+        <item quantity="other">%1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Mixin tekijät: %1$s ja %2$d muu</item>
+        <item quantity="other">Mixin tekijät: %1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Luonut %1$s ja %2$d muu</item>
+        <item quantity="other">Luonut %1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Luonut %1$s ja %2$d muu</item>
+        <item quantity="other">Luonut %1$s ja %2$d muuta</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d jakso</item>
+        <item quantity="other">%1$d jaksoa</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d JAKSO</item>
+        <item quantity="other">%1$,d JAKSOA</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d KAPPALE</item>
+        <item quantity="other">%1$,d KAPPALETTA</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d päivä</item>
+        <item quantity="other">%1$d päivää</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">%1$d tunti jäljellä</item>
+        <item quantity="other">%1$d tuntia jäljellä</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">%1$d minuutti jäljellä</item>
+        <item quantity="other">%1$d minuuttia jäljellä</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d ääni • %2$s</item>
+        <item quantity="other">%1$d ääntä • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d päivä Premiumia</item>
+        <item quantity="other">%1$d päivää Premiumia</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d kuukausi Premiumia</item>
+        <item quantity="other">%1$d kuukautta Premiumia</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d viikko Premiumia</item>
+        <item quantity="other">%1$d viikkoa Premiumia</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d vuosi Premiumia</item>
+        <item quantity="other">%1$d vuotta Premiumia</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s ennakkotallennus</item>
+        <item quantity="other">%1$s ennakkotallennusta</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d seuraaja</item>
+        <item quantity="other">%1$d seuraajaa</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d seurattava</item>
+        <item quantity="other">%1$d seurattavaa</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d kaveri</item>
+        <item quantity="other">%1$d kaveria</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d seuraaja</item>
+        <item quantity="other">%1$,d seuraajaa</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d tallennus</item>
+        <item quantity="other">%1$,d tallennusta</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d tallennus</item>
+        <item quantity="other">%1$,d tallennusta</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d seuraaja</item>
+        <item quantity="other">%1$,d seuraajaa</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d kappale lisätty</item>
+        <item quantity="other">%1$d kappaletta lisätty</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d kappale poistettu</item>
+        <item quantity="other">%1$d kappaletta poistettu</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d reaktio</item>
+        <item quantity="other">%1$d reaktiota</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Pikakertaus tulee saataville, kun olet kuunnellut tämän äänikirjan %1$d. minuutin.</item>
+        <item quantity="other">Pikakertaus tulee saataville, kun olet kuunnellut tämän äänikirjan ensimmäiset %1$d minuuttia.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d kuuntelee</item>
+        <item quantity="other">%1$d kuuntelee</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d kuunnellut</item>
+        <item quantity="other">%1$d kuunnellut</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d tallentanut</item>
+        <item quantity="other">%1$d tallentanut</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d lukenut</item>
+        <item quantity="other">%1$d lukenut</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Ennakkokuuntelu Premiumilla %1$d päivän päästä</item>
+        <item quantity="other">Ennakkokuuntelu Premiumilla %1$d päivän päästä</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Julkaistaan %1$d päivän kuluttua</item>
+        <item quantity="other">Julkaistaan %1$d päivän kuluttua</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d äänite</item>
+        <item quantity="other">%1$d äänitettä</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Viimeksi aktiivinen %1$d päivä sitten</item>
+        <item quantity="other">Viimeksi aktiivinen %1$d päivää sitten</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Voit ladata vain %1$d laitteelle.</item>
+        <item quantity="other">Voit ladata enintään %1$d laitteelle.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Soittolista · %1$d kappale</item>
+        <item quantity="other">Soittolista · %1$d kappaletta</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s vastaus. Näytä napauttamalla kahdesti.</item>
+        <item quantity="other">%1$s vastausta. Näytä napauttamalla kahdesti.</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s tallennus</item>
+        <item quantity="other">%1$s tallennusta</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;sekunti&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;sekuntia&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d rivi valittu</item>
+        <item quantity="other">%1$d riviä valittu</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d äänikirja</item>
+        <item quantity="other">%1$d äänikirjaa</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d kohde</item>
+        <item quantity="other">%1$d kohdetta</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Palattava online-tilaan %1$,d vuorokauden kuluessa</item>
+        <item quantity="other">Palattava online-tilaan %1$,d vuorokauden kuluessa</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Tilausta jäljellä %1$d päivä</item>
+        <item quantity="other">Tilausta jäljellä %1$d päivää</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Jakanut %1$s kaveri</item>
+        <item quantity="other">Jakanut %1$s kaveria</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d jako</item>
+        <item quantity="other">%1$d jakoa</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Syntymäpäiväsi perusteella olet tällä hetkellä %1$d vuoden vanha.</item>
+        <item quantity="other">Syntymäpäiväsi perusteella olet tällä hetkellä %1$d vuotta vanha.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Vaikutat olevan %1$d-vuotias</item>
+        <item quantity="other">Vaikutat olevan %1$d-vuotias</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">%1$d päivä sitten</item>
+        <item quantity="other">%1$d päivää sitten</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">%1$d tunti sitten</item>
+        <item quantity="other">%1$d tuntia sitten</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">%1$d minuutti sitten</item>
+        <item quantity="other">%1$d minuuttia sitten</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">%1$d kuukausi sitten</item>
+        <item quantity="other">%1$d kuukautta sitten</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">%1$d viikko sitten</item>
+        <item quantity="other">%1$d viikkoa sitten</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">%1$d vuosi sitten</item>
+        <item quantity="other">%1$d vuotta sitten</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s kappale yhdessä</item>
+        <item quantity="other">%1$s kappaletta yhdessä</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Levyttänyt &lt;b&gt;%1$s kappaleen&lt;/b&gt;</item>
+        <item quantity="other">Levyttänyt &lt;b&gt;%1$s kappaletta&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Suosituin kappale: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Suosituimmat kappaleet: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Suosituin kappale &lt;b&gt;artistin %1$s kanssa: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Suosituimmat kappaleet &lt;b&gt;artistin %1$s kanssa: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Työskennellyt &lt;b&gt;%1$s artistin&lt;/b&gt; kanssa</item>
+        <item quantity="other">Työskennellyt &lt;b&gt;%1$s artistin&lt;/b&gt; kanssa</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s yhteistyökumppani</item>
+        <item quantity="other">%1$s yhteistyökumppania</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s kappale</item>
+        <item quantity="other">%1$s kappaletta</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s yhteistyökumppani</item>
+        <item quantity="other">%1$s yhteistyökumppania</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Katso %1$s kappale yhdessä</item>
+        <item quantity="other">Katso %1$s kappaletta yhdessä</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + %2$d muu</item>
+        <item quantity="other">%1$s + %2$d muuta</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d tekijä</item>
+        <item quantity="other">%1$d tekijää</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d sample</item>
+        <item quantity="other">%1$d samplea</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s kuuntelukerta</item>
+        <item quantity="other">%1$s kuuntelukertaa</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d minuutti</item>
+        <item quantity="other">%1$d minuuttia</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d sekunti</item>
+        <item quantity="other">%1$d sekuntia</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Rooli: %1$s</item>
+        <item quantity="other">Roolit: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d uusi kohde</item>
+        <item quantity="other">%1$,d uutta kohdetta</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d kappale lisätty</item>
+        <item quantity="other">%1$d kappaletta lisätty</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$d kappale kuunneltu</item>
+        <item quantity="other">%1$d kappaletta kuunneltu</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Nopeutettu tempoon %1$d BPM</item>
+        <item quantity="other">Nopeutettu tempoon %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Hidastettu tempoon %1$d BPM</item>
+        <item quantity="other">Hidastettu tempoon %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d kaveri kuuntelee nyt</item>
+        <item quantity="other">%1$d kaveria kuuntelee nyt</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d kohde</item>
+        <item quantity="other">%1$d kohdetta</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d virke valittu</item>
+        <item quantity="other">%1$s, %2$s, %3$d virkettä valittu</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d tunti</item>
+        <item quantity="other">%1$d tuntia</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d tunti %2$d minuutti</item>
+        <item quantity="other">%1$d tunti %2$d minuuttia</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d sekunti</item>
+        <item quantity="other">%1$d sekuntia</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">%1$d tunti jäljellä</item>
+        <item quantity="other">%1$d tuntia jäljellä</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">%1$d tunti %2$d minuutti jäljellä</item>
+        <item quantity="other">%1$d tunti %2$d minuuttia jäljellä</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s haluaa liittyä Jamiin kanssasi!</item>
+        <item quantity="other">%1$s ja %2$d muuta haluavat liittyä Jamiisi!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s haluaa liittyä Jamiin!</item>
+        <item quantity="other">%1$s ja %2$d muuta haluavat liittyä Jamiin!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%1$s/%2$d tunti kuunneltu</item>
+        <item quantity="other">%1$s/%2$d tuntia kuunneltu</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Julkaistaan %1$d päivän kuluttua</item>
+        <item quantity="other">Julkaistaan %1$d päivän kuluttua</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Ennakkokuuntelu Premiumilla %1$d päivän päästä</item>
+        <item quantity="other">Ennakkokuuntelu Premiumilla %1$d päivän päästä</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d minuutti</item>
+        <item quantity="other">%1$d minuuttia</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d minuutti</item>
+        <item quantity="other">%1$d minuuttia</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Laitettu päälle %1$s ohjelmalle</item>
+        <item quantity="other">Laitettu päälle %1$s ohjelmalle</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d kappale</item>
+        <item quantity="other">%1$d kappaletta</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d/%2$d kappaletta</item>
+        <item quantity="other">%1$d/%2$d kappaletta</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Kesken, %1$d prosentti kuunneltu</item>
+        <item quantity="other">Kesken, %1$d prosenttia kuunneltu</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Sinulla voi olla kerrallaan vain %1$d kiinnitetty kohde.</item>
+        <item quantity="other">Sinulla voi olla kerrallaan vain %1$d kiinnitettyä kohdetta.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Sinulla voi olla kerrallaan vain %1$d kiinnitetty kohde.</item>
+        <item quantity="other">Sinulla voi olla kerrallaan vain %1$d kiinnitettyä kohdetta.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Aiemmin kuunneltu – kesken, %1$d prosentti kuunneltu</item>
+        <item quantity="other">Aiemmin kuunneltu – kesken, %1$d prosenttia kuunneltu</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d tunti</item>
+        <item quantity="other">%1$d tuntia</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d minuutti</item>
+        <item quantity="other">%1$d minuuttia</item>
+    </plurals>
+</resources>

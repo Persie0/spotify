@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="mixing_auto_mix_header_action_screen_supported">true</bool>
+</resources>

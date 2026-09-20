@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/spacer_8"
+    android:paddingRight="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/std_32dp"
+    android:layout_weight="1">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.Marginal"
+        android:textColor="@color/white"
+        android:ellipsize="marquee"
+        android:id="@+id/context_header_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:marqueeRepeatLimit="marquee_forever"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@color/white"
+        android:ellipsize="end"
+        android:id="@+id/context_header_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:singleLine="true"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/white"
+        android:ellipsize="end"
+        android:id="@+id/context_header_detail"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:singleLine="true"/>
+</LinearLayout>

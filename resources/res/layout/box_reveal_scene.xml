@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.Guideline
+        android:orientation="horizontal"
+        android:id="@+id/box_reveal_center_guideline"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintGuide_percent="0.37"/>
+    <ImageView
+        android:id="@+id/box_reveal_image"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        app:layout_constraintBottom_toBottomOf="@+id/box_reveal_center_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/box_reveal_center_guideline"
+        app:layout_constraintWidth_percent="0.68"/>
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:gravity="center"
+        android:id="@+id/box_reveal_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginTop="24dp"
+        android:layout_marginRight="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginHorizontal="@dimen/scene_entity_text_horizontal_margin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/box_reveal_image"/>
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:gravity="center"
+        android:id="@+id/box_reveal_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginHorizontal="@dimen/scene_entity_text_horizontal_margin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/box_reveal_title"/>
+</merge>

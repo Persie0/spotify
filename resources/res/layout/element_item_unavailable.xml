@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:clipToPadding="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:overScrollMode="never">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:paddingLeft="@dimen/encore_spacer_base"
+        android:paddingTop="@dimen/encore_spacer_looser_3"
+        android:paddingRight="@dimen/encore_spacer_base"
+        android:paddingBottom="@dimen/encore_spacer_base"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/encore_spacer_base">
+        <FrameLayout
+            android:id="@+id/item_unavailable_line_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <com.spotify.encoremobile.component.buttons.EncoreButton
+            android:id="@+id/item_unavailable_go_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/encore_spacer_base"
+            android:filterTouchesWhenObscured="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/item_unavailable_line_item"
+            style="@style/Encore.Button.Primary.Medium"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

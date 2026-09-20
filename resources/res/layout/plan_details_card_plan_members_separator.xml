@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<View xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/plan_members_separator"
+    android:background="?attr/baseBackgroundTintedBase"
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    android:layout_marginLeft="@dimen/spacer_16"
+    android:layout_marginTop="@dimen/spacer_8"
+    android:layout_marginRight="@dimen/spacer_16"
+    android:layout_marginBottom="@dimen/spacer_8"
+    android:layout_marginHorizontal="@dimen/spacer_16"
+    android:layout_marginVertical="@dimen/spacer_8"/>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.spotify.encoremobile.component.icons.IconVideo
+        android:layout_gravity="center"
+        android:id="@+id/placeholder_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:tint="@color/white"/>
+    <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+        android:id="@+id/thumbnail_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"/>
+</merge>

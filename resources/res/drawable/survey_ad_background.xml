@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/survey_gradient_start"
+                android:endColor="@color/survey_gradient_end"
+                android:angle="270"/>
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:startColor="@color/black_70"
+                android:endColor="@color/opacity_black_90"
+                android:angle="270"
+                android:centerY="0.3"
+                android:centerColor="@color/opacity_black_0"/>
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_widget">@color/white</color>
+    <color name="btn_login_bg_default">@color/dark_base_background_base</color>
+    <color name="btn_login_bg_pressed">@color/dark_base_background_press</color>
+    <color name="btn_text">@color/white</color>
+    <color name="text_base">@color/black</color>
+</resources>

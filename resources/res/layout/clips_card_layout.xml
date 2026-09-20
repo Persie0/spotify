@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="@dimen/spacer_8">
+    <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+        android:id="@+id/artwork"
+        android:layout_width="@dimen/clip_card_width"
+        android:layout_height="@dimen/clip_card_height"
+        android:scaleType="centerCrop"/>
+    <ImageView
+        android:layout_gravity="center"
+        android:id="@+id/clips_play_button"
+        android:layout_width="@dimen/spacer_24"
+        android:layout_height="@dimen/spacer_24"
+        android:src="@drawable/play_icon"/>
+</androidx.cardview.widget.CardView>

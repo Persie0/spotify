@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/shortcut_icon_background"/>
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/shortcut_icon_lastvisitedpage_placeholder_foreground"
+        android:left="@dimen/shortcut_adaptiveicon_padding_negative"
+        android:top="@dimen/shortcut_adaptiveicon_padding_negative"
+        android:right="@dimen/shortcut_adaptiveicon_padding_negative"
+        android:bottom="@dimen/shortcut_adaptiveicon_padding_negative"/>
+</layer-list>

@@ -1,0 +1,963 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="other">每月有 %1$s 名听众</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="other">%1$d 个已分组的扬声器</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="other">已选择 %1$d 颗星，满分 5 颗星</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="other">已选择 %1$d 颗星，满分 5 颗星</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="other">选择 %1$d 颗星</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="other">%1$d 颗星</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="other">其他 %1$d 个帐号</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="other">另有 %1$d 个帐号</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="other">发现 %1$d 个相关内容</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="other">%1$s 个文件夹</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="other">%1$s 个歌单</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="other">%1$s 本有声书</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="other">%1$s 个章节</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="other">%1$s 个精剪片段</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="other">%1$s 个单集</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="other">%1$s 首歌曲</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="other">%1$s 首曲目</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="other">%1$d 秒后可以跳过广告，定时器</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="other">%1$d 秒后跳过</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="other">广告 • %1$d 秒后可跳过</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="other">请注意！你未达到使用 Spotify 的年龄，因此你的帐号已被屏蔽，并且将在 %1$s 天后停用。我们的判断有误？请使用身份证件确认你的年龄。</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="other">你似乎未达到使用 Spotify 帐号的年龄。但如果你的家长或监护人同意，你可以拥有受管理的帐号。\n\n你的帐号将在 %1$s 天内停用。</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="other">如要重新激活你的帐号，请使用身份证件确认你的年龄。如果经过年龄验证无法确认你是否已达到使用 Spotify 的年龄，或你在 %1$s 天内未对帐号采取行动，你的帐号将被永久删除。</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="other">由于你未满 %1$d 岁，因此没有给予家长同意的资格。\n\n此外，根据你的年龄，我们暂时无法提供部分内容和功能，并已将其隐藏。</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="other">%1$d 首歌曲 • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="other">已选择 %1$d 项</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="other">已选择 %1$d 项</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="other">已选择 %1$d 项。还需选中至少 %2$d 项才可继续。</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="other">你比上限超出 %1$d 个字符。</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="other">+ 另外 %1$d 位</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="other">%1$,d 首新歌</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="other">%1$,d 首歌曲</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="other">你附近的%1$s活动</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="other">%1$d 首新歌</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="other">查询 %1$s 找到 %2$d 个相关内容</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="other">已添加 %1$d 本有声书</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="other">已播放 %1$d 本有声书</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="other">每个节目自动下载 %1$s 个新单集</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="other">播客 • %1$d 集</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="other">已将 %1$s 人加入群组</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="other">%1$d 天前</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="other">%1$d 小时前</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="other">%1$d 分钟前</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="other">%1$d 张照片</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="other">%1$d 个视频</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="other">%1$s 人</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="other">%1$s 位好友</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="other">此设置将在 %1$d 天后重置，届时请再返回。在此期间，你可以使用 AI 歌单或自行创建歌单。</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="other">此设置将在 %1$d 天后重置，届时请再返回。在此期间，你可以使用即时歌单或自行创建歌单。</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="other">此设置将在 %1$d 小时后重置，届时请再返回。在此期间，你可以使用 AI 歌单或自行创建歌单。</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="other">此设置将在 %1$d 小时后重置，届时请再返回。在此期间，你可以使用即时歌单或自行创建歌单。</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="other">%1$,d 首新曲目</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="other">%1$s 将无法直接向你发送消息。如果你不想与对方互动，退出聊天即可。</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="other">另外 %1$d 人</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="other">群组 • %1$d 人</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="other">（%1$d 人待定）</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="other">已下载 %1$d 张照片</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="other">%1$d 张照片无法下载</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="other">你已屏蔽的 %1$s 在此聊天中。如果你不想与对方互动，可以删除此群聊消息请求。</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="other">群组最多可有 %1$d 位用户</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="other">对方接受邀请后，便能在聊天中查看自己获邀之后的所有消息。</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="other">邀请所选用户加入此聊天？</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="other">已下载 %1$d 个视频</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="other">%1$d 个视频无法下载</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="other">+ %1$d 个角色</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="other">%1$d 天前</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="other">%1$d 小时前</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="other">%1$d 分钟前</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="other">%1$d 个月前</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="other">%1$s 条回复</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="other">%1$s 人也做出了回应。</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="other">%1$s 人对这条评论做出了回应。</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="other">%1$s 条回复</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="other">还有 %1$s 条回复。双击即可显示</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="other">%1$d 周前</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="other">%1$d 年前</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="other">%1$,d 首歌曲</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="other">%1$d 名听众</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="other">%1$d 首合作歌曲</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="other">%1$d 首合作歌曲</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="other">%1$d 天</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="other">每月有 %1$s 名听众</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="other">作者：%1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="other">%1$s + 其他 %2$d 位创作者</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="other">显示所有%1$s的可浏览列表</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="other">准备时间：%1$d 天</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="other">%1$d 天</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;天&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="other">在 %1$d 天内发布</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="other">距离收听时长失效还有 %1$d 天</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="other">距离聆听时间更新还有 %1$d 天</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="other">删除 %1$d 张照片？</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="other">删除 %1$d 项内容？</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="other">删除 %1$d 个视频？</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="other">%1$d 个字符，最多 %2$d 个</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="other">《%1$s》和 %2$d 项</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="other">已选择 %1$d 项</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="other">%2$d 天内只能更改用户名 %1$d 次。</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="other">%1$d 天后再试一次。</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="other">用户名每 %2$d 天可以更改 %1$d 次。</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="other">收藏次数：%1$s</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="other">已下载 %1$d%%</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="other">已添加 %1$d 集</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="other">已播放 %1$d 首单曲</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="other">等待 %1$d 秒，然后请求新验证码。</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="other">%1$d 秒再试一次</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="other">%1$d 个活动</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="other">显示另外 %1$d 种付款方式</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="other">在 Spotify 上获得 %1$s（满分 5 星），根据 %2$s 次评分统计</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="other">%1$d 星：%2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="other">%1$d 正在收听</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="other">%1$d 人正在收听</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="other">%1$s 的 Jam：正与 %2$d 人一起收听</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="other">%1$s 个人收藏</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;小时&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="other">距离收听时长失效还有 %1$d 小时</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="other">距离聆听时长更新还有 %1$d 小时</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="other">%1$d%%</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="other">%1$s 次播放</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="other">另外 %2$d 人加入了你的 Jam</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="other">%1$s 个文件夹</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="other">%1$s 个歌单</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="other">%1$s 首歌曲</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="other">歌单 • %1$s 首曲目</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="other">%1$s 首曲目</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="other">%1$s 个已下载的单集 • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="other">%1$s 个已下载的单集</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="other">已添加 %1$d 项内容</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="other">已播放 %1$d 项内容</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="other">你收到了 %1$s 和其他 %2$d 人加入 Jam 的请求，原因是你正在与其分享收听动态。</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="other">你收到了 %1$s 和另外 %2$d 人的 Jam 加入请求，原因是你已开启 Jam 自动邀请功能，并且符合以下任何一种情况：</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="other">+ 其他 %1$d 人</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="other">已选择 %1$d 行歌词</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="other">%1$d 个单集</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="other">%1$d 个项目</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="other">%1$d 人</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="other">%1$d 正在收听</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="other">月度套餐中包含的 %1$d 小时有声书收听权益已用尽。</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="other">可收听 %1$d 小时订阅者专享目录中的有声书，此权益包含在你的月度套餐中。</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="other">还有 %1$d 小时聆听时间</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="other">主持人：%1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="other">%1$d 天</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="other">%1$s 秒</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="other">%1$d 票</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="other">%1$d 位参与者</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="other">%1$d 个采样</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="other">已选择 %1$d 行歌词</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="other">%1$d 天前</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="other">%1$d 个月前</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="other">%1$d 周前</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="other">%1$d 年前</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="other">下载 %1$d 张照片？</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="other">下载 %1$d 项内容？</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="other">下载 %1$d 个视频？</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="other">你一次最多可发送 %1$d 个视频。</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="other">%1$d 张照片</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="other">%1$d 项内容</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="other">%1$d 个视频</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;分钟&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="other">剩余 %1$d 个字符，即将达到上限</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="other">剩余 %1$d 个字符</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="other">第 %1$,d 首，共 %2$,d 首（已完成 %3$,d%%）</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="other">第 %1$,d 首，共 %2$,d 首（已完成 %3$,d%%）</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="other">已加速至每分钟 %1$d 拍</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="other">已放慢至每分钟 %1$d 拍</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="other">%1$s 个下载可用</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="other">已选择 %1$d 项内容</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="other">%1$s 本有声书</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="other">%1$s 个单集</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="other">%1$s 个项目</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="other">%1$s 个活动</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="other">收听次数：%1$,d</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="other">%1$,d 首歌曲</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="other">由于这张专辑是新专辑，因此在接下来的 %1$d 天内，你还能以任意顺序播放该专辑。订阅 Premium 后，你可永久保留此权益。</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="other">剩余 %1$d 天内可按任何顺序播放</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="other">离线畅听，节省移动数据流量。免费试用 %1$d 天，还可享受更多 Spotify Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="other">随心挑选歌曲并以任何顺序播放。免费试用 %1$d 天，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="other">重新为队列排序，还有更多精彩功能。免费试用 %1$d 天，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="other">完全掌控自己的聆听体验。免费试用 %1$d 天，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="other">以任何顺序播放或随机播放内容。免费试用 %1$d 天，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="other">免费试用 %1$d 天无限制切换曲目功能，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="other">完全掌控自己的聆听体验。免费试用 %1$d 天，还可享受更多 Premium 福利。</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="other">在接下来的 %1$d 天内，你将试用部分 Premium 福利。</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="other">我们已向 %2$s 发送 %1$d 位数验证码。</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="other">由于你未满 %1$d 岁，因此没有给予家长同意的资格。\n\n此外，根据你的年龄，我们暂时无法提供部分内容和功能，并已将其隐藏。</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="other">PIN 码错误，请在 %1$d 分钟后再试一次。</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="other">PIN 码错误，请在 %1$d 秒后再试一次。</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="other">%1$d 个 Premium 帐号</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="other">%1$s + 其他 %2$d 位创作者</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="other">%1$s 和另外 %2$d 人 · 合辑</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="other">%1$s + 其他 %2$d 位创作者</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="other">合辑制作者：%1$s 和其他 %2$d 人</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="other">由 %1$s 和其他 %2$d 位用户创建</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="other">由 %1$s 和其他 %2$d 位用户创建</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="other">%1$d 首单集</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="other">%1$,d 首单曲</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="other">%1$,d 首歌曲</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="other">%1$d 天</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="other">剩余 %1$d 小时</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="other">剩余 %1$d 分钟</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="other">%1$d 票 • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="other">使用 Premium %1$d 天</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="other">使用 Premium %1$d 个月</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="other">使用 Premium %1$d 周</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="other">使用 Premium %1$d 年</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="other">%1$s 次预收藏</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="other">%1$d 位粉丝</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="other">关注 %1$d 人</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="other">%1$d 位好友</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="other">%1$,d 位粉丝</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="other">收藏次数：%1$,d</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="other">%1$,d 个人收藏</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="other">%1$,d 位粉丝</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="other">已添加 %1$d 首曲目</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="other">已删除 %1$d 首曲目</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="other">%1$d 个回应</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="other">播放此有声书的前 %1$d 分钟后，即可获取重点回顾。</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="other">%1$d 人正在收听</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="other">%1$d 人已播放</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="other">%1$d 人已收藏</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="other">%1$d 人已读</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="other">Premium 抢先体验：%1$d 天后</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="other">在 %1$d 天内发布</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="other">%1$d 个录音版本</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="other">最近在线时间：%1$d 天前</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="other">你最多可下载内容至 %1$d 台设备。</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="other">歌单 • %1$d 首歌曲</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="other">%1$s 条回复。双击即可显示</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="other">%1$s 个人收藏</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;秒&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="other">已选择 %1$d 行歌词</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="other">%1$d 本有声书</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="other">%1$d 个项目</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="other">必须在 %1$,d 天内重新连接网络</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="other">剩余时间：%1$d 天</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="other">%1$s 位好友已分享</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="other">%1$d 项分享内容</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="other">根据出生日期计算，你目前 %1$d 岁。</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="other">你应该是 %1$d 岁？</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="other">%1$d 天前</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="other">%1$d 小时前</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="other">%1$d 分钟前</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="other">%1$d 个月前</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="other">%1$d 周前</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="other">%1$d 年前</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="other">%1$s 首合作歌曲</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="other">已录制 &lt;b&gt;%1$s 首歌曲&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="other">热门歌曲：&lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="other">与 &lt;b&gt;%1$s 合作的热门歌曲：%2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="other">与 &lt;b&gt;%1$s 位艺人&lt;/b&gt;共同制作</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="other">%1$s 位共同创建者</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="other">%1$s 首歌曲</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="other">%1$s 首歌曲</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="other">%1$s 位共同创建者</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="other">查看 %1$s 首合作歌曲</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="other">%1$s + %2$d 个更多角色</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="other">%1$d 位参与者</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="other">%1$d 个采样</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="other">%1$s 次播放</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="other">角色：%1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="other">%1$,d 个新翻唱版本</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="other">已添加 %1$d 首歌曲</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="other">已播放 %1$d 首歌曲</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="other">已加速至每分钟 %1$d 拍</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="other">已放慢至每分钟 %1$d 拍</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="other">%1$d 位好友正在播放</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="other">%1$d 个项目</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="other">“%1$s”，%2$s；已选择 %3$d 句</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="other">%1$d 小时 %2$d 分钟</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="other">剩余 %1$d 小时</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="other">剩余 %1$d 小时 %2$d 分钟</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="other">%1$s 和另外 %2$d 人想加入你的 Jam！</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="other">%1$s 和另外 %2$d 人想加入你的 Jam！</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="other">已收听 %1$s/%2$d 小时</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="other">在 %1$d 天内发布</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="other">Premium 抢先体验：倒计时 %1$d 天</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="other">已开启 %1$s 个节目的自动下载功能</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="other">%1$d 首歌曲</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="other">%1$d/%2$d 首歌曲</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="other">正在进行，已完成 %1$d%%</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="other">一次最多只能置顶 %1$d 项内容。</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="other">一次最多只能置顶 %1$d 项内容。</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="other">之前已完成，正在进行，已完成 %1$d%%</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="other">%1$d 小时</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
+</resources>

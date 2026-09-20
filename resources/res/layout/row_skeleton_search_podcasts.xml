@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingLeft="@dimen/spacer_16"
+    android:paddingTop="@dimen/spacer_8"
+    android:paddingRight="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/spacer_16"
+    android:paddingVertical="@dimen/spacer_8">
+    <ImageView
+        android:id="@+id/skeleton_show_image"
+        android:background="@color/gray_15"
+        android:layout_width="@dimen/spacer_48"
+        android:layout_height="@dimen/spacer_48"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <ImageView
+        android:id="@+id/skeleton_show_title"
+        android:background="@drawable/allboarding_item_rectangle_skeleton_placeholder_8dp_radius"
+        android:layout_width="@dimen/allboarding_search_item_title_skeleton_width"
+        android:layout_height="@dimen/spacer_16"
+        android:layout_marginLeft="@dimen/spacer_12"
+        android:layout_marginRight="@dimen/spacer_12"
+        android:layout_marginBottom="@dimen/spacer_4"
+        android:layout_marginHorizontal="@dimen/spacer_12"
+        app:layout_constraintBottom_toTopOf="@+id/skeleton_show_subtitle"
+        app:layout_constraintStart_toEndOf="@+id/skeleton_show_image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"/>
+    <ImageView
+        android:id="@+id/skeleton_show_subtitle"
+        android:background="@drawable/allboarding_item_rectangle_skeleton_placeholder_4dp_radius"
+        android:layout_width="@dimen/allboarding_search_item_subtitle_skeleton_width"
+        android:layout_height="@dimen/spacer_8"
+        android:layout_marginLeft="@dimen/spacer_12"
+        android:layout_marginTop="@dimen/spacer_4"
+        android:layout_marginRight="@dimen/spacer_12"
+        android:layout_marginHorizontal="@dimen/spacer_12"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/skeleton_show_image"
+        app:layout_constraintTop_toBottomOf="@+id/skeleton_show_title"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/std_16dp"
+    android:paddingEnd="@dimen/std_16dp">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleMedium"
+        android:ellipsize="end"
+        android:gravity="start"
+        android:id="@+id/title"
+        android:paddingBottom="@dimen/cardcontainer_title_bottom_padding"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textDirection="locale"
+        android:textAlignment="gravity"/>
+    <com.spotify.encoremobile.roundedcorner.RoundedConstraintLayout
+        android:id="@+id/content"
+        android:background="?attr/baseBackgroundElevatedBase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cornerRadius="@dimen/cardcontainer_content_corner_radius">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cardcontainer_content_margin_top"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <com.spotify.encoremobile.component.buttons.EncoreButton
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cardcontainer_button_margin_top"
+            android:layout_marginBottom="@dimen/cardcontainer_button_margin_bottom"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/rows"
+            style="@style/Encore.Button.Secondary.Small"/>
+    </com.spotify.encoremobile.roundedcorner.RoundedConstraintLayout>
+</LinearLayout>

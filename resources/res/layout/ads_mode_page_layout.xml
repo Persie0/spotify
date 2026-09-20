@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/content"
+    android:background="?attr/pasteColorBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.nowplaying.scroll.view.PeekScrollView
+        android:id="@+id/peek_scroll_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:peekHeight="@dimen/peek_height">
+        <com.spotify.nowplayingmodes.adsmode.ui.overlay.AdsOverlayControlsLayout
+            android:id="@+id/overlay_controls_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <com.spotify.encoremobile.viewstub.EncoreViewStub
+                android:id="@+id/track_carousel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+            <include layout="@layout/ads_mode_overlay"/>
+        </com.spotify.nowplayingmodes.adsmode.ui.overlay.AdsOverlayControlsLayout>
+    </com.spotify.nowplaying.scroll.view.PeekScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

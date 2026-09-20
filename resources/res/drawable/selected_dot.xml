@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape
+            android:shape="ring"
+            android:useLevel="false"
+            android:innerRadius="0dp"
+            android:thickness="4dp">
+            <solid android:color="@color/view_pager_selected_dot_color"/>
+            <size
+                android:height="@dimen/view_pager_tab_height"
+                android:width="@dimen/view_pager_tab_width"/>
+        </shape>
+    </item>
+</layer-list>

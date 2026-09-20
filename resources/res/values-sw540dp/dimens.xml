@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="square_cover_art_min_bottom_vertical_margin">12dp</dimen>
+    <dimen name="square_cover_art_min_horizontal_margin">72dp</dimen>
+    <dimen name="square_cover_art_min_top_vertical_margin">16dp</dimen>
+    <dimen name="video_first_seekbar_container_height">80dp</dimen>
+</resources>

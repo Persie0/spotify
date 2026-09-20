@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:state_checked="true"
+        android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <size
+                        android:height="@dimen/std_24dp"
+                        android:width="@dimen/std_24dp"/>
+                    <solid android:color="@color/powder_green"/>
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="oval">
+                    <stroke
+                        android:width="@dimen/your_episodes_radio_button_checked_stroke_width"
+                        android:color="@color/green"/>
+                </shape>
+            </item>
+            <item
+                android:left="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:top="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:right="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:bottom="@dimen/your_episodes_radio_button_checked_solid_margin">
+                <shape android:shape="oval">
+                    <solid android:color="@color/green"/>
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <size
+                        android:height="@dimen/std_24dp"
+                        android:width="@dimen/std_24dp"/>
+                    <solid android:color="@color/powder_green"/>
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="oval">
+                    <stroke
+                        android:width="@dimen/your_episodes_radio_button_unchecked_stroke_width"
+                        android:color="@color/gray_70"/>
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_checked="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <size
+                        android:height="@dimen/std_24dp"
+                        android:width="@dimen/std_24dp"/>
+                    <stroke
+                        android:width="@dimen/your_episodes_radio_button_checked_stroke_width"
+                        android:color="@color/green"/>
+                </shape>
+            </item>
+            <item
+                android:left="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:top="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:right="@dimen/your_episodes_radio_button_checked_solid_margin"
+                android:bottom="@dimen/your_episodes_radio_button_checked_solid_margin">
+                <shape android:shape="oval">
+                    <solid android:color="@color/green"/>
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="@dimen/your_episodes_radio_button_unchecked_stroke_width"
+                android:color="@color/gray_70"/>
+            <size
+                android:height="@dimen/std_24dp"
+                android:width="@dimen/std_24dp"/>
+        </shape>
+    </item>
+</selector>

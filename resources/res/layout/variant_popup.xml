@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/variant_popup"
+    android:background="@drawable/popup_view_rounded_background"
+    android:padding="@dimen/emoji_picker_popup_view_holder_padding_vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/emoji_picker_popup_view_holder_padding_start"
+    android:paddingEnd="@dimen/emoji_picker_popup_view_holder_padding_end"/>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="scene_entity_text_horizontal_margin">40dp</dimen>
+    <dimen name="scene_title_subtitle_text_horizontal_margin">40dp</dimen>
+    <dimen name="scene_title_text_horizontal_margin">40dp</dimen>
+</resources>

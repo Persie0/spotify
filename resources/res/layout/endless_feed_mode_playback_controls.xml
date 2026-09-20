@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingLeft="@dimen/playback_controls_margin"
+    android:paddingRight="@dimen/playback_controls_margin"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    android:layoutDirection="ltr"
+    android:paddingHorizontal="@dimen/playback_controls_margin">
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/previous_button"
+        android:layout_width="@dimen/secondary_button_size"
+        android:layout_height="@dimen/secondary_button_size"
+        android:layout_marginLeft="@dimen/tertiary_button_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="@fraction/left_secondary_button_horizontal_bias"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/play_pause_button"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/play_pause_button"
+        android:layout_width="@dimen/primary_button_size"
+        android:layout_height="@dimen/primary_button_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/next_button"
+        android:layout_width="@dimen/secondary_button_size"
+        android:layout_height="@dimen/secondary_button_size"
+        android:layout_marginRight="@dimen/tertiary_button_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="@fraction/right_secondary_button_horizontal_bias"
+        app:layout_constraintLeft_toRightOf="@+id/play_pause_button"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

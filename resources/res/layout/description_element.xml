@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="?attr/baseTextSubdued"
+        android:textColorLink="@color/white"
+        android:layout_gravity="start"
+        android:id="@+id/txt_description"
+        android:longClickable="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lineSpacingExtra="2sp"
+        android:textIsSelectable="false"
+        android:textAlignment="viewStart"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@android:color/white"
+        android:id="@+id/showLess"
+        android:paddingTop="@dimen/encore_button_large_vertical_padding"
+        android:paddingBottom="@dimen/encore_button_large_vertical_padding"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/description_show_less"
+        android:paddingVertical="@dimen/encore_button_large_vertical_padding"/>
+</merge>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/gray_10"
+    android:layout_width="match_parent"
+    android:layout_height="?android:attr/actionBarSize"
+    app:layout_constraintLeft_toLeftOf="parent"
+    app:layout_constraintRight_toRightOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
+    <com.spotify.legacyglue.icons.SpotifyIconView
+        android:id="@+id/help_close_button"
+        android:background="?android:attr/selectableItemBackground"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="4dp"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/generic_content_description_close"
+        android:layout_marginStart="4dp"
+        app:iconColor="@color/gray_70"
+        app:iconSize="@dimen/std_24dp"
+        app:iconType="icon_x"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

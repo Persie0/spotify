@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="40dp"
+    android:paddingTop="10dp"
+    android:paddingRight="40dp"
+    android:paddingBottom="10dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="40dp"
+    android:paddingVertical="10dp">
+    <TextView
+        android:textAppearance="?attr/pasteTextAppearanceSecondary"
+        android:textColor="@color/cat_text_primary"
+        android:gravity="center_horizontal"
+        android:id="@+id/footer_body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/collection_footer_show_all_body"/>
+    <Button
+        android:gravity="center"
+        android:id="@+id/footer_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/collection_footer_show_all_button"
+        android:filterTouchesWhenObscured="false"
+        style="?attr/pasteButtonStyleInfoSmall"/>
+</LinearLayout>

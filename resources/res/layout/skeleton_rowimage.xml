@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="80sp">
+    <View
+        android:id="@+id/image"
+        android:background="@color/skeleton_base_color"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:id="@+id/title"
+        android:layout_width="172sp"
+        android:layout_height="16sp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/subtitle"
+        app:layout_constraintStart_toEndOf="@+id/image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="8sp"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:id="@+id/subtitle"
+        android:layout_width="130sp"
+        android:layout_height="8sp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/image"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="4sp"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

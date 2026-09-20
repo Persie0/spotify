@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+    android:gravity="center"
+    android:id="@+id/seek_timestamp"
+    android:background="@drawable/seek_timestamp_background"
+    android:paddingLeft="@dimen/spacer_16"
+    android:paddingTop="@dimen/spacer_4"
+    android:paddingRight="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_4"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minWidth="@dimen/seek_timestamp_min_width"
+    android:minHeight="@dimen/encore_control_size_smaller"
+    android:paddingHorizontal="@dimen/spacer_16"
+    android:paddingVertical="@dimen/spacer_4"/>

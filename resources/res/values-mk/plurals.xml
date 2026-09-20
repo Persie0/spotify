@@ -1,0 +1,1287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s месечен слушател</item>
+        <item quantity="other">%1$s месечни слушатели</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d групиран звучник</item>
+        <item quantity="other">%1$d групирани звучници</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d ѕвезда од 5</item>
+        <item quantity="other">%1$d ѕвезди од 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d ѕвезда од 5</item>
+        <item quantity="other">%1$d ѕвезди од 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">избери %1$d ѕвезда</item>
+        <item quantity="other">избери %1$d ѕвезди</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d ѕвезда</item>
+        <item quantity="other">%1$d ѕвезди</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">Уште %1$d сметка</item>
+        <item quantity="other">Уште %1$d сметки</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">И уште %1$d сметка</item>
+        <item quantity="other">И уште %1$d сметки</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">Најдовме %1$d ставка</item>
+        <item quantity="other">Најдовме %1$d ставки</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s папка</item>
+        <item quantity="other">%1$s папки</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s плејлиста</item>
+        <item quantity="other">%1$s плејлисти</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s аудиокнига</item>
+        <item quantity="other">%1$s аудиокниги</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s дел</item>
+        <item quantity="other">%1$s делови</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s исечок</item>
+        <item quantity="other">%1$s исечоци</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s епизода</item>
+        <item quantity="other">%1$s епизоди</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s песна</item>
+        <item quantity="other">%1$s песни</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s аудиозапис</item>
+        <item quantity="other">%1$s аудиозаписи</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d секунда до прескокнувањето на рекламата, тајмер</item>
+        <item quantity="other">%1$d секунди до прескокнувањето на рекламата, тајмер</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Прескокни по %1$d сек.</item>
+        <item quantity="other">Прескокни по %1$d сек.</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Реклама • Прескокни по %1$d сек.</item>
+        <item quantity="other">Реклама • Прескокни по %1$d сек.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Внимание! Немаш доволно години за да користиш Spotify, па сметката ти е блокирана и ќе се деактивира за %1$s ден. Дали погрешивме? Потврди си ја возраста со документ за идентификација.</item>
+        <item quantity="other">Внимание! Немаш доволно години за да користиш Spotify, па сметката ти е блокирана и ќе се деактивира за %1$s дена. Дали погрешивме? Потврди си ја возраста со документ за идентификација.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Изгледа немаш доволно години за да имаш своја сметка на Spotify. Но, можеш да имаш контролирана сметка ако ти дозволи родителот или старателот.\n\nТвојата сметка ќе се деактивира за %1$s ден.</item>
+        <item quantity="other">Изгледа немаш доволно години за да имаш своја сметка на Spotify. Но, можеш да имаш контролирана сметка ако ти дозволи родителот или старателот.\n\nСметката ќе се деактивира за %1$s дена.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">За повторно да ја активираш сметката, потврди си ја возраста со документ за идентификација. Ако со потврдата на возраста не се потврди дека имаш доволно години за да користиш Spotify или ако не се преземе никакво дејство во рок од %1$s ден, сметката трајно ќе ти се избрише.</item>
+        <item quantity="other">За повторно да ја активираш сметката, потврди си ја возраста со документ за идентификација. Ако со потврдата на возраста не се потврди дека имаш доволно години за да користиш Spotify или ако не се преземе никакво дејство во рок од %1$s дена, сметката трајно ќе ти се избрише.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Имаш помалку од %1$d година, па не ги исполнуваш условите за давање родителска согласност.\n\nИсто така, некои содржини и карактеристики сѐ уште не ти се достапни поради возраста. Ги скривме.</item>
+        <item quantity="other">Имаш помалку од %1$d години, па не ги исполнуваш условите за давање родителска согласност.\n\nИсто така, некои содржини и карактеристики сѐ уште не ти се достапни поради возраста. Ги скривме.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d песна • %2$s</item>
+        <item quantity="other">%1$d песни • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">Избрани се %1$d</item>
+        <item quantity="other">Избрани се %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">Избрани се %1$d</item>
+        <item quantity="other">Избрани се %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">Избрани се: %1$d. Избери најмалку уште %2$d за да продолжиш.</item>
+        <item quantity="other">Избрани се: %1$d. Избери најмалку уште %2$d за да продолжиш.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d ч.</item>
+        <item quantity="other">%1$d ч.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Го надмина ограничувањето за %1$d знак.</item>
+        <item quantity="other">Го надмина ограничувањето за %1$d знаци.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">и уште %1$d</item>
+        <item quantity="other">и уште %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d издание</item>
+        <item quantity="other">%1$,d изданија</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d песна</item>
+        <item quantity="other">%1$,d песни</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s настан во твоја близина</item>
+        <item quantity="other">%1$s настани во твоја близина</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d издание</item>
+        <item quantity="other">%1$d изданија</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">Изразот %1$s најде %2$d ставка</item>
+        <item quantity="other">Изразот %1$s најде %2$d ставки</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d ч.</item>
+        <item quantity="other">%1$d ч.</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d аудиокнига е додадена</item>
+        <item quantity="other">%1$d аудиокниги се додадени</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">Пуштена е %1$d аудиокнига</item>
+        <item quantity="other">Пуштени се %1$d аудиокниги</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s нова епизода по серија</item>
+        <item quantity="other">%1$s нови епизоди по серија</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Поткаст • %1$d епизода</item>
+        <item quantity="other">Поткаст • %1$d епизоди</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d час</item>
+        <item quantity="other">%1$d часа</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d сек.</item>
+        <item quantity="other">%1$d сек.</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s лице во групата</item>
+        <item quantity="other">%1$s лица во групата</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">Пред %1$d ден</item>
+        <item quantity="other">Пред %1$d дена</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">Пред %1$d час</item>
+        <item quantity="other">Пред %1$d часа</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">Пред %1$d минута</item>
+        <item quantity="other">Пред %1$d минути</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d фотографија</item>
+        <item quantity="other">%1$d фотографии</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d видео</item>
+        <item quantity="other">%1$d видеа</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s лице</item>
+        <item quantity="other">%1$s луѓе</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s пријател</item>
+        <item quantity="other">%1$s пријатели</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Ова ќе се ресетира за %1$d ден, па врати се тогаш. Во меѓувреме, може да користиш „Плејлиста од AI“ или да си создадеш своја.</item>
+        <item quantity="other">Ова ќе се ресетира за %1$d дена, па врати се тогаш. Во меѓувреме, може да користиш „Плејлиста од AI“ или да си создадеш своја.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Ова ќе се ресетира за %1$d ден, па врати се тогаш. Во меѓувреме, може да користиш „Инстант плејлиста“ или да си создадеш своја.</item>
+        <item quantity="other">Ова ќе се ресетира за %1$d дена, па врати се тогаш. Во меѓувреме, може да користиш „Инстант плејлиста“ или да си создадеш своја.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Ова ќе се ресетира за %1$d час, па врати се тогаш. Во меѓувреме, може да користиш „Плејлиста од AI“ или да си создадеш своја.</item>
+        <item quantity="other">Ова ќе се ресетира за %1$d часа, па врати се тогаш. Во меѓувреме, може да користиш „Плејлиста од AI“ или да си создадеш своја.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Ова ќе се ресетира за %1$d час, па врати се тогаш. Во меѓувреме, може да користиш „Инстант плејлиста“ или да си создадеш своја.</item>
+        <item quantity="other">Ова ќе се ресетира за %1$d часа, па врати се тогаш. Во меѓувреме, може да користиш „Инстант плејлиста“ или да си создадеш своја.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d нов запис</item>
+        <item quantity="other">%1$,d нови записи</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s нема да може директно да ти испраќа пораки. Можеш да го напуштиш разговорот ако не сакаш да комуницираш со корисникот.</item>
+        <item quantity="other">%1$s нема да може директно да ти испраќаат пораки. Можеш да го напуштиш разговорот ако не сакаш да комуницираш со корисниците.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">Уште %1$d</item>
+        <item quantity="other">Уште %1$d</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Група • %1$d лице</item>
+        <item quantity="other">Група • %1$d лица</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d во фаза на чекање)</item>
+        <item quantity="other">(%1$d во фаза на чекање)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d фотографија е преземена</item>
+        <item quantity="other">%1$d фотографии се преземени</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Не можеше да се преземе %1$d фотографија</item>
+        <item quantity="other">Не можеа да се преземат %1$d фотографии</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">Корисникот %1$s, кого го блокира, е во разговоров. Можеш да го избришеш барањето за групна размена на пораки ако не сакаш да комуницираш со корисникот.</item>
+        <item quantity="other">Корисниците %1$s, кои ги блокира, се во разговоров. Можеш да го избришеш барањето за групна размена на пораки ако не сакаш да комуницираш со корисниците.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Групите може да имаат максимум %1$d лице</item>
+        <item quantity="other">Групите може да имаат максимум %1$d лица</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Откако ќе прифати %1$s, ќе може да ги гледа сите пораки испратени во разговорот откако доби покана.</item>
+        <item quantity="other">Откако некој ќе прифати, ќе може да ги гледа сите пораки испратени во разговорот откако доби покана.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Да се покани %1$s во разговоров?</item>
+        <item quantity="other">Да се поканат избраните лица во разговоров?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d преземено видео</item>
+        <item quantity="other">%1$d преземени видеа</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Не можеше да се преземе %1$d видео</item>
+        <item quantity="other">Не можеа да се преземат %1$d видеа</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">и уште %1$d улога</item>
+        <item quantity="other">и уште %1$d улоги</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">Пред %1$d ден</item>
+        <item quantity="other">Пред %1$d дена</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">Пред %1$d час</item>
+        <item quantity="other">Пред %1$d часа</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">Пред %1$d минута</item>
+        <item quantity="other">Пред %1$d минути</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">Пред %1$d месец</item>
+        <item quantity="other">Пред %1$d месеци</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s одговор</item>
+        <item quantity="other">%1$s одговори</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">Реагираше и %1$s лице.</item>
+        <item quantity="other">Реагираа и %1$s луѓе.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s лице реагираше на коментаров.</item>
+        <item quantity="other">%1$s луѓе реагираа на коментаров.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s одговор</item>
+        <item quantity="other">%1$s одговори</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Уште %1$s одговор. Допри двапати за да се прикаже</item>
+        <item quantity="other">Уште %1$s одговори. Допри двапати за да се прикажат</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">Пред %1$d седмица</item>
+        <item quantity="other">Пред %1$d седмици</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">Пред %1$d година</item>
+        <item quantity="other">Пред %1$d години</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d песна</item>
+        <item quantity="other">%1$,d песни</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d слушател</item>
+        <item quantity="other">%1$d слушатели</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d час</item>
+        <item quantity="other">%1$d часа</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d заедничка песна</item>
+        <item quantity="other">%1$d заеднички песни</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d заедничка песна</item>
+        <item quantity="other">%1$d заеднички песни</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d ден</item>
+        <item quantity="other">%1$d дена</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d ч.</item>
+        <item quantity="other">%1$d ч.</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d сек.</item>
+        <item quantity="other">%1$d сек.</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s месечен слушател</item>
+        <item quantity="other">%1$s месечни слушатели</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Автор: %1$s</item>
+        <item quantity="other">Автори: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s +уште %2$d</item>
+        <item quantity="other">%1$s +уште %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Те носи на повеќе содржини од овој %1$s</item>
+        <item quantity="other">Покажува список за навигација од сите %1$s</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Време на подготовка: %1$d ден</item>
+        <item quantity="other">Време на подготовка: %1$d дена</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d ден</item>
+        <item quantity="other">%1$d дена</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;Ден&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;Дена&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Ќе се објави за %1$d ден</item>
+        <item quantity="other">Ќе се објави за %1$d дена</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d ден додека да истечат часовите за слушање</item>
+        <item quantity="other">%1$d дена додека да истечат часовите за слушање</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d ден додека да се обнови времето за слушање</item>
+        <item quantity="other">%1$d дена додека да се обнови времето за слушање</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Да се избрише %1$d фотографија?</item>
+        <item quantity="other">Да се избришат %1$d фотографии?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Да се избрише %1$d ставка?</item>
+        <item quantity="other">Да се избришат %1$d ставки?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Да се избрише %1$d видео?</item>
+        <item quantity="other">Да се избришат %1$d видеа?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d од %2$d знаци</item>
+        <item quantity="other">%1$d од %2$d знаци</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d час</item>
+        <item quantity="other">%1$d часа</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s и уште %2$d</item>
+        <item quantity="other">%1$s и уште %2$d</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">Избрани: %1$d</item>
+        <item quantity="other">Избрани: %1$d</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Можеш да го промениш корисничкото име само %1$d пат во рок од %2$d дена.</item>
+        <item quantity="other">Можеш да го промениш корисничкото име само %1$d пати во рок од %2$d дена.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Обиди се повторно за %1$d ден.</item>
+        <item quantity="other">Обиди се повторно за %1$d дена.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Можеш да го промениш корисничкото име %1$d пат на секои %2$d дена.</item>
+        <item quantity="other">Можеш да го промениш корисничкото име %1$d пати на секои %2$d дена.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s зачувување</item>
+        <item quantity="other">%1$s зачувувања</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Преземено: %1$d процент</item>
+        <item quantity="other">Преземено: %1$d проценти</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">Додадена е %1$d епизода</item>
+        <item quantity="other">Додадени се %1$d епизоди</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d пуштена епизода</item>
+        <item quantity="other">%1$d пуштени епизоди</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Почекај %1$d секунда, а потоа побарај нов код.</item>
+        <item quantity="other">Почекај %1$d секунди, а потоа побарај нов код.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Обиди се повторно за %1$d секунда</item>
+        <item quantity="other">Обиди се повторно за %1$d секунди</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d настан</item>
+        <item quantity="other">%1$d настани</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Прикажи уште %1$d начин на плаќање</item>
+        <item quantity="other">Прикажи уште %1$d начини на плаќање</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s од 5 ѕвезди на Spotify, според %2$s оцена</item>
+        <item quantity="other">%1$s од 5 ѕвезди на Spotify, според %2$s оцени</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d ѕвезда: %2$d %%</item>
+        <item quantity="other">%1$d ѕвезди: %2$d %%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d слуша</item>
+        <item quantity="other">%1$d слушаат</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d лице слуша</item>
+        <item quantity="other">%1$d луѓе слушаат</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Jam на %1$s – слушаш заедно со %2$d</item>
+        <item quantity="other">Jam на %1$s – слушаш заедно со %2$d</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s зачувување</item>
+        <item quantity="other">%1$s зачувувања</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;Час&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;Часа&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d час додека да истечат часовите за слушање</item>
+        <item quantity="other">%1$d часа додека да истечат часовите за слушање</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d час додека да се обноват часовите за слушање</item>
+        <item quantity="other">%1$d часа додека да се обноват часовите за слушање</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d процент</item>
+        <item quantity="other">%1$d проценти</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s преслушување</item>
+        <item quantity="other">%1$s преслушувања</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s се придружи во твојот Jam</item>
+        <item quantity="other">Уште %2$d се придружија во твојот Jam</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s папка</item>
+        <item quantity="other">%1$s папки</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s плејлиста</item>
+        <item quantity="other">%1$s плејлисти</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s песна</item>
+        <item quantity="other">%1$s песни</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Плејлиста • %1$s аудиозапис</item>
+        <item quantity="other">Плејлиста • %1$s аудиозаписи</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s аудиозапис</item>
+        <item quantity="other">%1$s аудиозаписи</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s преземена епизода • %2$s</item>
+        <item quantity="other">%1$s преземени епизоди • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s преземена епизода</item>
+        <item quantity="other">%1$s преземени епизоди</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">Додадена е %1$d ставка</item>
+        <item quantity="other">Додадени се %1$d ставки</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">Пуштена е %1$d ставка</item>
+        <item quantity="other">Пуштени се %1$d ставки</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Доби барање од %1$s за заеднички Jam бидејќи ја споделуваш активноста за слушање со %1$s.</item>
+        <item quantity="other">Доби барања од %1$s и уште %2$d за заеднички Jam бидејќи ја споделуваш активноста за слушање со нив.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Го доби барањето на %1$s за придружување во твојот Jam бидејќи автоматските покани за Jam ти се вклучени и важи едно од следниве:</item>
+        <item quantity="other">Ги доби барањата од %1$s и уште %2$d за придружување во твојот Jam бидејќи автоматските покани за Jam ти се вклучени и важи едно од следниве:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+ уште %1$d</item>
+        <item quantity="other">+ уште %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d избрана линија</item>
+        <item quantity="other">%1$d избрани линии</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d епизода</item>
+        <item quantity="other">%1$d епизоди</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d ставка</item>
+        <item quantity="other">%1$d ставки</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d лице</item>
+        <item quantity="other">%1$d луѓе</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d слуша</item>
+        <item quantity="other">%1$d слушаат</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Го ислуша сиот %1$d час аудиокниги вклучен во твојот месечен пакет.</item>
+        <item quantity="other">Ги ислуша сите %1$d часа аудиокниги вклучени во твојот месечен пакет.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Слушај %1$d час аудиокниги од нашиот каталог за претплатници, вклучен во твојот месечен пакет.</item>
+        <item quantity="other">Слушај %1$d часа аудиокниги од нашиот каталог за претплатници, вклучени во твојот месечен пакет.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d час време за слушање</item>
+        <item quantity="other">%1$d часа време за слушање</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Домаќин(и): %1$s%2$s + %3$d</item>
+        <item quantity="other">Домаќин(и): %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d ден</item>
+        <item quantity="other">%1$d дена</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d ч.</item>
+        <item quantity="other">%1$d ч.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s сек.</item>
+        <item quantity="other">%1$s сек.</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d глас</item>
+        <item quantity="other">%1$d гласови</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d авторски реализатор</item>
+        <item quantity="other">%1$d авторски реализатори</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d семпл</item>
+        <item quantity="other">%1$d семплови</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d избран стих</item>
+        <item quantity="other">%1$d избрани стихови</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">Пред %1$d ден</item>
+        <item quantity="other">Пред %1$d дена</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Пред %1$d месец</item>
+        <item quantity="other">Пред %1$d месеци</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Пред %1$d седмица</item>
+        <item quantity="other">Пред %1$d седмици</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Пред %1$d година</item>
+        <item quantity="other">Пред %1$d години</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Да се преземе %1$d фотографија?</item>
+        <item quantity="other">Да се преземат %1$d фотографии?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Да се преземе %1$d ставка?</item>
+        <item quantity="other">Да се преземат %1$d ставки?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Да се преземе %1$d видео?</item>
+        <item quantity="other">Да се преземат %1$d видеа?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Можеш да испраќаш %1$d видео одеднаш.</item>
+        <item quantity="other">Можеш да испраќаш %1$d видеа одеднаш.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d фотографија</item>
+        <item quantity="other">%1$d фотографии</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d ставка</item>
+        <item quantity="other">%1$d ставки</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d видео</item>
+        <item quantity="other">%1$d видеа</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;Минута&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;Минути&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d ново известување</item>
+        <item quantity="other">%d нови известувања</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">Преостанува уште %1$d знак, се приближуваш до ограничувањето</item>
+        <item quantity="other">Преостануваат уште %1$d знаци, се приближуваш до ограничувањето</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">преостанува уште %1$d знак</item>
+        <item quantity="other">преостануваат уште %1$d знаци</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d од %2$,d (%3$,d %% завршен)</item>
+        <item quantity="other">%1$,d од %2$,d (%3$,d %% завршени)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d од %2$,d (%3$,d %% завршен)</item>
+        <item quantity="other">%1$,d од %2$,d (%3$,d %% завршени)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Забрзано на %1$d отчукување во минута</item>
+        <item quantity="other">Забрзано на %1$d отчукувања во минута</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Забавено на %1$d отчукување во минута</item>
+        <item quantity="other">Забавено на %1$d отчукувања во минута</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d ч.</item>
+        <item quantity="other">%1$d ч.</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">Достапно е %1$s преземање</item>
+        <item quantity="other">Достапни се %1$s преземања</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d избрана ставка</item>
+        <item quantity="other">%1$d избрани ставки</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s книга</item>
+        <item quantity="other">%1$s книги</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s епизода</item>
+        <item quantity="other">%1$s епизоди</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s ставка</item>
+        <item quantity="other">%1$s ставки</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s настан</item>
+        <item quantity="other">%1$s настани</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d преслушување</item>
+        <item quantity="other">%1$,d преслушувања</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d песна</item>
+        <item quantity="other">%1$,d песни</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Албумов е нов, па може да го пушташ по кој било редослед уште %1$d ден. Со Premium, таквата слобода никогаш не завршува.</item>
+        <item quantity="other">Албумов е нов, па може да го пушташ по кој било редослед уште %1$d дена. Со Premium, таквата слобода никогаш не завршува.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Пуштај по кој било редослед уште %1$d ден</item>
+        <item quantity="other">Пуштај по кој било редослед уште %1$d дена</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Слушај без Wi-Fi и штеди мобилен интернет. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Слушај без Wi-Fi и штеди мобилен интернет. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Бирај песни и пуштај ги кога било и по кој било редослед. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Бирај песни и пуштај ги кога било и по кој било редослед. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Пререди ја низата и многу повеќе. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Пререди ја низата и многу повеќе. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Преземи целосна контрола врз слушањето. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Преземи целосна контрола врз слушањето. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Пуштај по кој било редослед или по случаен избор. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Пуштај по кој било редослед или по случаен избор. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Пробај неограничени прескокнувања, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Пробај неограничени прескокнувања, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Преземи целосна контрола врз слушањето. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од 24 часа.</item>
+        <item quantity="other">Преземи целосна контрола врз слушањето. Пробај го ова, како и повеќе придобивки на Premium, бесплатно во рок од %1$d дена.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Ќе имаш одредени придобивки на Premium во текот на следните 24 часа.</item>
+        <item quantity="other">Ќе имаш одредени придобивки на Premium во текот на следните %1$d дена.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Испративме %1$d-цифрен код на %2$s.</item>
+        <item quantity="other">Испративме %1$d-цифрен код на %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Имаш помалку од %1$d година, па не ги исполнуваш условите за давање родителска согласност.\n\nИсто така, некои содржини и карактеристики сѐ уште не ти се достапни поради возраста. Ги скривме.</item>
+        <item quantity="other">Имаш помалку од %1$d години, па не ги исполнуваш условите за давање родителска согласност.\n\nИсто така, некои содржини и карактеристики сѐ уште не ти се достапни поради возраста. Ги скривме.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Погрешен PIN, обиди се повторно за %1$d минута.</item>
+        <item quantity="other">Погрешен PIN, обиди се повторно за %1$d минути.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Погрешен PIN, обиди се повторно за %1$d секунда.</item>
+        <item quantity="other">Погрешен PIN, обиди се повторно за %1$d секунди.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d Premium сметка</item>
+        <item quantity="other">%1$d Premium сметки</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="other">%1$d секунди</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s +уште %2$d</item>
+        <item quantity="other">%1$s +уште %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s + уште %2$d · миксирано</item>
+        <item quantity="other">%1$s + уште %2$d · миксирано</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s +уште %2$d</item>
+        <item quantity="other">%1$s +уште %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Микс на %1$s и уште %2$d</item>
+        <item quantity="other">Микс на %1$s и уште %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Создадена од %1$s и уште %2$d</item>
+        <item quantity="other">Создадена од %1$s и уште %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Создадена од %1$s и уште %2$d</item>
+        <item quantity="other">Создадена од %1$s и уште %2$d</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d епизода</item>
+        <item quantity="other">%1$d епизоди</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d ЕПИЗОДА</item>
+        <item quantity="other">%1$,d ЕПИЗОДИ</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d ПЕСНА</item>
+        <item quantity="other">%1$,d ПЕСНИ</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d ден</item>
+        <item quantity="other">%1$d дена</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">Уште %1$d час</item>
+        <item quantity="other">Уште %1$d часа</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">Уште %1$d минута</item>
+        <item quantity="other">Уште %1$d минути</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d глас • %2$s</item>
+        <item quantity="other">%1$d гласа • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d ден Premium</item>
+        <item quantity="other">%1$d дена Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d месец Premium</item>
+        <item quantity="other">%1$d месеци Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d седмица Premium</item>
+        <item quantity="other">%1$d седмици Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d година Premium</item>
+        <item quantity="other">%1$d години Premium</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s зачувано однапред</item>
+        <item quantity="other">%1$s зачувани однапред</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d следбеник</item>
+        <item quantity="other">%1$d следбеници</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">Следиш %1$d</item>
+        <item quantity="other">Следиш %1$d</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d пријател</item>
+        <item quantity="other">%1$d пријатели</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d следбеник</item>
+        <item quantity="other">%1$,d следбеници</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d зачувување</item>
+        <item quantity="other">%1$,d зачувувања</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d зачувување</item>
+        <item quantity="other">%1$,d зачувувања</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d следбеник</item>
+        <item quantity="other">%1$,d следбеници</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d аудиозапис е додаден</item>
+        <item quantity="other">%1$d аудиозаписи се додадени</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d аудиозапис е отстранет</item>
+        <item quantity="other">%1$d аудиозаписи се отстранети</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d реакција</item>
+        <item quantity="other">%1$d реакции</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Твоето резиме ќе биде достапно откако ќе ја пуштиш првата %1$d минута од аудиокнигава.</item>
+        <item quantity="other">Твоето резиме ќе биде достапно откако ќе ги пуштиш првите %1$d минути од аудиокнигава.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d слуша</item>
+        <item quantity="other">%1$d слушаат</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d пушти</item>
+        <item quantity="other">%1$d пуштија</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d зачува</item>
+        <item quantity="other">%1$d зачуваа</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d виде</item>
+        <item quantity="other">%1$d видоа</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Ран пристап со Premium за %1$d ден</item>
+        <item quantity="other">Ран пристап со Premium за %1$d дена</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Ќе се објави за %1$d ден</item>
+        <item quantity="other">Ќе се објави за %1$d дена</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d снимка</item>
+        <item quantity="other">%1$d снимки</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Последна активност: пред %1$d ден</item>
+        <item quantity="other">Последна активност: пред %1$d дена</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Може да преземеш на најмногу %1$d уред.</item>
+        <item quantity="other">Може да преземеш на најмногу %1$d уреди.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Плејлиста · %1$d песна</item>
+        <item quantity="other">Плејлиста · %1$d песни</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s одговор. Допри двапати за да се прикаже</item>
+        <item quantity="other">%1$s одговори. Допри двапати за да се прикажат</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s зачувување</item>
+        <item quantity="other">%1$s зачувувања</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;Секунда&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;Секунди&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d избрана линија</item>
+        <item quantity="other">%1$d избрани линии</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d аудиокнига</item>
+        <item quantity="other">%1$d аудиокниги</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d ставка</item>
+        <item quantity="other">%1$d ставки</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Мораш да се вратиш онлајн за: %1$,d ден</item>
+        <item quantity="other">Мораш да се вратиш онлајн за: %1$,d дена</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Преостанато време: %1$d ден</item>
+        <item quantity="other">Преостанато време: %1$d дена</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Споделено од %1$s пријател</item>
+        <item quantity="other">Споделено од %1$s пријатели</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d споделување</item>
+        <item quantity="other">%1$d споделувања</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Според датумот на раѓање, имаш %1$d година.</item>
+        <item quantity="other">Според датумот на раѓање, имаш %1$d години.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Дали имаш %1$d година?</item>
+        <item quantity="other">Дали имаш %1$d години?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">Пред %1$d ден</item>
+        <item quantity="other">Пред %1$d дена</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">Пред %1$d час</item>
+        <item quantity="other">Пред %1$d часа</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">Пред %1$d минута</item>
+        <item quantity="other">Пред %1$d минути</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Пред %1$d месец</item>
+        <item quantity="other">Пред %1$d месеци</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Пред %1$d седмица</item>
+        <item quantity="other">Пред %1$d седмици</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Пред %1$d година</item>
+        <item quantity="other">Пред %1$d години</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s заедничка песна</item>
+        <item quantity="other">%1$s заеднички песни</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Сними &lt;b&gt;%1$s песна&lt;/b&gt;</item>
+        <item quantity="other">Сними &lt;b&gt;%1$s песни&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Најпопуларна песна: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Најпопуларни песни: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Најпопуларна песна со &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Најпопуларни песни со &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Соработуваше со &lt;b&gt;%1$s изведувач&lt;/b&gt;</item>
+        <item quantity="other">Соработуваше со &lt;b&gt;%1$s изведувачи&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s соработник</item>
+        <item quantity="other">%1$s соработници</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s песна</item>
+        <item quantity="other">%1$s песни</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s песна</item>
+        <item quantity="other">%1$s песни</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s соработник</item>
+        <item quantity="other">%1$s соработници</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Види %1$s заедничка песна</item>
+        <item quantity="other">Види %1$s заеднички песни</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s и уште %2$d</item>
+        <item quantity="other">%1$s и уште %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d авторски реализатор</item>
+        <item quantity="other">%1$d авторски реализатори</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d семпл</item>
+        <item quantity="other">%1$d семплови</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s преслушување</item>
+        <item quantity="other">%1$s преслушувања</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="other">%1$d секунди</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Улога: %1$s</item>
+        <item quantity="other">Улоги: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d нов запис</item>
+        <item quantity="other">%1$,d нови записи</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">Додадена е %1$d песна</item>
+        <item quantity="other">Додадени се %1$d песни</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">Пуштена е %1$d песна</item>
+        <item quantity="other">Пуштени се %1$d песни</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Забрзано на %1$d отчукување во минута</item>
+        <item quantity="other">Забрзано на %1$d отчукувања во минута</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Забавено на %1$d отчукување во минута</item>
+        <item quantity="other">Забавено на %1$d отчукувања во минута</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d пријател слуша сега</item>
+        <item quantity="other">%1$d пријатели слушаат сега</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d ставка</item>
+        <item quantity="other">%1$d ставки</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d избрана реченица</item>
+        <item quantity="other">%1$s, %2$s, %3$d избрани реченици</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d час</item>
+        <item quantity="other">%1$d часа</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d час и %2$d минута</item>
+        <item quantity="other">%1$d час и %2$d минути</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="other">%1$d секунди</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">Уште %1$d час</item>
+        <item quantity="other">Уште %1$d часа</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Уште %1$d час и %2$d минута</item>
+        <item quantity="other">Уште %1$d час и %2$d минути</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s сака да се придружи во Jam со тебе!</item>
+        <item quantity="other">%1$s и уште %2$d сакаат да се придружат во твојот Jam!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s сака да се придружи во твојот Jam!</item>
+        <item quantity="other">%1$s и уште %2$d сакаат да се придружат во твојот Jam!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">Ислушано: %1$s/%2$d час</item>
+        <item quantity="other">Ислушано: %1$s/%2$d часа</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Ќе се објави за %1$d ден</item>
+        <item quantity="other">Ќе се објави за %1$d дена</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Ран пристап со Premium за %1$d ден</item>
+        <item quantity="other">Ран пристап со Premium за %1$d дена</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d мин.</item>
+        <item quantity="other">%1$d мин.</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Вклучено за %1$s серија</item>
+        <item quantity="other">Вклучено за %1$s серии</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d песна</item>
+        <item quantity="other">%1$d песни</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d од %2$d песна</item>
+        <item quantity="other">%1$d од %2$d песни</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Во тек, завршен е %1$d процент</item>
+        <item quantity="other">Во тек, завршени се %1$d проценти</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Може да закачиш најмногу %1$d содржина одеднаш.</item>
+        <item quantity="other">Може да закачиш најмногу %1$d содржини одеднаш.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Може да закачиш најмногу %1$d содржина одеднаш.</item>
+        <item quantity="other">Може да закачиш најмногу %1$d содржини одеднаш.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Претходно завршено, во тек со завршен %1$d процент</item>
+        <item quantity="other">Претходно завршено, во тек со завршени %1$d проценти</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d час</item>
+        <item quantity="other">%1$d часа</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d минута</item>
+        <item quantity="other">%1$d минути</item>
+    </plurals>
+</resources>

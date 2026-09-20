@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.spotify.encoreconsumermobile.elements.story.CircularVideoPreviewSpinner
+        android:id="@+id/circular_video_preview_profile_outline"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/circular_video_preview_content_description"/>
+    <com.spotify.encoreconsumermobile.elements.story.CircleFrameLayout
+        android:id="@+id/circular_video_preview_content_root"
+        android:background="@color/gray_7"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="@dimen/circular_video_preview_profile_margin">
+        <ImageView
+            android:id="@+id/circular_video_preview_profile_picture"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerInside"
+            app:srcCompat="@drawable/circular_video_preview_placeholder"/>
+        <ViewStub
+            android:id="@+id/circular_video_preview_content"
+            android:visibility="invisible"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </com.spotify.encoreconsumermobile.elements.story.CircleFrameLayout>
+</merge>

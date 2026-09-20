@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.transcript.uiusecases.zoomimageview.ZoomViewArea xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/transcript_zoom_image_area"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.spotify.transcript.commons.views.ElementContainer
+            android:id="@+id/transcript_header_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <FrameLayout
+            android:id="@+id/list_container"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginLeft="@dimen/spacer_24"
+            android:layout_marginRight="@dimen/spacer_24"
+            android:layout_marginHorizontal="@dimen/spacer_24"
+            app:layout_constraintBottom_toTopOf="@+id/track_control_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/transcript_header_container"/>
+        <FrameLayout
+            android:id="@+id/passthrough_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@+id/track_control_container"/>
+        <FrameLayout
+            android:id="@+id/track_control_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.spotify.transcript.uiusecases.zoomimageview.ZoomViewArea>

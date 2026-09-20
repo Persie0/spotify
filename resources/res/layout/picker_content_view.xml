@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/content_picker_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.allboarding.allboardingimpl.utils.PickerCollapsingTitleBar
+        android:id="@+id/picker_collapsing_title"
+        android:fitsSystemWindows="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <com.spotify.allboarding.allboardingimpl.utils.GridRecyclerView
+        android:id="@+id/picker_recycler_view"
+        android:paddingTop="@dimen/std_8dp"
+        android:paddingBottom="@dimen/picker_rv_padding_bottom"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/std_16dp"
+        android:layout_marginRight="@dimen/std_16dp"
+        android:layout_marginHorizontal="@dimen/std_16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+    <include
+        android:id="@+id/buttonContainer"
+        layout="@layout/picker_action_buttons"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

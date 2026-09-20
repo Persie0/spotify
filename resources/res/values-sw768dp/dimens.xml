@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="card_margin">@dimen/encore_spacer_looser</dimen>
+    <dimen name="comment_horizontal_margin">@dimen/encore_spacer_looser</dimen>
+    <dimen name="widgets_spacer_base">@dimen/encore_spacer_looser</dimen>
+    <dimen name="widgets_spacer_tighter_4">@dimen/encore_spacer_tighter</dimen>
+</resources>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/encore_icon_skip_back_15_24"
+    android:inset="@dimen/inset_pressed"/>

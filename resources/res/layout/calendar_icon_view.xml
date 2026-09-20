@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.MarginalBold"
+        android:gravity="center"
+        android:id="@+id/concert_calendar_month"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:id="@+id/concert_calendar_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</merge>

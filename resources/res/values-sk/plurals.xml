@@ -1,0 +1,1624 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s poslucháč za mesiac</item>
+        <item quantity="few">%1$s poslucháči za mesiac</item>
+        <item quantity="other">%1$s poslucháčov za mesiac</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d zoskupený reproduktor</item>
+        <item quantity="few">%1$d zoskupené reproduktory</item>
+        <item quantity="other">%1$d zoskupených reproduktorov</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d hviezdička z 5</item>
+        <item quantity="few">%1$d hviezdičky z 5</item>
+        <item quantity="other">%1$d hviezdičiek z 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d hviezdička z 5</item>
+        <item quantity="few">%1$d hviezdičky z 5</item>
+        <item quantity="other">%1$d hviezdičiek z 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">vyberieš %1$d hviezdičku</item>
+        <item quantity="few">vyberieš %1$d hviezdičky</item>
+        <item quantity="other">vyberieš %1$d hviezdičiek</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d hviezdička</item>
+        <item quantity="few">%1$d hviezdičky</item>
+        <item quantity="other">%1$d hviezdičiek</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">%1$d ďalšie konto</item>
+        <item quantity="few">%1$d ďalšie kontá</item>
+        <item quantity="other">%1$d ďalších kont</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">A %1$d ďalšie konto</item>
+        <item quantity="few">A %1$d ďalšie kontá</item>
+        <item quantity="other">A %1$d ďalších kont</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">Našla sa %1$d položka</item>
+        <item quantity="few">Našli sa %1$d položky</item>
+        <item quantity="other">Našlo sa %1$d položiek</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s priečinok</item>
+        <item quantity="few">%1$s priečinky</item>
+        <item quantity="other">%1$s priečinkov</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s playlist</item>
+        <item quantity="few">%1$s playlisty</item>
+        <item quantity="other">%1$s playlistov</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s audiokniha</item>
+        <item quantity="few">%1$s audioknihy</item>
+        <item quantity="other">%1$s audiokníh</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s kapitola</item>
+        <item quantity="few">%1$s kapitoly</item>
+        <item quantity="other">%1$s kapitol</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s klip</item>
+        <item quantity="few">%1$s klipy</item>
+        <item quantity="other">%1$s klipov</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s epizóda</item>
+        <item quantity="few">%1$s epizódy</item>
+        <item quantity="other">%1$s epizód</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s skladba</item>
+        <item quantity="few">%1$s skladby</item>
+        <item quantity="other">%1$s skladieb</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s nahrávka</item>
+        <item quantity="few">%1$s nahrávky</item>
+        <item quantity="other">%1$s nahrávok</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d sekunda do preskočenia reklamy, časovač</item>
+        <item quantity="few">%1$d sekundy do preskočenia reklamy, časovač</item>
+        <item quantity="other">%1$d sekúnd do preskočenia reklamy, časovač</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Preskočiť po %1$d s</item>
+        <item quantity="few">Preskočiť po %1$d s</item>
+        <item quantity="other">Preskočiť po %1$d s</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Reklama • Možno preskočiť o %1$d s</item>
+        <item quantity="few">Reklama • Možno preskočiť o %1$d s</item>
+        <item quantity="other">Reklama • Možno preskočiť o %1$d s</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Pozor! Na používanie Spotify nemáš dostatočný vek, takže tvoje konto je zablokované a o %1$s deň sa deaktivuje. Máme nesprávne údaje? Skús potvrdiť svoj vek dokladom totožnosti.</item>
+        <item quantity="few">Pozor! Na používanie Spotify nemáš dostatočný vek, takže tvoje konto je zablokované a o %1$s dni sa deaktivuje. Máme nesprávne údaje? Skús potvrdiť svoj vek dokladom totožnosti.</item>
+        <item quantity="other">Pozor! Na používanie Spotify nemáš dostatočný vek, takže tvoje konto je zablokované a o %1$s dní sa deaktivuje. Máme nesprávne údaje? Skús potvrdiť svoj vek dokladom totožnosti.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Zdá sa, že na vlastné konto Spotify ešte nemáš dostatočný vek. Spravované konto ale mať môžeš, ak s tým bude súhlasiť tvoj rodič alebo zákonný zástupca. \n\nTvoje konto sa deaktivuje o %1$s deň.</item>
+        <item quantity="few">Zdá sa, že na vlastné konto Spotify ešte nemáš dostatočný vek. Spravované konto ale mať môžeš, ak s tým bude súhlasiť tvoj rodič alebo zákonný zástupca.\n\nTvoje konto sa deaktivuje o %1$s dni.</item>
+        <item quantity="other">Zdá sa, že na vlastné konto Spotify ešte nemáš dostatočný vek. Spravované konto ale mať môžeš, ak s tým bude súhlasiť tvoj rodič alebo zákonný zástupca.\n\nTvoje konto sa deaktivuje o %1$s dní.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Ak chceš znova aktivovať svoje konto, potvrď svoj vek dokladom totožnosti. Ak sa pri kontrole veku nepotvrdí, že máš na používanie Spotify dostatočný vek, alebo ak do %1$s dňa nič neurobíš, tvoje konto sa natrvalo odstráni.</item>
+        <item quantity="few">Ak chceš znova aktivovať svoje konto, potvrď svoj vek dokladom totožnosti. Ak sa pri kontrole veku nepotvrdí, že máš na používanie Spotify dostatočný vek, alebo ak do %1$s dní nič neurobíš, tvoje konto sa natrvalo odstráni.</item>
+        <item quantity="other">Ak chceš znova aktivovať svoje konto, potvrď svoj vek dokladom totožnosti. Ak sa pri kontrole veku nepotvrdí, že máš na používanie Spotify dostatočný vek, alebo ak do %1$s dní nič neurobíš, tvoje konto sa natrvalo odstráni.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Keďže máš menej ako %1$d rok, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+        <item quantity="few">Keďže máš menej ako %1$d roky, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+        <item quantity="other">Keďže máš menej ako %1$d rokov, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d skladba • %2$s</item>
+        <item quantity="few">%1$d skladby • %2$s</item>
+        <item quantity="other">%1$d skladieb • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d vybraný</item>
+        <item quantity="few">%1$d vybraní</item>
+        <item quantity="other">%1$d vybraných</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d vybraná položka</item>
+        <item quantity="few">%1$d vybrané položky</item>
+        <item quantity="other">%1$d vybraných položiek</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">Je vybraná %1$d položka. Ak chceš pokračovať, vyber ešte aspoň %2$d.</item>
+        <item quantity="few">Sú vybrané %1$d položky. Ak chceš pokračovať, vyber ešte aspoň %2$d.</item>
+        <item quantity="other">Je vybraných %1$d položiek. Ak chceš pokračovať, vyber ešte aspoň %2$d.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d hod.</item>
+        <item quantity="few">%1$d hod.</item>
+        <item quantity="other">%1$d hod.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">O %1$d znak prekračuješ limit.</item>
+        <item quantity="few">O %1$d znaky prekračuješ limit.</item>
+        <item quantity="other">O %1$d znakov prekračuješ limit.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">a ešte %1$d</item>
+        <item quantity="few">a ešte %1$d</item>
+        <item quantity="other">a ešte %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d nahrávka</item>
+        <item quantity="few">%1$,d nahrávky</item>
+        <item quantity="other">%1$,d nahrávok</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d skladba</item>
+        <item quantity="few">%1$,d skladby</item>
+        <item quantity="other">%1$,d skladieb</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s podujatie v tvojom okolí</item>
+        <item quantity="few">%1$s podujatia v tvojom okolí</item>
+        <item quantity="other">%1$s podujatí v tvojom okolí</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d nahrávka</item>
+        <item quantity="few">%1$d nahrávky</item>
+        <item quantity="other">%1$d nahrávok</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">K dopytu %1$s sa našla %2$d položka</item>
+        <item quantity="few">K dopytu %1$s sa našli %2$d položky</item>
+        <item quantity="other">K dopytu %1$s sa našlo %2$d položiek</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d hod.</item>
+        <item quantity="few">%1$d hod.</item>
+        <item quantity="other">%1$d hod.</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d pridaná audiokniha</item>
+        <item quantity="few">%1$d pridané audioknihy</item>
+        <item quantity="other">%1$d pridaných audiokníh</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d prehraná audiokniha</item>
+        <item quantity="few">%1$d prehrané audioknihy</item>
+        <item quantity="other">%1$d prehraných audiokníh</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s nová epizóda z každej relácie</item>
+        <item quantity="few">%1$s nové epizódy z každej relácie</item>
+        <item quantity="other">%1$s nových epizód z každej relácie</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podcast • %1$d epizóda</item>
+        <item quantity="few">Podcast • %1$d epizódy</item>
+        <item quantity="other">Podcast • %1$d epizód</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d hodina</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="other">%1$d hodín</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="few">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="campfire_agent_duration_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="few">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="campfire_agent_summary_worked_on_tasks">
+        <item quantity="one">Pracoval som na %1$d úlohe</item>
+        <item quantity="few">Pracoval som na %1$d úlohách</item>
+        <item quantity="other">Pracoval som na %1$d úlohách</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s osoba bola pridaná do skupiny</item>
+        <item quantity="few">%1$s ľudia boli pridaní do skupiny</item>
+        <item quantity="other">%1$s ľudí bolo pridaných do skupiny</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">pred %1$d dňom</item>
+        <item quantity="few">pred %1$d dňami</item>
+        <item quantity="other">pred %1$d dňami</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">pred %1$d hodinou</item>
+        <item quantity="few">pred %1$d hodinami</item>
+        <item quantity="other">pred %1$d hodinami</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">pred %1$d minútou</item>
+        <item quantity="few">pred %1$d minútami</item>
+        <item quantity="other">pred %1$d minútami</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d fotka</item>
+        <item quantity="few">%1$d fotky</item>
+        <item quantity="other">%1$d fotiek</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d video</item>
+        <item quantity="few">%1$d videá</item>
+        <item quantity="other">%1$d videí</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s osoba</item>
+        <item quantity="few">%1$s ľudia</item>
+        <item quantity="other">%1$s ľudí</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s priateľa</item>
+        <item quantity="few">%1$s priateľov</item>
+        <item quantity="other">%1$s priateľov</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Obnoví sa o %1$d deň, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="few">Obnoví sa o %1$d dni, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="other">Obnoví sa o %1$d dní, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Obnoví sa o %1$d deň, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="few">Obnoví sa o %1$d dni, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="other">Obnoví sa o %1$d dní, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Obnoví sa o %1$d hodinu, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="few">Obnoví sa o %1$d hodiny, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="other">Obnoví sa o %1$d hodín, tak sa sem potom vráť. Zatiaľ môžeš používať AI playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Obnoví sa o %1$d hodinu, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="few">Obnoví sa o %1$d hodiny, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+        <item quantity="other">Obnoví sa o %1$d hodín, tak sa sem potom vráť. Zatiaľ môžeš používať okamžitý playlist alebo si nejaký vytvoriť vytvoriť podľa seba.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d nová položka</item>
+        <item quantity="few">%1$,d nové položky</item>
+        <item quantity="other">%1$,d nových položiek</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s ti nebude môcť poslať správu priamo. Ak s týmto používateľom nechceš komunikovať, môžeš čet opustiť.</item>
+        <item quantity="few">%1$s ti nebudú môcť poslať správu priamo. Ak s nimi nechceš komunikovať, môžeš čet opustiť.</item>
+        <item quantity="other">%1$s ti nebudú môcť poslať správu priamo. Ak s nimi nechceš komunikovať, môžeš čet opustiť.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">%1$d ďalší</item>
+        <item quantity="few">%1$d ďalší</item>
+        <item quantity="other">%1$d ďalších</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Skupina • %1$d osoba</item>
+        <item quantity="few">Skupina • %1$d ľudia</item>
+        <item quantity="other">Skupina • %1$d ľudí</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(čaká sa na %1$d)</item>
+        <item quantity="few">(čaká sa na %1$d)</item>
+        <item quantity="other">(čaká sa na %1$d)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">Stiahla sa %1$d fotka</item>
+        <item quantity="few">Stiahli sa %1$d fotky</item>
+        <item quantity="other">Stiahlo sa %1$d fotiek</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">%1$d fotku sa nepodarilo stiahnuť</item>
+        <item quantity="few">%1$d fotky sa nepodarilo stiahnuť</item>
+        <item quantity="other">%1$d fotiek sa nepodarilo stiahnuť</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">V tomto čete je používateľ %1$s, ktorého máš zablokovaného. Ak s ním nechceš komunikovať, môžeš túto žiadosť o skupinovú správu odstrániť.</item>
+        <item quantity="few">V tomto čete sú používatelia %1$s, ktorých máš zablokovaných. Ak s nimi nechceš komunikovať, môžeš túto žiadosť o skupinovú správu odstrániť.</item>
+        <item quantity="other">V tomto čete sú používatelia %1$s, ktorých máš zablokovaných. Ak s nimi nechceš komunikovať, môžeš túto žiadosť o skupinovú správu odstrániť.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">V skupine môže byť najviac %1$d osoba</item>
+        <item quantity="few">V skupine môžu byť najviac %1$d ľudia</item>
+        <item quantity="other">V skupine môže byť najviac %1$d ľudí</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Keď %1$s pozvánku prijme, uvidí všetky správy odoslané v čete od momentu odoslania pozvánky.</item>
+        <item quantity="few">Keď niekto pozvánku prijme, uvidí všetky správy odoslané v čete od momentu odoslania pozvánky.</item>
+        <item quantity="other">Keď niekto pozvánku prijme, uvidí všetky správy odoslané v čete od momentu odoslania pozvánky.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Pozvať používateľa %1$s do tohto četu?</item>
+        <item quantity="few">Pozvať vybraných ľudí do tohto četu?</item>
+        <item quantity="other">Pozvať vybraných ľudí do tohto četu?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">Stiahlo sa %1$d video</item>
+        <item quantity="few">Stiahli sa %1$d videá</item>
+        <item quantity="other">Stiahlo sa %1$d videí</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">%1$d video sa nepodarilo stiahnuť</item>
+        <item quantity="few">%1$d videá sa nepodarilo stiahnuť</item>
+        <item quantity="other">%1$d videí sa nepodarilo stiahnuť</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d rola</item>
+        <item quantity="few">+ %1$d roly</item>
+        <item quantity="other">+ %1$d rol</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">pred %1$d dňom</item>
+        <item quantity="few">pred %1$d dňami</item>
+        <item quantity="other">pred %1$d dňami</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">pred %1$d hodinou</item>
+        <item quantity="few">pred %1$d hodinami</item>
+        <item quantity="other">pred %1$d hodinami</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">pred %1$d minútou</item>
+        <item quantity="few">pred %1$d minútami</item>
+        <item quantity="other">pred %1$d minútami</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">pred %1$d mesiacom</item>
+        <item quantity="few">pred %1$d mesiacmi</item>
+        <item quantity="other">pred %1$d mesiacmi</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s odpoveď</item>
+        <item quantity="few">%1$s odpovede</item>
+        <item quantity="other">%1$s odpovedí</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s osoba tiež reagovala.</item>
+        <item quantity="few">%1$s ľudia tiež reagovali.</item>
+        <item quantity="other">%1$s ľudí tiež reagovalo.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">Na tento komentár reagovala %1$s osoba.</item>
+        <item quantity="few">Na tento komentár reagovali %1$s ľudia.</item>
+        <item quantity="other">Na tento komentár reagovalo %1$s ľudí.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s odpoveď</item>
+        <item quantity="few">%1$s odpovede</item>
+        <item quantity="other">%1$s odpovedí</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">%1$s ďalšia odpoveď. Klepnutím dvakrát zobrazíš</item>
+        <item quantity="few">%1$s ďalšie odpovede. Klepnutím dvakrát zobrazíš</item>
+        <item quantity="other">%1$s ďalších odpovedí. Klepnutím dvakrát zobrazíš</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">pred %1$d týždňom</item>
+        <item quantity="few">pred %1$d týždňami</item>
+        <item quantity="other">pred %1$d týždňami</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">pred %1$d rokom</item>
+        <item quantity="few">pred %1$d rokmi</item>
+        <item quantity="other">pred %1$d rokmi</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d skladba</item>
+        <item quantity="few">%1$,d skladby</item>
+        <item quantity="other">%1$,d skladieb</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d poslucháč</item>
+        <item quantity="few">%1$d poslucháči</item>
+        <item quantity="other">%1$d poslucháčov</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d hodinu</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="other">%1$d hodín</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d minútu</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d spoločná skladba</item>
+        <item quantity="few">%1$d spoločné skladby</item>
+        <item quantity="other">%1$d spoločných skladieb</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d spoločná skladba</item>
+        <item quantity="few">%1$d spoločné skladby</item>
+        <item quantity="other">%1$d spoločných skladieb</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d hod.</item>
+        <item quantity="few">%1$d hod.</item>
+        <item quantity="other">%1$d hod.</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d s</item>
+        <item quantity="few">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s poslucháč za mesiac</item>
+        <item quantity="few">%1$s poslucháči za mesiac</item>
+        <item quantity="other">%1$s poslucháčov za mesiac</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Autor: %1$s</item>
+        <item quantity="few">Autori: %1$s</item>
+        <item quantity="other">Autori: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s + %2$d ďalší</item>
+        <item quantity="few">%1$s + %2$d ďalší</item>
+        <item quantity="other">%1$s + %2$d ďalších</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Prejde na ďalší obsah od tohto %1$s</item>
+        <item quantity="few">Zobrazí zoznam všetkých %1$s s možnosťou navigácie</item>
+        <item quantity="other">Zobrazí zoznam všetkých %1$s s možnosťou navigácie</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Čas prípravy: %1$d deň</item>
+        <item quantity="few">Čas prípravy: %1$d dni</item>
+        <item quantity="other">Čas prípravy: %1$d dní</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;deň&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;dni&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;dní&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Vychádza o %1$d deň</item>
+        <item quantity="few">Vychádza o %1$d dni</item>
+        <item quantity="other">Vychádza o %1$d dní</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d deň do uplynutia platnosti hodín počúvania</item>
+        <item quantity="few">%1$d dni do uplynutia platnosti hodín počúvania</item>
+        <item quantity="other">%1$d dní do uplynutia platnosti hodín počúvania</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d deň do obnovenia hodín počúvania</item>
+        <item quantity="few">%1$d dni do obnovenia hodín počúvania</item>
+        <item quantity="other">%1$d dní do obnovenia hodín počúvania</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Odstrániť fotku %1$d?</item>
+        <item quantity="few">Odstrániť %1$d fotky?</item>
+        <item quantity="other">Odstrániť %1$d fotiek?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Odstrániť %1$d položku?</item>
+        <item quantity="few">Odstrániť %1$d položky?</item>
+        <item quantity="other">Odstrániť %1$d položiek?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Odstrániť %1$d video?</item>
+        <item quantity="few">Odstrániť %1$d videá?</item>
+        <item quantity="other">Odstrániť %1$d videí?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d z %2$d znaku</item>
+        <item quantity="few">%1$d z %2$d znakov</item>
+        <item quantity="other">%1$d z %2$d znakov</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d hodina</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="other">%1$d hodín</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s a %2$d ďalšia položka</item>
+        <item quantity="few">%1$s a %2$d ďalšie položky</item>
+        <item quantity="other">%1$s a %2$d ďalších položiek</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d vybraná položka</item>
+        <item quantity="few">%1$d vybrané položky</item>
+        <item quantity="other">%1$d vybraných položiek</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Meno používateľa si môžeš zmeniť len %1$d‑krát za %2$d deň.</item>
+        <item quantity="few">Meno používateľa si môžeš zmeniť len %1$d‑krát za %2$d dni.</item>
+        <item quantity="other">Meno používateľa si môžeš zmeniť len %1$d‑krát za %2$d dní.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Skús to znova o %1$d deň.</item>
+        <item quantity="few">Skús to znova o %1$d dni.</item>
+        <item quantity="other">Skús to znova o %1$d dní.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Meno používateľa si môžeš zmeniť %1$d‑krát každý %2$d deň.</item>
+        <item quantity="few">Meno používateľa si môžeš zmeniť %1$d‑krát každé %2$d dni.</item>
+        <item quantity="other">Meno používateľa si môžeš zmeniť %1$d‑krát každých %2$d dní.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s uloženie</item>
+        <item quantity="few">%1$s uloženia</item>
+        <item quantity="other">%1$s uložení</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Stiahnuté na %1$d percento</item>
+        <item quantity="few">Stiahnuté na %1$d percentá</item>
+        <item quantity="other">Stiahnuté na %1$d percent</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d pridaná epizóda</item>
+        <item quantity="few">%1$d pridané epizódy</item>
+        <item quantity="other">%1$d pridaných epizód</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d prehraná epizóda</item>
+        <item quantity="few">%1$d prehrané epizódy</item>
+        <item quantity="other">%1$d prehraných epizód</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Počkaj %1$d sekundu a potom požiadaj o nový kód.</item>
+        <item quantity="few">Počkaj %1$d sekundy a potom požiadaj o nový kód.</item>
+        <item quantity="other">Počkaj %1$d sekúnd a potom požiadaj o nový kód.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Skús to znova o %1$d sekundu</item>
+        <item quantity="few">Skús to znova o %1$d sekundy</item>
+        <item quantity="other">Skús to znova o %1$d sekúnd</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d podujatie</item>
+        <item quantity="few">%1$d podujatia</item>
+        <item quantity="other">%1$d podujatí</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Zobraziť %1$d ďalší spôsob platby</item>
+        <item quantity="few">Zobraziť %1$d ďalšie spôsoby platby</item>
+        <item quantity="other">Zobraziť %1$d ďalších spôsobov platby</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s z 5 hviezdičiek na Spotify na základe %2$s hodnotenia</item>
+        <item quantity="few">%1$s z 5 hviezdičiek na Spotify na základe %2$s hodnotení</item>
+        <item quantity="other">%1$s z 5 hviezdičiek na Spotify na základe %2$s hodnotení</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d hviezdička: %2$d %%</item>
+        <item quantity="few">%1$d hviezdičky: %2$d %%</item>
+        <item quantity="other">%1$d hviezdičiek: %2$d %%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d poslucháč</item>
+        <item quantity="few">%1$d poslucháči</item>
+        <item quantity="other">%1$d poslucháčov</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">Počúva %1$d osoba</item>
+        <item quantity="few">Počúvajú %1$d ľudia</item>
+        <item quantity="other">Počúva %1$d ľudí</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Jam používateľa %1$s – %2$d počúva spoločne</item>
+        <item quantity="few">Jam používateľa %1$s – %2$d počúvajú spoločne</item>
+        <item quantity="other">Jam používateľa %1$s – %2$d počúvajú spoločne</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s uloženie</item>
+        <item quantity="few">%1$s uloženia</item>
+        <item quantity="other">%1$s uložení</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;hodina&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;hodiny&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;hodín&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d hodina do uplynutia platnosti hodín počúvania</item>
+        <item quantity="few">%1$d hodiny do uplynutia platnosti hodín počúvania</item>
+        <item quantity="other">%1$d hodín do uplynutia platnosti hodín počúvania</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d hodina do obnovenia hodín počúvania</item>
+        <item quantity="few">%1$d hodiny do obnovenia hodín počúvania</item>
+        <item quantity="other">%1$d hodín do obnovenia hodín počúvania</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d percento</item>
+        <item quantity="few">%1$d percentá</item>
+        <item quantity="other">%1$d percent</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s prehratie</item>
+        <item quantity="few">%1$s prehratia</item>
+        <item quantity="other">%1$s prehratí</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">Používateľ %1$s pripojil k tvojmu Jamu</item>
+        <item quantity="few">%2$d ďalší používatelia sa pripojili k tvojmu Jamu</item>
+        <item quantity="other">%2$d ďalších používateľov sa pripojilo k tvojmu Jamu</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s priečinok</item>
+        <item quantity="few">%1$s priečinky</item>
+        <item quantity="other">%1$s priečinkov</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s playlist</item>
+        <item quantity="few">%1$s playlisty</item>
+        <item quantity="other">%1$s playlistov</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s skladba</item>
+        <item quantity="few">%1$s skladby</item>
+        <item quantity="other">%1$s skladieb</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Playlist • %1$s nahrávka</item>
+        <item quantity="few">Playlist • %1$s nahrávky</item>
+        <item quantity="other">Playlist • %1$s nahrávok</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s nahrávka</item>
+        <item quantity="few">%1$s nahrávky</item>
+        <item quantity="other">%1$s nahrávok</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s stiahnutá epizóda • %2$s</item>
+        <item quantity="few">%1$s stiahnuté epizódy • %2$s</item>
+        <item quantity="other">%1$s stiahnutých epizód • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s stiahnutá epizóda</item>
+        <item quantity="few">%1$s stiahnuté epizódy</item>
+        <item quantity="other">%1$s stiahnutých epizód</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">Bola pridaná %1$d položka</item>
+        <item quantity="few">Boli pridané %1$d položky</item>
+        <item quantity="other">Bolo pridaných %1$d položiek</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">Prehrala sa %1$d položka</item>
+        <item quantity="few">Prehrali sa %1$d položky</item>
+        <item quantity="other">Prehralo sa %1$d položiek</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Žiadosť používateľa %1$s o pripojenie k Jamu ti prišla, pretože s používateľom %1$s zdieľaš počúvanie.</item>
+        <item quantity="few">Žiadosť používateľa %1$s a %2$d ďalších o pripojenie k Jamu ti prišla, pretože s nimi zdieľaš počúvanie.</item>
+        <item quantity="other">Žiadosť používateľa %1$s a %2$d ďalších o pripojenie k Jamu ti prišla, pretože s nimi zdieľaš počúvanie.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Prišla ti žiadosť používateľa %1$s o pripojenie k tvojmu Jamu, pretože máš zapnuté automatické pozvánky do Jamu a:</item>
+        <item quantity="few">Prišla ti žiadosť používateľa %1$s a %2$d ďalších o pripojenie k tvojmu Jamu, pretože máš zapnuté automatické pozvánky do Jamu a:</item>
+        <item quantity="other">Prišla ti žiadosť používateľa %1$s a %2$d ďalších o pripojenie k tvojmu Jamu, pretože máš zapnuté automatické pozvánky do Jamu a:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">a ešte %1$d</item>
+        <item quantity="few">a ešte %1$d</item>
+        <item quantity="other">a ešte %1$d</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d vybraný riadok</item>
+        <item quantity="few">%1$d vybrané riadky</item>
+        <item quantity="other">%1$d vybraných riadkov</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d epizóda</item>
+        <item quantity="few">%1$d epizódy</item>
+        <item quantity="other">%1$d epizód</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d položka</item>
+        <item quantity="few">%1$d položky</item>
+        <item quantity="other">%1$d položiek</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d osoba</item>
+        <item quantity="few">%1$d ľudia</item>
+        <item quantity="other">%1$d ľudí</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d poslucháč</item>
+        <item quantity="few">%1$d poslucháči</item>
+        <item quantity="other">%1$d poslucháčov</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">%1$d hodinu počúvania audiokníh, ktorú máš zahrnutú vo svojom mesačnom predplatnom, máš vyčerpanú.</item>
+        <item quantity="few">%1$d hodiny počúvania audiokníh, ktoré máš zahrnuté vo svojom mesačnom predplatnom, máš vyčerpané.</item>
+        <item quantity="other">%1$d hodín počúvania audiokníh, ktoré máš zahrnuté vo svojom mesačnom predplatnom, máš vyčerpané.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Počúvaj %1$d hodinu audiokníh z nášho katalógu predplatiteľov, ktorú máš zahrnutú vo svojom mesačnom predplatnom.</item>
+        <item quantity="few">Počúvaj %1$d hodiny audiokníh z nášho katalógu predplatiteľov, ktoré máš zahrnuté vo svojom mesačnom predplatnom.</item>
+        <item quantity="other">Počúvaj %1$d hodín audiokníh z nášho katalógu predplatiteľov, ktoré máš zahrnuté vo svojom mesačnom predplatnom.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d hodina počúvania</item>
+        <item quantity="few">%1$d hodiny počúvania</item>
+        <item quantity="other">%1$d hodín počúvania</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Hostí %1$s%2$s + %3$d</item>
+        <item quantity="few">Hostí %1$s%2$s + %3$d</item>
+        <item quantity="other">Hostí %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d hod.</item>
+        <item quantity="few">%1$d hod.</item>
+        <item quantity="other">%1$d hod.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s sekunda</item>
+        <item quantity="few">%1$s sekundy</item>
+        <item quantity="other">%1$s sekúnd</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d hlas</item>
+        <item quantity="few">%1$d hlasy</item>
+        <item quantity="other">%1$d hlasov</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d prispievateľ</item>
+        <item quantity="few">%1$d prispievatelia</item>
+        <item quantity="other">%1$d prispievateľov</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d sampel</item>
+        <item quantity="few">%1$d sample</item>
+        <item quantity="other">%1$d samplov</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d vybraný riadok</item>
+        <item quantity="few">%1$d vybrané riadky</item>
+        <item quantity="other">%1$d vybraných riadkov</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">Pred %1$d dňom</item>
+        <item quantity="few">Pred %1$d dňami</item>
+        <item quantity="other">Pred %1$d dňami</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">Pred %1$d mesiacom</item>
+        <item quantity="few">Pred %1$d mesiacmi</item>
+        <item quantity="other">Pred %1$d mesiacmi</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">Pred %1$d týždňom</item>
+        <item quantity="few">Pred %1$d týždňami</item>
+        <item quantity="other">Pred %1$d týždňami</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">Pred %1$d rokom</item>
+        <item quantity="few">Pred %1$d rokmi</item>
+        <item quantity="other">Pred %1$d rokmi</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Stiahnuť %1$d fotku?</item>
+        <item quantity="few">Stiahnuť %1$d fotky?</item>
+        <item quantity="other">Stiahnuť %1$d fotiek?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Stiahnuť %1$d položku?</item>
+        <item quantity="few">Stiahnuť %1$d položky?</item>
+        <item quantity="other">Stiahnuť %1$d položiek?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Stiahnuť %1$d video?</item>
+        <item quantity="few">Stiahnuť %1$d videá?</item>
+        <item quantity="other">Stiahnuť %1$d videí?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Naraz môžeš odoslať %1$d video.</item>
+        <item quantity="few">Naraz môžeš odoslať najviac %1$d videá.</item>
+        <item quantity="other">Naraz môžeš odoslať najviac %1$d videí.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d fotka</item>
+        <item quantity="few">%1$d fotky</item>
+        <item quantity="other">%1$d fotiek</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d položka</item>
+        <item quantity="few">%1$d položky</item>
+        <item quantity="other">%1$d položiek</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d video</item>
+        <item quantity="few">%1$d videá</item>
+        <item quantity="other">%1$d videí</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;minúta&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;minúty&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;minút&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d nové upozornenie</item>
+        <item quantity="few">%d nové upozornenia</item>
+        <item quantity="many">%d new notifications</item>
+        <item quantity="other">%d nových upozornení</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">Zostáva %1$d znak, blížiš sa k limitu</item>
+        <item quantity="few">Zostávajú %1$d znaky, blížiš sa k limitu</item>
+        <item quantity="other">Zostáva %1$d znakov, blížiš sa k limitu</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">%1$d zostávajúci znak</item>
+        <item quantity="few">%1$d zostávajúce znaky</item>
+        <item quantity="other">%1$d zostávajúcich znakov</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+        <item quantity="few">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+        <item quantity="other">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+        <item quantity="few">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+        <item quantity="other">%1$,d z %2$,d (%3$,d %% hotovo)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Zrýchlené na %1$d údery za minútu</item>
+        <item quantity="few">Zrýchlené na %1$d údery za minútu</item>
+        <item quantity="other">Zrýchlené na %1$d údery za minútu</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Spomalené na %1$d údery za minútu</item>
+        <item quantity="few">Spomalené na %1$d údery za minútu</item>
+        <item quantity="other">Spomalené na %1$d údery za minútu</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d hod.</item>
+        <item quantity="few">%1$d hod.</item>
+        <item quantity="other">%1$d hod.</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">Je dostupná %1$s stiahnutá položka</item>
+        <item quantity="few">Sú dostupné %1$s stiahnuté položky</item>
+        <item quantity="other">Je dostupných %1$s stiahnutých položiek</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d vybraná položka</item>
+        <item quantity="few">%1$d vybrané položky</item>
+        <item quantity="other">%1$d vybraných položiek</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s kniha</item>
+        <item quantity="few">%1$s knihy</item>
+        <item quantity="other">%1$s kníh</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s epizóda</item>
+        <item quantity="few">%1$s epizódy</item>
+        <item quantity="other">%1$s epizód</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s položka</item>
+        <item quantity="few">%1$s položky</item>
+        <item quantity="other">%1$s položiek</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s podujatie</item>
+        <item quantity="few">%1$s podujatia</item>
+        <item quantity="other">%1$s podujatí</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d vypočutie</item>
+        <item quantity="few">%1$,d vypočutia</item>
+        <item quantity="other">%1$,d vypočutí</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d skladba</item>
+        <item quantity="few">%1$,d skladby</item>
+        <item quantity="other">%1$,d skladieb</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Tento album je nový, takže ho ešte %1$d deň môžeš prehrávať v ľubovoľnom poradí. S Premium sa ti táto sloboda nikdy neskončí.</item>
+        <item quantity="few">Tento album je nový, takže ho ešte %1$d dni môžeš prehrávať v ľubovoľnom poradí. S Premium sa ti táto sloboda nikdy neskončí.</item>
+        <item quantity="other">Tento album je nový, takže ho ešte %1$d dní môžeš prehrávať v ľubovoľnom poradí. S Premium sa ti táto sloboda nikdy neskončí.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Ešte %1$d deň môžeš prehrávať v ľubovoľnom poradí</item>
+        <item quantity="few">Ešte %1$d dni môžeš prehrávať v ľubovoľnom poradí</item>
+        <item quantity="other">Ešte %1$d dní môžeš prehrávať v ľubovoľnom poradí</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Počúvaj bez Wi‑Fi a šetri si mobilné dáta. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Počúvaj bez Wi‑Fi a šetri si mobilné dáta. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Počúvaj bez Wi‑Fi a šetri si mobilné dáta. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Vyberaj si skladby a prehrávaj ich kedykoľvek a v ľubovoľnom poradí. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Vyberaj si skladby a prehrávaj ich kedykoľvek a v ľubovoľnom poradí. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Vyberaj si skladby a prehrávaj ich kedykoľvek a v ľubovoľnom poradí. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Môžeš meniť poradie v zozname a využívať ďalšie možnosti. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Môžeš meniť poradie v zozname a využívať ďalšie možnosti. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Môžeš meniť poradie v zozname a využívať ďalšie možnosti. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Prehrávaj v ľubovoľnom alebo náhodnom poradí. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Prehrávaj v ľubovoľnom alebo náhodnom poradí. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Prehrávaj v ľubovoľnom alebo náhodnom poradí. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Vyskúšaj neobmedzené preskakovanie a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Vyskúšaj neobmedzené preskakovanie a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Vyskúšaj neobmedzené preskakovanie a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na 24 hodín zadarmo.</item>
+        <item quantity="few">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na %1$d dni zadarmo.</item>
+        <item quantity="other">Získaj úplnú kontrolu nad tým, čo a ako počúvaš. Vyskúšaj túto a ďalšie výhody Premium na %1$d dní zadarmo.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Nasledujúcich 24 hodín máš k dispozícii niektoré výhody Premium.</item>
+        <item quantity="few">Nasledujúce %1$d dni máš k dispozícii niektoré výhody Premium.</item>
+        <item quantity="other">Nasledujúcich %1$d dní máš k dispozícii niektoré výhody Premium.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Na číslo %2$s sme poslali %1$d‑miestny kód.</item>
+        <item quantity="few">Na číslo %2$s sme poslali %1$d‑miestny kód.</item>
+        <item quantity="other">Na číslo %2$s sme poslali %1$d‑miestny kód.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Keďže máš menej ako %1$d rok, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+        <item quantity="few">Keďže máš menej ako %1$d roky, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+        <item quantity="other">Keďže máš menej ako %1$d rokov, nemôžeš poskytnúť súhlas rodiča.\n\nČasť obsahu a funkcií tiež zatiaľ nemáš vzhľadom na svoj vek k dispozícii, takže sme ich skryli.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Nesprávny PIN kód. Skús to znova o %1$d minútu.</item>
+        <item quantity="few">Nesprávny PIN kód. Skús to znova o %1$d minúty.</item>
+        <item quantity="other">Nesprávny PIN kód. Skús to znova o %1$d minút.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Nesprávny PIN kód. Skús to znova o %1$d sekundu.</item>
+        <item quantity="few">Nesprávny PIN kód. Skús to znova o %1$d sekundy.</item>
+        <item quantity="other">Nesprávny PIN kód. Skús to znova o %1$d sekúnd.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d konto Premium</item>
+        <item quantity="few">%1$d kontá Premium</item>
+        <item quantity="other">%1$d kont Premium</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d sekunda</item>
+        <item quantity="few">%1$d sekundy</item>
+        <item quantity="other">%1$d sekúnd</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s + %2$d ďalší</item>
+        <item quantity="few">%1$s + %2$d ďalší</item>
+        <item quantity="other">%1$s + %2$d ďalších</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s +%2$d ďalší · Zmixované</item>
+        <item quantity="few">%1$s +%2$d ďalší · Zmixované</item>
+        <item quantity="other">%1$s +%2$d ďalších · Zmixované</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s + %2$d ďalší</item>
+        <item quantity="few">%1$s + %2$d ďalší</item>
+        <item quantity="other">%1$s + %2$d ďalších</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Zmixované používateľom %1$s a %2$d ďalším</item>
+        <item quantity="few">Zmixované používateľom %1$s a %2$d ďalšími</item>
+        <item quantity="other">Zmixované používateľom %1$s a %2$d ďalšími</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Autori: %1$s a %2$d ďalší</item>
+        <item quantity="few">Autori: %1$s a %2$d ďalší</item>
+        <item quantity="other">Autori: %1$s a %2$d ďalších</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Autori: %1$s a %2$d ďalší</item>
+        <item quantity="few">Autori: %1$s a %2$d ďalší</item>
+        <item quantity="other">Autori: %1$s a %2$d ďalších</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d epizóda</item>
+        <item quantity="few">%1$d epizódy</item>
+        <item quantity="other">%1$d epizód</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d EPIZÓDA</item>
+        <item quantity="few">%1$,d EPIZÓDY</item>
+        <item quantity="other">%1$,d EPIZÓD</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d SKLADBA</item>
+        <item quantity="few">%1$,d SKLADBY</item>
+        <item quantity="other">%1$,d SKLADIEB</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d deň</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">Zostáva %1$d hodina</item>
+        <item quantity="few">Zostávajú %1$d hodiny</item>
+        <item quantity="other">Zostáva %1$d hodín</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">Zostáva %1$d minúta</item>
+        <item quantity="few">Zostávajú %1$d minúty</item>
+        <item quantity="other">Zostáva %1$d minút</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d hlas • %2$s</item>
+        <item quantity="few">%1$d hlasy • %2$s</item>
+        <item quantity="other">%1$d hlasov • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">Premium na %1$d deň</item>
+        <item quantity="few">Premium na %1$d dni</item>
+        <item quantity="other">Premium na %1$d dní</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">Premium na %1$d mesiac</item>
+        <item quantity="few">Premium na %1$d mesiace</item>
+        <item quantity="other">Premium na %1$d mesiacov</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">Premium na %1$d týždeň</item>
+        <item quantity="few">Premium na %1$d týždne</item>
+        <item quantity="other">Premium na %1$d týždňov</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">Premium na %1$d rok</item>
+        <item quantity="few">Premium na %1$d roky</item>
+        <item quantity="other">Premium na %1$d rokov</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s predbežné uloženie</item>
+        <item quantity="few">%1$s predbežné uloženia</item>
+        <item quantity="other">%1$s predbežných uložení</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d sledovateľ</item>
+        <item quantity="few">%1$d sledovatelia</item>
+        <item quantity="other">%1$d sledovateľov</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d sleduje</item>
+        <item quantity="few">%1$d sleduje</item>
+        <item quantity="other">%1$d sleduje</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d priateľ</item>
+        <item quantity="few">%1$d priatelia</item>
+        <item quantity="other">%1$d priateľov</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d sledovateľ</item>
+        <item quantity="few">%1$,d sledovatelia</item>
+        <item quantity="other">%1$,d sledovateľov</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d uloženie</item>
+        <item quantity="few">%1$,d uloženia</item>
+        <item quantity="other">%1$,d uložení</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d uloženie</item>
+        <item quantity="few">%1$,d uloženia</item>
+        <item quantity="other">%1$,d uložení</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d sledovateľ</item>
+        <item quantity="few">%1$,d sledovatelia</item>
+        <item quantity="other">%1$,d sledovateľov</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d nahrávka bola pridaná</item>
+        <item quantity="few">%1$d nahrávky boli pridané</item>
+        <item quantity="other">%1$d nahrávok bolo pridaných</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d nahrávka bola odstránená</item>
+        <item quantity="few">%1$d nahrávky boli odstránené</item>
+        <item quantity="other">%1$d nahrávok bolo odstránených</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d reakcia</item>
+        <item quantity="few">%1$d reakcie</item>
+        <item quantity="other">%1$d reakcií</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Tvoja rekapitulácia bude k dispozícii, keď si prehráš prvú %1$d minútu tejto audioknihy.</item>
+        <item quantity="few">Tvoja rekapitulácia bude k dispozícii, keď si prehráš prvé %1$d minúty tejto audioknihy.</item>
+        <item quantity="other">Tvoja rekapitulácia bude k dispozícii, keď si prehráš prvých %1$d minút tejto audioknihy.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d poslucháč</item>
+        <item quantity="few">%1$d poslucháči</item>
+        <item quantity="other">%1$d poslucháčov</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d poslucháč</item>
+        <item quantity="few">%1$d poslucháči</item>
+        <item quantity="other">%1$d poslucháčov</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d uloženie</item>
+        <item quantity="few">%1$d uloženia</item>
+        <item quantity="other">%1$d uložení</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">Videl %1$d</item>
+        <item quantity="few">Videli %1$d</item>
+        <item quantity="other">Videli %1$d</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Prednostný prístup s Premium o %1$d deň</item>
+        <item quantity="few">Prednostný prístup s Premium o %1$d dni</item>
+        <item quantity="other">Prednostný prístup s Premium o %1$d dní</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Vychádza o %1$d deň</item>
+        <item quantity="few">Vychádza o %1$d dni</item>
+        <item quantity="other">Vychádza o %1$d dní</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d nahrávka</item>
+        <item quantity="few">%1$d nahrávky</item>
+        <item quantity="other">%1$d nahrávok</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Naposledy aktívne pred %1$d dňom</item>
+        <item quantity="few">Naposledy aktívne pred %1$d dňami</item>
+        <item quantity="other">Naposledy aktívne pred %1$d dňami</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Sťahovať môžeš najviac do %1$d zariadenia.</item>
+        <item quantity="few">Sťahovať môžeš najviac do %1$d zariadení.</item>
+        <item quantity="other">Sťahovať môžeš najviac do %1$d zariadení.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Playlist • %1$d skladba</item>
+        <item quantity="few">Playlist • %1$d skladby</item>
+        <item quantity="other">Playlist • %1$d skladieb</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s odpoveď. Klepnutím dvakrát zobrazíš</item>
+        <item quantity="few">%1$s odpovede. Klepnutím dvakrát zobrazíš</item>
+        <item quantity="other">%1$s odpovedí. Klepnutím dvakrát zobrazíš</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s uloženie</item>
+        <item quantity="few">%1$s uloženia</item>
+        <item quantity="other">%1$s uložení</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;sekunda&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;sekundy&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;sekúnd&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d vybraný riadok</item>
+        <item quantity="few">%1$d vybrané riadky</item>
+        <item quantity="other">%1$d vybraných riadkov</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d audiokniha</item>
+        <item quantity="few">%1$d audioknihy</item>
+        <item quantity="other">%1$d audiokníh</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d položka</item>
+        <item quantity="few">%1$d položky</item>
+        <item quantity="other">%1$d položiek</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Znova sa budeš musieť pripojiť o %1$,d deň</item>
+        <item quantity="few">Znova sa budeš musieť pripojiť o %1$,d dni</item>
+        <item quantity="other">Znova sa budeš musieť pripojiť o %1$,d dní</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Zostávajúci čas: %1$d deň</item>
+        <item quantity="few">Zostávajúci čas: %1$d dni</item>
+        <item quantity="other">Zostávajúci čas: %1$d dní</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Zdieľané %1$s priateľom</item>
+        <item quantity="few">Zdieľané %1$s priateľmi</item>
+        <item quantity="other">Zdieľané %1$s priateľmi</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d zdieľanie</item>
+        <item quantity="few">%1$d zdieľania</item>
+        <item quantity="other">%1$d zdieľaní</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">Podľa tvojho dátumu narodenia máš momentálne %1$d rok.</item>
+        <item quantity="few">Podľa tvojho dátumu narodenia máš momentálne %1$d roky.</item>
+        <item quantity="other">Podľa tvojho dátumu narodenia máš momentálne %1$d rokov.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Zdá sa, že máš %1$d rok. Je to tak?</item>
+        <item quantity="few">Zdá sa, že máš %1$d roky. Je to tak?</item>
+        <item quantity="other">Zdá sa, že máš %1$d rokov. Je to tak?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">Pred %1$d dňom</item>
+        <item quantity="few">Pred %1$d dňami</item>
+        <item quantity="other">Pred %1$d dňami</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">Pred %1$d hodinou</item>
+        <item quantity="few">Pred %1$d hodinami</item>
+        <item quantity="other">Pred %1$d hodinami</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">Pred %1$d minútou</item>
+        <item quantity="few">Pred %1$d minútami</item>
+        <item quantity="other">Pred %1$d minútami</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">Pred %1$d mesiacom</item>
+        <item quantity="few">Pred %1$d mesiacmi</item>
+        <item quantity="other">Pred %1$d mesiacmi</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">Pred %1$d týždňom</item>
+        <item quantity="few">Pred %1$d týždňami</item>
+        <item quantity="other">Pred %1$d týždňami</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">Pred %1$d rokom</item>
+        <item quantity="few">Pred %1$d rokmi</item>
+        <item quantity="other">Pred %1$d rokmi</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s spoločná skladba</item>
+        <item quantity="few">%1$s spoločné skladby</item>
+        <item quantity="other">%1$s spoločných skladieb</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Nahraná &lt;b&gt;%1$s skladba&lt;/b&gt;</item>
+        <item quantity="few">Nahrané &lt;b&gt;%1$s skladby&lt;/b&gt;</item>
+        <item quantity="other">Nahraných &lt;b&gt;%1$s skladieb&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Najobľúbenejšia skladba: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="few">Najobľúbenejšie skladby: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Najobľúbenejšie skladby: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Najobľúbenejšia skladba s interpretom &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="few">Najobľúbenejšie skladby s interpretom &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Najobľúbenejšie skladby s interpretom &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Spolupráca s &lt;b&gt;%1$s interpretom&lt;/b&gt;</item>
+        <item quantity="few">Spolupráca s &lt;b&gt;%1$s interpretmi&lt;/b&gt;</item>
+        <item quantity="other">Spolupráca s &lt;b&gt;%1$s interpretmi&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s spolutvorca</item>
+        <item quantity="few">%1$s spolutvorcovia</item>
+        <item quantity="other">%1$s spolutvorcov</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s skladba</item>
+        <item quantity="few">%1$s skladby</item>
+        <item quantity="other">%1$s skladieb</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s skladba</item>
+        <item quantity="few">%1$s skladby</item>
+        <item quantity="other">%1$s skladieb</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s spolutvorca</item>
+        <item quantity="few">%1$s spolutvorcovia</item>
+        <item quantity="other">%1$s spolutvorcov</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Zobraziť %1$s spoločnú skladbu</item>
+        <item quantity="few">Zobraziť %1$s spoločné skladby</item>
+        <item quantity="other">Zobraziť %1$s spoločných skladieb</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s a ešte %2$d</item>
+        <item quantity="few">%1$s a ešte %2$d</item>
+        <item quantity="other">%1$s a ešte %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d prispievateľ</item>
+        <item quantity="few">%1$d prispievatelia</item>
+        <item quantity="other">%1$d prispievateľov</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d sampel</item>
+        <item quantity="few">%1$d sample</item>
+        <item quantity="other">%1$d samplov</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s prehratie</item>
+        <item quantity="few">%1$s prehratia</item>
+        <item quantity="other">%1$s prehratí</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d sekunda</item>
+        <item quantity="few">%1$d sekundy</item>
+        <item quantity="other">%1$d sekúnd</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Rola: %1$s</item>
+        <item quantity="few">Roly: %1$s</item>
+        <item quantity="other">Roly: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d nová položka</item>
+        <item quantity="few">%1$,d nové položky</item>
+        <item quantity="other">%1$,d nových položiek</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d skladba bola pridaná</item>
+        <item quantity="few">%1$d skladby boli pridané</item>
+        <item quantity="other">%1$d skladieb bolo pridaných</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">Prehrala sa %1$d skladba</item>
+        <item quantity="few">Prehrali sa %1$d skladby</item>
+        <item quantity="other">Prehralo sa %1$d skladieb</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="few">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Zrýchlené na %1$d BPM</item>
+        <item quantity="few">Zrýchlené na %1$d BPM</item>
+        <item quantity="other">Zrýchlené na %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Spomalené na %1$d BPM</item>
+        <item quantity="few">Spomalené na %1$d BPM</item>
+        <item quantity="other">Spomalené na %1$d BPM</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="few">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">Práve prehráva %1$d priateľ</item>
+        <item quantity="few">Práve prehrávajú %1$d priatelia</item>
+        <item quantity="other">Práve prehráva %1$d priateľov</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d položka</item>
+        <item quantity="few">%1$d položky</item>
+        <item quantity="other">%1$d položiek</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d vybraná veta</item>
+        <item quantity="few">%1$s, %2$s, %3$d vybrané vety</item>
+        <item quantity="other">%1$s, %2$s, %3$d vybraných viet</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d hodina</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="other">%1$d hodín</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d h %2$d min</item>
+        <item quantity="few">%1$d h %2$d min</item>
+        <item quantity="other">%1$d h %2$d min</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d sekunda</item>
+        <item quantity="few">%1$d sekundy</item>
+        <item quantity="other">%1$d sekúnd</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">Zostáva %1$d hodina</item>
+        <item quantity="few">Zostávajú %1$d hodiny</item>
+        <item quantity="other">Zostáva %1$d hodín</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Zostáva: %1$d h %2$d min</item>
+        <item quantity="few">Zostáva: %1$d h %2$d min</item>
+        <item quantity="other">Zostáva: %1$d h %2$d min</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s sa chce s tebou pripojiť k Jamu!</item>
+        <item quantity="few">%1$s a ďalší ( %2$d) sa chcú pripojiť k tvojmu Jamu!</item>
+        <item quantity="other">%1$s a ďalší ( %2$d) sa chcú pripojiť k tvojmu Jamu!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s sa chce pripojiť k tvojmu Jamu!</item>
+        <item quantity="few">%1$s a ďalší ( %2$d) sa chcú pripojiť k tvojmu Jamu!</item>
+        <item quantity="other">%1$s a ďalší ( %2$d) sa chcú pripojiť k tvojmu Jamu!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">Počúvané: %1$s/%2$d hodina</item>
+        <item quantity="few">Počúvané: %1$s/%2$d hodiny</item>
+        <item quantity="other">Počúvané: %1$s/%2$d hodín</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Vychádza o %1$d deň</item>
+        <item quantity="few">Vychádza o %1$d dni</item>
+        <item quantity="other">Vychádza o %1$d dní</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Prednostný prístup s Premium o %1$d deň</item>
+        <item quantity="few">Prednostný prístup s Premium o %1$d dni</item>
+        <item quantity="other">Prednostný prístup s Premium o %1$d dní</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d min.</item>
+        <item quantity="few">%1$d min.</item>
+        <item quantity="other">%1$d min.</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Zapnuté pre %1$s reláciu</item>
+        <item quantity="few">Zapnuté pre %1$s relácie</item>
+        <item quantity="other">Zapnuté pre %1$s relácií</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d skladba</item>
+        <item quantity="few">%1$d skladby</item>
+        <item quantity="other">%1$d skladieb</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d z %2$d skladby</item>
+        <item quantity="few">%1$d z %2$d skladieb</item>
+        <item quantity="other">%1$d z %2$d skladieb</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Prebieha, dokončené na %1$d percento</item>
+        <item quantity="few">Prebieha, dokončené na %1$d percentá</item>
+        <item quantity="other">Prebieha, dokončené na %1$d percent</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Naraz môžeš mať pripnutú len %1$d položku.</item>
+        <item quantity="few">Naraz môžeš mať pripnuté len %1$d položky.</item>
+        <item quantity="other">Naraz môžeš mať pripnutých len %1$d položiek.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Naraz môžeš mať pripnutú len %1$d položku.</item>
+        <item quantity="few">Naraz môžeš mať pripnuté len %1$d položky.</item>
+        <item quantity="other">Naraz môžeš mať pripnutých len %1$d položiek.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Predtým dokončené, znova prebieha a je dokončené na %1$d percento</item>
+        <item quantity="few">Predtým dokončené, znova prebieha a je dokončené na %1$d percentá</item>
+        <item quantity="other">Predtým dokončené, znova prebieha a je dokončené na %1$d percent</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d hodina</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="other">%1$d hodín</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d minúta</item>
+        <item quantity="few">%1$d minúty</item>
+        <item quantity="other">%1$d minút</item>
+    </plurals>
+</resources>

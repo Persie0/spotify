@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/countdown_timer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+            android:id="@+id/album_artwork"
+            android:padding="@dimen/spacer_8"
+            android:layout_width="@dimen/countdown_artwork_size"
+            android:layout_height="@dimen/countdown_artwork_size"
+            android:scaleType="centerCrop"
+            android:layout_marginEnd="@dimen/spacer_16"
+            app:iconInsetRatio="0.6"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <include
+            android:id="@+id/countdown_labels_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/album_artwork"
+            app:layout_constraintTop_toTopOf="parent"
+            layout="@layout/countdown_labels_container"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <FrameLayout
+        android:id="@+id/premium_early_access_banner_container"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

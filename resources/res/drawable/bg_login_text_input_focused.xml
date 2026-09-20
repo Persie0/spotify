@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/login_text_input_focused"/>
+    <size android:height="@dimen/login_text_input_height"/>
+    <corners android:radius="@dimen/login_text_input_corner_radius"/>
+</shape>

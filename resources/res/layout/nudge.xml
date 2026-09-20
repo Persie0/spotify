@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:paddingLeft="@dimen/encore_spacer_base"
+    android:paddingTop="@dimen/encore_spacer_base"
+    android:paddingRight="@dimen/encore_spacer_base"
+    android:paddingBottom="@dimen/encore_spacer_base"
+    android:clipToPadding="false"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/encore_spacer_base"
+    android:paddingVertical="@dimen/encore_spacer_base">
+    <View
+        android:layout_gravity="center"
+        android:id="@+id/nudge_arrow"
+        android:background="@color/white"
+        android:layout_width="@dimen/std_16dp"
+        android:layout_height="@dimen/std_16dp"
+        android:rotation="45"
+        android:elevation="8dp"/>
+    <com.spotify.messaging.tooltipsimpl.TooltipContentView
+        android:layout_gravity="center"
+        android:id="@+id/nudge_content"
+        android:background="@drawable/nudge_background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/nudge_min_height"
+        android:elevation="@dimen/spacer_8"/>
+</FrameLayout>

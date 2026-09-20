@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.spotify.encoreconsumermobile.elements.addtobutton.EncoreAddToButtonView
+        android:id="@+id/add_button"
+        android:layout_width="@dimen/row_button_clickable_size"
+        android:layout_height="@dimen/row_button_clickable_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/Encore.Button.Tertiary.Small.IconOnly"/>
+    <com.spotify.encoreconsumermobile.elements.contextmenu.ContextMenuButton
+        android:id="@+id/context_menu_button"
+        android:layout_width="@dimen/row_button_clickable_size"
+        android:layout_height="@dimen/row_button_clickable_size"
+        app:iconSize="@dimen/row_icon_size_small"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/add_button"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/Encore.Elements.Action"/>
+</merge>

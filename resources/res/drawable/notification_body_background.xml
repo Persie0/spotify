@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:height="110dp"
+    android:width="82dp"
+    android:viewportWidth="326"
+    android:viewportHeight="438">
+    <group>
+        <clip-path android:pathData="M6 0H309C312.314 0 315 2.68629 315 6V448.642C315 451.956 312.314 454.642 309 454.642H6C2.68629 454.642 0 451.956 0 448.642V6C0 2.68629 2.68629 0 6 0Z"/>
+        <group
+            android:pivotX="157.5"
+            android:pivotY="227.321"
+            android:scaleX="2.83"
+            android:scaleY="2.444"
+            android:rotation="-45.022"
+            android:translateX="-0.504"
+            android:translateY="0.655">
+            <path
+                android:fillColor="@drawable/_notification_body_background__0_res_0x7f080066"
+                android:pathData="M0 0V454.642H315V0"/>
+        </group>
+    </group>
+</vector>

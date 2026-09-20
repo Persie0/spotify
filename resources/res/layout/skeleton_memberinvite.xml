@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:layout_gravity="bottom|center_horizontal"
+        android:id="@+id/image"
+        android:layout_width="200sp"
+        android:layout_height="200sp"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="100sp"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:layout_gravity="bottom|center_horizontal"
+        android:id="@+id/title"
+        android:layout_width="190sp"
+        android:layout_height="56sp"
+        android:layout_marginTop="26dp"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="28sp"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:layout_gravity="bottom|center_horizontal"
+        android:id="@+id/subtitle"
+        android:layout_width="220sp"
+        android:layout_height="56sp"
+        android:layout_marginTop="10dp"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="28sp"/>
+    <com.spotify.appendix.pageloaderskeleton.RoundedRectView
+        android:layout_gravity="bottom|center_horizontal"
+        android:id="@+id/button"
+        android:layout_width="190sp"
+        android:layout_height="56sp"
+        android:layout_marginTop="10dp"
+        app:roundedrect_color="@color/skeleton_base_color"
+        app:roundedrect_radius="28sp"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

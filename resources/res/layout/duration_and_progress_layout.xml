@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_gravity="center"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/dark_base_text_subdued"
+        android:id="@+id/progress_text"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textDirection="locale"
+        android:textAlignment="gravity"
+        android:layout_marginEnd="4dp"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/gray_70"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/progress_separator"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/progress_separator"
+        android:importantForAccessibility="no"
+        android:layout_marginEnd="4dp"/>
+    <com.spotify.encoreconsumermobile.elements.playprogressbar.PlayProgressBarView
+        android:layout_gravity="center_vertical"
+        android:id="@+id/progress_bar"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="additional_trusted_origins">
+        <item>https://accounts.spotify.com</item>
+        <item>https://accounts-gew4.spotify.com</item>
+        <item>https://accounts-gue1.spotify.com</item>
+        <item>https://accounts-gew1.spotify.com</item>
+        <item>https://accounts-guc3.spotify.com</item>
+        <item>https://accounts-gae2.spotify.com</item>
+        <item>https://auth-callback.spotify.com</item>
+    </array>
+    <array name="android_wear_capabilities">
+        <item>auto_login_request</item>
+        <item>user_info_request</item>
+        <item>play_uri_request</item>
+        <item>pull_playback_request</item>
+        <item>seek_to_request</item>
+        <item>add_to_queue_request</item>
+        <item>send_signal_request</item>
+    </array>
+    <array name="assume_strong_biometrics_models">
+        <item>Pixel 4</item>
+        <item>Pixel 4 XL</item>
+    </array>
+    <array name="attribution_blacklist">
+        <item>com.sec.android.app.launcher</item>
+        <item>com.android.vending</item>
+        <item>com.sonyericsson.home</item>
+        <item>com.sonymobile.home</item>
+        <item>com.google.android.packageinstaller</item>
+        <item>com.teslacoilsw.launcher</item>
+        <item>com.bbk.launcher2</item>
+        <item>com.android.launcher</item>
+        <item>com.miui.global.packageinstaller</item>
+        <item>com.miui.home</item>
+        <item>com.oppo.launcher</item>
+        <item>com.tcl.android.launcher</item>
+        <item>com.vivo.appstore</item>
+        <item>com.motorola.launcher3</item>
+        <item>com.huawei.android.launcher</item>
+        <item>com.transsion.XOSLauncher</item>
+        <item>com.mi.android.globallauncher</item>
+        <item>com.gogo.launcher</item>
+        <item>com.android.chrome</item>
+        <item>com.transsion.hilauncher</item>
+        <item>com.lge.launcher3</item>
+        <item>com.hihonor.android.launcher</item>
+        <item>com.transsion.itel.launcher</item>
+        <item>com.zte.mifavor.launcher</item>
+        <item>com.tblenovo.launcher</item>
+        <item>net.oneplus.launcher</item>
+        <item>com.amazon.firelauncher</item>
+        <item>com.android.packageinstaller</item>
+    </array>
+    <array name="blend_social_prompting_loading_messages">
+        <item>This may take a few minutes…</item>
+        <item>Finding tracks you’ll both love…</item>
+        <item>Mixing your music tastes…</item>
+        <item>Curating your perfect blend…</item>
+        <item>Matching your vibes…</item>
+    </array>
+    <array name="cast_expanded_controller_default_control_buttons">
+        <item>@id/cast_button_type_closed_caption</item>
+        <item>@id/cast_button_type_skip_previous</item>
+        <item>@id/cast_button_type_skip_next</item>
+        <item>@id/cast_button_type_mute_toggle</item>
+    </array>
+    <array name="category_names">
+        <item>@string/emoji_category_emotions</item>
+        <item>@string/emoji_category_people</item>
+        <item>@string/emoji_category_animals_nature</item>
+        <item>@string/emoji_category_food_drink</item>
+        <item>@string/emoji_category_travel_places</item>
+        <item>@string/emoji_category_activity</item>
+        <item>@string/emoji_category_objects</item>
+        <item>@string/emoji_category_symbols</item>
+        <item>@string/emoji_category_flags</item>
+    </array>
+    <array name="date_day_text_sizes">
+        <item>18sp</item>
+        <item>36sp</item>
+    </array>
+    <array name="date_month_text_sizes">
+        <item>10sp</item>
+        <item>20sp</item>
+    </array>
+    <array name="emoji_by_category_raw_resources">
+        <item>@raw/emoji_category_emotions</item>
+        <item>@raw/emoji_category_people</item>
+        <item>@raw/emoji_category_animals_nature</item>
+        <item>@raw/emoji_category_food_drink</item>
+        <item>@raw/emoji_category_travel_places</item>
+        <item>@raw/emoji_category_activity</item>
+        <item>@raw/emoji_category_objects</item>
+        <item>@raw/emoji_category_symbols</item>
+        <item>@raw/emoji_category_flags</item>
+    </array>
+    <array name="emoji_by_category_raw_resources_gender_inclusive">
+        <item>@raw/emoji_category_emotions</item>
+        <item>@raw/emoji_category_people_gender_inclusive</item>
+        <item>@raw/emoji_category_animals_nature</item>
+        <item>@raw/emoji_category_food_drink</item>
+        <item>@raw/emoji_category_travel_places</item>
+        <item>@raw/emoji_category_activity</item>
+        <item>@raw/emoji_category_objects</item>
+        <item>@raw/emoji_category_symbols</item>
+        <item>@raw/emoji_category_flags</item>
+    </array>
+    <array name="emoji_categories_icons">
+        <item>@drawable/gm_filled_emoji_emotions_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_people_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_nature_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_food_beverage_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_transportation_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_events_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_objects_vd_theme_24</item>
+        <item>@drawable/gm_filled_emoji_symbols_vd_theme_24</item>
+        <item>@drawable/gm_filled_flag_vd_theme_24</item>
+    </array>
+    <array name="hosts_allowlist">
+        <item>fdb00c43dbde8b51cb312aa81d3b5fa17713adb94b28f598d77f8eb89daceedf, com.google.android.projection.gearhead</item>
+        <item>70811a3eacfd2e83e18da9bfede52df16ce91f2e69a44d21f18ab66991130771, com.google.android.projection.gearhead</item>
+        <item>1975b2f17177bc89a5dff31f9e64a6cae281a53dc1d1d59b1d147fe1c82afa00, com.google.android.projection.gearhead</item>
+    </array>
+    <array name="password_blacklist">
+        <item>11111111</item>
+        <item>12345678</item>
+        <item>123456789</item>
+        <item>access14</item>
+        <item>alejandra</item>
+        <item>alejandro</item>
+        <item>baseball</item>
+        <item>bigdaddy</item>
+        <item>butthead</item>
+        <item>cocacola</item>
+        <item>computer</item>
+        <item>consumer</item>
+        <item>corvette</item>
+        <item>danielle</item>
+        <item>dolphins</item>
+        <item>einstein</item>
+        <item>estrella</item>
+        <item>firebird</item>
+        <item>football</item>
+        <item>hardcore</item>
+        <item>iloveyou</item>
+        <item>internet</item>
+        <item>jennifer</item>
+        <item>mariposa</item>
+        <item>marlboro</item>
+        <item>maverick</item>
+        <item>mercedes</item>
+        <item>michelle</item>
+        <item>midnight</item>
+        <item>mistress</item>
+        <item>mountain</item>
+        <item>nicholas</item>
+        <item>password</item>
+        <item>password1</item>
+        <item>password12</item>
+        <item>password123</item>
+        <item>princess</item>
+        <item>qwertyui</item>
+        <item>redskins</item>
+        <item>redwings</item>
+        <item>rush2112</item>
+        <item>samantha</item>
+        <item>scorpion</item>
+        <item>sebastian</item>
+        <item>srinivas</item>
+        <item>startrek</item>
+        <item>starwars</item>
+        <item>steelers</item>
+        <item>sunshine</item>
+        <item>superman</item>
+        <item>swimming</item>
+        <item>tequiero</item>
+        <item>trustno1</item>
+        <item>victoria</item>
+        <item>whatever</item>
+        <item>xxxxxxxx</item>
+    </array>
+</resources>

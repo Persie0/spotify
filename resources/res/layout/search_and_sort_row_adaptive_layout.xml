@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/search_row_container"
+    android:paddingLeft="@dimen/header_adaptive_layout_default_padding_horizontal"
+    android:paddingTop="?attr/actionBarSize"
+    android:paddingRight="@dimen/header_adaptive_layout_default_padding_horizontal"
+    android:paddingBottom="16dp"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:alpha="0"
+    android:paddingHorizontal="@dimen/header_adaptive_layout_default_padding_horizontal"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintWidth_max="@dimen/header_adaptive_layout_max_content_width">
+    <com.spotify.encoreconsumermobile.elements.find.FindInContextView
+        android:id="@+id/find_in_context_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/sort_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoreconsumermobile.elements.sort.SortButtonView
+        android:id="@+id/sort_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/find_in_context_view"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:textColor="@color/gray_70"
+        android:gravity="center_vertical"
+        android:id="@+id/disc_separator_text"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/std_16dp"
+        android:layout_marginTop="@dimen/spacer_8"
+        android:layout_marginRight="@dimen/std_16dp"
+        android:drawablePadding="@dimen/spacer_4"
+        android:layout_marginHorizontal="@dimen/std_16dp"
+        app:drawableStartCompat="@drawable/encore_icon_album_16"
+        app:drawableTint="@color/gray_70"
+        app:layout_constraintBottom_toTopOf="@+id/row_layout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <FrameLayout
+        android:id="@+id/row_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/disc_separator_text"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

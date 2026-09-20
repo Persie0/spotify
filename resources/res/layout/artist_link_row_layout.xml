@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/row_root"
+    android:padding="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:layout_constrainedWidth="true">
+    <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+        android:id="@+id/artwork"
+        android:duplicateParentState="true"
+        android:layout_width="@dimen/track_row_cover_art_size"
+        android:layout_height="@dimen/track_row_cover_art_size"
+        android:layout_marginLeft="@dimen/spacer_8"
+        android:scaleType="centerCrop"
+        android:layout_marginStart="@dimen/spacer_8"
+        app:iconInsetRatio="0.5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:textColor="@color/encore_row_title"
+        android:ellipsize="end"
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textDirection="locale"
+        android:textAlignment="gravity"
+        android:layout_marginStart="12dp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/artwork"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

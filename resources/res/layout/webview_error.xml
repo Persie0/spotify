@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="?attr/backgroundBase"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleMedium"
+        android:textColor="?attr/textBase"
+        android:id="@+id/webview_error_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacer_8"
+        app:layout_constraintBottom_toTopOf="@+id/webview_error_message"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:textColor="?attr/textSubdued"
+        android:id="@+id/webview_error_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacer_16"
+        app:layout_constraintBottom_toTopOf="@+id/webview_error_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+    <com.spotify.encoremobile.buttons.PrimaryButtonView
+        android:theme="@style/ThemeOverlay.Encore.BrightAccent"
+        android:id="@+id/webview_error_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/encore_action_button_height_large"
+        android:text="@string/action_refresh"
+        android:filterTouchesWhenObscured="true"
+        app:actionButtonSize="large"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

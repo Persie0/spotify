@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapabilities="false">
+        <include
+            domain="sharedpref"
+            path="."/>
+        <exclude
+            domain="sharedpref"
+            path="my_secret_shared_pref_data.xml"/>
+        <exclude
+            domain="sharedpref"
+            path="my_com.ravelin.core_shared_pref_data.xml"/>
+    </cloud-backup>
+</data-extraction-rules>

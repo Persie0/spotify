@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    app:shimmer_base_alpha="1"
+    app:shimmer_base_color="@color/gray_15"
+    app:shimmer_colored="true"
+    app:shimmer_duration="@integer/shimmer_animation_duration"
+    app:shimmer_highlight_alpha="1"
+    app:shimmer_highlight_color="@color/gray_20">
+    <LinearLayout
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+        <include layout="@layout/row_skeleton_search_artists"/>
+    </LinearLayout>
+</com.facebook.shimmer.ShimmerFrameLayout>

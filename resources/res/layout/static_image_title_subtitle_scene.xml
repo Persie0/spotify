@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:gravity="center"
+        android:id="@+id/static_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginHorizontal="@dimen/scene_entity_text_horizontal_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/static_title"/>
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:gravity="center"
+        android:id="@+id/static_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginTop="24dp"
+        android:layout_marginRight="@dimen/scene_entity_text_horizontal_margin"
+        android:layout_marginHorizontal="@dimen/scene_entity_text_horizontal_margin"
+        app:layout_constraintBottom_toTopOf="@+id/static_subtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/static_image"
+        app:layout_constraintVertical_chainStyle="packed"/>
+    <ImageView
+        android:id="@+id/static_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/static_title"
+        app:layout_constraintDimensionRatio="H,1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintWidth_percent="0.65"/>
+</merge>

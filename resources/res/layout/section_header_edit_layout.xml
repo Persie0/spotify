@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/spacer_16"
+    android:paddingEnd="@dimen/spacer_8">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:id="@+id/section_header_edit_title"
+        android:paddingTop="@dimen/spacer_8"
+        android:paddingBottom="@dimen/spacer_8"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:paddingVertical="@dimen/spacer_8"/>
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:id="@+id/section_header_edit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        app:icon="@drawable/encore_icon_edit"
+        style="@style/Encore.Button.Tertiary.Small"/>
+</LinearLayout>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="header_dimens_ratio">6:5</string>
+    <string name="prerelease_header_video_ratio">1:1</string>
+    <string name="prerelease_header_video_ratio_with_full_width">1:1</string>
+</resources>
