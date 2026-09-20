@@ -486,9 +486,38 @@ ad metadata
 
 However, the ordinary skip-next `ad_disallow` branch still tests only the two optional-engagement bytes. It is not directly removed by the `+0x1b8` override. This is strong evidence that Spotify's user-facing **Skip Ad** operation is a separate command path from ordinary next-track / MediaSession skip-next.
 
-The unresolved transition is therefore no longer a timer/lifetime mystery:
+The Android-side ad-specific command is now recovered from smali.
 
-> What ad-specific command is emitted by the Skip Ad UI after subtype 6 makes the ad skippable, and which Orbit/ContextPlayer endpoint executes that command?
+The Skip Ad action branch obtains the `p8p0` dependency stored in `jo20.c`, then executes:
+
+```text
+SignalCommand.create("skip-ad")
+        |
+        v
+b8p0(SignalCommand)
+        |
+        v
+p8p0.a(h8p0) -> Single
+        |
+        v
+ignoreElement() -> Completable
+```
+
+The literal `"skip-ad"` is therefore the concrete player signal used by the UI. This is independent confirmation that user-facing Skip Ad does not route through ordinary `skipToNext`.
+
+`jo20` is dependency-injected with:
+
+```text
+Flowable
+Flowable
+p8p0
+```
+
+and is part of the UI family that renders `skip_ad_title`. The XML `skip_ad_button_stub` is only replaced by Compose content in the now-playing layouts.
+
+The unresolved boundary has moved one layer down:
+
+> Which concrete `p8p0` implementation dispatches `SignalCommand("skip-ad")`, which native/Esperanto signal endpoint receives it, and how is successful execution reflected in `ad_skipped` state/telemetry?
 
 Reports:
 
@@ -644,11 +673,14 @@ Most of the original trace is now resolved:
 - ContextPlayer event subtype `6`: **resolved as the scheduled `ad_skip` readiness event**
 - native `skippable_ad_delay` -> timer -> `+0x1b8` transition: **resolved**
 - relationship between Skip Ad and ordinary skip-next: **resolved structurally as separate capability paths**
-- actual ad-specific skip command/action: **open**
+- actual ad-specific skip command/action: **resolved as `SignalCommand("skip-ad")` through `p8p0`**
+- exact `p8p0` implementation / native signal endpoint: **open**
+- `ad_skipped` completion/telemetry link: **open**
 
 Next targets:
 
-1. trace the Skip Ad UI click handler
-2. identify the player/Esperanto/native command it emits
-3. trace that command to the ad playback transition and `ad_skipped` telemetry/event path
-4. map the equivalent command path for Connect/remote playback
+1. resolve `p8p0`, `b8p0`, and `h8p0`
+2. trace `SignalCommand("skip-ad")` serialization and dispatch
+3. identify the Orbit/ContextPlayer handler for the signal
+4. link successful command execution to `ad_skipped`
+5. map the equivalent path for Connect/remote playback
