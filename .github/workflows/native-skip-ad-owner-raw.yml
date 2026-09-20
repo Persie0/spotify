@@ -1,0 +1,59 @@
+name: Capture skip-ad owner constructor raw
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skip-ad-owner-raw.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/saoraw
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/saoraw
+
+      - name: Capture raw ranges
+        run: |
+          SO=/tmp/saoraw/liborbit-jni-spotify.so
+          echo '# Skip Ad owner raw constructor trace' > analysis/native-skip-ad-owner-raw.md
+          echo >> analysis/native-skip-ad-owner-raw.md
+          echo '## 0xefc300..0xefc780' >> analysis/native-skip-ad-owner-raw.md
+          echo '~~~asm' >> analysis/native-skip-ad-owner-raw.md
+          objdump -d -M intel --start-address=0xefc300 --stop-address=0xefc780 "$SO" >> analysis/native-skip-ad-owner-raw.md
+          echo '~~~' >> analysis/native-skip-ad-owner-raw.md
+          echo >> analysis/native-skip-ad-owner-raw.md
+          echo '## 0xfd4bd0..0xfd4d10 copy path' >> analysis/native-skip-ad-owner-raw.md
+          echo '~~~asm' >> analysis/native-skip-ad-owner-raw.md
+          objdump -d -M intel --start-address=0xfd4bd0 --stop-address=0xfd4d10 "$SO" >> analysis/native-skip-ad-owner-raw.md
+          echo '~~~' >> analysis/native-skip-ad-owner-raw.md
+          echo >> analysis/native-skip-ad-owner-raw.md
+          echo '## Signal string bytes' >> analysis/native-skip-ad-owner-raw.md
+          strings -a -t x "$SO" | grep -E '^[[:space:]]*(387721|387742|33c93e|34708a)[[:space:]]' >> analysis/native-skip-ad-owner-raw.md || true
+          wc -c analysis/native-skip-ad-owner-raw.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skip-ad-owner-raw.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Capture skip-ad owner constructor raw"
+          git pull --rebase origin main
+          git push origin HEAD:main
