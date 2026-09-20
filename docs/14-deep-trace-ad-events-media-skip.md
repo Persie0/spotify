@@ -369,6 +369,72 @@ The `+0x598` flag is broadly reused by the restriction builder and is associated
 
 What is **not** yet proven is what writes `+0x470` or whether its transition is the direct result of `ad.skippable_ad_delay` expiry. The delay key still has no simple RIP-relative native string xref, so the timer/state input may be accessed through generic metadata or another internal object.
 
+
+### Native delay predicate and its boundary with skip-next
+
+The indirect native delay lookup is now resolved.
+
+Orbit translates:
+
+```text
+ad.skippable_ad_delay
+        |
+        v
+skippable_ad_delay
+```
+
+and the ad-model virtual interface is reconstructed from ELF relocations. The runtime vtable base is `0x1879950`:
+
+```text
++0xc8 -> 0x14e2472  raw skippable metadata getter
++0xd0 -> 0x14e248a  derived skippable/timing predicate
++0xe8 -> 0x14e24e8  skippable_ad_delay integer parser
+```
+
+`0x14e24e8` first asks the raw-skippable virtual method whether the property is applicable, then retrieves `skippable_ad_delay` and parses it to an integer.
+
+The derived predicate is:
+
+```text
+if adObject[+0x1b8] != 0:
+    return true
+if skippable_ad_delay() > 0:
+    return false
+return raw_skippable()
+```
+
+A ContextPlayer event handler at `0x10a9668..0x10a969c` performs:
+
+```text
+if event[+0x38] == 6:
+    if ContextPlayer[+0x598] != 0
+       and ContextPlayer[+0x470] != 0
+       and ContextPlayer[+0x438] != null:
+        ContextPlayer[+0x438][+0x1b8] = 1
+
+    rebuild restrictions
+```
+
+This is the first concrete native link between a ContextPlayer event and the ad model's derived skippability state.
+
+It does **not** by itself prove that subtype `6` is the countdown-expiry event or that `+0x1b8` removes the skip-next restriction. The skip-next `ad_disallow` insertion at `r14+0x14a0` occurs earlier in the restriction builder and is gated directly by:
+
+```text
+ContextPlayer[+0x598] != 0
+ContextPlayer[+0x470] != 0
+```
+
+The derived virtual method at `+0xd0` is consulted later for a different ad restriction container. The remaining skip-next transition is therefore narrowed to the two ContextPlayer gate bytes, especially `+0x470`.
+
+Reports:
+
+- `analysis/native-delay-xrefs.md`
+- `analysis/native-skippable-vtable.md`
+- `analysis/native-ad-delay-link.md`
+- `analysis/native-ad-method-table-xrefs.md`
+- `analysis/native-ad-runtime-vtable.md`
+
+
 ## 8. MediaSession PlaybackState builder recovered from smali
 
 JADX did not emit a usable `pqd0.java`, but `pqd0.smali` contains:
@@ -512,8 +578,8 @@ The three original research questions are now resolved except for one deeper tra
 
 Next targets:
 
-1. group the `ad_disallow` / `mft_disallow` xrefs by native function range
-2. locate the indirect native consumer of `ad.skippable_ad_delay`
-3. determine local native timer vs deeper/backend-provided state
+1. identify the true writers and semantic meaning of ContextPlayer byte gates `+0x470` and `+0x598`
+2. resolve ContextPlayer event subtype `6` and the `currentTrackObject+0x1b8` state
+3. determine whether delay expiry changes the skip-next gate locally or through another player-core event
 4. available-command-set synchronization with the ContextPlayer restriction update
 5. Connect-device equivalent path
