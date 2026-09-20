@@ -1,0 +1,233 @@
+name: Trace Orbit restriction-owner constructor
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-owner-constructor.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace concrete owner constructor and vtable writers
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-restriction-owner-constructor.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          rel=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          ctor=(0x10a578a,0x10a5d2d)
+          primary=0x184c738
+          secondary=0x184c858
+
+          reloc={}
+          for line in rel:
+            m=re.match(r'^([0-9a-fA-F]+)\s+.*R_X86_64_(?:RELATIVE|64).*?\s([0-9a-fA-F]+)(?:\s|$)',line.strip())
+            if m:reloc[int(m.group(1),16)]=int(m.group(2),16)
+
+          print('# Restriction-owner constructor and owned gate writers')
+          print()
+          print('Concrete owner identity anchors:')
+          print('- primary vptr address point: 0x184c738')
+          print('- secondary interface vptr: 0x184c858 (this adjustment -8)')
+          print('- destructor/teardown method: 0x10a8812')
+          print('- restriction builder: 0x10a6464')
+          print('- event subtype-6 method: 0x10a9668')
+          print('- candidate constructor/initializer: 0x10a578a..0x10a5d2d')
+          print()
+
+          fl=[x for x in ins if ctor[0]<=x[0]<ctor[1]]
+
+          print('## Constructor vptr stores and gate-field accesses')
+          print()
+          for a,i,op,l in fl:
+            if (
+              '# 184c738' in l or '# 184c858' in l
+              or re.search(r'\+0x(?:438|470|598|14a0|1858|1859|1890|1898)\]',op)
+            ):
+              print('    '+l)
+          print()
+
+          print('## Context around constructor vptr stores')
+          print()
+          for target in ('# 184c738','# 184c858'):
+            for n,(a,i,op,l) in enumerate(fl):
+              if target in l:
+                print(f'### {target[2:]} referenced @ 0x{a:x}')
+                for _,_,_,ctx in fl[max(0,n-16):min(len(fl),n+28)]:
+                  print('    '+ctx)
+                print()
+
+          print('## Constructor writes to +0x438 / +0x470 / +0x598')
+          print()
+          found=0
+          for n,(a,i,op,l) in enumerate(fl):
+            parts=op.split(None,1)
+            if len(parts)<2:continue
+            dst=parts[1].split(',',1)[0]
+            m=re.search(r'\[([a-z][a-z0-9]*)\+0x(438|470|598)\]',dst)
+            if not m:continue
+            found+=1
+            print(f'### 0x{a:x}: {op}')
+            for _,_,_,ctx in fl[max(0,n-12):min(len(fl),n+18)]:
+              print('    '+ctx)
+            print()
+          if not found:print('- no direct constructor stores to the three fields')
+          print()
+
+          print('## Direct callers of constructor entry')
+          print()
+          callers=[]
+          for a,i,op,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+10a578a\b',op):
+              callers.append((a,i,op,fde_for(a)))
+          if not callers:print('- none')
+          for a,i,op,fr in callers:
+            fs=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{a:x} from {fs}')
+            for ctx in dis[max(0,i-16):min(len(dis),i+20)]:
+              print('    '+ctx)
+            print()
+
+          # Primary table entries only: 0x184c738 up to before the secondary table 0x184c858.
+          methods=[]
+          for slot in range(primary,secondary,8):
+            t=reloc.get(slot)
+            if t and 0x900000<=t<0x17f0000:
+              fr=fde_for(t)
+              if fr:methods.append((slot,t,fr))
+
+          print('## Primary owner vtable')
+          print()
+          for slot,t,fr in methods:
+            print(f'- slot +0x{slot-primary:x} (0x{slot:x}) -> 0x{t:x}, FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+          print()
+
+          # Analyze only FDEs genuinely owned by primary vtable. Track alias propagation:
+          # at function entry this=rdi; common aliases mov rbx/rbp/r12..,rdi are recognized.
+          print('## Gate field accesses in primary-vtable-owned methods')
+          print()
+          seen_fr=set()
+          direct_writer_count=0
+          for slot,t,fr in methods:
+            if fr in seen_fr:continue
+            seen_fr.add(fr)
+            fil=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            aliases={'rdi'}
+            changed=True
+            # conservative fixed-point over plain register copies from an existing this alias
+            while changed:
+              changed=False
+              for a,i,op,l in fil:
+                m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5])),(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5]))$',op)
+                if m and m.group(2) in aliases and m.group(1) not in aliases:
+                  aliases.add(m.group(1));changed=True
+            hits=[]
+            for a,i,op,l in fil:
+              for base in aliases:
+                m=re.search(r'\['+re.escape(base)+r'\+0x(438|470|598)\]',op)
+                if m:hits.append((a,i,op,base,m.group(1)))
+            if not hits:continue
+            slots=[s for s,tt,ff in methods if ff==fr]
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}; slots '+', '.join(f'+0x{s-primary:x}' for s in slots))
+            print('this aliases: '+', '.join(sorted(aliases)))
+            for a,i,op,base,off in hits:
+              parts=op.split(None,1)
+              dst=parts[1].split(',',1)[0] if len(parts)>1 else ''
+              opc=parts[0] if parts else ''
+              write=bool(re.search(r'\['+re.escape(base)+r'\+0x'+off+r'\]',dst)) and opc in {
+                'mov','movb','movw','movl','movq','and','or','xor','inc','dec','add','sub','xchg','cmpxchg'
+              }
+              if write:direct_writer_count+=1
+              print(f'- 0x{a:x}: +0x{off}' + (' WRITE' if write else '') + f' :: {op}')
+              if write:
+                print('  context:')
+                for ctx in dis[max(0,i-10):min(len(dis),i+13)]:
+                  print('    '+ctx)
+            print()
+          print(f'Direct gate writes found in primary-vtable methods: {direct_writer_count}')
+          print()
+
+          print('## Secondary-interface table')
+          print()
+          # stop at 0x184c900; many are thunks/stubs
+          for slot in range(secondary,0x184c900,8):
+            t=reloc.get(slot)
+            if t:
+              print(f'- slot +0x{slot-secondary:x} (0x{slot:x}) -> 0x{t:x}')
+          print()
+
+          print('## Known skip-next enforcement')
+          print()
+          print('0x10a7492 tests owner+0x598; 0x10a74a0 tests owner+0x470; when both are nonzero,')
+          print('0x10a74ae creates ad_disallow and inserts it into owner+0x14a0 = disallowSkippingNextReasons.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-owner-constructor.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace restriction-owner constructor and gate writers"
+          git pull --rebase origin main
+          git push origin HEAD:main
