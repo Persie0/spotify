@@ -61,7 +61,7 @@ Function 0x1088fd0..0x108903f
      1089029:	48 89 83 10 06 00 00 	mov    QWORD PTR [rbx+0x610],rax
      1089030:	0f 11 83 28 06 00 00 	movups XMMWORD PTR [rbx+0x628],xmm0
 
-## Constructor-chain accesses mapping to owner +0x470 string triple
+## Constructor-chain accesses near owner +0x470 / +0x478
 
 - none in first-level constructor helpers
 
@@ -220,12 +220,12 @@ Function 0x1088fd0..0x108903f
      10a969b:	c3                   	ret
 
 
-## Evidence that owner+0x470 is libc++ std::string-like
+## Field-type correction around owner+0x470
 
-- empty libc++ short string has first byte 0; non-empty short string stores size<<1 there; long form has low-bit marker
-- owner builder uses cmp BYTE PTR [owner+0x470],0
-- owner builder separately takes owner+0x478 as an address/data field
-- 0x470,0x478,0x480 form the expected 24-byte libc++ string footprint
+- owner+0x478 is passed as the std::string argument to 0x1488d69, which repeatedly compares it with libc++ string constants
+- therefore the string begins at owner+0x478, not owner+0x470
+- owner+0x470 is an adjacent state field eight bytes before that string; the restriction builder only tests its first byte for zero/nonzero
+- its exact type/meaning remains open until its writer is identified
 
 ## consumer called with owner+0x478: 0x1488d69
 Function 0x1488d69..0x1488ef9
