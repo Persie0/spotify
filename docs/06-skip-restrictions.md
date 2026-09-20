@@ -513,7 +513,39 @@ When subtype `6` reaches the restriction owner, `0x10a9668` sets `adObject+0x1b8
 
 A crucial distinction follows: the ordinary skip-next branch still inserts `ad_disallow` from **outer/inner optional presence** and does not test `+0x1b8` or the `+0xd0` result. Therefore the timed Spotify **Skip Ad** capability is separate from ordinary next-track / MediaSession skip-next in this build.
 
-The remaining native question is no longer the delay transition. It is the actual **ad-specific skip command/action** invoked once `ad_skip` has made the ad skippable, and how that command reaches Orbit/ContextPlayer without using ordinary skip-next.
+The ad-specific UI command is now recovered from APK smali. The Skip Ad branch creates:
+
+```text
+SignalCommand.create("skip-ad")
+        |
+        v
+new b8p0(signalCommand)
+        |
+        v
+p8p0.a(h8p0) -> Single
+        |
+        v
+ignoreElement() -> Completable
+```
+
+The decisive bytecode is in `la01.smali`: a `jo20` UI/presenter object yields its injected `p8p0` player-command dependency, then the literal signal `"skip-ad"` is sent through that API.
+
+`jo20` itself is constructed with two playback-state `Flowable` inputs plus the same `p8p0` command API. The legacy `skip_ad_button_stub` resource is only a host that is replaced by Compose content; the actual command is the player signal above.
+
+This confirms the architecture:
+
+```text
+skippable_ad_delay
+    -> native "ad_skip" readiness timer
+    -> adObject+0x1b8 = 1
+    -> Skip Ad UI becomes actionable
+    -> SignalCommand("skip-ad")
+    -> player command API
+```
+
+Ordinary MediaSession/next-track skipping remains a separate path governed by `disallowSkippingNextReasons`.
+
+The remaining question is now below the Android command facade: **which concrete `p8p0` implementation serializes/dispatches `SignalCommand("skip-ad")`, which Orbit/ContextPlayer endpoint receives it, and how that transition produces the later `ad_skipped` event/telemetry?**
 
 Evidence:
 
