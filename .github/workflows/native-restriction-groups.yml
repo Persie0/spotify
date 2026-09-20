@@ -1,0 +1,169 @@
+name: Group native restriction xrefs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-groups.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Spotify r1 APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install analysis helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Group direct string xrefs by unwind function range
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          cat > /tmp/group.py <<'PY'
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          targets=[
+            b'ad.skippable_ad_delay',
+            b'ad_disallow',
+            b'mft_disallow',
+            b'disallow_skipping_next_reasons',
+            b'SKIP_TO_NEXT_RESTRICTED',
+            b'skip_to_next_restricted',
+          ]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            def off2va(off):
+              for a,b,v in loads:
+                if a <= off < b: return v+(off-a)
+              return None
+            fdes=[]
+            dwarf=elf.get_dwarf_info()
+            try:
+              for e in dwarf.EH_CFI_entries():
+                if isinstance(e,FDE):
+                  start=e['initial_location']; end=start+e['address_range']
+                  if end>start: fdes.append((start,end))
+            except Exception as e:
+              print("EH_FRAME_PARSE_ERROR",repr(e))
+            fdes.sort()
+
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0] <= addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-4),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a <= addr < b: return (a,b)
+            return None
+
+          target_vas={}
+          for t in targets:
+            occ=[]; p=0
+            while True:
+              p=data.find(t,p)
+              if p<0: break
+              va=off2va(p)
+              if va is not None: occ.append(va)
+              p+=1
+            target_vas[t.decode()]=occ
+
+          xrefs=[]
+          for i,line in enumerate(dis):
+            maddr=re.match(r'^\s*([0-9a-f]+):',line)
+            if not maddr or '#' not in line: continue
+            src=int(maddr.group(1),16)
+            comment=line.split('#',1)[1]
+            mt=re.match(r'\s*([0-9a-f]+)\b',comment)
+            if not mt: continue
+            dst=int(mt.group(1),16)
+            for name,vas in target_vas.items():
+              if dst in vas:
+                xrefs.append((src,dst,name,i))
+
+          groups={}
+          for src,dst,name,i in xrefs:
+            fr=fde_for(src) or ('unknown','unknown')
+            groups.setdefault(fr,[]).append((src,dst,name,i))
+
+          print('# Native restriction xrefs grouped by ELF unwind range')
+          print()
+          print('Function-like ranges come from .eh_frame FDEs; this works even when local C++ symbols are stripped.')
+          print()
+          for name,vas in target_vas.items():
+            print(f'- {name}: '+(', '.join(f'0x{x:x}' for x in vas) if vas else 'NOT FOUND'))
+          print()
+          print(f'Total direct xrefs: {len(xrefs)}; FDE groups: {len(groups)}')
+          print()
+
+          def fmt_range(fr):
+            if fr[0]=='unknown': return 'unknown'
+            return f'0x{fr[0]:x}..0x{fr[1]:x} (size 0x{fr[1]-fr[0]:x})'
+
+          for n,(fr,hits) in enumerate(sorted(groups.items(), key=lambda kv: (kv[0][0] if kv[0][0] != 'unknown' else 1<<80)),1):
+            names=sorted({h[2] for h in hits})
+            print(f'## Group {n}: {fmt_range(fr)}')
+            print('Targets: '+', '.join(names))
+            print('Xrefs: '+', '.join(f'{h[2]}@0x{h[0]:x}' for h in hits))
+            print()
+            seen=set()
+            for src,dst,name,i in hits:
+              if src in seen: continue
+              seen.add(src)
+              print(f'### {name} @ 0x{src:x}')
+              print('ASM BEGIN')
+              for line in dis[max(0,i-7):min(len(dis),i+9)]:
+                print(line)
+              print('ASM END')
+              print()
+
+          print('## Co-location summary')
+          mixed=[(fr,hits) for fr,hits in groups.items() if len({h[2] for h in hits})>1]
+          if not mixed:
+            print('No FDE range contains direct references to more than one target string.')
+          else:
+            for fr,hits in mixed:
+              print(f'- {fmt_range(fr)}: '+', '.join(sorted({h[2] for h in hits})))
+          PY
+          python3 /tmp/group.py > analysis/native-restriction-groups.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-groups.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Group Orbit restriction xrefs by native function"
+          git pull --rebase origin main
+          git push origin HEAD:main
