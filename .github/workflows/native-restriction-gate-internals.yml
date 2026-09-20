@@ -1,0 +1,202 @@
+name: Decode restriction-owner gate internals
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-gate-internals.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode gate internals
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          python3 - <<'PY' > analysis/native-restriction-gate-internals.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return None
+
+          def cstring(va,maxlen=260):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def direct_targets(fr):
+            out=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if m:
+                t=int(m.group(1),16)
+                if 0x900000<=t<0x17f0000 and t not in out:out.append(t)
+            return out
+
+          def strings_in(fr):
+            vals=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]) or '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              s=cstring(int(m.group(1),16))
+              if s and s not in vals:vals.append(s)
+            return vals
+
+          targets={
+            'owner subobject initializer called with owner+0x38':0x10a5fec,
+            'primary vtable slot +0x38':0x10a8db4,
+            'slot +0x38 helper from owner+0x5e8':0xa9f6ee,
+            'restriction builder':0x10a6464,
+          }
+
+          print('# Restriction-owner gate internal methods')
+          print()
+          print('Known owner allocation: 0x18b0 bytes; primary vptr 0x184c738.')
+          print('Known skip-next ad gate: owner+0x598 && owner+0x470.')
+          print()
+
+          for name,addr in targets.items():
+            fr=fde_for(addr)
+            print(f'## {name}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); continue
+            print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}')
+            ss=strings_in(fr)
+            if ss:
+              print('Strings:')
+              for s in ss[:160]:print('- '+s.replace('\n','\\n'))
+            print('Direct callees:')
+            for t in direct_targets(fr)[:160]:
+              tf=fde_for(t)
+              print(f'- 0x{t:x}' + (f' FDE 0x{tf[0]:x}..0x{tf[1]:x}' if tf else ''))
+            print('Field/address patterns:')
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if re.search(r'\+0x(?:38|418|438|470|598|5e8|14a0|1858|1890)\]',op):
+                print(f'- 0x{a:x}: {op}')
+            print('Disassembly:')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          # Recursive one-level callees from the owner subobject initializer. This
+          # is where constructor-hidden writes can happen after rdi = owner+0x38.
+          init_fr=fde_for(0x10a5fec)
+          print('## One-level callees of owner+0x38 initializer')
+          print()
+          if init_fr:
+            for t in direct_targets(init_fr):
+              fr=fde_for(t)
+              if not fr:continue
+              ss=strings_in(fr)
+              relevant=[]
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1] and re.search(r'\+0x(?:400|438|470|560|598|5c0)\]',op):
+                  relevant.append((a,op))
+              print(f'### callee 0x{t:x}, FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              if ss:
+                print('Strings: '+ ' | '.join(s.replace('\n','\\n') for s in ss[:30]))
+              if relevant:
+                print('Large-offset accesses:')
+                for a,op in relevant:print(f'- 0x{a:x}: {op}')
+              print()
+
+          # Search for address-taking of the real owner gate fields in the local
+          # class implementation neighborhood. These are more useful than raw
+          # numeric-offset stores because a helper may mutate via a field pointer.
+          print('## Address-taking / direct access to owner gates in 0x10a5000..0x10aa500')
+          print()
+          for a,i,op,l in ins:
+            if not(0x10a5000<=a<0x10aa500):continue
+            if re.search(r'\+0x(470|598)\]',op):
+              print(f'### 0x{a:x} in {fde_for(a)}')
+              for ctx in lines[max(0,i-8):min(len(lines),i+11)]:
+                print('    '+ctx)
+              print()
+
+          # Decode the exact RIP-relative string seen after the +0x598 test.
+          print('## Resolved string at 0x32bea6')
+          print()
+          print(repr(cstring(0x32bea6)))
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-gate-internals.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode restriction-owner gate internals"
+          git pull --rebase origin main
+          git push origin HEAD:main
