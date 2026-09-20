@@ -545,7 +545,7 @@ skippable_ad_delay
 
 Ordinary MediaSession/next-track skipping remains a separate path governed by `disallowSkippingNextReasons`.
 
-The remaining question is now below the Android command facade: **which concrete `p8p0` implementation serializes/dispatches `SignalCommand("skip-ad")`, which Orbit/ContextPlayer endpoint receives it, and how that transition produces the later `ad_skipped` event/telemetry?**
+The command facade is now resolved one layer further. `hrw` is the concrete `p8p0` implementation, `b8p0` selects its `zqw` Signal branch, and `zqw` sends an `EsSignalRequest$SignalRequest` through `ClientBase.callSingle("spotify.player.esperanto.proto.ContextPlayer", "Signal", request)`. Ordinary next-track uses a different `ContextPlayer/SkipNext` branch. The remaining question is below the Esperanto boundary: **where Orbit consumes signal ID `skip-ad`, how it performs the ad transition, and how successful execution becomes the later `ad_skipped` state/telemetry.**
 
 Evidence:
 
