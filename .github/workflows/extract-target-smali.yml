@@ -44,7 +44,7 @@ jobs:
           rm -rf analysis/smali-targets
           mkdir -p analysis/smali-targets
 
-          targets="pqd0 pdp0 rpd0 sc11 qm0"
+          targets="pqd0 pdp0 rpd0 sc11 qm0 fzg1 be11"
           for target in $targets; do
             found="$(find /tmp/spotify-smali -type f -path '*/p/'"$target"'.smali' -print -quit)"
             if [ -z "$found" ]; then
@@ -82,8 +82,33 @@ jobs:
             echo "# ad skippability strings across decoded bytecode"
             grep -R -n -B6 -A10 -E 'ad\.skippable_ad_delay|ad\.is_skippable' /tmp/spotify-smali/smali* 2>/dev/null || true
             echo
-            echo "# be11 constructor references near selector 7"
-            grep -R -n -B10 -A12 'Lp/be11;-><init>' /tmp/spotify-smali/smali* 2>/dev/null | grep -B10 -A12 -E '0x7|Lp/be11;-><init>' || true
+            echo "# sc11 constructor references for selector 27 (0x1b)"
+            python3 - <<'PY'
+import pathlib
+for p in pathlib.Path('/tmp/spotify-smali').glob('smali*/p/*.smali'):
+    text=p.read_text(errors='ignore').splitlines()
+    for i,line in enumerate(text):
+        if 'Lp/sc11;-><init>' in line:
+            block=text[max(0,i-16):i+8]
+            if any('0x1b' in x for x in block):
+                print(f'--- {p}:{i+1} ---')
+                for n,x in enumerate(block, max(1,i-15)):
+                    print(f'{n}:{x}')
+PY
+            echo
+            echo "# be11 constructor references for selector 7"
+            python3 - <<'PY'
+import pathlib
+for p in pathlib.Path('/tmp/spotify-smali').glob('smali*/p/*.smali'):
+    text=p.read_text(errors='ignore').splitlines()
+    for i,line in enumerate(text):
+        if 'Lp/be11;-><init>' in line:
+            block=text[max(0,i-16):i+8]
+            if any(('0x7' in x and ('const/' in x or 'const ' in x)) for x in block):
+                print(f'--- {p}:{i+1} ---')
+                for n,x in enumerate(block, max(1,i-15)):
+                    print(f'{n}:{x}')
+PY
             echo
             echo "# disallowSkippingNext references"
             grep -R -n -B8 -A12 -E 'disallowSkippingNext|disallow_skipping_next' /tmp/spotify-smali/smali* 2>/dev/null || true
