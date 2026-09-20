@@ -286,7 +286,781 @@
 /tmp/spotify-smali/smali_classes9/com/spotify/player/model/ContextTrack$Metadata.smali-275-
 /tmp/spotify-smali/smali_classes9/com/spotify/player/model/ContextTrack$Metadata.smali-276-.field public static final KEY_THUMBNAIL_IMAGE_URL:Ljava/lang/String; = "thumbnail_image_url"
 
-# be11 constructor references near selector 7
+# sc11 constructor references
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-35-    iget v0, p0, Lp/lcw0;->a:I
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-36-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-37-    .line 2
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-38-    .line 3
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-39-    packed-switch v0, :pswitch_data_0
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-40-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-41-    .line 4
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-42-    .line 5
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-43-    .line 6
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-44-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-45-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-46-    .line 7
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-47-    .line 8
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-48-    const/4 v1, 0x2
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-49-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-50-    .line 9
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali:51:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-52-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-53-    .line 10
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-54-    .line 11
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-55-    .line 12
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-56-    iget-object p1, p0, Lp/lcw0;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-57-
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-58-    .line 13
+/tmp/spotify-smali/smali_classes10/p/lcw0.smali-59-    .line 14
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-993-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-994-    .line 436
+/tmp/spotify-smali/smali_classes5/p/be11.smali-995-    .line 437
+/tmp/spotify-smali/smali_classes5/p/be11.smali-996-    :goto_14
+/tmp/spotify-smali/smali_classes5/p/be11.smali-997-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-998-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-999-    .line 438
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1000-    :pswitch_14
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1001-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1002-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1003-    .line 439
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1004-    .line 440
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1005-    const/16 v1, 0x1d
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1006-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1007-    .line 441
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1008-    .line 442
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1009:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1010-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1011-    .line 443
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1012-    .line 444
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1013-    .line 445
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1014-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1015-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1016-    .line 446
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1017-    .line 447
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1039-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1040-    .line 457
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1041-    .line 458
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1042-    :goto_15
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1043-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1044-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1045-    .line 459
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1046-    :pswitch_15
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1047-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1048-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1049-    .line 460
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1050-    .line 461
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1051-    const/16 v1, 0x1b
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1052-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1053-    .line 462
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1054-    .line 463
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1055:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1056-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1057-    .line 464
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1058-    .line 465
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1059-    .line 466
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1060-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1061-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1062-    .line 467
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1063-    .line 468
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1085-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1086-    .line 478
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1087-    .line 479
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1088-    :goto_16
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1089-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1090-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1091-    .line 480
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1092-    :pswitch_16
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1093-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1094-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1095-    .line 481
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1096-    .line 482
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1097-    const/16 v1, 0x1a
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1098-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1099-    .line 483
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1100-    .line 484
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1101:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1102-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1103-    .line 485
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1104-    .line 486
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1105-    .line 487
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1106-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1107-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1108-    .line 488
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1109-    .line 489
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1131-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1132-    .line 499
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1133-    .line 500
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1134-    :goto_17
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1135-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1136-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1137-    .line 501
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1138-    :pswitch_17
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1139-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1140-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1141-    .line 502
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1142-    .line 503
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1143-    const/16 v1, 0x19
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1144-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1145-    .line 504
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1146-    .line 505
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1147:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1148-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1149-    .line 506
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1150-    .line 507
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1151-    .line 508
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1152-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1153-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1154-    .line 509
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1155-    .line 510
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1177-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1178-    .line 520
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1179-    .line 521
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1180-    :goto_18
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1181-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1182-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1183-    .line 522
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1184-    :pswitch_18
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1185-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1186-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1187-    .line 523
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1188-    .line 524
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1189-    const/16 v1, 0x10
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1190-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1191-    .line 525
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1192-    .line 526
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1193:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1194-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1195-    .line 527
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1196-    .line 528
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1197-    .line 529
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1198-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1199-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1200-    .line 530
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1201-    .line 531
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1223-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1224-    .line 541
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1225-    .line 542
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1226-    :goto_19
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1227-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1228-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1229-    .line 543
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1230-    :pswitch_19
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1231-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1232-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1233-    .line 544
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1234-    .line 545
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1235-    const/16 v1, 0xf
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1236-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1237-    .line 546
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1238-    .line 547
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1239:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1240-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1241-    .line 548
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1242-    .line 549
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1243-    .line 550
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1244-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1245-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1246-    .line 551
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1247-    .line 552
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1269-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1270-    .line 562
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1271-    .line 563
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1272-    :goto_1a
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1273-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1274-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1275-    .line 564
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1276-    :pswitch_1a
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1277-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1278-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1279-    .line 565
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1280-    .line 566
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1281-    const/16 v1, 0xb
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1282-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1283-    .line 567
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1284-    .line 568
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1285:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1286-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1287-    .line 569
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1288-    .line 570
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1289-    .line 571
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1290-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1291-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1292-    .line 572
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1293-    .line 573
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1314-    sget-object p1, Lp/w2a1;->a:Lp/w2a1;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1315-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1316-    .line 583
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1317-    .line 584
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1318-    :goto_1b
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1319-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1320-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1321-    .line 585
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1322-    :pswitch_1b
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1323-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1324-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1325-    .line 586
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1326-    .line 587
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1327-    const/4 v1, 0x6
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1328-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1329-    .line 588
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1330:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1331-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1332-    .line 589
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1333-    .line 590
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1334-    .line 591
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1335-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1336-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1337-    .line 592
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1338-    .line 593
+--
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1359-    sget-object p1, Lp/w2a1;->a:Lp/w2a1;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1360-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1361-    .line 603
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1362-    .line 604
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1363-    :goto_1c
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1364-    return-object p1
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1365-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1366-    .line 605
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1367-    :pswitch_1c
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1368-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1369-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1370-    .line 606
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1371-    .line 607
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1372-    const/4 v1, 0x3
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1373-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1374-    .line 608
+/tmp/spotify-smali/smali_classes5/p/be11.smali:1375:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1376-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1377-    .line 609
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1378-    .line 610
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1379-    .line 611
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1380-    iget-object p1, p0, Lp/be11;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1381-
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1382-    .line 612
+/tmp/spotify-smali/smali_classes5/p/be11.smali-1383-    .line 613
+--
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-173-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-174-    .line 66
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-175-    .line 67
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-176-    :goto_2
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-177-    return-object p1
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-178-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-179-    .line 68
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-180-    :pswitch_2
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-181-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-182-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-183-    .line 69
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-184-    .line 70
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-185-    const/16 v1, 0x9
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-186-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-187-    .line 71
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-188-    .line 72
+/tmp/spotify-smali/smali_classes6/p/wz9.smali:189:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-190-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-191-    .line 73
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-192-    .line 74
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-193-    .line 75
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-194-    iget-object p1, p0, Lp/wz9;->b:Lp/vjz;
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-195-
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-196-    .line 76
+/tmp/spotify-smali/smali_classes6/p/wz9.smali-197-    .line 77
+--
+/tmp/spotify-smali/smali_classes6/p/da21.smali-641-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-642-    .line 162
+/tmp/spotify-smali/smali_classes6/p/da21.smali-643-    .line 163
+/tmp/spotify-smali/smali_classes6/p/da21.smali-644-    invoke-direct {v2, v0, v3}, Lp/hi;-><init>(Ljava/lang/Object;I)V
+/tmp/spotify-smali/smali_classes6/p/da21.smali-645-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-646-    .line 164
+/tmp/spotify-smali/smali_classes6/p/da21.smali-647-    .line 165
+/tmp/spotify-smali/smali_classes6/p/da21.smali-648-    .line 166
+/tmp/spotify-smali/smali_classes6/p/da21.smali-649-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/da21.smali-650-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-651-    .line 167
+/tmp/spotify-smali/smali_classes6/p/da21.smali-652-    .line 168
+/tmp/spotify-smali/smali_classes6/p/da21.smali-653-    const/16 v3, 0x14
+/tmp/spotify-smali/smali_classes6/p/da21.smali-654-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-655-    .line 169
+/tmp/spotify-smali/smali_classes6/p/da21.smali-656-    .line 170
+/tmp/spotify-smali/smali_classes6/p/da21.smali:657:    invoke-direct {v0, v2, v3}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/da21.smali-658-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-659-    .line 171
+/tmp/spotify-smali/smali_classes6/p/da21.smali-660-    .line 172
+/tmp/spotify-smali/smali_classes6/p/da21.smali-661-    .line 173
+/tmp/spotify-smali/smali_classes6/p/da21.smali-662-    new-instance v2, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/da21.smali-663-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-664-    .line 174
+/tmp/spotify-smali/smali_classes6/p/da21.smali-665-    .line 175
+/tmp/spotify-smali/smali_classes6/p/da21.smali-666-    const/16 v3, 0x12
+/tmp/spotify-smali/smali_classes6/p/da21.smali-667-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-668-    .line 176
+/tmp/spotify-smali/smali_classes6/p/da21.smali-669-    .line 177
+/tmp/spotify-smali/smali_classes6/p/da21.smali:670:    invoke-direct {v2, v0, v3}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/da21.smali-671-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-672-    .line 178
+/tmp/spotify-smali/smali_classes6/p/da21.smali-673-    .line 179
+/tmp/spotify-smali/smali_classes6/p/da21.smali-674-    .line 180
+/tmp/spotify-smali/smali_classes6/p/da21.smali-675-    invoke-virtual {p1, v2, p0}, Lp/kxr;->collect(Lp/niz;Lp/fbk;)Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes6/p/da21.smali-676-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-677-    .line 181
+/tmp/spotify-smali/smali_classes6/p/da21.smali-678-    .line 182
+--
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1185-    iget-object v0, p0, Lp/xjz0;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1186-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1187-    .line 531
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1188-    .line 532
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1189-    check-cast v0, Lp/in21;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1190-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1191-    .line 533
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1192-    .line 534
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1193-    new-instance v1, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1194-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1195-    .line 535
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1196-    .line 536
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1197-    const/16 v2, 0x18
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1198-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1199-    .line 537
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1200-    .line 538
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali:1201:    invoke-direct {v1, p1, v2}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1202-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1203-    .line 539
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1204-    .line 540
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1205-    .line 541
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1206-    invoke-virtual {v0, v1, p2}, Lp/in21;->collect(Lp/niz;Lp/fbk;)Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1207-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1208-    .line 542
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1209-    .line 543
+--
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1235-    iget-object v0, p0, Lp/xjz0;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1236-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1237-    .line 554
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1238-    .line 555
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1239-    check-cast v0, Lp/uxc0;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1240-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1241-    .line 556
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1242-    .line 557
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1243-    new-instance v1, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1244-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1245-    .line 558
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1246-    .line 559
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1247-    const/16 v2, 0x11
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1248-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1249-    .line 560
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1250-    .line 561
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali:1251:    invoke-direct {v1, p1, v2}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1252-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1253-    .line 562
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1254-    .line 563
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1255-    .line 564
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1256-    invoke-virtual {v0, v1, p2}, Lp/uxc0;->collect(Lp/niz;Lp/fbk;)Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1257-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1258-    .line 565
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1259-    .line 566
+--
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1284-    :pswitch_16
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1285-    iget-object v0, p0, Lp/xjz0;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1286-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1287-    .line 577
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1288-    .line 578
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1289-    check-cast v0, Lp/f3i0;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1290-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1291-    .line 579
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1292-    .line 580
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1293-    new-instance v1, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1294-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1295-    .line 581
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1296-    .line 582
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1297-    const/4 v2, 0x4
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1298-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1299-    .line 583
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali:1300:    invoke-direct {v1, p1, v2}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1301-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1302-    .line 584
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1303-    .line 585
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1304-    .line 586
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1305-    invoke-virtual {v0, v1, p2}, Lp/f3i0;->collect(Lp/niz;Lp/fbk;)Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1306-
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1307-    .line 587
+/tmp/spotify-smali/smali_classes6/p/xjz0.smali-1308-    .line 588
+--
+/tmp/spotify-smali/smali_classes6/p/roi.smali-36-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-37-    .line 2
+/tmp/spotify-smali/smali_classes6/p/roi.smali-38-    .line 3
+/tmp/spotify-smali/smali_classes6/p/roi.smali-39-    packed-switch v0, :pswitch_data_0
+/tmp/spotify-smali/smali_classes6/p/roi.smali-40-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-41-    .line 4
+/tmp/spotify-smali/smali_classes6/p/roi.smali-42-    .line 5
+/tmp/spotify-smali/smali_classes6/p/roi.smali-43-    .line 6
+/tmp/spotify-smali/smali_classes6/p/roi.smali-44-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes6/p/roi.smali-45-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-46-    .line 7
+/tmp/spotify-smali/smali_classes6/p/roi.smali-47-    .line 8
+/tmp/spotify-smali/smali_classes6/p/roi.smali-48-    const/16 v1, 0x15
+/tmp/spotify-smali/smali_classes6/p/roi.smali-49-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-50-    .line 9
+/tmp/spotify-smali/smali_classes6/p/roi.smali-51-    .line 10
+/tmp/spotify-smali/smali_classes6/p/roi.smali:52:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes6/p/roi.smali-53-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-54-    .line 11
+/tmp/spotify-smali/smali_classes6/p/roi.smali-55-    .line 12
+/tmp/spotify-smali/smali_classes6/p/roi.smali-56-    .line 13
+/tmp/spotify-smali/smali_classes6/p/roi.smali-57-    iget-object p1, p0, Lp/roi;->b:Lp/vjz;
+/tmp/spotify-smali/smali_classes6/p/roi.smali-58-
+/tmp/spotify-smali/smali_classes6/p/roi.smali-59-    .line 14
+/tmp/spotify-smali/smali_classes6/p/roi.smali-60-    .line 15
+--
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-36-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-37-    .line 2
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-38-    .line 3
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-39-    packed-switch v0, :pswitch_data_0
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-40-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-41-    .line 4
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-42-    .line 5
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-43-    .line 6
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-44-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-45-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-46-    .line 7
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-47-    .line 8
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-48-    const/16 v1, 0x8
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-49-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-50-    .line 9
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-51-    .line 10
+/tmp/spotify-smali/smali_classes7/p/f9y.smali:52:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-53-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-54-    .line 11
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-55-    .line 12
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-56-    .line 13
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-57-    iget-object p1, p0, Lp/f9y;->b:Lp/luu0;
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-58-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-59-    .line 14
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-60-    .line 15
+--
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-85-    sget-object p1, Lp/w2a1;->a:Lp/w2a1;
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-86-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-87-    .line 27
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-88-    .line 28
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-89-    :goto_0
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-90-    return-object p1
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-91-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-92-    .line 29
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-93-    :pswitch_0
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-94-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-95-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-96-    .line 30
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-97-    .line 31
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-98-    const/4 v1, 0x1
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-99-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-100-    .line 32
+/tmp/spotify-smali/smali_classes7/p/f9y.smali:101:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-102-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-103-    .line 33
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-104-    .line 34
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-105-    .line 35
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-106-    iget-object p1, p0, Lp/f9y;->b:Lp/luu0;
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-107-
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-108-    .line 36
+/tmp/spotify-smali/smali_classes7/p/f9y.smali-109-    .line 37
+--
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1226-    :pswitch_14
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1227-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1228-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1229-    .line 551
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1230-    .line 552
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1231-    iget-object v1, p0, Lp/hs01;->c:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1232-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1233-    .line 553
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1234-    .line 554
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1235-    check-cast v1, Lp/nq11;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1236-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1237-    .line 555
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1238-    .line 556
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1239-    const/4 v2, 0x7
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1240-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1241-    .line 557
+/tmp/spotify-smali/smali_classes7/p/hs01.smali:1242:    invoke-direct {v0, p1, v1, v2}, Lp/sc11;-><init>(Lp/niz;Lp/lg01;I)V
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1243-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1244-    .line 558
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1245-    .line 559
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1246-    .line 560
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1247-    iget-object p1, p0, Lp/hs01;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1248-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1249-    .line 561
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1250-    .line 562
+--
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1279-    :pswitch_15
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1280-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1281-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1282-    .line 575
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1283-    .line 576
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1284-    iget-object v1, p0, Lp/hs01;->c:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1285-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1286-    .line 577
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1287-    .line 578
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1288-    check-cast v1, Lp/um11;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1289-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1290-    .line 579
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1291-    .line 580
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1292-    const/4 v2, 0x5
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1293-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1294-    .line 581
+/tmp/spotify-smali/smali_classes7/p/hs01.smali:1295:    invoke-direct {v0, p1, v1, v2}, Lp/sc11;-><init>(Lp/niz;Lp/lg01;I)V
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1296-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1297-    .line 582
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1298-    .line 583
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1299-    .line 584
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1300-    iget-object p1, p0, Lp/hs01;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1301-
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1302-    .line 585
+/tmp/spotify-smali/smali_classes7/p/hs01.smali-1303-    .line 586
+--
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-81-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-82-    .line 24
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-83-    .line 25
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-84-    :goto_0
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-85-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-86-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-87-    .line 26
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-88-    :pswitch_0
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-89-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-90-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-91-    .line 27
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-92-    .line 28
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-93-    const/16 v1, 0x1c
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-94-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-95-    .line 29
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-96-    .line 30
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali:97:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-98-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-99-    .line 31
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-100-    .line 32
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-101-    .line 33
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-102-    iget-object p1, p0, Lp/uxc0;->b:Lp/onc;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-103-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-104-    .line 34
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-105-    .line 35
+--
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-127-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-128-    .line 45
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-129-    .line 46
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-130-    :goto_1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-131-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-132-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-133-    .line 47
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-134-    :pswitch_1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-135-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-136-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-137-    .line 48
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-138-    .line 49
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-139-    const/16 v1, 0x13
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-140-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-141-    .line 50
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-142-    .line 51
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali:143:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-144-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-145-    .line 52
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-146-    .line 53
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-147-    .line 54
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-148-    iget-object p1, p0, Lp/uxc0;->b:Lp/onc;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-149-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-150-    .line 55
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-151-    .line 56
+--
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-173-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-174-    .line 66
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-175-    .line 67
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-176-    :goto_2
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-177-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-178-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-179-    .line 68
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-180-    :pswitch_2
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-181-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-182-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-183-    .line 69
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-184-    .line 70
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-185-    const/16 v1, 0xe
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-186-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-187-    .line 71
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-188-    .line 72
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali:189:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-190-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-191-    .line 73
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-192-    .line 74
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-193-    .line 75
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-194-    iget-object p1, p0, Lp/uxc0;->b:Lp/onc;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-195-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-196-    .line 76
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-197-    .line 77
+--
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-219-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-220-    .line 87
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-221-    .line 88
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-222-    :goto_3
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-223-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-224-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-225-    .line 89
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-226-    :pswitch_3
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-227-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-228-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-229-    .line 90
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-230-    .line 91
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-231-    const/16 v1, 0xd
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-232-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-233-    .line 92
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-234-    .line 93
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali:235:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-236-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-237-    .line 94
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-238-    .line 95
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-239-    .line 96
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-240-    iget-object p1, p0, Lp/uxc0;->b:Lp/onc;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-241-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-242-    .line 97
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-243-    .line 98
+--
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-265-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-266-    .line 108
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-267-    .line 109
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-268-    :goto_4
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-269-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-270-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-271-    .line 110
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-272-    :pswitch_4
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-273-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-274-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-275-    .line 111
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-276-    .line 112
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-277-    const/16 v1, 0xc
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-278-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-279-    .line 113
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-280-    .line 114
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali:281:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-282-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-283-    .line 115
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-284-    .line 116
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-285-    .line 117
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-286-    iget-object p1, p0, Lp/uxc0;->b:Lp/onc;
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-287-
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-288-    .line 118
+/tmp/spotify-smali/smali_classes8/p/uxc0.smali-289-    .line 119
+--
+/tmp/spotify-smali/smali_classes8/p/in21.smali-815-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-816-    .line 358
+/tmp/spotify-smali/smali_classes8/p/in21.smali-817-    .line 359
+/tmp/spotify-smali/smali_classes8/p/in21.smali-818-    :goto_10
+/tmp/spotify-smali/smali_classes8/p/in21.smali-819-    return-object p1
+/tmp/spotify-smali/smali_classes8/p/in21.smali-820-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-821-    .line 360
+/tmp/spotify-smali/smali_classes8/p/in21.smali-822-    :pswitch_10
+/tmp/spotify-smali/smali_classes8/p/in21.smali-823-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes8/p/in21.smali-824-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-825-    .line 361
+/tmp/spotify-smali/smali_classes8/p/in21.smali-826-    .line 362
+/tmp/spotify-smali/smali_classes8/p/in21.smali-827-    const/16 v1, 0x17
+/tmp/spotify-smali/smali_classes8/p/in21.smali-828-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-829-    .line 363
+/tmp/spotify-smali/smali_classes8/p/in21.smali-830-    .line 364
+/tmp/spotify-smali/smali_classes8/p/in21.smali:831:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes8/p/in21.smali-832-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-833-    .line 365
+/tmp/spotify-smali/smali_classes8/p/in21.smali-834-    .line 366
+/tmp/spotify-smali/smali_classes8/p/in21.smali-835-    .line 367
+/tmp/spotify-smali/smali_classes8/p/in21.smali-836-    iget-object p1, p0, Lp/in21;->b:Lp/yab;
+/tmp/spotify-smali/smali_classes8/p/in21.smali-837-
+/tmp/spotify-smali/smali_classes8/p/in21.smali-838-    .line 368
+/tmp/spotify-smali/smali_classes8/p/in21.smali-839-    .line 369
+--
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-36-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-37-    .line 2
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-38-    .line 3
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-39-    packed-switch v0, :pswitch_data_0
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-40-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-41-    .line 4
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-42-    .line 5
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-43-    .line 6
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-44-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-45-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-46-    .line 7
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-47-    .line 8
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-48-    const/16 v1, 0x16
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-49-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-50-    .line 9
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-51-    .line 10
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali:52:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-53-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-54-    .line 11
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-55-    .line 12
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-56-    .line 13
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-57-    iget-object p1, p0, Lp/vdm0;->b:Lp/yab;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-58-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-59-    .line 14
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-60-    .line 15
+--
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-82-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-83-    .line 25
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-84-    .line 26
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-85-    :goto_0
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-86-    return-object p1
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-87-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-88-    .line 27
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-89-    :pswitch_0
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-90-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-91-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-92-    .line 28
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-93-    .line 29
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-94-    const/16 v1, 0xa
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-95-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-96-    .line 30
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-97-    .line 31
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali:98:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-99-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-100-    .line 32
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-101-    .line 33
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-102-    .line 34
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-103-    iget-object p1, p0, Lp/vdm0;->b:Lp/yab;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-104-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-105-    .line 35
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-106-    .line 36
+--
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-127-    sget-object p1, Lp/w2a1;->a:Lp/w2a1;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-128-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-129-    .line 46
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-130-    .line 47
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-131-    :goto_1
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-132-    return-object p1
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-133-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-134-    .line 48
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-135-    :pswitch_1
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-136-    new-instance v0, Lp/sc11;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-137-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-138-    .line 49
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-139-    .line 50
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-140-    const/4 v1, 0x0
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-141-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-142-    .line 51
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali:143:    invoke-direct {v0, p1, v1}, Lp/sc11;-><init>(Lp/niz;I)V
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-144-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-145-    .line 52
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-146-    .line 53
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-147-    .line 54
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-148-    iget-object p1, p0, Lp/vdm0;->b:Lp/yab;
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-149-
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-150-    .line 55
+/tmp/spotify-smali/smali_classes9/p/vdm0.smali-151-    .line 56
+
+# be11 constructor references
+/tmp/spotify-smali/smali/p/qt21.smali-1321-    invoke-virtual {v2, v0, v1, p1}, Lcom/spotify/esperanto/esperanto/CoroutineClientBase;->callStream(Ljava/lang/String;Ljava/lang/String;Lp/pre0;)Lp/fiz;
+/tmp/spotify-smali/smali/p/qt21.smali-1322-
+/tmp/spotify-smali/smali/p/qt21.smali-1323-    .line 26
+/tmp/spotify-smali/smali/p/qt21.smali-1324-    .line 27
+/tmp/spotify-smali/smali/p/qt21.smali-1325-    .line 28
+/tmp/spotify-smali/smali/p/qt21.smali-1326-    move-result-object p1
 /tmp/spotify-smali/smali/p/qt21.smali-1327-
 /tmp/spotify-smali/smali/p/qt21.smali-1328-    .line 29
 /tmp/spotify-smali/smali/p/qt21.smali-1329-    new-instance v0, Lp/be11;
@@ -306,11 +1080,13 @@
 /tmp/spotify-smali/smali/p/qt21.smali-1343-
 /tmp/spotify-smali/smali/p/qt21.smali-1344-    .line 37
 /tmp/spotify-smali/smali/p/qt21.smali-1345-    .line 38
-/tmp/spotify-smali/smali/p/qt21.smali-1346-    const/16 v1, 0xa
-/tmp/spotify-smali/smali/p/qt21.smali-1347-
-/tmp/spotify-smali/smali/p/qt21.smali-1348-    .line 39
-/tmp/spotify-smali/smali/p/qt21.smali-1349-    .line 40
 --
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4204-    invoke-static {v8, v5}, Lp/cyf1;->j(Lp/fiz;Lp/juk;)Lp/fiz;
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4205-
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4206-    .line 1871
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4207-    .line 1872
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4208-    .line 1873
+/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4209-    move-result-object v5
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4210-
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4211-    .line 1874
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4212-    new-instance v8, Lp/be11;
@@ -330,11 +1106,13 @@
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4226-
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4227-    .line 1882
 /tmp/spotify-smali/smali_classes10/p/b5v0.smali-4228-    invoke-static {v8, v5}, Lp/ryf1;->t(Lp/fiz;I)Lp/pox;
-/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4229-
-/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4230-    .line 1883
-/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4231-    .line 1884
-/tmp/spotify-smali/smali_classes10/p/b5v0.smali-4232-    .line 1885
 --
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10007-    const-string v4, "speed-control"
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10008-
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10009-    .line 1980
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10010-    .line 1981
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10011-    invoke-virtual {v1, v4}, Lp/vmz;->b(Ljava/lang/String;)Lp/fiz;
+/tmp/spotify-smali/smali_classes10/p/h431.smali-10012-
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10013-    .line 1982
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10014-    .line 1983
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10015-    .line 1984
@@ -354,11 +1132,13 @@
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10029-
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10030-    .line 1991
 /tmp/spotify-smali/smali_classes10/p/h431.smali-10031-    :goto_4b
-/tmp/spotify-smali/smali_classes10/p/h431.smali-10032-    iput v14, v5, Lp/h431;->b:I
-/tmp/spotify-smali/smali_classes10/p/h431.smali-10033-
-/tmp/spotify-smali/smali_classes10/p/h431.smali-10034-    .line 1992
-/tmp/spotify-smali/smali_classes10/p/h431.smali-10035-    .line 1993
 --
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1025-    .line 32
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1026-    move-result-object p1
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1027-
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1028-    .line 33
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1029-    check-cast p1, Lp/fiz;
+/tmp/spotify-smali/smali_classes10/p/ld01.smali-1030-
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1031-    .line 34
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1032-    .line 35
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1033-    new-instance v1, Lp/be11;
@@ -378,11 +1158,13 @@
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1047-
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1048-    .line 43
 /tmp/spotify-smali/smali_classes10/p/ld01.smali-1049-    .line 44
-/tmp/spotify-smali/smali_classes10/p/ld01.smali-1050-    const/4 v3, 0x3
-/tmp/spotify-smali/smali_classes10/p/ld01.smali-1051-
-/tmp/spotify-smali/smali_classes10/p/ld01.smali-1052-    .line 45
-/tmp/spotify-smali/smali_classes10/p/ld01.smali-1053-    const/16 v4, 0xd
 --
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9391-    iget-object p2, p2, Lp/l22;->Z:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9392-
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9393-    .line 28
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9394-    .line 29
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9395-    check-cast p2, Lp/xv41;
+/tmp/spotify-smali/smali_classes10/p/lx11.smali-9396-
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9397-    .line 30
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9398-    .line 31
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9399-    new-instance v4, Lp/be11;
@@ -402,11 +1184,13 @@
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9413-
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9414-    .line 39
 /tmp/spotify-smali/smali_classes10/p/lx11.smali-9415-    .line 40
-/tmp/spotify-smali/smali_classes10/p/lx11.smali-9416-    and-int/lit8 p2, p1, 0xe
-/tmp/spotify-smali/smali_classes10/p/lx11.smali-9417-
-/tmp/spotify-smali/smali_classes10/p/lx11.smali-9418-    .line 41
-/tmp/spotify-smali/smali_classes10/p/lx11.smali-9419-    .line 42
 --
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-948-    check-cast v9, Lp/vmz;
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-949-
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-950-    .line 146
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-951-    const-string v10, "campfire"
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-952-
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-953-    const-string v11, "ENABLED"
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-954-
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-955-    invoke-virtual {v9, v10, v11}, Lp/vmz;->c(Ljava/lang/String;Ljava/lang/String;)Lp/fiz;
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-956-
@@ -426,11 +1210,13 @@
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-970-
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-971-    .line 149
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-972-    new-instance v12, Lp/s5u;
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-973-
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-974-    const/4 v13, 0x2
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-975-
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-976-    invoke-direct {v12, v9, v1, v13}, Lp/s5u;-><init>(Lp/fiz;Ljava/lang/Object;I)V
 --
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1082-
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1083-    .line 167
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1084-    iget-object v5, v5, Lp/rg41;->b:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1085-
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1086-    check-cast v5, Lp/vmz;
+/tmp/spotify-smali/smali_classes10/p/uh5.smali-1087-
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1088-    .line 168
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1089-    invoke-virtual {v5, v10, v11}, Lp/vmz;->c(Ljava/lang/String;Ljava/lang/String;)Lp/fiz;
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1090-
@@ -450,11 +1236,13 @@
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1104-
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1105-    .line 171
 /tmp/spotify-smali/smali_classes10/p/uh5.smali-1106-    new-instance v6, Lp/s5u;
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-1107-
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-1108-    const/4 v9, 0x2
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-1109-
-/tmp/spotify-smali/smali_classes10/p/uh5.smali-1110-    invoke-direct {v6, v5, v1, v9}, Lp/s5u;-><init>(Lp/fiz;Ljava/lang/Object;I)V
 --
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-25-    iput-object p2, p0, Lp/vd71;->a:Lp/luk;
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-26-
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-27-    .line 5
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-28-    .line 6
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-29-    iget-object p1, p1, Lp/sd71;->b:Lp/hb11;
+/tmp/spotify-smali/smali_classes10/p/vd71.smali-30-
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-31-    .line 7
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-32-    .line 8
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-33-    new-instance p2, Lp/be11;
@@ -474,11 +1262,13 @@
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-47-
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-48-    .line 16
 /tmp/spotify-smali/smali_classes10/p/vd71.smali-49-    .line 17
-/tmp/spotify-smali/smali_classes10/p/vd71.smali-50-    .line 18
-/tmp/spotify-smali/smali_classes10/p/vd71.smali-51-    move-result-object p1
-/tmp/spotify-smali/smali_classes10/p/vd71.smali-52-
-/tmp/spotify-smali/smali_classes10/p/vd71.smali-53-    .line 19
 --
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19689-    .line 37
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19690-    .line 38
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19691-.end method
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19692-
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19693-.method public static final s(Lp/fiz;Lp/xre;)Lp/nnc;
+/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19694-    .locals 3
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19695-
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19696-    .line 1
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19697-    new-instance v0, Lp/be11;
@@ -498,11 +1288,13 @@
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19711-
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19712-    .line 9
 /tmp/spotify-smali/smali_classes4/p/nyg1.smali-19713-    .line 10
-/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19714-    .line 11
-/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19715-    move-result-object p0
-/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19716-
-/tmp/spotify-smali/smali_classes4/p/nyg1.smali-19717-    .line 12
 --
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-705-    .line 39
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-706-    invoke-static {v3}, Lp/mvl0;->p(Lp/fiz;)Lp/fiz;
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-707-
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-708-    .line 40
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-709-    .line 41
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-710-    .line 42
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-711-    move-result-object v0
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-712-
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-713-    .line 43
@@ -522,11 +1314,13 @@
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-727-
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-728-    .line 50
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-729-    .line 51
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-730-    invoke-virtual {v1, v0}, Lio/reactivex/rxjava3/core/Flowable;->j(Lio/reactivex/rxjava3/core/FlowableTransformer;)Lio/reactivex/rxjava3/core/Flowable;
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-731-
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-732-    .line 52
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-733-    .line 53
 --
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-813-    .line 95
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-814-    invoke-static {v0, v1, v2}, Lp/zug1;->i(Lp/voi;Lio/reactivex/rxjava3/core/Flowable;Lp/cp0;)Lp/fiz;
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-815-
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-816-    .line 96
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-817-    .line 97
+/tmp/spotify-smali/smali_classes4/p/sn21.smali-818-    .line 98
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-819-    move-result-object v0
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-820-
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-821-    .line 99
@@ -546,11 +1340,13 @@
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-835-
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-836-    .line 106
 /tmp/spotify-smali/smali_classes4/p/sn21.smali-837-    .line 107
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-838-    move-object v5, p1
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-839-
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-840-    .line 108
-/tmp/spotify-smali/smali_classes4/p/sn21.smali-841-    invoke-direct/range {v4 .. v12}, Lp/co21;-><init>(Lp/mn21;Lp/th00;Lp/fiz;Lp/fiz;Lp/fiz;Lp/fiz;Lp/fiz;Lp/eh00;)V
 --
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1285-
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1286-    .line 28
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1287-    new-instance p2, Lp/uxc0;
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1288-
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1289-    invoke-direct {p2, p1, v0}, Lp/uxc0;-><init>(Lp/onc;I)V
+/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1290-
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1291-    .line 29
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1292-    invoke-static {p2}, Lp/mvl0;->p(Lp/fiz;)Lp/fiz;
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1293-
@@ -570,11 +1366,13 @@
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1307-.end method
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1308-
 /tmp/spotify-smali/smali_classes4/p/ezw0.smali-1309-.method public constructor <init>(Lp/r5o;Lp/v5o;Lp/y64;Lp/noa0;Lp/flw0;Ljava/lang/String;Z)V
-/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1310-    .locals 11
-/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1311-
-/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1312-    move-object/from16 v9, p5
-/tmp/spotify-smali/smali_classes4/p/ezw0.smali-1313-
 --
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-79-    .line 9
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-80-    invoke-interface {v1}, Lp/v5m;->a()Lp/xv41;
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-81-
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-82-    .line 10
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-83-    .line 11
+/tmp/spotify-smali/smali_classes5/p/ce11.smali-84-    .line 12
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-85-    move-result-object v1
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-86-
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-87-    .line 13
@@ -594,11 +1392,13 @@
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-101-
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-102-    .line 20
 /tmp/spotify-smali/smali_classes5/p/ce11.smali-103-    .line 21
-/tmp/spotify-smali/smali_classes5/p/ce11.smali-104-    iget-object v0, v0, Lp/le11;->g:Lp/luk;
-/tmp/spotify-smali/smali_classes5/p/ce11.smali-105-
-/tmp/spotify-smali/smali_classes5/p/ce11.smali-106-    .line 22
-/tmp/spotify-smali/smali_classes5/p/ce11.smali-107-    .line 23
 --
+/tmp/spotify-smali/smali_classes6/p/da21.smali-770-    .line 219
+/tmp/spotify-smali/smali_classes6/p/da21.smali-771-    iget-object p1, v2, Lp/x1p0;->d:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes6/p/da21.smali-772-
+/tmp/spotify-smali/smali_classes6/p/da21.smali-773-    .line 220
+/tmp/spotify-smali/smali_classes6/p/da21.smali-774-    .line 221
+/tmp/spotify-smali/smali_classes6/p/da21.smali-775-    check-cast p1, Lp/fiz;
 /tmp/spotify-smali/smali_classes6/p/da21.smali-776-
 /tmp/spotify-smali/smali_classes6/p/da21.smali-777-    .line 222
 /tmp/spotify-smali/smali_classes6/p/da21.smali-778-    .line 223
@@ -618,11 +1418,13 @@
 /tmp/spotify-smali/smali_classes6/p/da21.smali-792-
 /tmp/spotify-smali/smali_classes6/p/da21.smali-793-    .line 230
 /tmp/spotify-smali/smali_classes6/p/da21.smali-794-    .line 231
-/tmp/spotify-smali/smali_classes6/p/da21.smali-795-    invoke-static {v0, p0}, Lp/vyf1;->t(Lp/fiz;Lp/fbk;)Ljava/lang/Object;
-/tmp/spotify-smali/smali_classes6/p/da21.smali-796-
-/tmp/spotify-smali/smali_classes6/p/da21.smali-797-    .line 232
-/tmp/spotify-smali/smali_classes6/p/da21.smali-798-    .line 233
 --
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-848-
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-849-    .line 268
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-850-    .line 269
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-851-    .line 270
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-852-    iget-object v9, v2, Lp/rr21;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes6/p/r7w0.smali-853-
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-854-    .line 271
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-855-    .line 272
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-856-    new-instance v11, Lp/be11;
@@ -642,11 +1444,13 @@
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-870-
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-871-    .line 280
 /tmp/spotify-smali/smali_classes6/p/r7w0.smali-872-    .line 281
-/tmp/spotify-smali/smali_classes6/p/r7w0.smali-873-    const/4 v12, 0x0
-/tmp/spotify-smali/smali_classes6/p/r7w0.smali-874-
-/tmp/spotify-smali/smali_classes6/p/r7w0.smali-875-    .line 282
-/tmp/spotify-smali/smali_classes6/p/r7w0.smali-876-    aput-object v10, v9, v12
 --
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1475-    .line 74
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1476-    .line 75
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1477-    move-result-object v0
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1478-
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1479-    .line 76
+/tmp/spotify-smali/smali_classes7/p/eq0.smali-1480-    goto :goto_0
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1481-
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1482-    .line 77
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1483-    :cond_2
@@ -666,11 +1470,13 @@
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1497-
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1498-    .line 84
 /tmp/spotify-smali/smali_classes7/p/eq0.smali-1499-    :goto_0
-/tmp/spotify-smali/smali_classes7/p/eq0.smali-1500-    iput-object v3, v9, Lp/eq0;->c:Ljava/lang/Object;
-/tmp/spotify-smali/smali_classes7/p/eq0.smali-1501-
-/tmp/spotify-smali/smali_classes7/p/eq0.smali-1502-    .line 85
-/tmp/spotify-smali/smali_classes7/p/eq0.smali-1503-    .line 86
 --
+/tmp/spotify-smali/smali_classes7/p/x131.smali-68-    iput-object p1, p0, Lp/x131;->c:Lp/ot21;
+/tmp/spotify-smali/smali_classes7/p/x131.smali-69-
+/tmp/spotify-smali/smali_classes7/p/x131.smali-70-    .line 22
+/tmp/spotify-smali/smali_classes7/p/x131.smali-71-    .line 23
+/tmp/spotify-smali/smali_classes7/p/x131.smali-72-    iget-object p1, p2, Lp/b231;->c:Lp/vjz;
+/tmp/spotify-smali/smali_classes7/p/x131.smali-73-
 /tmp/spotify-smali/smali_classes7/p/x131.smali-74-    .line 24
 /tmp/spotify-smali/smali_classes7/p/x131.smali-75-    .line 25
 /tmp/spotify-smali/smali_classes7/p/x131.smali-76-    new-instance p2, Lp/be11;
@@ -690,11 +1496,13 @@
 /tmp/spotify-smali/smali_classes7/p/x131.smali-90-
 /tmp/spotify-smali/smali_classes7/p/x131.smali-91-    .line 33
 /tmp/spotify-smali/smali_classes7/p/x131.smali-92-    .line 34
-/tmp/spotify-smali/smali_classes7/p/x131.smali-93-    sget-object v2, Lp/wyx;->X:Lp/wyx;
-/tmp/spotify-smali/smali_classes7/p/x131.smali-94-
-/tmp/spotify-smali/smali_classes7/p/x131.smali-95-    .line 35
-/tmp/spotify-smali/smali_classes7/p/x131.smali-96-    .line 36
 --
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1793-    iget-object v3, v1, Lp/fj41;->c:Lp/rrq;
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1794-
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1795-    .line 858
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1796-    .line 859
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1797-    iget-object v3, v3, Lp/rrq;->b:Lp/fiz;
+/tmp/spotify-smali/smali_classes7/p/i941.smali-1798-
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1799-    .line 860
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1800-    .line 861
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1801-    new-instance v10, Lp/be11;
@@ -714,11 +1522,13 @@
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1815-
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1816-    .line 869
 /tmp/spotify-smali/smali_classes7/p/i941.smali-1817-    .line 870
-/tmp/spotify-smali/smali_classes7/p/i941.smali-1818-    iget-object v8, v1, Lp/fj41;->i:Lp/zv41;
-/tmp/spotify-smali/smali_classes7/p/i941.smali-1819-
-/tmp/spotify-smali/smali_classes7/p/i941.smali-1820-    .line 871
-/tmp/spotify-smali/smali_classes7/p/i941.smali-1821-    .line 872
 --
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1675-    return-object v0
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1676-
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1677-    .line 307
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1678-    :pswitch_16
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1679-    check-cast p1, Lp/fiz;
+/tmp/spotify-smali/smali_classes7/p/m541.smali-1680-
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1681-    .line 308
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1682-    .line 309
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1683-    new-instance v0, Lp/be11;
@@ -738,11 +1548,13 @@
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1697-
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1698-    .line 317
 /tmp/spotify-smali/smali_classes7/p/m541.smali-1699-    :pswitch_17
-/tmp/spotify-smali/smali_classes7/p/m541.smali-1700-    check-cast p1, Landroid/content/Context;
-/tmp/spotify-smali/smali_classes7/p/m541.smali-1701-
-/tmp/spotify-smali/smali_classes7/p/m541.smali-1702-    .line 318
-/tmp/spotify-smali/smali_classes7/p/m541.smali-1703-    .line 319
 --
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-90-    iget-object p1, p1, Lp/qce0;->f:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-91-
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-92-    .line 28
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-93-    .line 29
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-94-    check-cast p1, Lp/phw0;
+/tmp/spotify-smali/smali_classes7/p/cr31.smali-95-
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-96-    .line 30
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-97-    .line 31
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-98-    new-instance v0, Lp/be11;
@@ -762,11 +1574,13 @@
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-112-
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-113-    .line 39
 /tmp/spotify-smali/smali_classes7/p/cr31.smali-114-    :pswitch_data_0
-/tmp/spotify-smali/smali_classes7/p/cr31.smali-115-    .packed-switch 0x0
-/tmp/spotify-smali/smali_classes7/p/cr31.smali-116-        :pswitch_0
-/tmp/spotify-smali/smali_classes7/p/cr31.smali-117-    .end packed-switch
-/tmp/spotify-smali/smali_classes7/p/cr31.smali-118-    .line 40
 --
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39695-    invoke-interface {v1}, Lp/q7m;->current()Lp/xv41;
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39696-
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39697-    .line 63
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39698-    .line 64
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39699-    .line 65
+/tmp/spotify-smali/smali_classes7/p/d3o.smali-39700-    move-result-object v1
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39701-
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39702-    .line 66
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39703-    new-instance v3, Lp/be11;
@@ -786,11 +1600,13 @@
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39717-
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39718-    .line 74
 /tmp/spotify-smali/smali_classes7/p/d3o.smali-39719-    .line 75
-/tmp/spotify-smali/smali_classes7/p/d3o.smali-39720-    invoke-static {v3, v1}, Lp/k0e1;->g(Lp/fiz;Lp/juk;)Lio/reactivex/rxjava3/core/Observable;
-/tmp/spotify-smali/smali_classes7/p/d3o.smali-39721-
-/tmp/spotify-smali/smali_classes7/p/d3o.smali-39722-    .line 76
-/tmp/spotify-smali/smali_classes7/p/d3o.smali-39723-    .line 77
 --
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1638-
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1639-    .line 47
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1640-    .line 48
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1641-    .line 49
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1642-    new-instance p1, Lp/be11;
+/tmp/spotify-smali/smali_classes7/p/lk41.smali-1643-
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1644-    .line 50
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1645-    .line 51
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1646-    const/16 v1, 0x16
@@ -810,11 +1626,13 @@
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1660-
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1661-    .line 59
 /tmp/spotify-smali/smali_classes7/p/lk41.smali-1662-    .line 60
-/tmp/spotify-smali/smali_classes7/p/lk41.smali-1663-    invoke-static {p1, v0}, Lp/vyf1;->t(Lp/fiz;Lp/fbk;)Ljava/lang/Object;
-/tmp/spotify-smali/smali_classes7/p/lk41.smali-1664-
-/tmp/spotify-smali/smali_classes7/p/lk41.smali-1665-    .line 61
-/tmp/spotify-smali/smali_classes7/p/lk41.smali-1666-    .line 62
 --
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-87-
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-88-    .line 12
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-89-    iput-object p1, p0, Lp/fni0;->c:Lp/u190;
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-90-
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-91-    iput-object p2, p0, Lp/fni0;->f:Lp/ml20;
+/tmp/spotify-smali/smali_classes7/p/fni0.smali-92-
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-93-    .line 13
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-94-    invoke-virtual {p1}, Lp/u190;->b()Lp/fiz;
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-95-
@@ -849,11 +1667,13 @@
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-124-    iget-object p1, p1, Lp/u190;->h:Lp/ou8;
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-125-
 /tmp/spotify-smali/smali_classes7/p/fni0.smali-126-    .line 20
-/tmp/spotify-smali/smali_classes7/p/fni0.smali-127-    iput-object p1, p0, Lp/fni0;->b:Lp/ou8;
-/tmp/spotify-smali/smali_classes7/p/fni0.smali-128-
-/tmp/spotify-smali/smali_classes7/p/fni0.smali-129-    return-void
-/tmp/spotify-smali/smali_classes7/p/fni0.smali-130-.end method
 --
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-134-    invoke-direct {p3, p0, v0}, Lp/i941;-><init>(Ljava/lang/Object;I)V
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-135-
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-136-    const/4 v0, 0x3
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-137-
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-138-    invoke-direct {p1, v0, p3}, Lp/ot21;-><init>(ILp/eh00;)V
+/tmp/spotify-smali/smali_classes7/p/b7k.smali-139-
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-140-    iput-object p1, p0, Lp/b7k;->b:Lp/ot21;
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-141-
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-142-    .line 19
@@ -873,11 +1693,13 @@
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-156-    sget-object p1, Lp/gl11;->a:Lp/azu0;
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-157-
 /tmp/spotify-smali/smali_classes7/p/b7k.smali-158-    .line 23
-/tmp/spotify-smali/smali_classes7/p/b7k.smali-159-    iput-object p1, p0, Lp/b7k;->c:Lp/azu0;
-/tmp/spotify-smali/smali_classes7/p/b7k.smali-160-
-/tmp/spotify-smali/smali_classes7/p/b7k.smali-161-    return-void
-/tmp/spotify-smali/smali_classes7/p/b7k.smali-162-.end method
 --
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2591-    iget-object p1, p1, Lp/ezw0;->d:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2592-
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2593-    .line 73
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2594-    .line 74
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2595-    check-cast p1, Lp/be11;
+/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2596-
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2597-    .line 75
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2598-    .line 76
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2599-    new-instance v1, Lp/be11;
@@ -897,11 +1719,13 @@
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2613-
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2614-    .line 84
 /tmp/spotify-smali/smali_classes8/p/gbk0.smali-2615-    .line 85
-/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2616-    const/16 v3, 0x15
-/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2617-
-/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2618-    .line 86
-/tmp/spotify-smali/smali_classes8/p/gbk0.smali-2619-    .line 87
 --
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-833-    invoke-virtual {v6, v13}, Lp/mu80;->n(Lp/ex80;)Lp/fiz;
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-834-
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-835-    .line 381
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-836-    .line 382
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-837-    .line 383
+/tmp/spotify-smali/smali_classes8/p/xz11.smali-838-    move-result-object v6
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-839-
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-840-    .line 384
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-841-    new-instance v10, Lp/be11;
@@ -921,11 +1745,13 @@
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-855-
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-856-    .line 392
 /tmp/spotify-smali/smali_classes8/p/xz11.smali-857-    .line 393
-/tmp/spotify-smali/smali_classes8/p/xz11.smali-858-    invoke-direct {v6, v8, v9, v11}, Lp/p7b;-><init>(IILp/fbk;)V
-/tmp/spotify-smali/smali_classes8/p/xz11.smali-859-
-/tmp/spotify-smali/smali_classes8/p/xz11.smali-860-    .line 394
-/tmp/spotify-smali/smali_classes8/p/xz11.smali-861-    .line 395
 --
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2296-    :cond_0
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2297-    iget-object v0, p0, Lp/x1p0;->d:Ljava/lang/Object;
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2298-
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2299-    .line 15
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2300-    .line 16
+/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2301-    check-cast v0, Lp/fiz;
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2302-
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2303-    .line 17
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2304-    .line 18
@@ -945,11 +1771,13 @@
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2318-
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2319-    .line 25
 /tmp/spotify-smali/smali_classes9/p/x1p0.smali-2320-    .line 26
-/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2321-    const/4 v2, 0x0
-/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2322-
-/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2323-    .line 27
-/tmp/spotify-smali/smali_classes9/p/x1p0.smali-2324-    invoke-direct {v0, v2, p0}, Lp/sb90;-><init>(Lp/fbk;Lp/x1p0;)V
 --
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4777-    iget-object v3, v1, Lp/dmw0;->b:Lp/zxd1;
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4778-
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4779-    .line 68
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4780-    .line 69
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4781-    iget-object v3, v3, Lp/zxd1;->b:Lp/nuu0;
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4782-
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4783-    .line 70
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4784-    .line 71
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4785-    new-instance v4, Lp/be11;
@@ -969,11 +1797,13 @@
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4799-
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4800-    .line 79
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-4801-    sget-object v4, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4802-
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4803-    .line 80
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4804-    .line 81
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-4805-    const/16 v7, 0x30
 --
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5712-    iget-object v4, v1, Lp/dmw0;->b:Lp/zxd1;
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5713-
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5714-    .line 104
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5715-    .line 105
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5716-    iget-object v4, v4, Lp/zxd1;->b:Lp/nuu0;
+/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5717-
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5718-    .line 106
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5719-    .line 107
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5720-    new-instance v5, Lp/be11;
@@ -993,11 +1823,13 @@
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5734-
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5735-    .line 115
 /tmp/spotify-smali/smali_classes9/p/dmw0.smali-5736-    sget-object v5, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5737-
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5738-    .line 116
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5739-    .line 117
-/tmp/spotify-smali/smali_classes9/p/dmw0.smali-5740-    const/16 v8, 0x30
 --
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5160-    check-cast v6, Lp/mu80;
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5161-
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5162-    .line 101
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5163-    .line 102
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5164-    invoke-virtual {v6, v1}, Lp/mu80;->p(Lp/iz80;)Lp/fiz;
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5165-
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5166-    .line 103
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5167-    .line 104
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5168-    .line 105
@@ -1017,11 +1849,13 @@
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5182-
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5183-    .line 112
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5184-    .line 113
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5185-    .line 114
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5186-    move-result-object v1
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5187-
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5188-    .line 115
 --
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5312-    check-cast v10, Lp/mu80;
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5313-
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5314-    .line 175
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5315-    .line 176
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5316-    invoke-virtual {v10, v6}, Lp/mu80;->p(Lp/iz80;)Lp/fiz;
+/tmp/spotify-smali/smali_classes9/p/vo11.smali-5317-
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5318-    .line 177
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5319-    .line 178
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5320-    .line 179
@@ -1041,11 +1875,13 @@
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5334-
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5335-    .line 186
 /tmp/spotify-smali/smali_classes9/p/vo11.smali-5336-    .line 187
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5337-    .line 188
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5338-    move-result-object v15
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5339-
-/tmp/spotify-smali/smali_classes9/p/vo11.smali-5340-    .line 189
 --
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-755-    .line 272
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-756-    invoke-virtual {v6, v5, v1, v3}, Lp/mu80;->m(Ljava/lang/String;Ljava/lang/String;Lcom/spotify/playlist/policy/proto/PlaylistRequestDecorationPolicy;)Lp/fiz;
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-757-
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-758-    .line 273
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-759-    .line 274
+/tmp/spotify-smali/smali_classes9/p/v5g0.smali-760-    .line 275
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-761-    move-result-object v3
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-762-
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-763-    .line 276
@@ -1065,11 +1901,13 @@
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-777-
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-778-    .line 283
 /tmp/spotify-smali/smali_classes9/p/v5g0.smali-779-    .line 284
-/tmp/spotify-smali/smali_classes9/p/v5g0.smali-780-    .line 285
-/tmp/spotify-smali/smali_classes9/p/v5g0.smali-781-    move-result-object v3
-/tmp/spotify-smali/smali_classes9/p/v5g0.smali-782-
-/tmp/spotify-smali/smali_classes9/p/v5g0.smali-783-    .line 286
 --
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6192-    .line 1969
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6193-    invoke-virtual {v1, v4, v2, v6}, Lp/mu80;->m(Ljava/lang/String;Ljava/lang/String;Lcom/spotify/playlist/policy/proto/PlaylistRequestDecorationPolicy;)Lp/fiz;
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6194-
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6195-    .line 1970
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6196-    .line 1971
+/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6197-    .line 1972
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6198-    move-result-object v1
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6199-
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6200-    .line 1973
@@ -1089,10 +1927,6 @@
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6214-
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6215-    .line 1980
 /tmp/spotify-smali/smali_classes9/p/q2y0.smali-6216-    .line 1981
-/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6217-    .line 1982
-/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6218-    move-result-object v1
-/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6219-
-/tmp/spotify-smali/smali_classes9/p/q2y0.smali-6220-    .line 1983
 
 # disallowSkippingNext references
 /tmp/spotify-smali/smali_classes11/p/srz.smali-12449-    invoke-virtual {v9, v10}, Lcom/spotify/player/model/Restrictions$Builder;->disallowSkippingPrevReasons(Ljava/util/Set;)Lcom/spotify/player/model/Restrictions$Builder;
