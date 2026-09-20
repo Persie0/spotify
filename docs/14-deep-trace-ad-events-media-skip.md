@@ -515,9 +515,17 @@ p8p0
 
 and is part of the UI family that renders `skip_ad_title`. The XML `skip_ad_button_stub` is only replaced by Compose content in the now-playing layouts.
 
-The unresolved boundary has moved one layer down:
+The command path is now resolved through the Esperanto boundary. `p8p0` is implemented here by `hrw`; the `b8p0` Signal variant dispatches through `zqw`, which builds/receives an `EsSignalRequest$SignalRequest` and calls:
 
-> Which concrete `p8p0` implementation dispatches `SignalCommand("skip-ad")`, which native/Esperanto signal endpoint receives it, and how is successful execution reflected in `ad_skipped` state/telemetry?
+```text
+spotify.player.esperanto.proto.ContextPlayer / Signal
+```
+
+The ordinary next-track variant dispatches separately to `ContextPlayer / SkipNext`, confirming again that timed Skip Ad is not MediaSession skip-next.
+
+The unresolved boundary has moved into Orbit/native handling:
+
+> Which native handler consumes signal ID `skip-ad`, what state transition it performs, and how successful execution is reflected in `ad_skipped` state/telemetry?
 
 Reports:
 
