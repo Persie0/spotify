@@ -42,7 +42,7 @@ Also resolved:
 - one-shot milestone deduplication exists per registered ad
 - progress/volume-style events can repeat
 
-## 2. Relationship between ad delay and Restrictions — MOSTLY RESOLVED
+## 2. Relationship between ad delay and Restrictions — RESOLVED THROUGH ANDROID BOUNDARY
 
 Confirmed:
 
@@ -58,15 +58,23 @@ is read as countdown/presentation metadata.
 
 No local Android Java/Kotlin path was found that mutates `Restrictions` from the delay value.
 
-The player restriction is transported as real player state through player schemas such as:
+The restriction transport is now traced exactly:
 
-`EsRestrictions$Restrictions`
+```text
+ContextPlayer.GetState
+  -> EsContextPlayerState.N()
+  -> f5x0.a(EsRestrictions)
+  -> Restrictions.Builder.disallowSkippingNextReasons(...)
+  -> PlayerState.Builder.restrictions(...)
+```
+
+The mapper reads `EsRestrictions$Restrictions.x0()` for the skip-next reasons.
+
+No Android-side countdown mutation exists between the streamed protocol state and the public `PlayerState`.
 
 Remaining question:
 
-> Which deeper player/native/backend transition removes the skip restriction when the countdown expires?
-
-This is now the main unresolved part of the delay investigation.
+> Inside/below `liborbit-jni-spotify.so`, is countdown expiry computed locally, or does Orbit consume an already-updated restriction from another player/backend state source?
 
 ## 3. MediaSession ACTION_SKIP_TO_NEXT generation — RESOLVED
 
@@ -94,34 +102,47 @@ and:
 
 [14-deep-trace-ad-events-media-skip.md](14-deep-trace-ad-events-media-skip.md)
 
-## 4. Player command error handling — OPEN
+## 4. Player command error handling — MOSTLY RESOLVED
 
-Goal:
+`ContextPlayer.GetError` is streamed by `lrw.java`.
 
-Determine the exact error path when a next command is submitted but the deeper player rejects it.
+`g2h1.java` maps the protocol error enum into `ErrorType.SKIP_TO_NEXT_RESTRICTED`.
 
-Best anchors:
+Known restriction reasons include:
 
-- `SkipToNextTrackCommand`
-- `wx7.java`
-- `l8k.java`
-- player Esperanto command request/response
-- player command result/error enums
-- native player boundary
+- `mft_disallow` / `disallow-mft-radio` — free-tier/on-demand restriction
+- `ad_disallow` — action not allowed in the current context
 
-## 5. Native player / JNI boundary — HIGH PRIORITY
+Remaining work is native function-level tracing of where those reasons are produced.
 
-The remaining skip-timing question likely lives below the Android presentation layer.
+## 5. Native player / JNI boundary — ACTIVE
 
-Questions:
+The Android boundary is now mapped:
 
-- where does the available-command set change?
-- which restrictions originate in native player state?
-- is the countdown expiry handled locally in native code or supplied by backend/player state?
-- where is `EsContextPlayerState` converted into the Android `PlayerState` model?
-- can a restriction change occur without a new remote response?
+```text
+ContextPlayer.GetState
+  -> EsContextPlayerState
+  -> p4h1
+  -> f5x0
+  -> public PlayerState / Restrictions
+```
 
-This is the most useful next investigation.
+The native scan identifies `liborbit-jni-spotify.so` as containing:
+
+```text
+ad.skippable_ad_delay
+ad_disallow
+disallow_skipping_next_reasons
+SKIP_TO_NEXT_RESTRICTED
+```
+
+along with the player/Connect/Esperanto restriction descriptors.
+
+Current target:
+
+- native code xrefs for those strings
+- determine whether the same native subsystem consumes the delay and produces/removes `ad_disallow`
+- distinguish a local native timer transition from a restriction update supplied by deeper/backend state
 
 ## 6. Connect-device behavior — OPEN
 
