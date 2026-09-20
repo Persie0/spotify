@@ -1,0 +1,233 @@
+name: Find restriction-owner gate writers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-gate-writers-focused.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install analysis helpers
+        run: python3 -m pip install --quiet pyelftools capstone
+
+      - name: Find writes in concrete owner cluster
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x10a0000 --stop-address=0x10b0000 "$SO" > /tmp/owner-region.asm
+          objdump -d -M intel "$SO" > /tmp/all.asm
+
+          python3 - <<'PY' > analysis/native-restriction-gate-writers-focused.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          region=Path('/tmp/owner-region.asm').read_text(errors='replace').splitlines()
+          allasm=Path('/tmp/all.asm').read_text(errors='replace').splitlines()
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(region):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          allins=[]
+          for i,l in enumerate(allasm):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: allins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def fde_lines(fr):
+            return [x for x in ins if fr[0]<=x[0]<fr[1]]
+
+          targets=[0x438,0x470,0x598]
+          sizes={
+            'BYTE PTR':1,'WORD PTR':2,'DWORD PTR':4,'QWORD PTR':8,
+            'XMMWORD PTR':16,'YMMWORD PTR':32,'ZMMWORD PTR':64,
+          }
+          write_mnems={'mov','movb','movw','movl','movq','movups','movaps','movdqa','movdqu','movq',
+                       'and','or','xor','pxor','add','sub','inc','dec','xchg','cmpxchg','stosb','stosq'}
+
+          def parse_write(op):
+            parts=op.split(None,1)
+            if len(parts)<2:return None
+            mnem=parts[0].lower()
+            if mnem not in write_mnems:return None
+            dst=parts[1].split(',',1)[0].strip()
+            mm=re.search(r'(?:(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD|ZMMWORD) PTR )?\[([a-z][a-z0-9]*)(?:\+0x([0-9a-f]+))?\]',dst)
+            if not mm:return None
+            kind=(mm.group(1)+' PTR') if mm.group(1) else None
+            base=mm.group(2)
+            off=int(mm.group(3),16) if mm.group(3) else 0
+            size=sizes.get(kind,1)
+            # For generic MOV with register source infer common widths if no PTR printed.
+            if kind is None:
+              if re.search(r'\b(?:rax|rbx|rcx|rdx|rsi|rdi|rbp|rsp|r8|r9|r1[0-5])\b',parts[1].split(',',1)[1] if ',' in parts[1] else ''):size=8
+              elif re.search(r'\b(?:eax|ebx|ecx|edx|esi|edi|r8d|r9d|r1[0-5]d)\b',parts[1].split(',',1)[1] if ',' in parts[1] else ''):size=4
+            return mnem,base,off,size,dst
+
+          print('# Focused restriction-owner gate writer trace')
+          print()
+          print('Scope: native text 0x10a0000..0x10b0000, the same code cluster as the 0x18b0-byte restriction owner.')
+          print('Authoritative read sites: owner+0x598 and owner+0x470 gate ad_disallow insertion into skip-next.')
+          print()
+
+          # 1) Constructor: rbp is proven owner base immediately after 0x18b0 allocation.
+          ctor=(0x10a578a,0x10a5d2d)
+          ctor_lines=fde_lines(ctor)
+          print('## Constructor writes overlapping gate/object fields (base=rbp)')
+          print()
+          hits=[]
+          for a,i,op,l in ctor_lines:
+            w=parse_write(op)
+            if not w:continue
+            mnem,base,off,size,dst=w
+            if base!='rbp':continue
+            for t in targets:
+              if off<=t<off+size:
+                hits.append((a,i,op,off,size,t))
+          if not hits:print('- none')
+          for a,i,op,off,size,t in hits:
+            print(f'### 0x{a:x}: write [rbp+0x{off:x}..+0x{off+size-1:x}] overlaps +0x{t:x}')
+            for _,_,_,ctx in ctor_lines[max(0,next(n for n,x in enumerate(ctor_lines) if x[0]==a)-10):next(n for n,x in enumerate(ctor_lines) if x[0]==a)+14]:
+              print('    '+ctx)
+            print()
+
+          print('## Constructor member-address handoffs near gates')
+          print()
+          # LEA of owner member addresses within +-0x80, plus next 8 instructions to reveal helper call.
+          for n,(a,i,op,l) in enumerate(ctor_lines):
+            m=re.search(r'lea\s+([a-z][a-z0-9]*),\[rbp\+0x([0-9a-f]+)\]',op)
+            if not m:continue
+            off=int(m.group(2),16)
+            if not any(abs(off-t)<=0x100 for t in targets):continue
+            print(f'### 0x{a:x}: {op}')
+            for _,_,_,ctx in ctor_lines[max(0,n-5):min(len(ctor_lines),n+14)]:
+              print('    '+ctx)
+            print()
+
+          # 2) Region-wide direct writes, grouped by FDE. Require a plausible this base
+          # register and print all candidates for manual identity checks.
+          print('## Region-wide direct writes to exact +0x470/+0x598')
+          print()
+          cands=[]
+          for a,i,op,l in ins:
+            w=parse_write(op)
+            if not w:continue
+            mnem,base,off,size,dst=w
+            if off not in (0x470,0x598):continue
+            if base in {'rsp','esp','rip'}:continue
+            fr=fde_for(a)
+            cands.append((a,i,op,base,off,size,fr))
+          if not cands:print('- none')
+          for a,i,op,base,off,size,fr in cands:
+            fs=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{a:x} in {fs}: {base}+0x{off:x} WRITE :: {op}')
+            for ctx in region[max(0,i-10):min(len(region),i+14)]:
+              print('    '+ctx)
+            print()
+
+          # 3) Functions that both access a gate and call/jump to the restriction builder.
+          print('## Gate-accessing functions that rebuild restrictions')
+          print()
+          byfr={}
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if not fr:continue
+            if re.search(r'\[[a-z][a-z0-9]*\+0x(?:470|598)\]',op):
+              byfr.setdefault(fr,{'gate':[],'builder':[]})['gate'].append((a,i,op))
+            if re.search(r'\b(?:call|jmp)\s+10a6464\b',op):
+              byfr.setdefault(fr,{'gate':[],'builder':[]})['builder'].append((a,i,op))
+          found=False
+          for fr,d in sorted(byfr.items()):
+            if not d['gate'] or not d['builder']:continue
+            found=True
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x}')
+            for a,i,op in d['gate']:print(f'- gate @0x{a:x}: {op}')
+            for a,i,op in d['builder']:print(f'- rebuild @0x{a:x}: {op}')
+            print()
+          if not found:print('- none beyond known callbacks')
+
+          # 4) Direct builder callers, with full FDE field accesses to reveal related state changes.
+          print('## All direct restriction-builder callers')
+          print()
+          caller_frs=[]
+          for a,i,op,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+10a6464\b',op):
+              fr=fde_for(a)
+              if fr and fr not in caller_frs:caller_frs.append(fr)
+          for fr in caller_frs:
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x}')
+            fl=fde_lines(fr)
+            for a,i,op,l in fl:
+              if (
+                re.search(r'\+0x(?:38|438|470|598|14a0|1858|1859|1890)\]',op)
+                or re.search(r'\b(?:call|jmp)\s+10a6464\b',op)
+              ):
+                print('    '+l)
+            print()
+
+          # 5) Locate functions that reference primary/secondary vtable addresses and any gate fields.
+          print('## Same-class identity anchors plus gate accesses')
+          print()
+          for fr in sorted({fde_for(a) for a,_,op,l in ins if '# 184c738' in l or '# 184c858' in l if fde_for(a)}):
+            fl=fde_lines(fr)
+            gate=[x for x in fl if re.search(r'\+0x(?:470|598)\]',x[2])]
+            if gate:
+              print(f'### 0x{fr[0]:x}..0x{fr[1]:x}')
+              for x in gate:print('    '+x[3])
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-gate-writers-focused.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find restriction-owner gate writers"
+          git pull --rebase origin main
+          git push origin HEAD:main
