@@ -1,0 +1,219 @@
+name: Link restriction nested optional to ad runtime type
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-object-type-link.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace optional helpers and ad vtable
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-ad-object-type-link.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          reltext=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+            return None
+
+          def qword(va):
+            o=va2off(va)
+            return struct.unpack_from('<Q',data,o)[0] if o is not None and o+8<=len(data) else None
+
+          def cstring(va,maxlen=500):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 for x in raw)/len(raw)<.92:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          rel={}
+          for line in reltext:
+            s=line.split()
+            if len(s)<3:continue
+            try: off=int(s[0],16)
+            except:continue
+            # Last hex-ish token before optional symbol/addend; RELATIVE rows are easiest.
+            m=re.search(r'R_X86_64_RELATIVE\s+([0-9a-fA-F]+)',line)
+            if m:rel[off]=int(m.group(1),16)
+
+          print('# Restriction nested optional -> ad runtime type trace')
+          print()
+          print('Proven coordinates:')
+          print('- outer payload engaged: owner+0x598')
+          print('- nested optional starts: owner+0x438')
+          print('- nested engagement byte: owner+0x470')
+          print('- nested pointee: *(owner+0x438), callback writes pointee+0x1b8')
+          print()
+
+          print('## Ad-model vtable region around address point 0x1879950')
+          print()
+          for va in range(0x1879900,0x1879a70,8):
+            raw=qword(va)
+            rr=rel.get(va)
+            target=rr if rr is not None else raw
+            note=''
+            if target:
+              s=cstring(target)
+              if s:note=' string='+repr(s)
+            print(f'- 0x{va:x}: raw=0x{(raw or 0):x}' + (f' reloc->0x{rr:x}' if rr is not None else '') + note)
+          print()
+
+          print('## Itanium header / RTTI candidate')
+          print()
+          ap=0x1879950
+          for va in (ap-0x18,ap-0x10,ap-0x8,ap,ap+8,ap+0xc8,ap+0xd0,ap+0xe8):
+            raw=qword(va); rr=rel.get(va)
+            print(f'- 0x{va:x}: raw=0x{(raw or 0):x}' + (f' reloc->0x{rr:x}' if rr is not None else ''))
+          rtti=rel.get(ap-8) or qword(ap-8)
+          if rtti:
+            print(f'RTTI candidate: 0x{rtti:x}')
+            for off in range(0,0x60,8):
+              va=rtti+off; raw=qword(va); rr=rel.get(va)
+              target=rr if rr is not None else raw
+              note=''
+              if target:
+                s=cstring(target)
+                if s:note=' string='+repr(s)
+              print(f'  +0x{off:x}: raw=0x{(raw or 0):x}' + (f' reloc->0x{rr:x}' if rr is not None else '') + note)
+          print()
+
+          print('## Code references to vtable/address point region')
+          print()
+          for i,l in enumerate(lines):
+            if re.search(r'#\s*18799(?:[0-9a-f]{2})\b',l):
+              a=None
+              m=re.match(r'^\s*([0-9a-f]+):',l)
+              if m:a=int(m.group(1),16)
+              print(f'### {("0x%x"%a) if a else "?"}: {l.strip()}')
+              for x in lines[max(0,i-8):min(len(lines),i+12)]:print('    '+x)
+              print()
+
+          targets={
+            'nested optional copy-ctor wrapper':0x108da66,
+            'nested payload copy constructor':0x108da9a,
+            'nested optional assignment helper':0x108e3d0,
+            'nested optional destructor/reset target':0x105633e,
+          }
+          print('## Direct xrefs to nested optional helper family')
+          print()
+          for name,target in targets.items():
+            print(f'### {name}: 0x{target:x}')
+            n=0
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if not m or int(m.group(1),16)!=target:continue
+              n+=1
+              fr=fde_for(a)
+              print(f'- callsite 0x{a:x}, caller {fr}')
+              for x in lines[max(0,i-12):min(len(lines),i+14)]:print('    '+x)
+              print()
+            print(f'Total: {n}')
+            print()
+
+          # Locate construction/assignment patterns where the nested member is addressed
+          # relative to a known payload/state base.
+          print('## Address-taking of +0x3f0 / +0x428 in state helper region')
+          print()
+          for a,i,op,l in ins:
+            if not(0x1080000<=a<0x10b0000):continue
+            if re.search(r'\+0x(3f0|428|438|470)\]',op):
+              print(f'### 0x{a:x}: {op} ; FDE={fde_for(a)}')
+              for x in lines[max(0,i-10):min(len(lines),i+12)]:print('    '+x)
+              print()
+
+          # Search writes of known ad vtable/address point constants via LEA comments
+          # and stores of that register within the next few instructions.
+          print('## Candidate ad-vptr stores')
+          print()
+          refs=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+            if '# 1879950' in l or '# 187994' in l or '# 187996' in l:
+              refs.append((a,i,op,l))
+          if not refs:print('- no direct RIP-relative address-point loads found')
+          for a,i,op,l in refs:
+            print(f'### 0x{a:x}: {l.strip()}')
+            for x in lines[max(0,i-8):min(len(lines),i+18)]:print('    '+x)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-object-type-link.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Link restriction nested optional to ad runtime type"
+          git pull --rebase origin main
+          git push origin HEAD:main
