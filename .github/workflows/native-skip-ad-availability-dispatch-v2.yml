@@ -1,0 +1,77 @@
+name: Decode native skip-ad availability dispatch v2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skip-ad-availability-dispatch-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/nskip2
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/nskip2
+
+      - name: Decode fixed ranges
+        run: |
+          set -euo pipefail
+          SO=/tmp/nskip2/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/nskip2/all.dis
+          {
+            echo '# Native skip-ad availability / dispatch trace v2'
+            echo
+            echo '## Available-signal producer: 0xfd381a..0xfd38d6'
+            objdump -d -M intel --start-address=0xfd381a --stop-address=0xfd38d6 "$SO"
+            echo
+            echo '## Incoming skip-ad discriminator: 0xfd38d6..0xfd39bb'
+            objdump -d -M intel --start-address=0xfd38d6 --stop-address=0xfd39bb "$SO"
+            echo
+            echo '## Secondary skip-ad handler: 0x1204218..0x1204ede'
+            objdump -d -M intel --start-address=0x1204218 --stop-address=0x1204ede "$SO"
+            echo
+            echo '## Helpers near availability/dispatch'
+            echo '### d23a2c'
+            objdump -d -M intel --start-address=0xd239c0 --stop-address=0xd23b20 "$SO"
+            echo
+            echo '### fd65d4 / fd69d4'
+            objdump -d -M intel --start-address=0xfd6560 --stop-address=0xfd6b40 "$SO"
+            echo
+            echo '## Direct call/jump xrefs'
+            grep -E -B14 -A20 '\b(call|jmp)[[:space:]]+(fd381a|fd38d6|d23a2c|fd65d4|fd69d4)\b' /tmp/nskip2/all.dis | head -n 18000 || true
+            echo
+            echo '## Relocations targeting producer/consumer'
+            readelf -rW "$SO" | grep -E 'fd381a|fd38d6|1204218|12044d8' || true
+            echo
+            echo '## All virtual +0x140 calls in nearby player regions'
+            grep -E -B14 -A24 'call[[:space:]]+QWORD PTR \[[a-z0-9]+\+0x140\]' /tmp/nskip2/all.dis | head -n 24000 || true
+            echo
+            echo '## Exact skip-ad references'
+            grep -F -B24 -A60 '# 34708a ' /tmp/nskip2/all.dis || true
+          } > analysis/native-skip-ad-availability-dispatch-v2.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skip-ad-availability-dispatch-v2.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode native skip-ad availability dispatch v2"
+          git pull --rebase origin main
+          git push origin HEAD:main
