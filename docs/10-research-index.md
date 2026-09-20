@@ -193,14 +193,27 @@ The inner object is also now tied to the previously decoded ad metadata interfac
 
 The restriction builder loads the pointer from `owner+0x438` and calls exactly `+0xd0/+0xd8/+0xe0`. Event subtype `6` at `0x10a9668` checks the two optional engagement bytes, sets `[owner+0x438]+0x1b8 = 1`, and rebuilds restrictions. The `+0xd0` predicate returns true immediately when `+0x1b8` is set; otherwise a positive `skippable_ad_delay` suppresses the predicate and zero/non-positive delay falls back to raw `skippable`.
 
-The remaining native question is narrower but important: skip-next `ad_disallow` is inserted from **optional presence** before the builder invokes `+0xd0`. We therefore still need to determine whether expiry/event subtype `6` causes the nested optional/object to be reset or swapped, or whether a separate player-core transition removes the skip-next restriction.
+Event subtype `6` is now semantically resolved. Two native producer paths contain the literal string `"ad_skip"`; both call the nested ad object's `+0xe8` `skippable_ad_delay` parser, require a positive delay, multiply it by 1000, write subtype `6`, and schedule the event through `0x139c09a`. The callback at `0x10a9668` then sets `adObject+0x1b8 = 1` and rebuilds restrictions.
+
+This proves the local delay-expiry state machine:
+
+```text
+skippable_ad_delay > 0
+    -> schedule "ad_skip" after delay*1000 ms
+    -> subtype 6 fires
+    -> adObject+0x1b8 = 1
+    -> derived +0xd0 skippability becomes true
+    -> restrictions rebuilt
+```
+
+It also proves an important separation: ordinary skip-next `ad_disallow` is still derived from nested-object presence and does not test `+0x1b8`. Spotify's timed **Skip Ad** capability is therefore distinct from ordinary next-track / MediaSession skip-next in this build.
 
 Current target:
 
-- trace producers and lifetime transitions of the inner optional at `owner+0x438/+0x470`
-- resolve event subtype `6` semantically and determine whether it coincides with delay expiry
-- trace the exact state change that makes the skip-next `ad_disallow` branch stop firing
-- trace available-command synchronization after the native skip-next restriction set changes
+- trace the actual ad-specific skip command invoked after `ad_skip` readiness
+- trace the Android UI click path from the skip-ad button into player/Esperanto/native code
+- identify the native/ContextPlayer endpoint that records or executes an ad skip
+- determine whether Connect uses the same ad-specific command or a remote equivalent
 
 ## 6. Connect-device behavior — OPEN
 
