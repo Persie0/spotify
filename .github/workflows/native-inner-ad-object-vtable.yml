@@ -1,0 +1,70 @@
+name: Resolve inner ad object vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-inner-ad-object-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Resolve vtable slots and installers
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Inner ad-object vtable resolution"
+            echo
+            echo "Candidate address point: 0x1879950"
+            echo "Builder calls through owner+0x438 at vtable slots +0xd0, +0xd8, +0xe0."
+            echo
+            echo "## Raw bytes around candidate vtable"
+            objdump -s --start-address=0x1879900 --stop-address=0x1879a60 "$SO" || true
+            echo
+            echo "## Relocations in candidate vtable range"
+            readelf -rW "$SO" | awk '$1 >= "0000000001879900" && $1 < "0000000001879a60" {print}' || true
+            echo
+            echo "## Known adjacent method bodies"
+            for R in               "0x14e2440 0x14e248a"               "0x14e248a 0x14e24b8"               "0x14e24b8 0x14e24d0"               "0x14e24d0 0x14e24e8"               "0x14e24e8 0x14e25d0"; do
+              set -- $R
+              echo
+              echo "### $1..$2"
+              objdump -d -M intel --start-address=$1 --stop-address=$2 "$SO"
+            done
+            echo
+            echo "## Code references to candidate address point / nearby vtable"
+            objdump -d -M intel "$SO" | grep -E -B16 -A22 '1879950|1879940|1879960|1879970|1879980' | head -n 3000 || true
+            echo
+            echo "## Relocations whose target is candidate-ad method family"
+            readelf -rW "$SO" | grep -E '14e2472|14e248a|14e24b8|14e24d0|14e24e8|14e25d0' || true
+          } > analysis/native-inner-ad-object-vtable.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-inner-ad-object-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve inner ad object vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
