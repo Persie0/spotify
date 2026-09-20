@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageButton xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_gravity="center"
+    android:id="@+id/auth_icon"
+    android:background="@drawable/rounded_selectable_button"
+    android:padding="@dimen/rounded_auth_button_icon_padding"
+    android:layout_width="@dimen/rounded_auth_button_size"
+    android:layout_height="@dimen/rounded_auth_button_size"
+    android:scaleType="fitXY"
+    android:contentDescription="@string/rounded_auth_button_icon_content_description"/>

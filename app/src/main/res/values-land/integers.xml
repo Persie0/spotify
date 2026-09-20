@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="card_row_columns">4</integer>
+    <integer name="entity_body_length">350</integer>
+    <integer name="hugs_grid_columns">@integer/hugs_grid_columns_land</integer>
+    <integer name="mtrl_calendar_header_orientation">0</integer>
+    <integer name="social_listening_ipl_onboarding_header_default_columns">5</integer>
+    <integer name="social_listening_ipl_onboarding_header_default_rows">2</integer>
+    <integer name="your_library_dense_span_count">4</integer>
+</resources>

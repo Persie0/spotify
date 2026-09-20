@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/baseDecorativeSubdued"/>
+        </shape>
+    </item>
+    <item
+        android:gravity="center"
+        android:id="@+id/icon_hidden"
+        android:drawable="@drawable/encore_icon_hidden"
+        android:top="@dimen/encore_spacer_tighter"
+        android:bottom="@dimen/encore_spacer_tighter"
+        android:start="@dimen/encore_spacer_tighter"
+        android:end="@dimen/encore_spacer_tighter"/>
+</layer-list>

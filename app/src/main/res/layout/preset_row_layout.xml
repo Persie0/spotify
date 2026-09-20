@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingLeft="@dimen/spacer_16"
+    android:paddingTop="@dimen/spacer_8"
+    android:paddingRight="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/spacer_48"
+    android:paddingHorizontal="@dimen/spacer_16"
+    android:paddingVertical="@dimen/spacer_8">
+    <com.spotify.encoremobile.component.slottextview.EncoreTitleView
+        android:ellipsize="end"
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/icon_check"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.component.icons.IconCheck
+        android:id="@+id/icon_check"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:iconActive="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/title"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

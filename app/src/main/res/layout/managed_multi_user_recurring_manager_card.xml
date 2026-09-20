@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/card_root"
+    android:background="@drawable/plan_details_card_background"
+    android:paddingTop="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_16"
+    android:focusable="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="@dimen/spacer_16">
+    <include layout="@layout/plan_details_card_header"/>
+    <include layout="@layout/plan_details_card_separator"/>
+    <include layout="@layout/plan_details_card_description"/>
+    <include layout="@layout/abt_entry_point"/>
+    <include layout="@layout/manage_address_title"/>
+    <View
+        android:id="@+id/manage_address_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <include layout="@layout/plan_details_card_plan_household_separator"/>
+    <include layout="@layout/plan_details_card_plan_members_title"/>
+    <include layout="@layout/plan_details_card_plan_members_title_v2"/>
+    <include layout="@layout/plan_details_card_plan_members_separator"/>
+    <include layout="@layout/plan_details_card_plan_member_list"/>
+    <View
+        android:id="@+id/accounts_available_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <View
+        android:id="@+id/buy_additional_accounts_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <View
+        android:id="@+id/add_member_help_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <View
+        android:id="@+id/change_pin_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

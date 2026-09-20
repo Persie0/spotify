@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.encoremobile.component.listrow.EncoreListRow xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/list_row"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textDirection="locale"
+    style="@style/Encore.ListRow.Naked">
+    <ImageView
+        android:id="@+id/media_slot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:slot="media"/>
+    <com.spotify.encoremobile.component.slottextview.EncoreTitleView
+        android:id="@+id/title_slot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:slot="title"/>
+    <com.google.android.material.radiobutton.MaterialRadioButton
+        android:id="@+id/trailing_slot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:slot="trailing"
+        style="@style/Widget.Glue.RadioButton"/>
+</com.spotify.encoremobile.component.listrow.EncoreListRow>

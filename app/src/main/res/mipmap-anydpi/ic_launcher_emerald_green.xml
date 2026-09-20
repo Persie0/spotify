@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/visual_differentiation_emerald_green"/>
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_launcher_emerald_green_foreground"
+        android:left="@dimen/adaptiveicon_padding_negative"
+        android:top="@dimen/adaptiveicon_padding_negative"
+        android:right="@dimen/adaptiveicon_padding_negative"
+        android:bottom="@dimen/adaptiveicon_padding_negative"/>
+</layer-list>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingLeft="@dimen/encore_spacer_tighter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.encoreconsumermobile.elements.playindicator.PlayIndicatorView
+        android:id="@+id/play_indicator"
+        android:visibility="visible"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="?attr/invertedTextBase"
+        android:ellipsize="end"
+        android:id="@+id/text"
+        android:clickable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="2"
+        android:layout_marginStart="@dimen/encore_spacer_tighter_2"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/button"
+        app:layout_constraintStart_toEndOf="@+id/play_indicator"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginStart="0dp"/>
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:textColor="?attr/invertedTextBrightAccent"
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/encore_spacer_base"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/text"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginStart="0dp"
+        style="@style/Encore.Button.Tertiary.Small"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:theme="@style/Theme.Glue"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/spacer_4"
+    android:paddingBottom="@dimen/spacer_16"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleSmall"
+        android:id="@+id/title"
+        android:paddingLeft="@dimen/spacer_16"
+        android:paddingRight="@dimen/spacer_16"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/stream_ad_leavebehind_row_title"
+        android:paddingHorizontal="@dimen/spacer_16"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/stream_ad_leavebehind_recycler_view"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

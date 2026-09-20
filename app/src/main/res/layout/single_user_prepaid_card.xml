@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/card_root"
+    android:background="@drawable/plan_details_card_background"
+    android:paddingTop="@dimen/spacer_16"
+    android:paddingBottom="@dimen/spacer_16"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:paddingVertical="@dimen/spacer_16">
+    <include layout="@layout/plan_details_card_header"/>
+    <include layout="@layout/plan_details_card_separator"/>
+    <include layout="@layout/plan_details_card_description"/>
+    <include layout="@layout/abt_entry_point"/>
+    <include layout="@layout/plan_details_card_plan_length"/>
+    <include layout="@layout/plan_details_card_plan_expiry"/>
+</LinearLayout>

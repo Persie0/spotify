@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:drawable="@drawable/encore_icon_t_shirt_active_16"
+        app:state_icon_active="true"
+        app:state_small_glyph="true"/>
+    <item
+        android:drawable="@drawable/encore_icon_t_shirt_16"
+        app:state_small_glyph="true"/>
+    <item
+        android:drawable="@drawable/encore_icon_t_shirt_active_24"
+        app:state_icon_active="true"/>
+    <item android:drawable="@drawable/encore_icon_t_shirt_24"/>
+</selector>

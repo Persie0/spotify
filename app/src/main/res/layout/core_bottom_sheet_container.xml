@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.bottomsheet.core.ScrollableContentWithHeaderLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/core_bottom_sheet_background"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <View
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/core_bottom_sheet_grapple"
+        android:layout_width="@dimen/core_bottom_sheet_grapple_width"
+        android:layout_height="@dimen/core_bottom_sheet_grapple_height"
+        android:layout_marginTop="@dimen/core_bottom_sheet_grapple_margin_vertical"
+        android:layout_marginBottom="@dimen/core_bottom_sheet_grapple_margin_vertical"
+        android:layout_marginVertical="@dimen/core_bottom_sheet_grapple_margin_vertical"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</com.spotify.bottomsheet.core.ScrollableContentWithHeaderLayout>

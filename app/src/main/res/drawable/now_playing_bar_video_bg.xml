@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@android:color/black"/>
+    <corners android:radius="@dimen/floating_now_playing_bar_media_radius"/>
+</shape>

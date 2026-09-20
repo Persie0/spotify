@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="window_is_wider_than_breakpoint_for_new_layout">true</bool>
+</resources>

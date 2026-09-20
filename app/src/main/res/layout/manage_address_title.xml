@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.encoremobile.component.textview.EncoreTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+    android:textColor="?attr/baseTextBase"
+    android:id="@+id/manage_address_title"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/premium_plan_card_household"
+    android:textDirection="locale"
+    android:paddingStart="16dp"/>

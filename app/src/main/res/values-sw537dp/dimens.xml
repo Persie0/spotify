@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="footer_bottom_padding">10dp</dimen>
+    <dimen name="footer_button_margin">64dp</dimen>
+    <dimen name="footer_top_padding">12dp</dimen>
+    <dimen name="header_button_margin">32dp</dimen>
+    <dimen name="header_top_margin">16dp</dimen>
+    <dimen name="peek_height">36dp</dimen>
+    <dimen name="playback_controls_margin">72dp</dimen>
+    <dimen name="player_controls_bottom_margin">56dp</dimen>
+    <dimen name="seekbar_margin_horizontal">64dp</dimen>
+    <dimen name="seekbar_margin_vertical">8dp</dimen>
+    <dimen name="widget_padding">18dp</dimen>
+    <dimen name="widget_padding_top">16dp</dimen>
+    <dimen name="widgets_container_horizontal_padding">80dp</dimen>
+</resources>

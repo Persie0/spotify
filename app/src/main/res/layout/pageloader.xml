@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:animateLayoutChanges="false"/>
+    <ViewStub
+        android:id="@+id/debug_error_text_stub"
+        android:layout="@layout/pageloader_debug_error"
+        android:inflatedId="@+id/debug_error_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/toast_stub"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</merge>

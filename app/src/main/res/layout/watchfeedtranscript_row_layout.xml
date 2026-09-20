@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/transcript_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@color/watch_feed_transcript_unread_text"
+        android:layout_gravity="bottom"
+        android:id="@+id/transcript_textview"
+        android:background="@drawable/watch_feed_transcript_background"
+        android:paddingLeft="@dimen/spacer_8"
+        android:paddingTop="@dimen/spacer_4"
+        android:paddingRight="@dimen/spacer_8"
+        android:paddingBottom="@dimen/spacer_4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacer_8"
+        android:paddingVertical="@dimen/spacer_4"/>
+</FrameLayout>

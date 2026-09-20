@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:height="40dp"
+    android:width="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <path
+        android:fillColor="@drawable/_share_icn_facebook_stories__0_res_0x7f080069"
+        android:pathData="M17.5 34.792C10.408 33.6 5 27.429 5 20c0-8.283 6.717-15 15-15h0.012C28.297 5 35 11.717 35 20c0 7.43-5.408 13.6-12.5 14.792L20 32.708z"/>
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M22.5 34.788V24.583h3.333L26.5 20h-4l-0.004-2.646c0-1.187 0.429-2.354 2.292-2.354h1.879v-4.167s-1.705-0.316-3.346-0.316c-3.425 0-5.821 2.391-5.821 6.15V20h-3.75v4.583h3.75v10.205C18.313 34.925 19.146 35 20 35c0.854 0 1.688-0.075 2.5-0.212z"/>
+    <path
+        android:fillColor="#1877f2"
+        android:pathData="M20 2.5c9.65 0 17.5 7.85 17.5 17.5S29.65 37.5 20 37.5 2.5 29.65 2.5 20 10.35 2.5 20 2.5zM20 0C8.954 0 0 8.954 0 20s8.954 20 20 20 20-8.954 20-20S31.046 0 20 0z"
+        android:fillType="evenOdd"/>
+</vector>

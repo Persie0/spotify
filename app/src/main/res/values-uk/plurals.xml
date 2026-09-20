@@ -1,0 +1,1929 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s слухач за місяць</item>
+        <item quantity="few">%1$s слухачі за місяць</item>
+        <item quantity="many">%1$s слухачів за місяць</item>
+        <item quantity="other">%1$s слухачів за місяць</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d групова колонка</item>
+        <item quantity="few">%1$d групові колонки</item>
+        <item quantity="many">%1$d групових колонок</item>
+        <item quantity="other">%1$d групових колонок</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d зірка з 5</item>
+        <item quantity="few">%1$d зірки з 5</item>
+        <item quantity="many">%1$d зірок із 5</item>
+        <item quantity="other">%1$d зірок із 5</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d зірка з 5</item>
+        <item quantity="few">%1$d зірки з 5</item>
+        <item quantity="many">%1$d зірок із 5</item>
+        <item quantity="other">%1$d зірок із 5</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">вибрати %1$d зірку</item>
+        <item quantity="few">вибрати %1$d зірки</item>
+        <item quantity="many">вибрати %1$d зірок</item>
+        <item quantity="other">вибрати %1$d зірок</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d зірка</item>
+        <item quantity="few">%1$d зірки</item>
+        <item quantity="many">%1$d зірок</item>
+        <item quantity="other">%1$d зірок</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">Ще %1$d акаунт</item>
+        <item quantity="few">Ще %1$d акаунти</item>
+        <item quantity="many">Ще %1$d акаунтів</item>
+        <item quantity="other">Ще %1$d акаунтів</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">Ще %1$d акаунт</item>
+        <item quantity="few">Ще %1$d акаунти</item>
+        <item quantity="many">Ще %1$d акаунтів</item>
+        <item quantity="other">Ще %1$d акаунтів</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">Знайдено %1$d елемент</item>
+        <item quantity="few">Знайдено %1$d елементи</item>
+        <item quantity="many">Знайдено %1$d елементів</item>
+        <item quantity="other">Знайдено %1$d елементів</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s папка</item>
+        <item quantity="few">%1$s папки</item>
+        <item quantity="many">%1$s папок</item>
+        <item quantity="other">%1$s папок</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s плейліст</item>
+        <item quantity="few">%1$s плейлісти</item>
+        <item quantity="many">%1$s плейлістів</item>
+        <item quantity="other">%1$s плейлістів</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s аудіокнига</item>
+        <item quantity="few">%1$s аудіокниги</item>
+        <item quantity="many">%1$s аудіокниг</item>
+        <item quantity="other">%1$s аудіокниги</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s розділ</item>
+        <item quantity="few">%1$s розділи</item>
+        <item quantity="many">%1$s розділів</item>
+        <item quantity="other">%1$s розділів</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s вирізка</item>
+        <item quantity="few">%1$s вирізки</item>
+        <item quantity="many">%1$s вирізок</item>
+        <item quantity="other">%1$s вирізок</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s епізод</item>
+        <item quantity="few">%1$s епізоди</item>
+        <item quantity="many">%1$s епізодів</item>
+        <item quantity="other">%1$s епізоду</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s пісня</item>
+        <item quantity="few">%1$s пісні</item>
+        <item quantity="many">%1$s пісень</item>
+        <item quantity="other">%1$s пісні</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s трек</item>
+        <item quantity="few">%1$s треки</item>
+        <item quantity="many">%1$s треків</item>
+        <item quantity="other">%1$s треку</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">Пропустити рекламу через %1$d секунду, таймер</item>
+        <item quantity="few">Пропустити рекламу через %1$d секунди, таймер</item>
+        <item quantity="many">Пропустити рекламу через %1$d секунд, таймер</item>
+        <item quantity="other">Пропустити рекламу через %1$d с, таймер</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Можна пропустити через %1$d с</item>
+        <item quantity="few">Можна пропустити через %1$d с</item>
+        <item quantity="many">Можна пропустити через %1$d с</item>
+        <item quantity="other">Можна пропустити через %1$d с</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Реклама • Можна пропустити через %1$d с</item>
+        <item quantity="few">Реклама • Можна пропустити через %1$d с</item>
+        <item quantity="many">Реклама • Можна пропустити через %1$d с</item>
+        <item quantity="other">Реклама • Можна пропустити через %1$d с</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Увага! Вам недостатньо років для користування Spotify, тому ваш акаунт заблоковано і за %1$s день його буде деактивовано. Ми помилилися? Підтвердьте свій вік за допомогою посвідчення особи.</item>
+        <item quantity="few">Увага! Вам недостатньо років для користування Spotify, тому Ваш акаунт заблоковано і за %1$s дні його буде деактивовано. Ми помилилися? Підтвердьте свій вік за допомогою посвідчення особи.</item>
+        <item quantity="many">Увага! Вам недостатньо років для користування Spotify, тому Ваш акаунт заблоковано і за %1$s днів його буде деактивовано. Ми помилилися? Підтвердьте свій вік за допомогою посвідчення особи.</item>
+        <item quantity="other">Увага! Вам недостатньо років для користування Spotify, тому Ваш акаунт заблоковано і за %1$s дн. його буде деактивовано. Ми помилилися? Підтвердьте свій вік за допомогою посвідчення особи.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Схоже, вам недостатньо років, щоб мати власний акаунт Spotify. Але ви можете мати керований акаунт, якщо хтось із ваших батьків або опікун на це погодиться.\n\nВаш акаунт буде деактивовано через %1$s день.</item>
+        <item quantity="few">Схоже, вам недостатньо років, щоб мати власний акаунт Spotify. Але ви можете мати керований акаунт, якщо хтось із ваших батьків або опікун на це погодиться.\n\nВаш акаунт буде деактивовано через %1$s дні.</item>
+        <item quantity="many">Схоже, вам недостатньо років, щоб мати власний акаунт Spotify. Але ви можете мати керований акаунт, якщо хтось із ваших батьків або опікун на це погодиться.\n\nВаш акаунт буде деактивовано через %1$s днів.</item>
+        <item quantity="other">Схоже, вам недостатньо років, щоб мати власний акаунт Spotify. Але ви можете мати керований акаунт, якщо хтось із ваших батьків або опікун на це погодиться.\n\nВаш акаунт буде деактивовано через %1$s днів.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">Щоб відновити акаунт, підтвердьте свій вік за допомогою посвідчення особи. Якщо перевірка віку не підтвердить, що вам достатньо років для користування Spotify, або не буде вжито жодних заходів протягом %1$s дня, ваш акаунт буде видалено назавжди.</item>
+        <item quantity="few">Щоб відновити акаунт, підтвердьте свій вік за допомогою посвідчення особи. Якщо перевірка віку не підтвердить, що вам достатньо років для користування Spotify, або не буде вжито жодних заходів протягом %1$s днів, ваш акаунт буде видалено назавжди.</item>
+        <item quantity="many">Щоб відновити акаунт, підтвердьте свій вік за допомогою посвідчення особи. Якщо перевірка віку не підтвердить, що вам достатньо років для користування Spotify, або не буде вжито жодних заходів протягом %1$s днів, ваш акаунт буде видалено назавжди.</item>
+        <item quantity="other">Щоб відновити акаунт, підтвердьте свій вік за допомогою посвідчення особи. Якщо перевірка віку не підтвердить, що вам достатньо років для користування Spotify, або не буде вжито жодних заходів протягом %1$s днів, ваш акаунт буде видалено назавжди.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Оскільки вам не виповнилося %1$d року, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="few">Оскільки вам не виповнилося %1$d років, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="many">Оскільки вам не виповнилося %1$d років, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="other">Оскільки вам не виповнилося %1$d р., ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d пісня • %2$s</item>
+        <item quantity="few">%1$d пісні • %2$s</item>
+        <item quantity="many">%1$d пісень • %2$s</item>
+        <item quantity="other">%1$d пісні • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">Вибрано %1$d</item>
+        <item quantity="few">Вибрано %1$d</item>
+        <item quantity="many">Вибрано %1$d</item>
+        <item quantity="other">Вибрано %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">Вибрано %1$d</item>
+        <item quantity="few">Вибрано %1$d</item>
+        <item quantity="many">Вибрано %1$d</item>
+        <item quantity="other">Вибрано %1$d</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">Вибрано %1$d. Виберіть ще принаймні %2$d, щоб продовжити.</item>
+        <item quantity="few">Вибрано %1$d. Виберіть ще принаймні %2$d, щоб продовжити.</item>
+        <item quantity="many">Вибрано %1$d. Виберіть ще принаймні %2$d, щоб продовжити.</item>
+        <item quantity="other">Вибрано %1$d. Виберіть ще принаймні %2$d, щоб продовжити.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d год</item>
+        <item quantity="many">%1$d год</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">Ви перевищили ліміт на %1$d символ.</item>
+        <item quantity="few">Ви перевищили ліміт на %1$d символи.</item>
+        <item quantity="many">Ви перевищили ліміт на %1$d символів.</item>
+        <item quantity="other">Ви перевищили ліміт на %1$d символів.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">і ще %1$d</item>
+        <item quantity="few">і ще %1$d</item>
+        <item quantity="many">і ще %1$d</item>
+        <item quantity="other">і ще %1$d</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d реліз</item>
+        <item quantity="few">%1$,d релізи</item>
+        <item quantity="many">%1$,d релізів</item>
+        <item quantity="other">%1$,d релізу</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d пісня</item>
+        <item quantity="few">%1$,d пісні</item>
+        <item quantity="many">%1$,d пісень</item>
+        <item quantity="other">%1$,d пісні</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s захід біля вас</item>
+        <item quantity="few">%1$s заходи біля вас</item>
+        <item quantity="many">%1$s заходів біля вас</item>
+        <item quantity="other">Заходів біля вас: %1$s</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d реліз</item>
+        <item quantity="few">%1$d релізи</item>
+        <item quantity="many">%1$d релізів</item>
+        <item quantity="other">%1$d релізу</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісні</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">За запитом &quot;%1$s&quot; знайдено %2$d елемент</item>
+        <item quantity="few">За запитом &quot;%1$s&quot; знайдено %2$d елементи</item>
+        <item quantity="many">За запитом &quot;%1$s&quot; знайдено %2$d елементів</item>
+        <item quantity="other">За запитом &quot;%1$s&quot; знайдено елементів: %2$d</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d год</item>
+        <item quantity="many">%1$d год</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">Додано %1$d аудіокнигу</item>
+        <item quantity="few">Додано %1$d аудіокниги</item>
+        <item quantity="many">Додано %1$d аудіокниг</item>
+        <item quantity="other">Додано %1$d аудіокниги</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">Відтворено %1$d аудіокнигу</item>
+        <item quantity="few">Відтворено %1$d аудіокниги</item>
+        <item quantity="many">Відтворено %1$d аудіокниг</item>
+        <item quantity="other">Відтворено %1$d аудіокниг</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s новий епізод на шоу</item>
+        <item quantity="few">%1$s нові епізоди на шоу</item>
+        <item quantity="many">%1$s нових епізодів на шоу</item>
+        <item quantity="other">%1$s нових епізодів на шоу</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Подкаст • %1$d епізод</item>
+        <item quantity="few">Подкаст • %1$d епізоди</item>
+        <item quantity="many">Подкаст • %1$d епізодів</item>
+        <item quantity="other">Подкаст • %1$d епізодів</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d година</item>
+        <item quantity="few">%1$d години</item>
+        <item quantity="many">%1$d годин</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d с</item>
+        <item quantity="few">%1$d с</item>
+        <item quantity="many">%1$d с</item>
+        <item quantity="other">%1$d с</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s учасник у групі</item>
+        <item quantity="few">%1$s учасники в групі</item>
+        <item quantity="many">%1$s учасників у групі</item>
+        <item quantity="other">%1$s учасників у групі</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">%1$d день тому</item>
+        <item quantity="few">%1$d дні тому</item>
+        <item quantity="many">%1$d днів тому</item>
+        <item quantity="other">%1$d днів тому</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">%1$d годину тому</item>
+        <item quantity="few">%1$d години тому</item>
+        <item quantity="many">%1$d годин тому</item>
+        <item quantity="other">%1$d години тому</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">%1$d хвилину тому</item>
+        <item quantity="few">%1$d хвилини тому</item>
+        <item quantity="many">%1$d хвилин тому</item>
+        <item quantity="other">%1$d хвилини тому</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d фотографія</item>
+        <item quantity="few">%1$d фотографії</item>
+        <item quantity="many">%1$d фотографій</item>
+        <item quantity="other">%1$d фотографій</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d відео</item>
+        <item quantity="few">%1$d відео</item>
+        <item quantity="many">%1$d відео</item>
+        <item quantity="other">%1$d відео</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s користувач</item>
+        <item quantity="few">%1$s користувачі</item>
+        <item quantity="many">%1$s користувачів</item>
+        <item quantity="other">%1$s користувачів</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s друг</item>
+        <item quantity="few">%1$s друга</item>
+        <item quantity="many">%1$s друзів</item>
+        <item quantity="other">%1$s друзів</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Обмеження буде скинуто через %1$d день, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="few">Обмеження буде скинуто через %1$d дні, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="many">Обмеження буде скинуто через %1$d днів, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="other">Обмеження буде скинуто через %1$d дн., поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Обмеження буде скинуто через %1$d день, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="few">Обмеження буде скинуто через %1$d дні, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="many">Обмеження буде скинуто через %1$d днів, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="other">Обмеження буде скинуто через %1$d дн., поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Обмеження буде скинуто через %1$d годину, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="few">Обмеження буде скинуто через %1$d години, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="many">Обмеження буде скинуто через %1$d годин, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+        <item quantity="other">Обмеження буде скинуто через %1$d год, поверніться пізніше. Тим часом ви можете створити плейліст на основі ШІ або скласти власний.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Обмеження буде скинуто через %1$d годину, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="few">Обмеження буде скинуто через %1$d години, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="many">Обмеження буде скинуто через %1$d годин, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+        <item quantity="other">Обмеження буде скинуто через %1$d год, поверніться пізніше. Тим часом ви можете створити миттєвий плейліст або скласти власний.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d новий трек</item>
+        <item quantity="few">%1$,d нові треки</item>
+        <item quantity="many">%1$,d нових треків</item>
+        <item quantity="other">%1$,d нових треків</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s не зможе надсилати вам повідомлення безпосередньо. Ви можете вийти із чату, якщо не хочете взаємодіяти із цим учасником.</item>
+        <item quantity="few">%1$s не зможе надсилати вам повідомлення безпосередньо. Ви можете вийти із чату, якщо не хочете взаємодіяти із цим учасником.</item>
+        <item quantity="many">%1$s не зможе надсилати вам повідомлення безпосередньо. Ви можете вийти із чату, якщо не хочете взаємодіяти із цим учасником.</item>
+        <item quantity="other">%1$s не зможе надсилати вам повідомлення безпосередньо. Ви можете вийти із чату, якщо не хочете взаємодіяти із цим учасником.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">ще %1$d користувач</item>
+        <item quantity="few">ще %1$d користувачі</item>
+        <item quantity="many">ще %1$d користувачів</item>
+        <item quantity="other">ще %1$d користувачів</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Група • %1$d особа</item>
+        <item quantity="few">Група • %1$d особи</item>
+        <item quantity="many">Група • %1$d осіб</item>
+        <item quantity="other">Група • %1$d осіб</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d розглядає(-ють) запрошення)</item>
+        <item quantity="few">(%1$d розглядають запрошення)</item>
+        <item quantity="many">(%1$d розглядають запрошення)</item>
+        <item quantity="other">(%1$d розглядають запрошення)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">Завантажено %1$d фотографію</item>
+        <item quantity="few">Завантажено %1$d фотографії</item>
+        <item quantity="many">Завантажено %1$d фотографій</item>
+        <item quantity="other">Завантажено %1$d фотографій</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Не вдалося завантажити %1$d фотографію</item>
+        <item quantity="few">Не вдалося завантажити %1$d фотографії</item>
+        <item quantity="many">Не вдалося завантажити %1$d фотографій</item>
+        <item quantity="other">Не вдалося завантажити %1$d фотографій</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">У цьому чаті беруть участь заблоковані користувачі: %1$s. Якщо ви не хочете взаємодіяти з ними, видаліть запит на групове повідомлення.</item>
+        <item quantity="few">У цьому чаті беруть участь заблоковані користувачі: %1$s. Якщо ви не хочете взаємодіяти з ними, видаліть запит на групове повідомлення.</item>
+        <item quantity="many">У цьому чаті беруть участь заблоковані користувачі: %1$s. Якщо ви не хочете взаємодіяти з ними, видаліть запит на групове повідомлення.</item>
+        <item quantity="other">У цьому чаті беруть участь заблоковані користувачі: %1$s. Якщо ви не хочете взаємодіяти з ними, видаліть запит на групове повідомлення.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Група може містити не більш як %1$d учасника</item>
+        <item quantity="few">Група може містити не більш як %1$d учасників</item>
+        <item quantity="many">Група може містити не більш як %1$d учасників</item>
+        <item quantity="other">Група може містити не більш як %1$d учасників</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Прийнявши запрошення, користувач %1$s зможе бачити всі повідомлення, надіслані в чаті з моменту отримання запрошення.</item>
+        <item quantity="few">Прийнявши запрошення, користувачі зможуть бачити всі повідомлення, надіслані в чаті з моменту отримання ними запрошення.</item>
+        <item quantity="many">Прийнявши запрошення, користувачі зможуть бачити всі повідомлення, надіслані в чаті з моменту отримання ними запрошення.</item>
+        <item quantity="other">Прийнявши запрошення, користувачі зможуть бачити всі повідомлення, надіслані в чаті з моменту отримання ними запрошення.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Запросити користувача %1$s до цього чату?</item>
+        <item quantity="few">Запросити вибраних користувачів до цього чату?</item>
+        <item quantity="many">Запросити вибраних користувачів до цього чату?</item>
+        <item quantity="other">Запросити вибраних користувачів до цього чату?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">Завантажено %1$d відео</item>
+        <item quantity="few">Завантажено %1$d відео</item>
+        <item quantity="many">Завантажено %1$d відео</item>
+        <item quantity="other">Завантажено %1$d відео</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Не вдалося завантажити %1$d відео</item>
+        <item quantity="few">Не вдалося завантажити %1$d відео</item>
+        <item quantity="many">Не вдалося завантажити %1$d відео</item>
+        <item quantity="other">Не вдалося завантажити %1$d відео</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">і ще %1$d роль</item>
+        <item quantity="few">і ще %1$d ролі</item>
+        <item quantity="many">і ще %1$d ролей</item>
+        <item quantity="other">і ще %1$d ролей</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">%1$d день тому</item>
+        <item quantity="few">%1$d дні тому</item>
+        <item quantity="many">%1$d днів тому</item>
+        <item quantity="other">%1$d днів тому</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">%1$d годину тому</item>
+        <item quantity="few">%1$d години тому</item>
+        <item quantity="many">%1$d годин тому</item>
+        <item quantity="other">%1$d години тому</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">%1$d хвилину тому</item>
+        <item quantity="few">%1$d хвилини тому</item>
+        <item quantity="many">%1$d хвилин тому</item>
+        <item quantity="other">%1$d хвилини тому</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d місяць тому</item>
+        <item quantity="few">%1$d місяці тому</item>
+        <item quantity="many">%1$d місяців тому</item>
+        <item quantity="other">%1$d місяців тому</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s відповідь</item>
+        <item quantity="few">%1$s відповіді</item>
+        <item quantity="many">%1$s відповідей</item>
+        <item quantity="other">%1$s відповідей</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s особа також відреагувала.</item>
+        <item quantity="few">%1$s особи також відреагували.</item>
+        <item quantity="many">%1$s осіб також відреагували.</item>
+        <item quantity="other">%1$s особи також відреагували.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s особа відреагувала на цей коментар.</item>
+        <item quantity="few">%1$s особи відреагували на цей коментар.</item>
+        <item quantity="many">%1$s осіб відреагували на цей коментар.</item>
+        <item quantity="other">%1$s особи відреагували на цей коментар.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s відповідь</item>
+        <item quantity="few">%1$s відповіді</item>
+        <item quantity="many">%1$s відповідей</item>
+        <item quantity="other">%1$s відповідей</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Ще %1$s відповідь. Двічі торкніться, щоб показати</item>
+        <item quantity="few">Ще %1$s відповіді. Двічі торкніться, щоб показати</item>
+        <item quantity="many">Ще %1$s відповідей. Двічі торкніться, щоб показати</item>
+        <item quantity="other">Ще відповіді (%1$s). Двічі торкніться, щоб показати</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d тиждень тому</item>
+        <item quantity="few">%1$d тижні тому</item>
+        <item quantity="many">%1$d тижнів тому</item>
+        <item quantity="other">%1$d тижнів тому</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">%1$d рік тому</item>
+        <item quantity="few">%1$d роки тому</item>
+        <item quantity="many">%1$d років тому</item>
+        <item quantity="other">%1$d р. тому</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d пісня</item>
+        <item quantity="few">%1$,d пісні</item>
+        <item quantity="many">%1$,d пісень</item>
+        <item quantity="other">%1$,d пісні</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d слухач</item>
+        <item quantity="few">%1$d слухачі</item>
+        <item quantity="many">%1$d слухачів</item>
+        <item quantity="other">%1$d слухача</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">Через %1$d годину</item>
+        <item quantity="few">Через %1$d години</item>
+        <item quantity="many">Через %1$d годин</item>
+        <item quantity="other">Через %1$d годин</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">через %1$d хвилину</item>
+        <item quantity="few">через %1$d хвилини</item>
+        <item quantity="many">через %1$d хвилин</item>
+        <item quantity="other">через %1$d хв</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d спільна пісня</item>
+        <item quantity="few">%1$d спільні пісні</item>
+        <item quantity="many">%1$d спільних пісень</item>
+        <item quantity="other">%1$d спільних пісень</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d спільна пісня</item>
+        <item quantity="few">%1$d спільні пісні</item>
+        <item quantity="many">%1$d спільних пісень</item>
+        <item quantity="other">%1$d спільних пісень</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дні</item>
+        <item quantity="many">%1$d днів</item>
+        <item quantity="other">%1$d дн.</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d год</item>
+        <item quantity="many">%1$d год</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d с</item>
+        <item quantity="few">%1$d с</item>
+        <item quantity="many">%1$d с</item>
+        <item quantity="other">%1$d с</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s слухач за місяць</item>
+        <item quantity="few">%1$s слухачі за місяць</item>
+        <item quantity="many">%1$s слухачів за місяць</item>
+        <item quantity="other">%1$s слухачів за місяць</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Автор: %1$s</item>
+        <item quantity="few">Автори: %1$s</item>
+        <item quantity="many">Автори: %1$s</item>
+        <item quantity="other">Автори: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s та ще %2$d співавтор</item>
+        <item quantity="few">%1$s та ще %2$d співавтори</item>
+        <item quantity="many">%1$s та ще %2$d співавторів</item>
+        <item quantity="other">%1$s та ще %2$d співавторів</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">Перехід до іншого контенту від цього %1$s</item>
+        <item quantity="few">Список усіх %1$s</item>
+        <item quantity="many">Список усіх %1$s</item>
+        <item quantity="other">Список усіх %1$s</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">Час підготовки: %1$d день</item>
+        <item quantity="few">Час підготовки: %1$d дні</item>
+        <item quantity="many">Час підготовки: %1$d днів</item>
+        <item quantity="other">Час підготовки: %1$d дн.</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дні</item>
+        <item quantity="many">%1$d днів</item>
+        <item quantity="other">%1$d дн.</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;день&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;дні&lt;/b&gt;</item>
+        <item quantity="many">%1$s&lt;br/&gt;&lt;b&gt;днів&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;дня&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">Реліз за %1$d дн.</item>
+        <item quantity="few">Реліз за %1$d дн.</item>
+        <item quantity="many">Реліз за %1$d дн.</item>
+        <item quantity="other">Реліз за %1$d дн.</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d день до закінчення годин прослуховування</item>
+        <item quantity="few">%1$d дні до закінчення годин прослуховування</item>
+        <item quantity="many">%1$d днів до закінчення годин прослуховування</item>
+        <item quantity="other">%1$d дн. до закінчення годин прослуховування</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d день до поновлення годин прослуховування</item>
+        <item quantity="few">%1$d дні до поновлення годин прослуховування</item>
+        <item quantity="many">%1$d днів до поновлення годин прослуховування</item>
+        <item quantity="other">%1$d дня до поновлення годин прослуховування</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Видалити %1$d фотографію?</item>
+        <item quantity="few">Видалити %1$d фотографії?</item>
+        <item quantity="many">Видалити %1$d фотографій?</item>
+        <item quantity="other">Видалити %1$d фотографій?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Видалити %1$d елемент?</item>
+        <item quantity="few">Видалити %1$d елементи?</item>
+        <item quantity="many">Видалити %1$d елементів?</item>
+        <item quantity="other">Видалити %1$d елементів?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Видалити %1$d відео?</item>
+        <item quantity="few">Видалити %1$d відео?</item>
+        <item quantity="many">Видалити %1$d відео?</item>
+        <item quantity="other">Видалити %1$d відео?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">Символів: %1$d з %2$d</item>
+        <item quantity="few">Символів: %1$d з %2$d</item>
+        <item quantity="many">Символів: %1$d з %2$d</item>
+        <item quantity="other">Символів: %1$d з %2$d</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d година</item>
+        <item quantity="few">%1$d години</item>
+        <item quantity="many">%1$d годин</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s і ще %2$d елемент</item>
+        <item quantity="few">%1$s і ще %2$d елементи</item>
+        <item quantity="many">%1$s і ще %2$d елементів</item>
+        <item quantity="other">%1$s і ще %2$d елементів</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">Вибрано %1$d</item>
+        <item quantity="few">Вибрано %1$d</item>
+        <item quantity="many">Вибрано %1$d</item>
+        <item quantity="other">Вибрано %1$d</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">Ім’я користувача можна змінити лише %1$d раз протягом %2$d дн.</item>
+        <item quantity="few">Ім’я користувача можна змінити лише %1$d рази протягом %2$d дн.</item>
+        <item quantity="many">Ім’я користувача можна змінити лише %1$d разів протягом %2$d дн.</item>
+        <item quantity="other">Ім’я користувача можна змінити лише %1$d разів протягом %2$d дн.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Повторіть спробу через %1$d день.</item>
+        <item quantity="few">Повторіть спробу через %1$d дні.</item>
+        <item quantity="many">Повторіть спробу через %1$d днів.</item>
+        <item quantity="other">Повторіть спробу через %1$d днів.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">Ім’я користувача можна змінити лише %1$d раз кожн. %2$d дн.</item>
+        <item quantity="few">Ім’я користувача можна змінити лише %1$d рази кожн. %2$d дн.</item>
+        <item quantity="many">Ім’я користувача можна змінити лише %1$d разів кожн. %2$d дн.</item>
+        <item quantity="other">Ім’я користувача можна змінити лише %1$d разів кожн. %2$d дн.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s збереження</item>
+        <item quantity="few">%1$s збереження</item>
+        <item quantity="many">%1$s збережень</item>
+        <item quantity="other">%1$s збережень</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">Завантажено %1$d відсоток</item>
+        <item quantity="few">Завантажено %1$d відсотки</item>
+        <item quantity="many">Завантажено %1$d відсотків</item>
+        <item quantity="other">Завантажено %1$d відсотка</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">Додано %1$d епізод</item>
+        <item quantity="few">Додано %1$d епізоди</item>
+        <item quantity="many">Додано %1$d епізодів</item>
+        <item quantity="other">Додано %1$d епізоду</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">Прослухано %1$d епізод</item>
+        <item quantity="few">Прослухано %1$d епізоди</item>
+        <item quantity="many">Прослухано %1$d епізодів</item>
+        <item quantity="other">Прослухано %1$d епізоду</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Зачекайте %1$d секунду, а потім надішліть запит на отримання нового коду.</item>
+        <item quantity="few">Зачекайте %1$d секунди, а потім надішліть запит на отримання нового коду.</item>
+        <item quantity="many">Зачекайте %1$d секунд, а потім надішліть запит на отримання нового коду.</item>
+        <item quantity="other">Зачекайте %1$d секунд, а потім надішліть запит на отримання нового коду.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Спробуйте знову за %1$d секунду</item>
+        <item quantity="few">Спробуйте знову за %1$d секунди</item>
+        <item quantity="many">Спробуйте знову за %1$d секунд</item>
+        <item quantity="other">Спробуйте знову за %1$d секунд</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d захід</item>
+        <item quantity="few">%1$d заходи</item>
+        <item quantity="many">%1$d заходів</item>
+        <item quantity="other">%1$d заходу</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">Показати ще %1$d спосіб оплати</item>
+        <item quantity="few">Показати ще %1$d способи оплати</item>
+        <item quantity="many">Показати ще %1$d способів оплати</item>
+        <item quantity="other">Показати ще %1$d способів оплати</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%1$s із 5 зірочок у Spotify на основі %2$s оцінки</item>
+        <item quantity="few">%1$s із 5 зірочок у Spotify на основі %2$s оцінок</item>
+        <item quantity="many">%1$s із 5 зірочок у Spotify на основі %2$s оцінок</item>
+        <item quantity="other">%1$s із 5 зірочок у Spotify на основі %2$s оцінок</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d зірочка: %2$d%%</item>
+        <item quantity="few">%1$d зірочки: %2$d%%</item>
+        <item quantity="many">%1$d зірочок: %2$d%%</item>
+        <item quantity="other">%1$d зірочок: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d слухач</item>
+        <item quantity="few">%1$d слухачі</item>
+        <item quantity="many">%1$d слухачів</item>
+        <item quantity="other">%1$d слухачів</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d слухач</item>
+        <item quantity="few">%1$d слухачі</item>
+        <item quantity="many">%1$d слухачів</item>
+        <item quantity="other">%1$d слухачів</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">Сеанс Jam користувача %1$s — слухає ще %2$d</item>
+        <item quantity="few">Сеанс Jam користувача %1$s — слухають ще %2$d</item>
+        <item quantity="many">Сеанс Jam користувача %1$s — слухають ще %2$d</item>
+        <item quantity="other">Сеанс Jam користувача %1$s — слухають ще %2$d</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s збереження</item>
+        <item quantity="few">%1$s збереження</item>
+        <item quantity="many">%1$s збережень</item>
+        <item quantity="other">%1$s збереження</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;година&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;години&lt;/b&gt;</item>
+        <item quantity="many">%1$s&lt;br/&gt;&lt;b&gt;годин&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;години&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d година до закінчення годин прослуховування</item>
+        <item quantity="few">%1$d години до закінчення годин прослуховування</item>
+        <item quantity="many">%1$d годин до закінчення годин прослуховування</item>
+        <item quantity="other">%1$d год до закінчення годин прослуховування</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d година до поновлення годин прослуховування</item>
+        <item quantity="few">%1$d години до поновлення годин прослуховування</item>
+        <item quantity="many">%1$d годин до поновлення годин прослуховування</item>
+        <item quantity="other">%1$d години до поновлення годин прослуховування</item>
+    </plurals>
+    <plurals name="insights_match_percentage_accessibility">
+        <item quantity="one">%1$d %%</item>
+        <item quantity="few">%1$d %%</item>
+        <item quantity="many">%1$d %%</item>
+        <item quantity="other">%1$d %%</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s відтворення</item>
+        <item quantity="few">%1$s відтворення</item>
+        <item quantity="many">%1$s відтворень</item>
+        <item quantity="other">%1$s відтворень</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s приєднується до вашого сеансу Jam</item>
+        <item quantity="few">Ще %2$d приєдналися до вашого сеансу Jam</item>
+        <item quantity="many">Ще %2$d приєдналися до вашого сеансу Jam</item>
+        <item quantity="other">Ще %2$d приєдналися до вашого сеансу Jam</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s папка</item>
+        <item quantity="few">%1$s папки</item>
+        <item quantity="many">%1$s папок</item>
+        <item quantity="other">%1$s папок</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s плейліст</item>
+        <item quantity="few">%1$s плейлісти</item>
+        <item quantity="many">%1$s плейлістів</item>
+        <item quantity="other">%1$s плейлістів</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s пісня</item>
+        <item quantity="few">%1$s пісні</item>
+        <item quantity="many">%1$s пісень</item>
+        <item quantity="other">%1$s пісень</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Плейліст • %1$s трек</item>
+        <item quantity="few">Плейліст • %1$s треки</item>
+        <item quantity="many">Плейліст • %1$s треків</item>
+        <item quantity="other">Плейліст • %1$s треків</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s трек</item>
+        <item quantity="few">%1$s треки</item>
+        <item quantity="many">%1$s треків</item>
+        <item quantity="other">%1$s треків</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s завантажений епізод • %2$s</item>
+        <item quantity="few">%1$s завантажених епізоди • %2$s</item>
+        <item quantity="many">%1$s завантажених епізодів • %2$s</item>
+        <item quantity="other">%1$s завантажених епізодів • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s завантажений епізод</item>
+        <item quantity="few">%1$s завантажені епізоди</item>
+        <item quantity="many">%1$s завантажених епізодів</item>
+        <item quantity="other">%1$s завантажених епізодів</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">Додано елементів: %1$d</item>
+        <item quantity="few">Додано елементів: %1$d</item>
+        <item quantity="many">Додано елементів: %1$d</item>
+        <item quantity="other">Додано елементів: %1$d</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">Відтворено елементів: %1$d</item>
+        <item quantity="few">Відтворено елементів: %1$d</item>
+        <item quantity="many">Відтворено елементів: %1$d</item>
+        <item quantity="other">Відтворено елементів: %1$d</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Користувач %1$s надсилає запит на участь у сеансі Jam разом із вами, оскільки ви ділитеся прослуханим вами з користувачем %1$s.</item>
+        <item quantity="few">%1$s і ще %2$d користувачі надсилають запит на участь у сеансі Jam разом із вами, оскільки ви ділитеся з ними прослуханим вами.</item>
+        <item quantity="many">%1$s і ще %2$d користувачів надсилають запит на участь у сеансі Jam разом із вами, оскільки ви ділитеся з ними прослуханим вами.</item>
+        <item quantity="other">%1$s і ще %2$d користувачів надсилають запит на участь у сеансі Jam разом із вами, оскільки ви ділитеся з ними прослуханим вами.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Ви отримали від користувача %1$s запит на приєднання до вашого сеансу Jam, оскільки ввімкнули автоматичні запрошення до сеансів Jam, а також:</item>
+        <item quantity="few">Ви отримали від користувача %1$s і ще кількох осіб (%2$d) запит на приєднання до вашого сеансу Jam, оскільки ввімкнули автоматичні запрошення до сеансів Jam, а також:</item>
+        <item quantity="many">Ви отримали від користувача %1$s і ще кількох осіб (%2$d) запит на приєднання до вашого сеансу Jam, оскільки ввімкнули автоматичні запрошення до сеансів Jam, а також:</item>
+        <item quantity="other">Ви отримали від користувача %1$s і ще кількох осіб (%2$d) запит на приєднання до вашого сеансу Jam, оскільки ввімкнули автоматичні запрошення до сеансів Jam, а також:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+ ще %1$d користувач</item>
+        <item quantity="few">+ ще %1$d користувачі</item>
+        <item quantity="many">+ ще %1$d користувачів</item>
+        <item quantity="other">+ ще %1$d користувачів</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісні</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">Вибрано %1$d рядок</item>
+        <item quantity="few">Вибрано %1$d рядки</item>
+        <item quantity="many">Вибрано %1$d рядків</item>
+        <item quantity="other">Вибрано %1$d рядків</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d епізод</item>
+        <item quantity="few">%1$d епізоди</item>
+        <item quantity="many">%1$d епізодів</item>
+        <item quantity="other">%1$d епізоду</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d елемент</item>
+        <item quantity="few">%1$d елементи</item>
+        <item quantity="many">%1$d елементів</item>
+        <item quantity="other">%1$d елементів</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d користувач</item>
+        <item quantity="few">%1$d користувачі</item>
+        <item quantity="many">%1$d користувачів</item>
+        <item quantity="other">%1$d користувачів</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d слухач</item>
+        <item quantity="few">%1$d слухачі</item>
+        <item quantity="many">%1$d слухачів</item>
+        <item quantity="other">%1$d слухачів</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Ви вичерпали весь ліміт часу на прослуховування аудіокниг у межах вашої місячної підписки (%1$d година).</item>
+        <item quantity="few">Ви вичерпали весь ліміт часу на прослуховування аудіокниг у межах вашої місячної підписки (%1$d годин).</item>
+        <item quantity="many">Ви вичерпали весь ліміт часу на прослуховування аудіокниг у межах вашої місячної підписки (%1$d годин).</item>
+        <item quantity="other">Ви вичерпали весь ліміт часу на прослуховування аудіокниг у межах вашої місячної підписки (%1$d години).</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Слухайте аудіокниги з нашого каталогу для підписників протягом %1$d години в межах вашої місячної підписки.</item>
+        <item quantity="few">Слухайте аудіокниги з нашого каталогу для підписників протягом %1$d годин у межах вашої місячної підписки.</item>
+        <item quantity="many">Слухайте аудіокниги з нашого каталогу для підписників протягом %1$d годин у межах вашої місячної підписки.</item>
+        <item quantity="other">Слухайте аудіокниги з нашого каталогу для підписників протягом %1$d години в межах вашої місячної підписки.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d година часу прослуховування</item>
+        <item quantity="few">%1$d години часу прослуховування</item>
+        <item quantity="many">%1$d годин часу прослуховування</item>
+        <item quantity="other">%1$d год часу прослуховування</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Ведучі: %1$s%2$s + %3$d</item>
+        <item quantity="few">Ведучі: %1$s%2$s + %3$d</item>
+        <item quantity="many">Ведучі: %1$s%2$s + %3$d</item>
+        <item quantity="other">Ведучі: %1$s%2$s + %3$d</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дні</item>
+        <item quantity="many">%1$d днів</item>
+        <item quantity="other">%1$d дн.</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d год</item>
+        <item quantity="many">%1$d год</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s с</item>
+        <item quantity="few">%1$s с</item>
+        <item quantity="many">%1$s с</item>
+        <item quantity="other">%1$s с</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d голос</item>
+        <item quantity="few">%1$d голоси</item>
+        <item quantity="many">%1$d голосів</item>
+        <item quantity="other">%1$d голосів</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d учасник створення</item>
+        <item quantity="few">%1$d учасники створення</item>
+        <item quantity="many">%1$d учасників створення</item>
+        <item quantity="other">%1$d учасників створення</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d семпл</item>
+        <item quantity="few">%1$d семпли</item>
+        <item quantity="many">%1$d семплів</item>
+        <item quantity="other">%1$d семплів</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">Вибрано %1$d рядок</item>
+        <item quantity="few">Вибрано %1$d рядки</item>
+        <item quantity="many">Вибрано %1$d рядків</item>
+        <item quantity="other">Вибрано %1$d рядків</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">%1$d день тому</item>
+        <item quantity="few">%1$d дні тому</item>
+        <item quantity="many">%1$d днів тому</item>
+        <item quantity="other">%1$d дн. тому</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">%1$d місяць тому</item>
+        <item quantity="few">%1$d місяці тому</item>
+        <item quantity="many">%1$d місяців тому</item>
+        <item quantity="other">%1$d міс. тому</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">%1$d тиждень тому</item>
+        <item quantity="few">%1$d тижні тому</item>
+        <item quantity="many">%1$d тижнів тому</item>
+        <item quantity="other">%1$d тиж. тому</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">%1$d рік тому</item>
+        <item quantity="few">%1$d роки тому</item>
+        <item quantity="many">%1$d років тому</item>
+        <item quantity="other">%1$d р. тому</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Завантажити %1$d фотографію?</item>
+        <item quantity="few">Завантажити %1$d фотографії?</item>
+        <item quantity="many">Завантажити %1$d фотографій?</item>
+        <item quantity="other">Завантажити %1$d фотографій?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Завантажити %1$d елемент?</item>
+        <item quantity="few">Завантажити %1$d елементи?</item>
+        <item quantity="many">Завантажити %1$d елементів?</item>
+        <item quantity="other">Завантажити %1$d елементів?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Завантажити %1$d відео?</item>
+        <item quantity="few">Завантажити %1$d відео?</item>
+        <item quantity="many">Завантажити %1$d відео?</item>
+        <item quantity="other">Завантажити %1$d відео?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Одночасно можна надіслати %1$d відео.</item>
+        <item quantity="few">Одночасно можна надіслати до %1$d відео.</item>
+        <item quantity="many">Одночасно можна надіслати до %1$d відео.</item>
+        <item quantity="other">Одночасно можна надіслати до %1$d відео.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d фотографія</item>
+        <item quantity="few">%1$d фотографії</item>
+        <item quantity="many">%1$d фотографій</item>
+        <item quantity="other">%1$d фотографій</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d елемент</item>
+        <item quantity="few">%1$d елементи</item>
+        <item quantity="many">%1$d елементів</item>
+        <item quantity="other">%1$d елементів</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d відео</item>
+        <item quantity="few">%1$d відео</item>
+        <item quantity="many">%1$d відео</item>
+        <item quantity="other">%1$d відео</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;хвилина&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;хвилини&lt;/b&gt;</item>
+        <item quantity="many">%1$s&lt;br/&gt;&lt;b&gt;хвилин&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;хвилини&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d нове сповіщення</item>
+        <item quantity="few">%d нові сповіщення</item>
+        <item quantity="many">%d нових сповіщень</item>
+        <item quantity="other">%d нового сповіщення</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">Лишився %1$d символ, ліміту майже досягнуто</item>
+        <item quantity="few">Лишилося %1$d символи, ліміту майже досягнуто</item>
+        <item quantity="many">Лишилося %1$d символів, ліміту майже досягнуто</item>
+        <item quantity="other">Лишилося %1$d символів, ліміту майже досягнуто</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">Лишився %1$d символ</item>
+        <item quantity="few">Лишилося %1$d символи</item>
+        <item quantity="many">Лишилося %1$d символів</item>
+        <item quantity="other">Лишилося %1$d символів</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%1$,d з %2$,d (виконано %3$,d %%)</item>
+        <item quantity="few">%1$,d з %2$,d (виконано %3$,d %%)</item>
+        <item quantity="many">%1$,d з %2$,d (виконано %3$,d %%)</item>
+        <item quantity="other">%1$,d з %2$,d (виконано %3$,d %%)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d з %2$,d(%3$,d %%)</item>
+        <item quantity="few">%1$,d з %2$,d(%3$,d %%)</item>
+        <item quantity="many">%1$,d з %2$,d(%3$,d %%)</item>
+        <item quantity="other">%1$,d з %2$,d(%3$,d %%)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Прискорено до %1$d удару на хвилину</item>
+        <item quantity="few">Прискорено до %1$d ударів на хвилину</item>
+        <item quantity="many">Прискорено до %1$d ударів на хвилину</item>
+        <item quantity="other">Прискорено до %1$d уд. на хвилину</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Уповільнено до %1$d удару на хвилину</item>
+        <item quantity="few">Уповільнено до %1$d ударів на хвилину</item>
+        <item quantity="many">Уповільнено до %1$d ударів на хвилину</item>
+        <item quantity="other">Уповільнено до %1$d уд. на хвилину</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d год</item>
+        <item quantity="many">%1$d год</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">Доступно %1$s завантаження</item>
+        <item quantity="few">Доступно %1$s завантаження</item>
+        <item quantity="many">Доступно %1$s завантажень</item>
+        <item quantity="other">Доступно %1$s завантаження</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">Вибрано %1$d елемент</item>
+        <item quantity="few">Вибрано %1$d елементи</item>
+        <item quantity="many">Вибрано %1$d елементів</item>
+        <item quantity="other">Вибрано %1$d елементів</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s книга</item>
+        <item quantity="few">%1$s книги</item>
+        <item quantity="many">%1$s книг</item>
+        <item quantity="other">%1$s книг</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s епізод</item>
+        <item quantity="few">%1$s епізоди</item>
+        <item quantity="many">%1$s епізодів</item>
+        <item quantity="other">%1$s епізоду</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s елемент</item>
+        <item quantity="few">%1$s елементи</item>
+        <item quantity="many">%1$s елементів</item>
+        <item quantity="other">%1$s елементів</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s захід</item>
+        <item quantity="few">%1$s заходи</item>
+        <item quantity="many">%1$s заходів</item>
+        <item quantity="other">%1$s заходу</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d прослуховування</item>
+        <item quantity="few">%1$,d прослуховування</item>
+        <item quantity="many">%1$,d прослуховувань</item>
+        <item quantity="other">%1$,d прослуховувань</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d пісня</item>
+        <item quantity="few">%1$,d пісні</item>
+        <item quantity="many">%1$,d пісень</item>
+        <item quantity="other">%1$,d пісень</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Це новий альбом, тож протягом %1$d дня ви можете слухати його в будь-якому порядку. А з Premium ваша свобода не має меж.</item>
+        <item quantity="few">Це новий альбом, тож протягом %1$d днів ви можете слухати його в будь-якому порядку. А з Premium ваша свобода не має меж.</item>
+        <item quantity="many">Це новий альбом, тож протягом %1$d днів ви можете слухати його в будь-якому порядку. А з Premium ваша свобода не має меж.</item>
+        <item quantity="other">Це новий альбом, тож протягом %1$d дн. ви можете слухати його в будь-якому порядку. А з Premium ваша свобода не має меж.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Слухайте в будь-якому порядку ще %1$d день</item>
+        <item quantity="few">Слухайте в будь-якому порядку ще %1$d дні</item>
+        <item quantity="many">Слухайте в будь-якому порядку ще %1$d днів</item>
+        <item quantity="other">Слухайте в будь-якому порядку ще %1$d дн.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Слухайте без Wi-Fi і економте мобільні дані. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Слухайте без Wi-Fi і економте мобільні дані. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Слухайте без Wi-Fi і економте мобільні дані. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Слухайте без Wi-Fi і економте мобільні дані. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d дн.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Вибирайте пісні й слухайте їх будь-коли в будь-якому порядку. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Вибирайте пісні й слухайте їх будь-коли в будь-якому порядку. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Вибирайте пісні й слухайте їх будь-коли в будь-якому порядку. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Вибирайте пісні й слухайте їх будь-коли в будь-якому порядку. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Змінюйте порядок черги й не тільки. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Змінюйте порядок черги й не тільки. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Змінюйте порядок черги й не тільки. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Змінюйте порядок черги й не тільки. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Відтворюйте треки в будь-якому порядку або перемішуйте їх. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Відтворюйте треки в будь-якому порядку або перемішуйте їх. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Відтворюйте треки в будь-якому порядку або перемішуйте їх. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Відтворюйте треки в будь-якому порядку або перемішуйте їх. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Спробуйте необмежену кількість пропусків і інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Спробуйте необмежену кількість пропусків і інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Спробуйте необмежену кількість пропусків і інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Спробуйте необмежену кількість пропусків і інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом 24 годин.</item>
+        <item quantity="few">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="many">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+        <item quantity="other">Відчуйте повний контроль над музикою. Спробуйте цю та інші переваги Premium безкоштовно протягом %1$d днів.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">Насолоджуйтеся деякими перевагами Premium протягом наступних 24 годин.</item>
+        <item quantity="few">Насолоджуйтеся деякими перевагами Premium протягом наступних %1$d днів.</item>
+        <item quantity="many">Насолоджуйтеся деякими перевагами Premium протягом наступних %1$d днів.</item>
+        <item quantity="other">Насолоджуйтеся деякими перевагами Premium протягом наступних %1$d днів.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Ми надіслали %1$d-значний код на номер %2$s.</item>
+        <item quantity="few">Ми надіслали %1$d-значний код на номер %2$s.</item>
+        <item quantity="many">Ми надіслали %1$d-значний код на номер %2$s.</item>
+        <item quantity="other">Ми надіслали %1$d-значний код на номер %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Оскільки вам не виповнилося %1$d року, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="few">Оскільки вам не виповнилося %1$d років, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="many">Оскільки вам не виповнилося %1$d років, ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+        <item quantity="other">Оскільки вам не виповнилося %1$d р., ви не маєте права надавати згоду батьків.\n\nКрім того, певний контент і функції ще не доступні з огляду на ваш вік, тому ми їх приховали.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Неправильний PIN-код. Спробуйте знову за %1$d хвилину.</item>
+        <item quantity="few">Неправильний PIN-код. Спробуйте знову за %1$d хвилини.</item>
+        <item quantity="many">Неправильний PIN-код. Спробуйте знову за %1$d хвилин.</item>
+        <item quantity="other">Неправильний PIN-код. Спробуйте знову за %1$d хвилини.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Неправильний PIN-код. Спробуйте знову за %1$d секунду.</item>
+        <item quantity="few">Неправильний PIN-код. Спробуйте знову за %1$d секунди.</item>
+        <item quantity="many">Неправильний PIN-код. Спробуйте знову за %1$d секунд.</item>
+        <item quantity="other">Неправильний PIN-код. Спробуйте знову за %1$d секунди.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d Premium-акаунт</item>
+        <item quantity="few">%1$d Premium-акаунти</item>
+        <item quantity="many">%1$d Premium-акаунтів</item>
+        <item quantity="other">Premium-акаунтів: %1$d</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="few">%1$d секунди</item>
+        <item quantity="many">%1$d секунд</item>
+        <item quantity="other">%1$d с</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s та ще %2$d співавтор</item>
+        <item quantity="few">%1$s та ще %2$d співавтори</item>
+        <item quantity="many">%1$s та ще %2$d співавторів</item>
+        <item quantity="other">%1$s та ще %2$d співавторів</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s та ще %2$d співавтор · Мікс</item>
+        <item quantity="few">%1$s та ще %2$d співавтори · Мікс</item>
+        <item quantity="many">%1$s та ще %2$d співавторів · Мікс</item>
+        <item quantity="other">%1$s та ще %2$d співавторів · Мікс</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s та ще %2$d співавтор</item>
+        <item quantity="few">%1$s та ще %2$d співавтори</item>
+        <item quantity="many">%1$s та ще %2$d співавторів</item>
+        <item quantity="other">%1$s та ще %2$d співавторів</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">Мікс від: %1$s і ще %2$d співавтор</item>
+        <item quantity="few">Мікс від: %1$s і ще %2$d співавтори</item>
+        <item quantity="many">Мікс від: %1$s і ще %2$d співавторів</item>
+        <item quantity="other">Мікс від: %1$s і ще %2$d співавторів</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Автори: %1$s і %2$d співавтор</item>
+        <item quantity="few">Автори: %1$s і %2$d співавтори</item>
+        <item quantity="many">Автори: %1$s і %2$d співавторів</item>
+        <item quantity="other">Автори: %1$s і %2$d співавтора</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Автори: %1$s і %2$d співавтор</item>
+        <item quantity="few">Автори: %1$s і %2$d співавтори</item>
+        <item quantity="many">Автори: %1$s і %2$d співавторів</item>
+        <item quantity="other">Автори: %1$s і %2$d співавтора</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d епізод</item>
+        <item quantity="few">%1$d епізоди</item>
+        <item quantity="many">%1$d епізодів</item>
+        <item quantity="other">%1$d епізодів</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d ЕПІЗОД</item>
+        <item quantity="few">%1$,d ЕПІЗОДИ</item>
+        <item quantity="many">%1$,d ЕПІЗОДІВ</item>
+        <item quantity="other">%1$,d ЕПІЗОДІВ</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d ПІСНЯ</item>
+        <item quantity="few">%1$,d ПІСНІ</item>
+        <item quantity="many">%1$,d ПІСЕНЬ</item>
+        <item quantity="other">%1$,d ПІСЕНЬ</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дні</item>
+        <item quantity="many">%1$d днів</item>
+        <item quantity="other">%1$d днів</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">Залишилася %1$d година</item>
+        <item quantity="few">Залишилися %1$d години</item>
+        <item quantity="many">Залишилося %1$d годин</item>
+        <item quantity="other">Залишилося %1$d годин</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">Залишилася %1$d хвилина</item>
+        <item quantity="few">Залишилися %1$d хвилини</item>
+        <item quantity="many">Залишилося %1$d хвилин</item>
+        <item quantity="other">Залишилося %1$d хвилин</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d голос • %2$s</item>
+        <item quantity="few">%1$d голоси • %2$s</item>
+        <item quantity="many">%1$d голосів • %2$s</item>
+        <item quantity="other">%1$d голосів • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d день Premium-підписки</item>
+        <item quantity="few">%1$d дні Premium-підписки</item>
+        <item quantity="many">%1$d днів Premium-підписки</item>
+        <item quantity="other">%1$d днів Premium-підписки</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d місяць Premium-підписки</item>
+        <item quantity="few">%1$d місяці Premium-підписки</item>
+        <item quantity="many">%1$d місяців Premium-підписки</item>
+        <item quantity="other">%1$d місяців Premium-підписки</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d тиждень Premium-підписки</item>
+        <item quantity="few">%1$d тижні Premium-підписки</item>
+        <item quantity="many">%1$d тижнів Premium-підписки</item>
+        <item quantity="other">%1$d тижнів Premium-підписки</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d рік Premium-підписки</item>
+        <item quantity="few">%1$d роки Premium-підписки</item>
+        <item quantity="many">%1$d років Premium-підписки</item>
+        <item quantity="other">%1$d років Premium-підписки</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s збережено наперед</item>
+        <item quantity="few">%1$s збережено наперед</item>
+        <item quantity="many">%1$s збережено наперед</item>
+        <item quantity="other">%1$s збережено наперед</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d підписник</item>
+        <item quantity="few">%1$d підписники</item>
+        <item quantity="many">%1$d підписників</item>
+        <item quantity="other">%1$d підписників</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d підписка</item>
+        <item quantity="few">%1$d підписки</item>
+        <item quantity="many">%1$d підписок</item>
+        <item quantity="other">%1$d підписки</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d друг</item>
+        <item quantity="few">%1$d друга</item>
+        <item quantity="many">%1$d друзів</item>
+        <item quantity="other">%1$d друзів</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d підписник</item>
+        <item quantity="few">%1$,d підписники</item>
+        <item quantity="many">%1$,d підписників</item>
+        <item quantity="other">%1$,d підписників</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d збереження</item>
+        <item quantity="few">%1$,d збереження</item>
+        <item quantity="many">%1$,d збережень</item>
+        <item quantity="other">%1$,d збережень</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d збереження</item>
+        <item quantity="few">%1$,d збереження</item>
+        <item quantity="many">%1$,d збережень</item>
+        <item quantity="other">%1$,d збереження</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d підписник</item>
+        <item quantity="few">%1$,d підписники</item>
+        <item quantity="many">%1$,d підписників</item>
+        <item quantity="other">%1$,d підписника</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">Додано %1$d трек</item>
+        <item quantity="few">Додано %1$d треки</item>
+        <item quantity="many">Додано %1$d треків</item>
+        <item quantity="other">Додано %1$d треків</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">Вилучено %1$d трек</item>
+        <item quantity="few">Вилучено %1$d треки</item>
+        <item quantity="many">Вилучено %1$d треків</item>
+        <item quantity="other">Вилучено %1$d треків</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d реакція</item>
+        <item quantity="few">%1$d реакції</item>
+        <item quantity="many">%1$d реакцій</item>
+        <item quantity="other">%1$d реакцій</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Переказ змісту з’явиться, щойно ви прослухаєте першу %1$d хвилину цієї аудіокниги.</item>
+        <item quantity="few">Переказ змісту з’явиться, щойно ви прослухаєте перші %1$d хвилини цієї аудіокниги.</item>
+        <item quantity="many">Переказ змісту з’явиться, щойно ви прослухаєте перші %1$d хвилин цієї аудіокниги.</item>
+        <item quantity="other">Переказ змісту з’явиться, щойно ви прослухаєте перші %1$d хв цієї аудіокниги.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d слухач</item>
+        <item quantity="few">%1$d слухачі</item>
+        <item quantity="many">%1$d слухачів</item>
+        <item quantity="other">%1$d слухачів</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">Відтворили: %1$d</item>
+        <item quantity="few">Відтворили: %1$d</item>
+        <item quantity="many">Відтворили: %1$d</item>
+        <item quantity="other">Відтворили: %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">Зберегли: %1$d</item>
+        <item quantity="few">Зберегли: %1$d</item>
+        <item quantity="many">Зберегли: %1$d</item>
+        <item quantity="other">Зберегли: %1$d</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">Прочитали: %1$d</item>
+        <item quantity="few">Прочитали: %1$d</item>
+        <item quantity="many">Прочитали: %1$d</item>
+        <item quantity="other">Прочитали: %1$d</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Ранній доступ завдяки підписці Premium: через %1$d день</item>
+        <item quantity="few">Ранній доступ завдяки підписці Premium: через %1$d дні</item>
+        <item quantity="many">Ранній доступ завдяки підписці Premium: через %1$d днів</item>
+        <item quantity="other">Ранній доступ завдяки підписці Premium: через %1$d днів</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">Реліз за %1$d день</item>
+        <item quantity="few">Реліз за %1$d дні</item>
+        <item quantity="many">Реліз за %1$d днів</item>
+        <item quantity="other">Реліз за %1$d днів</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d запис</item>
+        <item quantity="few">%1$d записи</item>
+        <item quantity="many">%1$d записів</item>
+        <item quantity="other">%1$d записів</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Остання активність: %1$d день тому</item>
+        <item quantity="few">Остання активність: %1$d дні тому</item>
+        <item quantity="many">Остання активність: %1$d днів тому</item>
+        <item quantity="other">Востаннє: %1$d дн. тому</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Ви можете завантажувати вміст щонайбільше на %1$d пристрій.</item>
+        <item quantity="few">Ви можете завантажувати вміст щонайбільше на %1$d пристрої.</item>
+        <item quantity="many">Ви можете завантажувати вміст щонайбільше на %1$d пристроїв.</item>
+        <item quantity="other">Ви можете завантажувати вміст щонайбільше на %1$d пристроїв.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Плейліст • %1$d пісня</item>
+        <item quantity="few">Плейліст • %1$d пісні</item>
+        <item quantity="many">Плейліст • %1$d пісень</item>
+        <item quantity="other">Плейліст • %1$d пісень</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$s відповідь. Двічі торкніться, щоб показати</item>
+        <item quantity="few">%1$s відповіді. Двічі торкніться, щоб показати</item>
+        <item quantity="many">%1$s відповідей. Двічі торкніться, щоб показати</item>
+        <item quantity="other">Відповідей: %1$s. Двічі торкніться, щоб показати</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s збереження</item>
+        <item quantity="few">%1$s збереження</item>
+        <item quantity="many">%1$s збережень</item>
+        <item quantity="other">%1$s збереження</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;секунда&lt;/b&gt;</item>
+        <item quantity="few">%1$s&lt;br/&gt;&lt;b&gt;секунди&lt;/b&gt;</item>
+        <item quantity="many">%1$s&lt;br/&gt;&lt;b&gt;секунд&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;секунди&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">Вибрано %1$d рядок</item>
+        <item quantity="few">Вибрано %1$d рядки</item>
+        <item quantity="many">Вибрано %1$d рядків</item>
+        <item quantity="other">Вибрано %1$d рядка</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d аудіокнига</item>
+        <item quantity="few">%1$d аудіокниги</item>
+        <item quantity="many">%1$d аудіокниг</item>
+        <item quantity="other">%1$d аудіокниг</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d елемент</item>
+        <item quantity="few">%1$d елементи</item>
+        <item quantity="many">%1$d елементів</item>
+        <item quantity="other">%1$d елементів</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">Має знову з’явитися в мережі через %1$,d день</item>
+        <item quantity="few">Має знову з’явитися в мережі через %1$,d дні</item>
+        <item quantity="many">Має знову з’явитися в мережі через %1$,d днів</item>
+        <item quantity="other">Має знову з’явитися в мережі через %1$,d днів</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Лишився %1$d день</item>
+        <item quantity="few">Лишилося %1$d дні</item>
+        <item quantity="many">Лишилося %1$d днів</item>
+        <item quantity="other">Лишилося %1$d днів</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">Поділився %1$s друг</item>
+        <item quantity="few">Поділилися %1$s друга</item>
+        <item quantity="many">Поділилися %1$s друзів</item>
+        <item quantity="other">Поділилися %1$s друзів</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d поширення</item>
+        <item quantity="few">%1$d поширення</item>
+        <item quantity="many">%1$d поширень</item>
+        <item quantity="other">%1$d поширень</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">За датою народження вам зараз %1$d рік.</item>
+        <item quantity="few">За датою народження вам зараз %1$d роки.</item>
+        <item quantity="many">За датою народження вам зараз %1$d років.</item>
+        <item quantity="other">За датою народження вам зараз %1$d р.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Схоже, вам %1$d рік?</item>
+        <item quantity="few">Схоже, вам %1$d роки?</item>
+        <item quantity="many">Схоже, вам %1$d років?</item>
+        <item quantity="other">Схоже, вам %1$d р.?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">%1$d день тому</item>
+        <item quantity="few">%1$d дні тому</item>
+        <item quantity="many">%1$d днів тому</item>
+        <item quantity="other">%1$d дн. тому</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">%1$d годину тому</item>
+        <item quantity="few">%1$d години тому</item>
+        <item quantity="many">%1$d годин тому</item>
+        <item quantity="other">%1$d год тому</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">%1$d хвилину тому</item>
+        <item quantity="few">%1$d хвилини тому</item>
+        <item quantity="many">%1$d хвилин тому</item>
+        <item quantity="other">%1$d хв тому</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">%1$d місяць тому</item>
+        <item quantity="few">%1$d місяці тому</item>
+        <item quantity="many">%1$d місяців тому</item>
+        <item quantity="other">%1$d міс. тому</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">%1$d тиждень тому</item>
+        <item quantity="few">%1$d тижні тому</item>
+        <item quantity="many">%1$d тижнів тому</item>
+        <item quantity="other">%1$d тиж. тому</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">%1$d рік тому</item>
+        <item quantity="few">%1$d роки тому</item>
+        <item quantity="many">%1$d років тому</item>
+        <item quantity="other">%1$d р. тому</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s спільна пісня</item>
+        <item quantity="few">%1$s спільні пісні</item>
+        <item quantity="many">%1$s спільних пісень</item>
+        <item quantity="other">%1$s спільних пісень</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">Записано &lt;b&gt;%1$s пісню&lt;/b&gt;</item>
+        <item quantity="few">Записано &lt;b&gt;%1$s пісні&lt;/b&gt;</item>
+        <item quantity="many">Записано &lt;b&gt;%1$s пісень&lt;/b&gt;</item>
+        <item quantity="other">Записано &lt;b&gt;%1$s пісень&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Топпісня(-і): &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="few">Топпісні: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="many">Топпісні: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Топпісні: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Топпісня(-і) з виконавцем &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="few">Топпісні з виконавцем &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="many">Топпісні з виконавцем &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Топпісні з виконавцем &lt;b&gt;%1$s: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">Спільна робота з &lt;b&gt;%1$s виконавцем(-ями)&lt;/b&gt;</item>
+        <item quantity="few">Спільна робота з &lt;b&gt;%1$s виконавцями&lt;/b&gt;</item>
+        <item quantity="many">Спільна робота з &lt;b&gt;%1$s виконавцями&lt;/b&gt;</item>
+        <item quantity="other">Спільна робота з &lt;b&gt;%1$s виконавцями&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s співтворець</item>
+        <item quantity="few">%1$s співтворці</item>
+        <item quantity="many">%1$s співтворців</item>
+        <item quantity="other">%1$s співтворців</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s пісня</item>
+        <item quantity="few">%1$s пісні</item>
+        <item quantity="many">%1$s пісень</item>
+        <item quantity="other">%1$s пісень</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s пісня</item>
+        <item quantity="few">%1$s пісні</item>
+        <item quantity="many">%1$s пісень</item>
+        <item quantity="other">%1$s пісень</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s співтворець</item>
+        <item quantity="few">%1$s співтворці</item>
+        <item quantity="many">%1$s співтворців</item>
+        <item quantity="other">%1$s співтворців</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">Переглянути %1$s спільну пісню</item>
+        <item quantity="few">Переглянути %1$s спільні пісні</item>
+        <item quantity="many">Переглянути %1$s спільних пісень</item>
+        <item quantity="other">Переглянути %1$s спільних пісень</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s і ще %2$d</item>
+        <item quantity="few">%1$s і ще %2$d</item>
+        <item quantity="many">%1$s і ще %2$d</item>
+        <item quantity="other">%1$s і ще %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d учасник створення</item>
+        <item quantity="few">%1$d учасники створення</item>
+        <item quantity="many">%1$d учасників створення</item>
+        <item quantity="other">%1$d учасників створення</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d семпл</item>
+        <item quantity="few">%1$d семпли</item>
+        <item quantity="many">%1$d семплів</item>
+        <item quantity="other">%1$d семплів</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s відтворень</item>
+        <item quantity="few">%1$s відтворень</item>
+        <item quantity="many">%1$s відтворень</item>
+        <item quantity="other">%1$s відтворень</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="few">%1$d секунди</item>
+        <item quantity="many">%1$d секунд</item>
+        <item quantity="other">%1$d с</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Ролі: %1$s</item>
+        <item quantity="few">Ролі: %1$s</item>
+        <item quantity="many">Ролі: %1$s</item>
+        <item quantity="other">Ролі: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d нова версія</item>
+        <item quantity="few">%1$,d нові версії</item>
+        <item quantity="many">%1$,d нових версій</item>
+        <item quantity="other">%1$,d нових версій</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">Додано %1$d пісню</item>
+        <item quantity="few">Додано %1$d пісні</item>
+        <item quantity="many">Додано %1$d пісень</item>
+        <item quantity="other">Додано %1$d пісні</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">Відтворено пісень: %1$d</item>
+        <item quantity="few">Відтворено пісень: %1$d</item>
+        <item quantity="many">Відтворено пісень: %1$d</item>
+        <item quantity="other">Відтворено пісень: %1$d</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="few">%1$d BPM</item>
+        <item quantity="many">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Прискорено до %1$d удару на хвилину</item>
+        <item quantity="few">Прискорено до %1$d ударів на хвилину</item>
+        <item quantity="many">Прискорено до %1$d ударів на хвилину</item>
+        <item quantity="other">Прискорено до %1$d уд. на хвилину</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Уповільнено до %1$d удару на хвилину</item>
+        <item quantity="few">Уповільнено до %1$d ударів на хвилину</item>
+        <item quantity="many">Уповільнено до %1$d ударів на хвилину</item>
+        <item quantity="other">Уповільнено до %1$d уд. на хвилину</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d BPM</item>
+        <item quantity="few">%1$d BPM</item>
+        <item quantity="many">%1$d BPM</item>
+        <item quantity="other">%1$d BPM</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">Зараз слухає %1$d друг</item>
+        <item quantity="few">Зараз слухають %1$d друга</item>
+        <item quantity="many">Зараз слухають %1$d друзів</item>
+        <item quantity="other">Зараз слухають %1$d друзів</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d елемент</item>
+        <item quantity="few">%1$d елементи</item>
+        <item quantity="many">%1$d елементів</item>
+        <item quantity="other">%1$d елементів</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">&quot;%1$s&quot;, %2$s, вибрано %3$d речення</item>
+        <item quantity="few">&quot;%1$s&quot;, %2$s, вибрано %3$d речення</item>
+        <item quantity="many">&quot;%1$s&quot;, %2$s, вибрано %3$d речень</item>
+        <item quantity="other">&quot;%1$s&quot;, %2$s, вибрано %3$d речень</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d година</item>
+        <item quantity="few">%1$d години</item>
+        <item quantity="many">%1$d годин</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d год %2$d хв</item>
+        <item quantity="few">%1$d год %2$d хв</item>
+        <item quantity="many">%1$d год %2$d хв</item>
+        <item quantity="other">%1$d год %2$d хв</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="few">%1$d секунди</item>
+        <item quantity="many">%1$d секунд</item>
+        <item quantity="other">%1$d с</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">Залишилася %1$d година</item>
+        <item quantity="few">Залишилися %1$d години</item>
+        <item quantity="many">Залишилося %1$d годин</item>
+        <item quantity="other">Залишилося %1$d годин</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">Залишилося: %1$d год %2$d хв</item>
+        <item quantity="few">Залишилося: %1$d год %2$d хв</item>
+        <item quantity="many">Залишилося: %1$d год %2$d хв</item>
+        <item quantity="other">Залишилося: %1$d год %2$d хв</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s хоче приєднатися до сеансу Jam разом із вами!</item>
+        <item quantity="few">%1$s і ще %2$d особи хочуть приєднатися до вашого сеансу Jam!</item>
+        <item quantity="many">%1$s і ще %2$d осіб хочуть приєднатися до вашого сеансу Jam!</item>
+        <item quantity="other">%1$s і ще %2$d осіб хочуть приєднатися до вашого сеансу Jam!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s хоче приєднатися до вашого сеансу Jam!</item>
+        <item quantity="few">%1$s і ще %2$d особи хочуть приєднатися до вашого сеансу Jam!</item>
+        <item quantity="many">%1$s і ще %2$d осіб хочуть приєднатися до вашого сеансу Jam!</item>
+        <item quantity="other">%1$s і ще %2$d осіб хочуть приєднатися до вашого сеансу Jam!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">Прослухано %1$s/%2$d години</item>
+        <item quantity="few">Прослухано %1$s/%2$d годин</item>
+        <item quantity="many">Прослухано %1$s/%2$d годин</item>
+        <item quantity="other">Прослухано %1$s/%2$d години</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">Реліз за %1$d дн.</item>
+        <item quantity="few">Реліз за %1$d дн.</item>
+        <item quantity="many">Реліз за %1$d дн.</item>
+        <item quantity="other">Реліз за %1$d дн.</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Ранній доступ завдяки підписці Premium: через %1$d день</item>
+        <item quantity="few">Ранній доступ завдяки підписці Premium: через %1$d дні</item>
+        <item quantity="many">Ранній доступ завдяки підписці Premium: через %1$d днів</item>
+        <item quantity="other">Ранній доступ завдяки підписці Premium: через %1$d днів</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d хв</item>
+        <item quantity="few">%1$d хв</item>
+        <item quantity="many">%1$d хв</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Увімкнено для %1$s шоу</item>
+        <item quantity="few">Увімкнено для %1$s шоу</item>
+        <item quantity="many">Увімкнено для %1$s шоу</item>
+        <item quantity="other">Увімкнено для %1$s шоу</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d пісня</item>
+        <item quantity="few">%1$d пісні</item>
+        <item quantity="many">%1$d пісень</item>
+        <item quantity="other">%1$d пісень</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%1$d з %2$d пісні</item>
+        <item quantity="few">%1$d з %2$d пісень</item>
+        <item quantity="many">%1$d з %2$d пісень</item>
+        <item quantity="other">%1$d з %2$d пісень</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Виконується: виконано %1$d відсоток</item>
+        <item quantity="few">Виконується: виконано %1$d відсотки</item>
+        <item quantity="many">Виконується: виконано %1$d відсотків</item>
+        <item quantity="other">Виконується: виконано %1$d відсотка</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Одночасно можна закріпити до %1$d елемента.</item>
+        <item quantity="few">Одночасно можна закріпити до %1$d елементів.</item>
+        <item quantity="many">Одночасно можна закріпити до %1$d елементів.</item>
+        <item quantity="other">Одночасно можна закріпити до %1$d елемента.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Одночасно можна закріпити до %1$d елемента.</item>
+        <item quantity="few">Одночасно можна закріпити до %1$d елементів.</item>
+        <item quantity="many">Одночасно можна закріпити до %1$d елементів.</item>
+        <item quantity="other">Одночасно можна закріпити до %1$d елемента.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Раніше прослухано, виконується: виконано %1$d відсоток</item>
+        <item quantity="few">Раніше прослухано, виконується: виконано %1$d відсотки</item>
+        <item quantity="many">Раніше прослухано, виконується: виконано %1$d відсотків</item>
+        <item quantity="other">Раніше прослухано, виконується: виконано %1$d відсотка</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d година</item>
+        <item quantity="few">%1$d години</item>
+        <item quantity="many">%1$d годин</item>
+        <item quantity="other">%1$d год</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d хвилина</item>
+        <item quantity="few">%1$d хвилини</item>
+        <item quantity="many">%1$d хвилин</item>
+        <item quantity="other">%1$d хв</item>
+    </plurals>
+</resources>

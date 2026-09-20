@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView
+        android:id="@+id/viral_badge_icon"
+        android:background="@drawable/viral_badge_background"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="centerInside"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/viral_badge_text"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@color/viral_badge_text_color"
+        android:gravity="start|top"
+        android:id="@+id/viral_badge_text"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/encore_viral_badge_margin"
+        android:text="@string/viral_badge_text"
+        android:lineSpacingExtra="1sp"
+        android:translationY="-0.38sp"
+        android:layout_marginStart="@dimen/encore_viral_badge_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/viral_badge_icon"
+        app:layout_constraintTop_toTopOf="parent"/>
+</merge>

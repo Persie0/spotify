@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/spacer_24">
+    <FrameLayout
+        android:layout_gravity="bottom"
+        android:background="@drawable/top_view_list_item_background"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/spacer_8"/>
+</LinearLayout>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true"/>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">appspot.com
+        </domain>
+        <domain includeSubdomains="true">facebook.com
+        </domain>
+        <domain includeSubdomains="true">genius.com
+        </domain>
+        <domain includeSubdomains="true">google.com
+        </domain>
+        <domain includeSubdomains="true">googleapis.com
+        </domain>
+        <domain includeSubdomains="true">instagram.com
+        </domain>
+        <domain includeSubdomains="true">qualtrics.com
+        </domain>
+        <domain includeSubdomains="true">scdn.co
+        </domain>
+        <domain includeSubdomains="true">slack.com
+        </domain>
+        <domain includeSubdomains="true">spotify.com
+        </domain>
+        <domain includeSubdomains="true">spotify.net
+        </domain>
+        <domain includeSubdomains="true">spotifyinternal.com
+        </domain>
+        <domain includeSubdomains="true">twitter.com
+        </domain>
+    </domain-config>
+</network-security-config>

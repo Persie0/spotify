@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <stroke
+        android:width="@dimen/floating_now_playing_bar_outline_width"
+        android:color="?attr/backgroundTintedBase"/>
+    <corners android:radius="@dimen/floating_now_playing_bar_outline_radius"/>
+</shape>

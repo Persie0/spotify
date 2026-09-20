@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/entity_action"
+        android:layout_width="@dimen/encore_entity_action_view_size"
+        android:layout_height="@dimen/encore_entity_action_view_size"/>
+</merge>

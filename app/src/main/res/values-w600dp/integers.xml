@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="adaptive_ui_hugs_grid_columns">2</integer>
+    <integer name="allboarding_row_number_of_items_2">3</integer>
+    <integer name="allboarding_row_number_of_items_3">5</integer>
+</resources>

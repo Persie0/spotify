@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="@dimen/encore_button_animation_pressed_scale"
+                android:propertyName="scaleX"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="@dimen/encore_button_animation_pressed_scale"
+                android:propertyName="scaleY"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="1"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+    <item android:state_enabled="false">
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="@dimen/opacity_30"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+    <item>
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="@dimen/encore_button_animation_default_scale"
+                android:propertyName="scaleX"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="@dimen/encore_button_animation_default_scale"
+                android:propertyName="scaleY"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_button_animation_interpolator"
+                android:duration="@integer/encore_button_animation_time"
+                android:valueTo="1"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+</selector>

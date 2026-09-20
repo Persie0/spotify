@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_gravity="center"
+    android:id="@+id/pin_code_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <EditText
+        android:id="@+id/pin_code_first_digit"
+        app:layout_constraintEnd_toStartOf="@+id/pin_code_second_digit"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/PinDigitEditText"/>
+    <EditText
+        android:id="@+id/pin_code_second_digit"
+        android:layout_marginStart="@dimen/pin_digit_spacing"
+        app:layout_constraintEnd_toStartOf="@+id/pin_code_third_digit"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/pin_code_first_digit"
+        app:layout_constraintTop_toTopOf="@+id/pin_code_first_digit"
+        style="@style/PinDigitEditText"/>
+    <EditText
+        android:id="@+id/pin_code_third_digit"
+        android:layout_marginStart="@dimen/pin_digit_spacing"
+        app:layout_constraintEnd_toStartOf="@+id/pin_code_fourth_digit"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/pin_code_second_digit"
+        app:layout_constraintTop_toTopOf="@+id/pin_code_second_digit"
+        style="@style/PinDigitEditText"/>
+    <EditText
+        android:id="@+id/pin_code_fourth_digit"
+        android:layout_marginStart="@dimen/pin_digit_spacing"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/pin_code_third_digit"
+        app:layout_constraintTop_toTopOf="@+id/pin_code_third_digit"
+        style="@style/PinDigitEditText.LastDigit"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

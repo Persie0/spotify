@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.login.adaptiveauthentication.challenge.smscode.HiddenOtpEditText xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/otp_input_hidden"
+    android:background="@null"
+    android:layout_width="1dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="0dp"
+    android:singleLine="true"
+    android:digits="0123456789"
+    android:inputType="number"
+    android:imeOptions="actionDone"
+    android:defaultFocusHighlightEnabled="false"/>

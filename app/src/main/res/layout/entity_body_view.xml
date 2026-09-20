@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/entity_body_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/content_information_banner_slot"
+        android:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/body_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginBottom="0dp"/>
+    <com.spotify.encoremobile.component.textview.EncoreTextView
+        android:id="@+id/body_text"
+        android:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:textDirection="locale"
+        app:layout_constraintBottom_toTopOf="@+id/entity_metadata"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/content_information_banner_slot"
+        app:layout_goneMarginBottom="0dp"
+        style="@style/EntityBodyTextStyle"/>
+    <com.spotify.encoreconsumermobile.elements.entitymetadata.EntityMetadataView
+        android:id="@+id/entity_metadata"
+        android:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/body_text"/>
+</merge>

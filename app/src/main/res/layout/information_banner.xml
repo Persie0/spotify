@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/information_banner_background"
+    android:padding="@dimen/spacer_16"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.icons.IconX
+        android:id="@+id/close_button"
+        android:layout_width="@dimen/encore_button_small_icon_size"
+        android:layout_height="@dimen/encore_button_small_icon_size"
+        android:contentDescription="@string/close_button_content_description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/textSubdued"/>
+    <TextView
+        android:textColor="?attr/textSubdued"
+        android:id="@+id/message_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacer_12"
+        app:layout_constraintEnd_toStartOf="@+id/close_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/TextAppearance.Encore.BodySmall"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

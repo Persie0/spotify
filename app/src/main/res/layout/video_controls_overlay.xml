@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <View
+        android:id="@+id/overlay_view"
+        android:background="@color/opacity_black_50"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"/>
+    <com.spotify.legacyglue.widgetstate.StateListAnimatorImageButton
+        android:layout_gravity="center"
+        android:id="@+id/action_button"
+        android:background="@null"
+        android:layout_width="@dimen/video_controls_overlay_icon_size"
+        android:layout_height="@dimen/video_controls_overlay_icon_size"
+        android:importantForAccessibility="no"/>
+</merge>

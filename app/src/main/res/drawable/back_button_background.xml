@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <size
+        android:height="@dimen/encore_back_button_background_size"
+        android:width="@dimen/encore_back_button_background_size"/>
+    <solid android:color="@color/opacity_black_30"/>
+</shape>

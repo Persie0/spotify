@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/onboarding_mobius"
+    app:startDestination="@+id/loading">
+    <fragment
+        android:label="Content Picker"
+        android:name="com.spotify.allboarding.allboardingimpl.presentation.contentpicker.ContentPickerFragment"
+        android:id="@+id/content_picker"/>
+    <fragment
+        android:label="Search"
+        android:name="com.spotify.allboarding.allboardingimpl.search.SearchFragment"
+        android:id="@+id/search"/>
+    <fragment
+        android:label="NotificationOptIn"
+        android:name="com.spotify.allboarding.notificationpermission.view.NotificationPermissionFragment"
+        android:id="@+id/notification_permission"/>
+    <dialog
+        android:label="SkipDialog"
+        android:name="com.spotify.allboarding.allboardingimpl.skip.SkipDialogFragment"
+        android:id="@+id/skip_dialog"/>
+    <fragment
+        android:label="Loading"
+        android:name="com.spotify.allboarding.allboardingimpl.presentation.loading.LoadingFragment"
+        android:id="@+id/loading"/>
+    <fragment
+        android:label="Summary"
+        android:name="com.spotify.allboarding.allboardingimpl.presentation.summary.SummaryFragment"
+        android:id="@+id/summary"/>
+    <fragment
+        android:label="Error"
+        android:name="com.spotify.allboarding.allboardingimpl.presentation.error.ErrorFragment"
+        android:id="@+id/error"/>
+    <fragment
+        android:label="Contextual Audio"
+        android:name="com.spotify.allboarding.contextualaudio.presentation.ContextualAudioFragment"
+        android:id="@+id/contextual_audio"/>
+    <fragment
+        android:label="Carousel"
+        android:name="com.spotify.allboarding.allboardingimpl.presentation.carousel.CarouselFragment"
+        android:id="@+id/carousel"/>
+</navigation>

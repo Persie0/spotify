@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/debug_error"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"/>
+    <Button
+        android:id="@+id/debug_error_reveal_text"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/debug_error_reveal_text"
+        style="@style/Widget.Solar.Button.Primary.Small.White"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.Marginal"
+        android:textSize="8sp"
+        android:textColor="@color/white"
+        android:id="@+id/debug_error_stacktrace_text"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:shadowColor="@color/black"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="7"
+        android:animateLayoutChanges="true"/>
+</LinearLayout>

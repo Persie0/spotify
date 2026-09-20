@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/ad_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.google.android.material.imageview.ShapeableImageView
+        android:layout_gravity="center_horizontal"
+        android:id="@+id/fallback_cover_art_image"
+        android:visibility="gone"
+        android:layout_width="@dimen/square_cover_art_size"
+        android:layout_height="@dimen/square_cover_art_size"
+        android:layout_marginTop="@dimen/square_cover_art_top_margin"
+        android:scaleType="fitCenter"
+        app:shapeAppearanceOverlay="@style/AdsCoverArtImageViewRoundedCorners"/>
+    <ImageView
+        android:id="@+id/image_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+    <com.spotify.betamax.player.VideoSurfaceView
+        android:id="@+id/video_surface"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</FrameLayout>

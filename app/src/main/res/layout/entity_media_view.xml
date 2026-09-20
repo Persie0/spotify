@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.spotify.encoreconsumermobile.elements.artwork.ArtworkView
+        android:id="@+id/entity_media_artwork"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:iconInsetRatio="0.5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:placeholderBackgroundColor="@color/entity_media_placeholder_color"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/entity_media_overlay"
+        android:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/entity_media_artwork"
+        app:layout_constraintEnd_toEndOf="@+id/entity_media_artwork"
+        app:layout_constraintStart_toStartOf="@+id/entity_media_artwork"
+        app:layout_constraintTop_toTopOf="@+id/entity_media_artwork"/>
+</merge>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/global_top_artist_label_bg"
+    android:paddingTop="@dimen/encore_spacer_tighter_4"
+    android:paddingBottom="@dimen/encore_spacer_tighter_4"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/encore_spacer_tighter_2"
+    android:paddingEnd="@dimen/encore_spacer_tighter_2">
+    <com.spotify.encoremobile.component.icons.IconMedal
+        android:layout_gravity="center_vertical"
+        android:id="@+id/global_top_artist_icon"
+        android:layout_width="12dp"
+        android:layout_height="wrap_content"
+        android:tint="?attr/baseTextBase"
+        app:iconActive="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="?attr/baseTextBase"
+        android:ellipsize="end"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/global_top_artist_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:layout_marginStart="@dimen/encore_spacer_tighter_3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/global_top_artist_icon"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

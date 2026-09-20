@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android" xmlns:motion="http://schemas.android.com/apk/res-auto">
+    <ConstraintSet android:id="@+id/default_size">
+        <Constraint android:id="@+id/video_surface">
+            <Layout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                motion:layout_constraintBottom_toBottomOf="parent"
+                motion:layout_constraintDimensionRatio="16:9"
+                motion:layout_constraintEnd_toEndOf="parent"
+                motion:layout_constraintStart_toStartOf="parent"
+                motion:layout_constraintTop_toTopOf="parent"/>
+            <PropertySet motion:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/companion_content">
+            <Layout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginBottom="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginStart="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginVertical="@dimen/floating_now_playing_bar_content_padding"
+                motion:layout_constraintBottom_toBottomOf="parent"
+                motion:layout_constraintDimensionRatio="1:1"
+                motion:layout_constraintEnd_toEndOf="parent"
+                motion:layout_constraintStart_toStartOf="parent"
+                motion:layout_constraintTop_toTopOf="parent"/>
+            <PropertySet motion:visibilityMode="ignore"/>
+        </Constraint>
+    </ConstraintSet>
+    <ConstraintSet android:id="@+id/large_size">
+        <Constraint android:id="@+id/video_surface">
+            <Layout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                motion:layout_constraintBottom_toBottomOf="parent"
+                motion:layout_constraintDimensionRatio="16:9"
+                motion:layout_constraintEnd_toEndOf="parent"
+                motion:layout_constraintStart_toStartOf="parent"
+                motion:layout_constraintTop_toTopOf="parent"/>
+            <PropertySet motion:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/companion_content">
+            <Layout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginBottom="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginStart="@dimen/floating_now_playing_bar_content_padding"
+                android:layout_marginVertical="@dimen/floating_now_playing_bar_content_padding"
+                motion:layout_constraintBottom_toBottomOf="parent"
+                motion:layout_constraintDimensionRatio="1:1"
+                motion:layout_constraintEnd_toEndOf="parent"
+                motion:layout_constraintStart_toStartOf="parent"
+                motion:layout_constraintTop_toTopOf="parent"/>
+            <PropertySet motion:visibilityMode="ignore"/>
+        </Constraint>
+    </ConstraintSet>
+    <Transition
+        motion:constraintSetEnd="@+id/large_size"
+        motion:constraintSetStart="@+id/default_size"
+        motion:duration="100"/>
+</MotionScene>

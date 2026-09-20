@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/button_background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <com.spotify.encoremobile.facepile.FacePileView
+            android:id="@+id/face_pile"
+            android:visibility="gone"
+            android:duplicateParentState="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/std_8dp"
+            app:border_mask_thickness="2dp"
+            app:face_size="24dp"
+            app:face_view_count="2"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/queue_button"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+        <ImageView
+            android:id="@+id/queue_button"
+            android:background="@null"
+            android:padding="@dimen/spacer_8"
+            android:duplicateParentState="true"
+            android:layout_width="@dimen/quaternary_button_size"
+            android:layout_height="@dimen/quaternary_button_size"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/np_content_desc_queue"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

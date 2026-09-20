@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ReinventFreeTooltip" parent="">
+        <item name="android:paddingTop">@dimen/spacer_12</item>
+        <item name="android:paddingBottom">@dimen/spacer_12</item>
+        <item name="android:layout_width">320dp</item>
+        <item name="android:layout_height">-2</item>
+        <item name="android:paddingStart">@dimen/spacer_16</item>
+        <item name="android:paddingEnd">@dimen/spacer_16</item>
+    </style>
+    <style name="Widget.Design.TabLayout" parent="@style/Base.Widget.Design.TabLayout">
+        <item name="tabGravity">center</item>
+        <item name="tabMode">fixed</item>
+    </style>
+</resources>

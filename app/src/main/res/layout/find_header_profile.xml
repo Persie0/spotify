@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingBottom="@dimen/spacer_16"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/spacer_8"
+    android:paddingEnd="@dimen/spacer_16">
+    <FrameLayout
+        android:id="@+id/face_header_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/camera_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoreconsumermobile.elements.camerabutton.CameraButtonView
+        android:id="@+id/camera_button"
+        android:layout_width="@dimen/encore_camera_button_size"
+        android:layout_height="@dimen/encore_camera_button_size"
+        android:contentDescription="@string/scan_code_content_description"
+        android:layout_marginEnd="@dimen/spacer_8"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/audio_recognition_button"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="0dp"/>
+    <com.spotify.legacyglue.widgetstate.StateListAnimatorImageButton
+        android:id="@+id/audio_recognition_button"
+        android:background="@null"
+        android:visibility="gone"
+        android:layout_width="@dimen/encore_camera_button_size"
+        android:layout_height="@dimen/encore_camera_button_size"
+        android:src="@drawable/encore_icon_search_audio"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/identify_song_content_description"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/encore_accessory_white"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

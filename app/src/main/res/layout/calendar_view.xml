@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:id="@+id/calendar"
+    android:background="#fff"
+    android:layout_width="@dimen/cell_height"
+    android:layout_height="@dimen/cell_height"
+    android:scaleType="centerCrop">
+    <TextView
+        android:textSize="@dimen/calendar_icon_month_text_size"
+        android:textColor="#fff"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:id="@+id/month"
+        android:background="#a80a00"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:textAllCaps="true"
+        style="?attr/pasteTextAppearanceBodySmallBold"/>
+    <TextView
+        android:textSize="@dimen/calendar_icon_day_text_size"
+        android:textColor="#000"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:id="@+id/day"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        style="?attr/pasteTextAppearanceBodySmallBold"/>
+</LinearLayout>

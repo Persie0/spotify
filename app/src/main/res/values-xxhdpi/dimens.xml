@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="footer_bottom_padding">0dp</dimen>
+    <dimen name="footer_top_padding">8dp</dimen>
+    <dimen name="header_button_margin">12dp</dimen>
+    <dimen name="header_button_size">40dp</dimen>
+    <dimen name="header_top_margin">8dp</dimen>
+    <dimen name="peek_height">32dp</dimen>
+    <dimen name="player_controls_bottom_margin">44dp</dimen>
+    <dimen name="primary_button_size">64dp</dimen>
+    <dimen name="quaternary_button_size">34dp</dimen>
+    <dimen name="secondary_button_size">48dp</dimen>
+    <dimen name="square_cover_art_min_bottom_vertical_margin">4dp</dimen>
+    <dimen name="square_cover_art_min_horizontal_margin">24dp</dimen>
+    <dimen name="square_cover_art_min_top_vertical_margin">8dp</dimen>
+    <dimen name="square_cover_art_size">260dp</dimen>
+    <dimen name="square_cover_art_top_margin">74dp</dimen>
+    <dimen name="tertiary_button_size">40dp</dimen>
+    <dimen name="track_info_subtitle_text_size">16sp</dimen>
+    <dimen name="track_info_title_text_size">20sp</dimen>
+    <dimen name="widget_padding">16dp</dimen>
+    <dimen name="widget_padding_top">14dp</dimen>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:id="@+id/button"
+        android:layout_width="@dimen/endless_dj_button_size"
+        android:layout_height="@dimen/endless_dj_button_size"
+        android:contentDescription="@string/endless_dj_button_content_description"
+        android:elevation="@dimen/endless_dj_button_elevation"
+        android:stateListAnimator="@null"
+        app:backgroundTint="@color/default_endless_dj_button_background"
+        app:icon="@drawable/ic_dj_button_jellyfish"
+        app:iconGravity="textStart"
+        app:iconSize="@dimen/endless_dj_button_icon_size"
+        app:rippleColor="@color/white_20"
+        app:strokeWidth="0dp"
+        style="@style/Encore.Button.Tertiary.Medium.IconOnly"/>
+</FrameLayout>

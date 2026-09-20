@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:state_enabled="false"
+        android:state_checked="true"
+        android:color="?attr/brightAccentTextBase"
+        android:alpha="@dimen/opacity_30"/>
+    <item
+        android:state_checked="true"
+        android:color="?attr/brightAccentBackgroundBase"/>
+    <item
+        android:state_pressed="true"
+        android:color="?attr/baseEssentialSubdued"/>
+    <item
+        android:state_enabled="false"
+        android:color="?attr/baseTextBase"
+        android:alpha="@dimen/opacity_30"/>
+    <item
+        android:color="?attr/baseTextSubdued"
+        app:state_progress_indicator_visible="true"/>
+    <item android:color="?attr/baseTextSubdued"/>
+</selector>

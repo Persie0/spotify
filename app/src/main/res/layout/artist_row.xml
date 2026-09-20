@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingTop="@dimen/spacer_8"
+    android:paddingBottom="@dimen/spacer_8"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/artist_row_height"
+    android:paddingVertical="@dimen/spacer_8">
+    <ImageView
+        android:id="@+id/artist_image"
+        android:layout_width="@dimen/artist_image_size"
+        android:layout_height="@dimen/artist_image_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:textColor="@color/white"
+        android:ellipsize="end"
+        android:id="@+id/artist_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:textAlignment="viewStart"
+        android:layout_marginStart="@dimen/spacer_12"
+        android:layout_marginEnd="@dimen/spacer_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/artist_image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

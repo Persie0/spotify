@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/snackbarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:translationZ="-1dp"/>
+    <FrameLayout
+        android:id="@+id/preview_container"
+        android:clipChildren="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <FrameLayout
+        android:id="@+id/quicksilver_card_container"
+        android:clipChildren="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <com.spotify.encoremobile.tooltip.TooltipContainer
+        android:id="@+id/tooltip_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</FrameLayout>

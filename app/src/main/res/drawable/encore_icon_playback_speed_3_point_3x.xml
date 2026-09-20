@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:drawable="@drawable/encore_icon_playback_speed_3_point_3x_16"
+        app:state_small_glyph="true"/>
+    <item android:drawable="@drawable/encore_icon_playback_speed_3_point_3x_24"/>
+</selector>

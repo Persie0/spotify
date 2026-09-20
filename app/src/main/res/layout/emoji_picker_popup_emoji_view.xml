@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center"
+    android:layout_gravity="center"
+    android:id="@+id/emoji_picker_popup_emoji_view_wrapper"
+    android:layout_width="0dp"
+    android:layout_height="0dp">
+    <androidx.emoji2.emojipicker.EmojiView
+        android:gravity="center"
+        android:id="@+id/emoji_picker_popup_emoji_view"
+        android:background="@drawable/ripple_image_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:importantForAccessibility="yes"/>
+</LinearLayout>

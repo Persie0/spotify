@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/std_54dp">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+        android:textColor="@color/white"
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/std_16dp"
+        android:layout_marginStart="@dimen/std_16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.google.android.material.radiobutton.MaterialRadioButton
+        android:enabled="false"
+        android:id="@+id/status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:button="@null"
+        android:drawableRight="@drawable/drawable_your_episodes_radio_button"
+        android:drawableEnd="@drawable/drawable_your_episodes_radio_button"
+        android:layout_marginEnd="@dimen/std_16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/title"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

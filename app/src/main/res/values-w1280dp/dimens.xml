@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="adaptive_ui_content_area_horizontal_margin">144dp</dimen>
+    <dimen name="adaptive_ui_header_play_button_end_margin">156dp</dimen>
+    <dimen name="content_area_horizontal_margin">144dp</dimen>
+    <dimen name="header_action_row_end_margin">152dp</dimen>
+    <dimen name="header_action_row_start_margin">148dp</dimen>
+    <dimen name="header_content_end_margin">160dp</dimen>
+    <dimen name="header_content_start_margin">160dp</dimen>
+    <dimen name="start_fragment_side_guideline">288dp</dimen>
+    <dimen name="tabs_row_margin">144dp</dimen>
+    <dimen name="toolbar_content_inset">160dp</dimen>
+</resources>

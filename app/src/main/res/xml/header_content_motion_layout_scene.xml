@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <Transition
+        app:constraintSetEnd="@+id/end"
+        app:constraintSetStart="@+id/start">
+        <KeyFrameSet>
+            <KeyAttribute
+                android:alpha="1"
+                app:framePosition="0"
+                app:motionTarget="@+id/artwork"
+                app:transitionEasing="cubic(0.6, 0, 0.7, 1)"/>
+            <KeyAttribute
+                android:alpha="0"
+                app:framePosition="100"
+                app:motionTarget="@+id/artwork"/>
+            <KeyAttribute
+                android:scaleX="1.04"
+                android:scaleY="1.04"
+                app:framePosition="0"
+                app:motionTarget="@+id/artwork"/>
+            <KeyAttribute
+                android:scaleX="0.96"
+                android:scaleY="0.96"
+                app:framePosition="100"
+                app:motionTarget="@+id/artwork"/>
+        </KeyFrameSet>
+    </Transition>
+    <ConstraintSet android:id="@+id/start">
+        <Constraint android:id="@+id/counter_container">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/description">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/subtitle">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+    </ConstraintSet>
+    <ConstraintSet android:id="@+id/end">
+        <Constraint android:id="@+id/counter_container">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/description">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+        <Constraint android:id="@+id/subtitle">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore"/>
+        </Constraint>
+    </ConstraintSet>
+</MotionScene>

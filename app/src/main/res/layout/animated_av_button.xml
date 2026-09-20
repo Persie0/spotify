@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:id="@+id/av_container"
+    android:clipChildren="true"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:paddingEnd="@dimen/spacer_8">
+    <ImageView
+        android:layout_gravity="center_vertical"
+        android:id="@+id/av_icon"
+        android:padding="@dimen/spacer_8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/av_content_desc"/>
+    <androidx.appcompat.widget.AppCompatTextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+        android:textColor="@color/av_btn_white"
+        android:ellipsize="end"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/av_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"/>
+    <com.spotify.encoremobile.component.icons.IconExclamationCircle
+        android:layout_gravity="top"
+        android:id="@+id/av_verification_badge"
+        android:visibility="gone"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginTop="@dimen/spacer_4"
+        app:iconActive="true"
+        app:tint="?attr/baseTextWarning"/>
+</LinearLayout>

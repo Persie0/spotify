@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="start_fragment_bottom_guideline">32dp</dimen>
+    <dimen name="start_fragment_side_guideline">32dp</dimen>
+    <dimen name="start_fragment_top_button_margin">64dp</dimen>
+    <dimen name="start_fragment_top_guideline">48dp</dimen>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:paste="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/toolbar_one_trust"
+    android:background="@color/gray_7"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize">
+        <com.spotify.legacyglue.icons.SpotifyIconView
+            android:id="@+id/btn_close"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="8dp"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/generic_content_description_close"
+            paste:iconSize="@dimen/toolbar_icon_size"
+            paste:iconType="icon_x"/>
+    </LinearLayout>
+</FrameLayout>

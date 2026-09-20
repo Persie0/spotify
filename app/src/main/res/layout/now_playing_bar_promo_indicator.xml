@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.nowplayingbar.nowplayingbar.view.PromoIndicatorView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.Marginal"
+    android:textColor="?android:attr/textColorSecondary"
+    android:ellipsize="marquee"
+    android:gravity="center_vertical"
+    android:visibility="gone"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/nowplayingbar_promotional_indicator_text"
+    android:singleLine="true"
+    android:drawablePadding="@dimen/spacer_4"
+    android:marqueeRepeatLimit="marquee_forever"
+    android:drawableStart="@drawable/encore_icon_information_alt"/>

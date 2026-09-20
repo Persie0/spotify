@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.compose.ui.platform.ComposeView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_gravity="end"
+    android:id="@+id/header_play_button"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginRight="@dimen/adaptive_ui_header_play_button_end_margin"
+    android:layout_marginEnd="@dimen/adaptive_ui_header_play_button_end_margin"
+    android:translationZ="10dp"
+    app:layout_behavior="com.spotify.encoreconsumermobile.layout.headers.ComposePlayButtonBehavior"/>

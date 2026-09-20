@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+    android:textColor="@color/white"
+    android:id="@+id/text"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/spacer_16"
+    android:layout_marginRight="@dimen/spacer_16"
+    android:maxLength="200"
+    android:layout_marginHorizontal="@dimen/spacer_16"/>

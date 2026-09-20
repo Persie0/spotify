@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.encoremobile.buttons.PrimaryButtonView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:theme="@style/ThemeOverlay.Encore.Inverted"
+    android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/encore_action_button_height_small"
+    android:filterTouchesWhenObscured="false"
+    app:actionButtonSize="small"/>

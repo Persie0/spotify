@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ViewStub
+        android:id="@+id/video_view_stub"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <ImageView
+        android:id="@+id/frozen_frame"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@null"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null"/>
+    <ProgressBar
+        android:id="@+id/throbber"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/indeterminateProgressBar"/>
+    <ImageView
+        android:id="@+id/seek_frame"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@null"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null"/>
+</merge>

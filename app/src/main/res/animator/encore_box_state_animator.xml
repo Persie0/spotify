@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:fillAfter="true"
+                android:fillEnabled="true"
+                android:valueFrom="?attr/encoreCardBackgroundColor"
+                android:valueTo="?attr/encoreCardBackgroundPressedColor"
+                android:valueType="colorType"
+                android:propertyName="cardBackgroundColor"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueTo="1"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+    <item android:state_enabled="false">
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueTo="@dimen/opacity_30"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+    <item android:state_focused="true">
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueFrom="?attr/encoreCardBackgroundColor"
+                android:valueTo="?attr/encoreCardBackgroundFocusedColor"
+                android:valueType="colorType"
+                android:propertyName="cardBackgroundColor"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueTo="1"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+    <item>
+        <set>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueFrom="?attr/encoreCardBackgroundPressedColor"
+                android:valueTo="?attr/encoreCardBackgroundColor"
+                android:valueType="colorType"
+                android:propertyName="cardBackgroundColor"/>
+            <objectAnimator
+                android:interpolator="@anim/encore_box_animation_interpolator"
+                android:duration="@integer/encore_box_animation_time"
+                android:valueTo="1"
+                android:propertyName="alpha"/>
+        </set>
+    </item>
+</selector>

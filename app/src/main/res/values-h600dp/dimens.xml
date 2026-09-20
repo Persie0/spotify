@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="basic_story_body_margin_top">@dimen/spacer_24</dimen>
+    <dimen name="basic_story_button_margin_top">@dimen/spacer_32</dimen>
+    <dimen name="basic_story_image_margin_top">@dimen/spacer_24</dimen>
+    <dimen name="basic_story_subtitle_margin_top">@dimen/spacer_8</dimen>
+    <dimen name="face_pile_margin">35dp</dimen>
+    <dimen name="story_image_size">210dp</dimen>
+</resources>

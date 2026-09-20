@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:background="@drawable/glue_empty_state_gradient_background_half"
+    android:paddingLeft="48dp"
+    android:paddingRight="48dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.TitleMedium"
+        android:textColor="@color/white"
+        android:gravity="center_horizontal"
+        android:id="@android:id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="?attr/pasteColorTextSecondary"
+        android:gravity="center_horizontal"
+        android:id="@android:id/text2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:layout_marginBottom="44dp"/>
+    <Button
+        android:layout_gravity="center_horizontal"
+        android:id="@+id/empty_view_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:filterTouchesWhenObscured="false"
+        style="?attr/solarButtonPrimaryWhite"/>
+</LinearLayout>

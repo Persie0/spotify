@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/benefit_container"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp">
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="@+id/plan_benefit_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/plan_benefit_text"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/white"
+        android:gravity="center_vertical"
+        android:id="@+id/plan_benefit_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:minHeight="24dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/icon"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

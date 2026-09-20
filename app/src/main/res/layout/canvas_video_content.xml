@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/music_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+    <LinearLayout
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/peek_placeholder"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.spotify.encoremobile.component.icons.IconTrack
+            android:id="@+id/track_icon"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
+            app:tint="?attr/baseTextSubdued"/>
+        <TextView
+            android:textColor="@color/white"
+            android:padding="10dp"
+            android:layout_width="170dp"
+            android:layout_height="wrap_content"
+            android:text="@string/next_track_peek_disallowed"
+            style="@style/TextAppearance.Cat.Secondary"/>
+    </LinearLayout>
+    <com.spotify.betamax.player.VideoSurfaceView
+        android:id="@+id/video_surface"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <View
+        android:id="@+id/mixing_dim_overlay"
+        android:background="@android:color/black"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"/>
+</FrameLayout>

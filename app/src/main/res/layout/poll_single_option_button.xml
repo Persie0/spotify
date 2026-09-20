@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.BodySmallBold"
+    android:textColor="@drawable/button_poll_solid_text_selector"
+    android:ellipsize="end"
+    android:gravity="center_vertical"
+    android:background="@drawable/button_poll_default_background"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:button="@null"
+    android:minHeight="40dp"
+    android:maxLines="2"
+    android:lines="@null"
+    android:filterTouchesWhenObscured="true"/>

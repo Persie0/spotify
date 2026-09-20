@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:id="@+id/entity_pretitle_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.icons.EncoreIconView
+        android:id="@+id/pretitle_leading_icon"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="@dimen/entity_pretitle_icon_size"
+        android:layout_height="@dimen/entity_pretitle_icon_size"
+        android:layout_marginEnd="@dimen/entity_pretitle_horizontal_spacing"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/pretitle_text"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.component.slottextview.EncorePretitleView
+        android:textAppearance="@style/TextAppearance.Encore.Pretitle"
+        android:textColor="?attr/textSubdued"
+        android:ellipsize="end"
+        android:id="@+id/pretitle_text"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/pretitle_trailing_icon"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/pretitle_leading_icon"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.component.icons.EncoreIconView
+        android:id="@+id/pretitle_trailing_icon"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="@dimen/entity_pretitle_icon_size"
+        android:layout_height="@dimen/entity_pretitle_icon_size"
+        android:layout_marginStart="@dimen/entity_pretitle_horizontal_spacing"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/pretitle_text"
+        app:layout_constraintTop_toTopOf="parent"/>
+</merge>

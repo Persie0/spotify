@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/content"
+    android:background="?attr/pasteColorBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView
+        android:id="@+id/overlay_controls_layout"
+        android:background="@drawable/nowplaying_overlay_gradient_dark"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.spotify.encoremobile.viewstub.EncoreViewStub
+            android:id="@+id/video_first_track_carousel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+        <include layout="@layout/video_first_overlay_land"/>
+    </com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView>
+    <FrameLayout
+        android:id="@+id/immersive_video_overlay_ui_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.spotify.encoremobile.viewstub.EncoreViewStub
+            android:layout_gravity="end|top"
+            android:id="@+id/skip_ad_button_stub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacer_40"
+            android:layout_marginEnd="@dimen/spacer_24"/>
+    </FrameLayout>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:layout_gravity="start|top"
+        android:id="@+id/promotional_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

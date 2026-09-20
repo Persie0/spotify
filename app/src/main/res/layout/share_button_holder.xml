@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/share_button_holder"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <View
+        android:id="@+id/share_button_bg"
+        android:background="@drawable/back_button_background"
+        android:visibility="gone"
+        android:layout_width="@dimen/share_button_size"
+        android:layout_height="@dimen/share_button_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <ImageView
+        android:id="@+id/share_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/encore_icon_share_android_24"
+        android:contentDescription="@string/cultural_moments_share_menu_option"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

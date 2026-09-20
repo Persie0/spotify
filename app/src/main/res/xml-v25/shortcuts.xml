@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <shortcut
+        android:icon="@mipmap/shortcut_icon_search"
+        android:enabled="true"
+        android:shortcutId="search"
+        android:shortcutShortLabel="@string/search_tab_title"
+        android:shortcutLongLabel="@string/search_tab_title">
+        <intent
+            android:targetPackage="com.spotify.music"
+            android:action="android.intent.action.SEARCH"
+            android:targetClass="com.spotify.music.SpotifyMainActivity"/>
+    </shortcut>
+</shortcuts>

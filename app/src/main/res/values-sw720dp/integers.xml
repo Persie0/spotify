@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="card_row_columns">4</integer>
+    <integer name="hugs_grid_columns">4</integer>
+    <integer name="hugs_grid_columns_land">6</integer>
+    <integer name="your_library_dense_span_count">4</integer>
+</resources>

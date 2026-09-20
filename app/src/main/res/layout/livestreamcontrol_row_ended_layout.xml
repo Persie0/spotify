@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textSize="@dimen/livestream_control_row_ended_live_title_text_size"
+        android:id="@+id/ended_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/ended_live_audio_event_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoreconsumermobile.elements.share.ShareButton
+        android:id="@+id/share_button"
+        android:layout_width="@dimen/encore_action_button_icon_size"
+        android:layout_height="@dimen/encore_action_button_icon_size"
+        android:layout_marginTop="12dp"
+        app:iconSize="@dimen/livestream_control_row_ended_live_icon_size"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ended_title"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

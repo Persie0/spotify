@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.MarqueeTrackSubtitle.Mini" parent="@style/TextAppearance.Encore.BodySmall">
+        <item name="android:textColor">@color/gray_70</item>
+    </style>
+    <style name="TextAppearance.MarqueeTrackTitle.Mini" parent="@style/TextAppearance.Encore.BodyMediumBold">
+        <item name="android:textColor">@color/white</item>
+    </style>
+</resources>

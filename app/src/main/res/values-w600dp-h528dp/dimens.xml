@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="cover_art_bottom_margin">16dp</dimen>
+    <dimen name="cover_art_max_size">152dp</dimen>
+    <dimen name="mini_primary_button_size">40dp</dimen>
+    <dimen name="mini_seek_bar_padding">16dp</dimen>
+    <dimen name="mini_seek_bar_progress_radius">1dp</dimen>
+    <dimen name="primary_button_bottom_margin">18dp</dimen>
+    <dimen name="ternary_button_size">32dp</dimen>
+    <dimen name="track_placeholder">48dp</dimen>
+</resources>

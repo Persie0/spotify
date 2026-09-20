@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:gravity="center"
+        android:id="@+id/static_intro_scene_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_title_subtitle_text_horizontal_margin"
+        android:layout_marginRight="@dimen/scene_title_subtitle_text_horizontal_margin"
+        android:accessibilityTraversalBefore="@+id/static_intro_scene_subtitle"
+        android:layout_marginHorizontal="@dimen/scene_title_subtitle_text_horizontal_margin"
+        app:layout_constraintBottom_toTopOf="@+id/static_intro_scene_subtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"/>
+    <com.spotify.campaigns.paragraph.view.ParagraphView
+        android:gravity="center"
+        android:id="@+id/static_intro_scene_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/scene_title_subtitle_text_horizontal_margin"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="@dimen/scene_title_subtitle_text_horizontal_margin"
+        android:accessibilityTraversalAfter="@+id/static_intro_scene_title"
+        android:layout_marginHorizontal="@dimen/scene_title_subtitle_text_horizontal_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/static_intro_scene_title"/>
+</merge>

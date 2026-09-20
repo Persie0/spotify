@@ -1,0 +1,1279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s জন মাসিক শ্রোতা</item>
+        <item quantity="other">%1$s জন মাসিক শ্রোতা</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$dটি গ্রুপ করা স্পিকার</item>
+        <item quantity="other">%1$dটি গ্রুপ করা স্পিকার</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">5টির মধ্যে %1$dটি স্টার</item>
+        <item quantity="other">5টির মধ্যে %1$dটি স্টার</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">5টির মধ্যে %1$dটি স্টার</item>
+        <item quantity="other">5টির মধ্যে %1$dটি স্টার</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">%1$dটি স্টার বেছে নিন</item>
+        <item quantity="other">%1$dটি স্টার বেছে নিন</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$dটি স্টার</item>
+        <item quantity="other">%1$dটি স্টার</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">আরও %1$dটি অ্যাকাউন্ট</item>
+        <item quantity="other">আরও %1$dটি অ্যাকাউন্ট</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">এবং আরও %1$dটি অ্যাকাউন্ট</item>
+        <item quantity="other">এবং আরও %1$dটি অ্যাকাউন্ট</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">%1$dটি আইটেম পাওয়া গেছে</item>
+        <item quantity="other">%1$dটি আইটেম পাওয়া গেছে</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s টি ফোল্ডার</item>
+        <item quantity="other">%1$s টি ফোল্ডার</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s প্লেলিস্ট</item>
+        <item quantity="other">%1$s প্লেলিস্ট</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$sটি অডিওবুক</item>
+        <item quantity="other">%1$sটি অডিওবুক</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$sটি অধ্যায়</item>
+        <item quantity="other">%1$sটি অধ্যায়</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$sটি ক্লিপ</item>
+        <item quantity="other">%1$sটি ক্লিপ</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$sটি পর্ব</item>
+        <item quantity="other">%1$sটি পর্ব</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$sটি গান</item>
+        <item quantity="other">%1$sটি গান</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s টি ট্র্যাক</item>
+        <item quantity="other">%1$s টি ট্র্যাক</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d সেকেন্ড পরে বিজ্ঞাপন স্কিপ করা যাবে, টাইমার</item>
+        <item quantity="other">%1$d সেকেন্ড পরে বিজ্ঞাপন স্কিপ করা যাবে, টাইমার</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">%1$d সেকেন্ড পরে এড়িয়ে যান</item>
+        <item quantity="other">%1$d সেকেন্ড পরে এড়িয়ে যান</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">বিজ্ঞাপন • %1$d সেকেন্ড পরে এড়িয়ে যান</item>
+        <item quantity="other">বিজ্ঞাপন • %1$d সেকেন্ড পরে এড়িয়ে যান</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">মন দিয়ে শুনুন! Spotify ব্যবহার করার মতো বয়স এখনও আপনার হয়নি, তাই আপনার অ্যাকাউন্ট ব্লক করা হয়েছে এবং %1$s দিনের মধ্যে এটি নিষ্ক্রিয় করা হবে। আমরা কি ভুল বুঝেছি? পরিচয়পত্র দেখিয়ে আপনার বয়স কনফার্ম করার চেষ্টা করুন।</item>
+        <item quantity="other">মন দিয়ে শুনুন! Spotify ব্যবহার করার মতো বয়স এখনও আপনার হয়নি, তাই আপনার অ্যাকাউন্ট ব্লক করা হয়েছে এবং %1$s দিনের মধ্যে এটি নিষ্ক্রিয় করা হবে। আমরা কি ভুল বুঝেছি? পরিচয়পত্র দেখিয়ে আপনার বয়স কনফার্ম করার চেষ্টা করুন।</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">দেখে মনে হচ্ছে, আপনার নিজের জন্য Spotify অ্যাকাউন্ট খোলার মতো যথেষ্ট বয়স এখনও হয়নি। কিন্তু আপনার পিতা-মাতা বা অভিভাবক অনুমতি দিলে আপনি একটি ম্যানেজ করা অ্যাকাউন্ট পেতে পারেন।\n\nআপনার অ্যাকাউন্ট %1$s দিনের মধ্যে নিষ্ক্রিয় করা হবে।</item>
+        <item quantity="other">দেখে মনে হচ্ছে, আপনার নিজের জন্য Spotify অ্যাকাউন্ট খোলার মতো যথেষ্ট বয়স এখনও হয়নি। কিন্তু আপনার পিতা-মাতা বা অভিভাবক অনুমতি দিলে আপনি একটি ম্যানেজ করা অ্যাকাউন্ট পেতে পারেন।\n\nআপনার অ্যাকাউন্ট %1$s দিনের মধ্যে নিষ্ক্রিয় করা হবে।</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">আপনার অ্যাকাউন্ট আবার চালু করতে, পরিচয়পত্রের মাধ্যমে আপনার বয়স কনফার্ম করুন। Spotify ব্যবহার করার জন্য আপনার যথেষ্ট বয়স হয়েছে কিনা তা বয়স চেক করে দেখার মাধ্যমে কনফার্ম না করা হলে অথবা %1$s দিনের মধ্যে কোনও অ্যাকশন না নেওয়া হলে, আপনার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলা হবে।</item>
+        <item quantity="other">আপনার অ্যাকাউন্ট আবার চালু করতে, পরিচয়পত্রের মাধ্যমে আপনার বয়স কনফার্ম করুন। Spotify ব্যবহার করার জন্য আপনার যথেষ্ট বয়স হয়েছে কিনা তা বয়স চেক করে দেখার মাধ্যমে কনফার্ম না করা হলে অথবা %1$s দিনের মধ্যে কোনও অ্যাকশন না নেওয়া হলে, আপনার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলা হবে।</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">আপনার বয়স %1$d বছরের কম, তাই আপনি অভিভাবকীয় সম্মতি দেওয়ার যোগ্য নন।\n\nএছাড়াও, আপনার বর্তমান বয়স অনুসারে আপনি কিছু কন্টেন্ট এবং ফিচার অ্যাক্সেস করতে পারবেন না। আমরা সেগুলি লুকিয়ে রেখেছি।</item>
+        <item quantity="other">আপনার বয়স %1$d বছরের কম, তাই আপনি অভিভাবকীয় সম্মতি দেওয়ার যোগ্য নন।\n\nএছাড়াও, আপনার বর্তমান বয়স অনুসারে আপনি কিছু কন্টেন্ট এবং ফিচার অ্যাক্সেস করতে পারবেন না। আমরা সেগুলি লুকিয়ে রেখেছি।</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d টি গান • %2$s</item>
+        <item quantity="other">%1$dটি গান • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d জনকে বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$d জনকে বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d জনকে বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$d জনকে বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$dটি বেছে নেওয়া হয়েছে। চালিয়ে যাওয়ার জন্য অন্তত আরও %2$dটি বেছে নিন।</item>
+        <item quantity="other">%1$dটি বেছে নেওয়া হয়েছে। চালিয়ে যাওয়ার জন্য অন্তত আরও %2$dটি বেছে নিন।</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d  ঘন্টা</item>
+        <item quantity="other">%1$d  ঘন্টা</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">আপনি সর্বাধিক সীমার থেকে %1$dটি অক্ষর বেশি লিখেছেন।</item>
+        <item quantity="other">আপনি সর্বাধিক সীমার থেকে %1$dটি অক্ষর বেশি লিখেছেন।</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ আরও %1$dটি</item>
+        <item quantity="other">+ আরও %1$dটি</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,dটি রিলিজ</item>
+        <item quantity="other">%1$,dটি রিলিজ</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,dটি গান</item>
+        <item quantity="other">%1$,dটি গান</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">আপনার কাছাকাছি %1$sটি ইভেন্ট হচ্ছে</item>
+        <item quantity="other">আপনার কাছাকাছি %1$sটি ইভেন্ট হচ্ছে</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$dটি রিলিজ</item>
+        <item quantity="other">%1$dটি রিলিজ</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">%1$s কোয়েরিতে %2$dটি আইটেম পাওয়া গেছে</item>
+        <item quantity="other">%1$s কোয়েরিতে %2$dটি আইটেম পাওয়া গেছে</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$dটি অডিওবুক যোগ করা হয়েছে</item>
+        <item quantity="other">%1$dটি অডিওবুক যোগ করা হয়েছে</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$dটি অডিওবুক চালানো হয়েছে</item>
+        <item quantity="other">%1$dটি অডিওবুক চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">শো প্রতি %1$sটি নতুন পর্ব</item>
+        <item quantity="other">শো প্রতি %1$sটি নতুন পর্ব</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">পডকাস্ট • %1$d টি পর্ব</item>
+        <item quantity="other">পডকাস্ট • %1$d টি পর্ব</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">গ্রুপে %1$s জন ব্যক্তি রয়েছেন</item>
+        <item quantity="other">গ্রুপে %1$s জন লোক রয়েছেন</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">%1$d দিন আগে</item>
+        <item quantity="other">%1$d দিন আগে</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">%1$d ঘণ্টা আগে</item>
+        <item quantity="other">%1$d ঘণ্টা আগে</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">%1$d মিনিট আগে</item>
+        <item quantity="other">%1$d মিনিট আগে</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$dটি ফটো</item>
+        <item quantity="other">%1$dটি ফটো</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$dটি ভিডিও</item>
+        <item quantity="other">%1$dটি ভিডিও</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s জন</item>
+        <item quantity="other">%1$s জন</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s জন বন্ধু</item>
+        <item quantity="other">%1$s জন বন্ধু</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">এটি %1$d দিনের মধ্যে রিসেট হবে, তাই তার পরে ফিরে আসুন। সেই সময়ের মধ্যে, আপনি AI প্লেলিস্ট ব্যবহার করতে পারেন অথবা নিজেই একটি তৈরি করতে পারেন।</item>
+        <item quantity="other">এটি %1$d দিনের মধ্যে রিসেট হবে, তাই তার পরে ফিরে আসুন। সেই সময়ের মধ্যে, আপনি AI প্লেলিস্ট ব্যবহার করতে পারেন অথবা একটি নিজেই তৈরি করতে পারেন।</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">এটিকে %1$d দিনের মধ্যে রিসেট করা হবে, তাই তখন আবার এসে দেখুন। এই সময়ের মধ্যে, আপনি ঝটপট প্লেলিস্ট ব্যবহার করতে অথবা নিজেই একটি তৈরি করে নিতে পারবেন।</item>
+        <item quantity="other">এটিকে %1$d দিনের মধ্যে রিসেট করা হবে, তাই তখন আবার এসে দেখুন। এই সময়ের মধ্যে, আপনি ঝটপট প্লেলিস্ট ব্যবহার করতে অথবা নিজেই একটি তৈরি করে নিতে পারবেন।</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">এটি %1$d ঘণ্টার মধ্যে রিসেট হবে, তাই তার পরে ফিরে আসুন। সেই সময়ের মধ্যে, আপনি AI প্লেলিস্ট ব্যবহার করতে পারেন অথবা একটি নিজেই তৈরি করতে পারেন।</item>
+        <item quantity="other">এটি %1$d ঘণ্টার মধ্যে রিসেট হবে, তাই তার পরে ফিরে আসুন। সেই সময়ের মধ্যে, আপনি AI প্লেলিস্ট ব্যবহার করতে পারেন অথবা একটি নিজেই তৈরি করতে পারেন।</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">এটিকে %1$d ঘণ্টার মধ্যে রিসেট করা হবে, তাই তখন আবার এসে দেখুন। এই সময়ের মধ্যে, আপনি তাৎক্ষণিক প্লেলিস্ট ব্যবহার করতে অথবা নিজেই একটি তৈরি করে নিতে পারবেন।</item>
+        <item quantity="other">এটিকে %1$d ঘণ্টার মধ্যে রিসেট করা হবে, তাই তখন আবার এসে দেখুন। এই সময়ের মধ্যে, আপনি তাৎক্ষণিক প্লেলিস্ট ব্যবহার করতে অথবা নিজেই একটি তৈরি করে নিতে পারবেন।</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d টি নতুন এন্ট্রি</item>
+        <item quantity="other">%1$,d টি নতুন এন্ট্রি</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s আপনাকে সরাসরি মেসেজ করতে পারবেন না। তার সাথে ইন্টার‍্যাক্ট করতে না চাইলে আপনি চ্যাট ছেড়ে বেরিয়ে যেতে পারেন।</item>
+        <item quantity="other">%1$s আপনাকে সরাসরি মেসেজ করতে পারবেন না। তাদের সাথে ইন্টার‍্যাক্ট করতে না চাইলে আপনি চ্যাট ছেড়ে বেরিয়ে যেতে পারেন।</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">অন্য %1$d জন</item>
+        <item quantity="other">অন্যান্য %1$d জন</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">গ্রুপ • %1$d জন ব্যক্তি</item>
+        <item quantity="other">গ্রুপ • %1$d জন লোক</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d জন এখনও করেননি)</item>
+        <item quantity="other">(%1$d জন এখনও করেননি)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$dটি ফটো ডাউনলোড করা হয়েছে</item>
+        <item quantity="other">%1$dটি ফটো ডাউনলোড করা হয়েছে</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">%1$dটি ফটো ডাউনলোড করা যায়নি</item>
+        <item quantity="other">%1$dটি ফটো ডাউনলোড করা যায়নি</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">আপনি %1$s-কে করেছেন এবং তিনি এই চ্যাটে রয়েছেন। তার সাথে ইন্টারঅ্যাক্ট করতে না চাইলে, আপনি এই গ্রুপ মেসেজের অনুরোধটি মুছে ফেলতে পারেন।</item>
+        <item quantity="other">আপনি %1$s-কে ব্লক করেছেন এবং তারা এই চ্যাটে রয়েছেন। তাদের সাথে ইন্টারঅ্যাক্ট করতে না চাইলে, আপনি এই গ্রুপ মেসেজের অনুরোধটি মুছে ফেলতে পারেন।</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">গ্রুপে সর্বাধিক %1$d জন থাকতে পারেন</item>
+        <item quantity="other">গ্রুপে সর্বাধিক %1$d জন থাকতে পারেন</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">%1$s সম্মত হলে, আমন্ত্রণ জানানোর পর থেকে চ্যাটে পাঠানো সব মেসেজ তিনি দেখতে পারবেন।</item>
+        <item quantity="other">কোনও ব্যক্তি সম্মত হলে, আমন্ত্রণ জানানোর পর থেকে চ্যাটে পাঠানো সব মেসেজ তিনি দেখতে পারবেন।</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">%1$s-কে এই চ্যাটে আমন্ত্রণ জানাতে চান?</item>
+        <item quantity="other">বেছে নেওয়া লোকজনকে এই চ্যাটে আমন্ত্রণ জানাতে চান?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$dটি ভিডিও ডাউনলোড হয়েছে</item>
+        <item quantity="other">%1$dটি ভিডিও ডাউনলোড হয়েছে</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">%1$dটি ফটো ডাউনলোড করা যায়নি</item>
+        <item quantity="other">%1$dটি ফটো ডাউনলোড করা যায়নি</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$dটি রোল</item>
+        <item quantity="other">+ %1$dটি রোল</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">%1$d দিন আগে</item>
+        <item quantity="other">%1$d দিন আগে</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">%1$d ঘণ্টা আগে</item>
+        <item quantity="other">%1$d ঘণ্টা আগে</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">%1$d মিনিট আগে</item>
+        <item quantity="other">%1$d মিনিট আগে</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d মাস আগে</item>
+        <item quantity="other">%1$d মাস আগে</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$sটি উত্তর</item>
+        <item quantity="other">%1$sটি উত্তর</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">এছাড়াও %1$s জন ব্যক্তি প্রতিক্রিয়া জানিয়েছেন।</item>
+        <item quantity="other">এছাড়াও %1$s জন ব্যক্তি প্রতিক্রিয়া জানিয়েছেন।</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s জন ব্যক্তি এই মন্তব্যে প্রতিক্রিয়া জানিয়েছেন।</item>
+        <item quantity="other">%1$s জন ব্যক্তি এই মন্তব্যে প্রতিক্রিয়া জানিয়েছেন।</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$sটি উত্তর</item>
+        <item quantity="other">%1$sটি উত্তর</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">আরও %1$sটি উত্তর। দেখানোর জন্য দুইবার ট্যাপ করুন</item>
+        <item quantity="other">আরও %1$sটি উত্তর। দেখানোর জন্য দুইবার ট্যাপ করুন</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d সপ্তাহ আগে</item>
+        <item quantity="other">%1$d সপ্তাহ আগে</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">%1$d বছর আগে</item>
+        <item quantity="other">%1$d বছর আগে</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,dটি গান</item>
+        <item quantity="other">%1$,dটি গান</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d জন শ্রোতা</item>
+        <item quantity="other">%1$d জন শ্রোতা</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d ঘন্টা</item>
+        <item quantity="other">%1$d ঘন্টা</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">একসাথে %1$dটি গানে কাজ করেছেন</item>
+        <item quantity="other">একসাথে %1$dটি গানে কাজ করেছেন</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">একসাথে %1$dটি গানে কাজ করেছেন</item>
+        <item quantity="other">একসাথে %1$dটি গানে কাজ করেছেন</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d দিন</item>
+        <item quantity="other">%1$d দিন</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s জন মাসিক শ্রোতা</item>
+        <item quantity="other">%1$s জন মাসিক শ্রোতা</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">রচয়িতা: %1$s</item>
+        <item quantity="other">রচয়িতা: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s + অন্য %2$d জন</item>
+        <item quantity="other">%1$s + অন্য %2$d জন</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">%1$s-এর থেকে আরও কটেন্টে নেভিগেট করে</item>
+        <item quantity="other">%1$s-এ যুক্ত সকলের একটি নেভিগেট করার লিস্ট দেখায়</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">প্রস্তুতির সময় %1$d দিন</item>
+        <item quantity="other">প্রস্তুতির সময় %1$d দিন</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d দিন</item>
+        <item quantity="other">%1$d দিন</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;দিন&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;দিন&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+        <item quantity="other">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">শোনার সময়ের মেয়াদ শেষ হতে আর %1$d দিন বাকি</item>
+        <item quantity="other">শোনার সময়ের মেয়াদ শেষ হতে আর %1$d দিন বাকি</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">শোনার সময় রিনিউ হতে %1$d দিন বাকি</item>
+        <item quantity="other">শোনার সময় রিনিউ হতে %1$d দিন বাকি</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">%1$dটি ফটো মুছবেন?</item>
+        <item quantity="other">%1$dটি ফটো মুছবেন?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">%1$dটি আইটেম মুছে ফেলতে চান?</item>
+        <item quantity="other">%1$dটি আইটেম মুছে ফেলতে চান?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">%1$dটি ভিডিও মুছে ফেলতে চান?</item>
+        <item quantity="other">%1$dটি ভিডিও মুছে ফেলতে চান?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%2$dটি অক্ষরের মধ্যে %1$d নম্বর</item>
+        <item quantity="other">%2$dটি অক্ষরের মধ্যে %1$d নম্বর</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s ও অন্য %2$dটি</item>
+        <item quantity="other">%1$s ও অন্যান্য %2$dটি</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$dটি আইটেম বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$dটি আইটেম বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">আপনি %2$d দিনের মধ্যে মাত্র %1$d বার ব্যবহারকারীর নাম পরিবর্তন করতে পারবেন।</item>
+        <item quantity="other">আপনি %2$d দিনের মধ্যে মাত্র %1$d বার ব্যবহারকারীর নাম পরিবর্তন করতে পারবেন।</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">%1$d দিন পরে আবার চেষ্টা করুন।</item>
+        <item quantity="other">%1$d দিন পরে আবার চেষ্টা করুন।</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">আপনি প্রত্যেক %2$d দিন অন্তর %1$d বার আপনার ব্যবহারকারীর নাম পরিবর্তন করতে পারবেন।</item>
+        <item quantity="other">আপনি প্রত্যেক %2$d দিন অন্তর %1$d বার আপনার ব্যবহারকারীর নাম পরিবর্তন করতে পারবেন।</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s বার সেভ করা হয়েছে</item>
+        <item quantity="other">%1$s বার সেভ করা হয়েছে</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">%1$d শতাংশ ডাউনলোড করা হয়েছে</item>
+        <item quantity="other">%1$d শতাংশ ডাউনলোড করা হয়েছে</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$dটি পর্ব যোগ করা হয়েছে</item>
+        <item quantity="other">%1$dটি পর্ব যোগ করা হয়েছে</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$dটি পর্ব চালানো হয়েছে</item>
+        <item quantity="other">%1$dটি পর্ব চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">%1$d সেকেন্ড অপেক্ষা করুন, তারপরে একটি নতুন কোডের জন্য অনুরোধ করুন।</item>
+        <item quantity="other">%1$d সেকেন্ড অপেক্ষা করুন, তারপরে একটি নতুন কোডের জন্য অনুরোধ করুন।</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">%1$d সেকেন্ডে আবার চেষ্টা করুন</item>
+        <item quantity="other">%1$d সেকেন্ডে আবার চেষ্টা করুন</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$dটি ইভেন্ট</item>
+        <item quantity="other">%1$dটি ইভেন্ট</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">আরও %1$dটি পেমেন্ট পদ্ধতি দেখান</item>
+        <item quantity="other">আরও %1$dটি পেমেন্ট পদ্ধতি দেখান</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">%2$sটি রেটিংয়ের উপর ভিত্তি করে, Spotify-তে 5-এর মধ্যে %1$s স্টার রেটিং দেওয়া হয়েছে</item>
+        <item quantity="other">%2$sটি রেটিংয়ের উপর ভিত্তি করে, Spotify-তে 5-এর মধ্যে %1$s স্টার রেটিং দেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d স্টার: %2$d%%</item>
+        <item quantity="other">%1$d স্টার: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d জন শুনছেন</item>
+        <item quantity="other">%1$d জন শুনছেন</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d জন ব্যক্তি শুনছেন</item>
+        <item quantity="other">%1$d জন ব্যক্তি শুনছেন</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">%1$s-এর Jam – %2$d জন একসঙ্গে শুনছেন</item>
+        <item quantity="other">%1$s-এর Jam – %2$d জন একসঙ্গে শুনছেন</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$sটি সেভ করা আছে</item>
+        <item quantity="other">%1$sটি সেভ করা আছে</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;ঘণ্টা&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;ঘণ্টা&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">শোনার সময়ের মেয়াদ শেষ হতে আর %1$d ঘণ্টা বাকি</item>
+        <item quantity="other">শোনার সময়ের মেয়াদ শেষ হতে আর %1$d ঘণ্টা বাকি</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">&apos;শোনার সময়&apos; রিনিউ হতে %1$d ঘণ্টা বাকি</item>
+        <item quantity="other">&apos;শোনার সময়&apos; রিনিউ হতে %1$d ঘণ্টা বাকি</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s বার চালানো হয়েছে</item>
+        <item quantity="other">%1$s বার চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s আপনার Jam-এ যোগ দিয়েছেন</item>
+        <item quantity="other">অন্য %2$d জন আপনার Jam-এ যোগ দিয়েছেন</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s টি ফোল্ডার</item>
+        <item quantity="other">%1$s টি ফোল্ডার</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s প্লেলিস্ট</item>
+        <item quantity="other">%1$s প্লেলিস্ট</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s টি গান</item>
+        <item quantity="other">%1$s টি গান</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">প্লেলিস্ট• %1$s ট্র্যাক</item>
+        <item quantity="other">প্লেলিস্ট• %1$s টি ট্র্যাক</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s ট্র্যাক</item>
+        <item quantity="other">%1$s টি ট্র্যাক</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$sটি ডাউনলোড করা পর্ব • %2$s</item>
+        <item quantity="other">%1$sটি ডাউনলোড করা পর্ব • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s টি ডাউনলোড করা পর্ব</item>
+        <item quantity="other">%1$s টি ডাউনলোড করা পর্ব</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$dটি আইটেম যোগ করা হয়েছে</item>
+        <item quantity="other">%1$dটি আইটেম যোগ করা হয়েছে</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$dটি আইটেম চালানো হয়েছে</item>
+        <item quantity="other">%1$dটি আইটেম চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">যেহেতু আপনি কী শুনছেন তা %1$s-এর সাথে শেয়ার করছেন, তাই আপনি %1$s-এর কাছ থেকে Jam করার অনুরোধ পেয়েছেন।</item>
+        <item quantity="other">যেহেতু আপনি কী শুনছেন তা %2$d-এর সাথে শেয়ার করছেন, তাই আপনি %1$s-এর কাছ থেকে Jam করার অনুরোধ পেয়েছেন।</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">আপনি Jam-এর অটোমেটিক আমন্ত্রণ চালু করেছেন এবং নিম্নলিখিত যেকোনও একটি শর্ত পূরণ করেছেন বলে, আপনার Jam-এ যোগ দেওয়ার জন্য %1$s-এর থেকে অনুরোধ পেয়েছেন:</item>
+        <item quantity="other">আপনি Jam-এর অটোমেটিক আমন্ত্রণ চালু করেছেন এবং নিম্নলিখিত যেকোনও একটি শর্ত পূরণ করেছেন বলে, আপনার Jam-এ যোগ দেওয়ার জন্য %1$s ও অন্যান্য %2$d জনের থেকে অনুরোধ পেয়েছেন:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+ অন্য %1$d জন</item>
+        <item quantity="other">+ অন্য %1$d জন</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d টি গান</item>
+        <item quantity="other">%1$d টি গান</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$dটি পর্ব</item>
+        <item quantity="other">%1$dটি পর্ব</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$dটি আইটেম</item>
+        <item quantity="other">%1$dটি আইটেম</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d জন</item>
+        <item quantity="other">%1$d জন</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d জন শুনছেন</item>
+        <item quantity="other">%1$d জন শুনছেন</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">আপনি নিজের মাসিক প্ল্যানে অন্তর্ভুক্ত %1$d ঘণ্টার অডিওবুকের পুরোটা শুনেছেন।</item>
+        <item quantity="other">আপনি নিজের মাসিক প্ল্যানে অন্তর্ভুক্ত %1$d ঘণ্টার অডিওবুকের পুরোটা শুনেছেন।</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">আমাদের সাবস্ক্রাইবার ক্যাটালগ থেকে %1$d ঘণ্টার অডিওবুক শুনুন, আপনার মাসিক প্ল্যানে অন্তর্ভুক্ত।</item>
+        <item quantity="other">আমাদের সাবস্ক্রাইবার ক্যাটালগ থেকে %1$d ঘণ্টার অডিওবুক শুনুন, আপনার মাসিক প্ল্যানে অন্তর্ভুক্ত।</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d-ঘণ্টা শোনার সময়</item>
+        <item quantity="other">%1$d-ঘণ্টা শোনার সময়</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">%1$s%2$s + %3$d জন হোস্ট করেছেন</item>
+        <item quantity="other">%1$s%2$s + %3$d জন হোস্ট করেছেন</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d দিন</item>
+        <item quantity="other">%1$d দিন</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s সেকেন্ড</item>
+        <item quantity="other">%1$s সেকেন্ড</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d জন কন্ট্রিবিউটর</item>
+        <item quantity="other">%1$d জন কন্ট্রিবিউটর</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$dটি স্যাম্পেল</item>
+        <item quantity="other">%1$dটি স্যাম্পেল</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">%1$d দিন আগে</item>
+        <item quantity="other">%1$d দিন আগে</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">%1$d মাস আগে</item>
+        <item quantity="other">%1$d মাস আগে</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">%1$d সপ্তাহ আগে</item>
+        <item quantity="other">%1$d সপ্তাহ আগে</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">%1$d বছর আগে</item>
+        <item quantity="other">%1$d বছর আগে</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">%1$dটি ফটো ডাউনলোড করতে চান?</item>
+        <item quantity="other">%1$dটি ফটো ডাউনলোড করতে চান?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">%1$dটি আইটেম ডাউনলোড করতে চান?</item>
+        <item quantity="other">%1$dটি আইটেম ডাউনলোড করতে চান?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">%1$dটি ভিডিও ডাউনলোড করতে চান?</item>
+        <item quantity="other">%1$dটি ভিডিও ডাউনলোড করবেন?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">আপনি একবারে সর্বাধিক %1$dটি ফাইল ইমপোর্ট করতে পারবেন।</item>
+        <item quantity="other">আপনি একবারে সর্বাধিক %1$dটি ভিডিও পাঠাতে পারবেন।</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$dটি ফটো</item>
+        <item quantity="other">%1$dটি ফটো</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$dটি আইটেম</item>
+        <item quantity="other">%1$dটি আইটেম</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$dটি ভিডিও</item>
+        <item quantity="other">%1$dটি ভিডিও</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;মিনিট&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;মিনিট&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%dটি নতুন বিজ্ঞপ্তি</item>
+        <item quantity="other">%dটি নতুন বিজ্ঞপ্তি</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">আর %1$dটি অক্ষর লেখা যাবে, সর্বাধিক সীমার কাছাকাছি পৌঁছে গেছে</item>
+        <item quantity="other">আর %1$dটি অক্ষর লেখা যাবে, সর্বাধিক সীমার কাছাকাছি পৌঁছে গেছে</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">আর %1$dটি অক্ষর লেখা যাবে</item>
+        <item quantity="other">আর %1$dটি অক্ষর লেখা যাবে</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%2$,dটির মধ্যে %1$,dটি (%3$,d%% সম্পূর্ণ)</item>
+        <item quantity="other">%2$,dটির মধ্যে %1$,dটি (%3$,d%% সম্পূর্ণ)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%2$,d-এর মধ্যে %1$,d( %3$,d %% সম্পূর্ণ)</item>
+        <item quantity="other">%2$,d-এর মধ্যে %1$,d (%3$,d%% সম্পূর্ণ)</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">গতি বাড়িয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+        <item quantity="other">গতি বাড়িয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">গতি কমিয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+        <item quantity="other">গতি কমিয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$sটি ডাউনলোড করা গান উপলভ্য</item>
+        <item quantity="other">%1$sটি ডাউনলোড করা গান উপলভ্য</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$dটি আইটেম বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$dটি আইটেম বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$sটি বই</item>
+        <item quantity="other">%1$sটি বই</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s টি পর্ব</item>
+        <item quantity="other">%1$s টি পর্ব</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$sটি আইটেম</item>
+        <item quantity="other">%1$sটি আইটেম</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$sটি ইভেন্ট</item>
+        <item quantity="other">%1$sটি ইভেন্ট</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d জন শুনছেন</item>
+        <item quantity="other">%1$,d জন শুনছেন</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d টি গান</item>
+        <item quantity="other">%1$,d টি গান</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">এই অ্যালবাম নতুন, তাই আপনি আরও %1$d দিনের জন্য এটি যে কোনও ক্রমে চালাতে পারবেন। Premium নিয়ে, এই স্বাধীনতা আপনি চিরকাল উপভোগ করতে পারবেন।</item>
+        <item quantity="other">এই অ্যালবাম নতুন, তাই আপনি আরও %1$d দিনের জন্য এটি যে কোনও ক্রমে চালাতে পারবেন। Premium নিয়ে, এই স্বাধীনতা আপনি চিরকাল উপভোগ করতে পারবেন।</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">আরও %1$d দিনের জন্য যে কোনও ক্রমে চালান</item>
+        <item quantity="other">আরও %1$d দিনের জন্য যে কোনও ক্রমে চালান</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">ওয়াই-ফাই ছাড়াই মিউজিক শুনুন এবং আপনার মোবাইল ডেটা সাশ্রয় করুন। 24 ঘণ্টার জন্য বিনামূল্যে এটি এবং Spotify Premium-এর আরও সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">ওয়াই-ফাই ছাড়াই মিউজিক শুনুন এবং আপনার মোবাইল ডেটা সাশ্রয় করুন। %1$d দিনের জন্য বিনামূল্যে এটি এবং Spotify Premium-এর আরও সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">যে কোনও সময়, যে কোনও অর্ডারে চালানোর জন্য গান বেছে নিন। 24 ঘণ্টার জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">যে কোনও সময়, যে কোনও অর্ডারে চালানোর জন্য গান বেছে নিন। %1$d দিনের জন্য় বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">আপনার লিস্ট নতুন অর্ডারে সাজান এবং আরও অনেক কিছু করুন। 24 ঘণ্টার জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">আপনার লিস্ট নতুন অর্ডারে সাজান এবং আরও অনেক কিছু করুন। %1$d দিনের জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">আপনার মিউজিক শোনার পুরো নিয়ন্ত্রণ নিজের হাতে নিন। 24 ঘণ্টার জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">আপনার মিউজিক শোনার পুরো নিয়ন্ত্রণ নিজের হাতে নিন। %1$d দিনের জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">যে কোনও অর্ডারে গান চালান বা শাফেল করুন। 24 ঘণ্টার জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">যে কোনও অর্ডারে গান চালান বা শাফেল করুন। %1$d দিনের জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">আনলিমিটেড স্কিপ ও 24 ঘণ্টার জন্য বিনামূল্যে Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">আনলিমিটেড স্কিপ ও %1$d দিনের জন্য বিনামূল্যে Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">আপনার মিউজিক শোনার পুরো নিয়ন্ত্রণ নিজের হাতে নিন। 24 ঘণ্টার জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+        <item quantity="other">আপনার মিউজিক শোনার পুরো নিয়ন্ত্রণ নিজের হাতে নিন। %1$d দিনের জন্য বিনামূল্যে, এটি এবং Spotify Premium-এর আরও অনেক সুবিধা ব্যবহার করে দেখুন।</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">পরবর্তী 24 ঘণ্টায় ব্যবহার করে দেখার জন্য Spotify Premium-এর কিছু সুবিধা আপনার কাছে আছে।</item>
+        <item quantity="other">পরবর্তী %1$d দিনের মধ্যে ব্যবহার করে দেখার জন্য Spotify Premium-এর কিছু সুবিধা আপনার কাছে আছে।</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">আমরা %2$s নম্বরে %1$d-সংখ্যার কোড পাঠিয়েছি।</item>
+        <item quantity="other">আমরা %2$s নম্বরে %1$d-সংখ্যার কোড পাঠিয়েছি।</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">আপনার বয়স %1$d বছরের কম, তাই আপনি অভিভাবকীয় সম্মতি দেওয়ার যোগ্য নন।\n\nএছাড়াও, আপনার বর্তমান বয়স অনুসারে আপনি কিছু কন্টেন্ট এবং ফিচার অ্যাক্সেস করতে পারবেন না। আমরা সেগুলি লুকিয়ে রেখেছি।</item>
+        <item quantity="other">আপনার বয়স %1$d বছরের কম, তাই আপনি অভিভাবকীয় সম্মতি দেওয়ার যোগ্য নন।\n\nএছাড়াও, আপনার বর্তমান বয়স অনুসারে আপনি কিছু কন্টেন্ট এবং ফিচার অ্যাক্সেস করতে পারবেন না। আমরা সেগুলি লুকিয়ে রেখেছি।</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">ভুল পিন, %1$d মিনিট পরে আবার চেষ্টা করে দেখুন।</item>
+        <item quantity="other">ভুল পিন, %1$d মিনিট পরে আবার চেষ্টা করে দেখুন।</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">ভুল পিন, %1$d সেকেন্ড পরে আবার চেষ্টা করে দেখুন।</item>
+        <item quantity="other">ভুল পিন, %1$d সেকেন্ড পরে আবার চেষ্টা করে দেখুন।</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$dটি Premium অ্যাকাউন্ট</item>
+        <item quantity="other">%1$dটি Premium অ্যাকাউন্ট</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s + অন্য %2$d জন</item>
+        <item quantity="other">%1$s + অন্য %2$d জন</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s + অন্য %2$d জন · মিক্স করেছেন</item>
+        <item quantity="other">%1$s + অন্য %2$d জন · মিক্স করেছেন</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s + অন্য %2$d জন</item>
+        <item quantity="other">%1$s + অন্য %2$d জন</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">%1$s + অন্য %2$d জন মিক্স করেছেন</item>
+        <item quantity="other">%1$s + অন্য %2$d জন মিক্স করেছেন</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">%1$s এবং অন্য %2$d জন তৈরি করেছেন</item>
+        <item quantity="other">%1$s এবং অন্যান্য %2$d জন তৈরি করেছেন</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">%1$s এবং অন্য %2$d জন তৈরি করেছেন</item>
+        <item quantity="other">%1$s এবং অন্যান্য %2$d জন তৈরি করেছেন</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d টি পর্ব</item>
+        <item quantity="other">%1$d টি পর্ব</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d গান</item>
+        <item quantity="other">%1$d টি গান</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d টি পর্ব</item>
+        <item quantity="other">%1$,d টি পর্ব</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d টি গান</item>
+        <item quantity="other">%1$,d টি গান</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d দিন</item>
+        <item quantity="other">%1$d দিন</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">%1$d ঘন্টা বাকি</item>
+        <item quantity="other">%1$d ঘন্টা বাকি</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">%1$d মিনিট বাকি</item>
+        <item quantity="other">%1$d মিনিট বাকি</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d বাকি • %2$s টি ভোট</item>
+        <item quantity="other">%1$d বাকি • %2$s টি ভোট</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d দিনের প্রিমিয়াম সাবস্ক্রিপশন</item>
+        <item quantity="other">%1$d দিনের প্রিমিয়াম সাবস্ক্রিপশন</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d মাসের Premium সাবস্ক্রিপশন</item>
+        <item quantity="other">%1$d মাসের Premium সাবস্ক্রিপশন</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d সপ্তাহের Premium সাবস্ক্রিপশন</item>
+        <item quantity="other">%1$d সপ্তাহের Premium সাবস্ক্রিপশন</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d বছরের Premium সাবস্ক্রিপশন</item>
+        <item quantity="other">%1$d বছরের Premium সাবস্ক্রিপশন</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$sটি আগে থেকে সেভ করা</item>
+        <item quantity="other">%1$sটি আগে থেকে সেভ করা</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d জন ফলোয়ার</item>
+        <item quantity="other">%1$d জন ফলোয়ার</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d জনকে ফলো করছেন</item>
+        <item quantity="other">%1$d জনকে ফলো করছেন</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d জন বন্ধু</item>
+        <item quantity="other">%1$d জন বন্ধু</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d জন ফলোয়ার</item>
+        <item quantity="other">%1$,dজন ফলোয়ার</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d বার সেভ করা হয়েছে</item>
+        <item quantity="other">%1$,d বার সেভ করা হয়েছে</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,dটি সেভ করা আছে</item>
+        <item quantity="other">%1$,dটি সেভ করা আছে</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d জন ফলোয়ার</item>
+        <item quantity="other">%1$,d জন ফলোয়ার</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$dটি ট্র্যাক যোগ করা হয়েছে</item>
+        <item quantity="other">%1$dটি ট্র্যাক যোগ করা হয়েছে</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$dটি ট্র্যাক সরানো হয়েছে</item>
+        <item quantity="other">%1$dটি ট্র্যাক সরানো হয়েছে</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$dটি প্রতিক্রিয়া</item>
+        <item quantity="other">%1$dটি প্রতিক্রিয়া</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">প্রথম %1$d মিনিট এই অডিওবুক চালানোর পর আপনার রিক্যাপ উপলভ্য হবে।</item>
+        <item quantity="other">প্রথম %1$d মিনিট এই অডিওবুক চালানোর পর আপনার রিক্যাপ দেখানো হবে।</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d জন শুনছেন</item>
+        <item quantity="other">%1$d জন শুনছেন</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d জন চালিয়েছেন</item>
+        <item quantity="other">%1$d জন চালিয়েছেন</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d জন সেভ করেছেন</item>
+        <item quantity="other">%1$d জন সেভ করেছেন</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d জন দেখেছেন</item>
+        <item quantity="other">%1$d জন দেখেছেন</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">%1$d দিনের মধ্যে Spotify Premium-এর আগাম অ্যাক্সেসের সুবিধা পাওয়া যাবে</item>
+        <item quantity="other">%1$d দিনের মধ্যে Spotify Premium-এর আগাম অ্যাক্সেসের সুবিধা পাওয়া যাবে</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+        <item quantity="other">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$dটি রেকর্ডিং</item>
+        <item quantity="other">%1$dটি রেকর্ডিং</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">শেষ সক্রিয় %1$d দিন আগে</item>
+        <item quantity="other">শেষ সক্রিয় %1$d দিন আগে</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">আপনি সর্বাধিক %1$dটি ডিভাইসে ডাউনলোড করতে পারবেন।</item>
+        <item quantity="other">আপনি সর্বাধিক %1$dটি ডিভাইসে ডাউনলোড করতে পারবেন।</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">প্লেলিস্ট • %1$dটি গান</item>
+        <item quantity="other">প্লেলিস্ট • %1$dটি গান</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">%1$sটি উত্তর। দেখানোর জন্য দুইবার ট্যাপ করুন</item>
+        <item quantity="other">%1$sটি উত্তর। দেখানোর জন্য দুইবার ট্যাপ করুন</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$sটি সেভ করা আছে</item>
+        <item quantity="other">%1$sটি সেভ করা আছে</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;সেকেন্ড&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;সেকেন্ড&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$dটি লাইন বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$dটি অডিওবুক</item>
+        <item quantity="other">%1$dটি অডিওবুক</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$dটি আইটেম</item>
+        <item quantity="other">%1$dটি আইটেম</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">এই সময়সীমার মধ্যে অবশ্যই অনলাইনে ফিরে যেতে হবে: %1$,d দিন।</item>
+        <item quantity="other">এই সময়সীমার মধ্যে অবশ্যই অনলাইনে ফিরে যেতে হবে: %1$,d দিন।</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">আর কত দিন বাকি: %1$d দিন</item>
+        <item quantity="other">আর কত দিন বাকি: %1$d দিন</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">%1$s জন বন্ধু শেয়ার করেছেন</item>
+        <item quantity="other">%1$s জন বন্ধু শেয়ার করেছেন</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$dটি আইটেম শেয়ার করা হয়েছে</item>
+        <item quantity="other">%1$dটি আইটেম শেয়ার করা হয়েছে</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">জন্মের তারিখ অনুযায়ী, আপনার বর্তমান বয়স %1$d বছর।</item>
+        <item quantity="other">জন্মের তারিখ অনুযায়ী, আপনার বর্তমান বয়স %1$d বছর।</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">আপনার বয়স কি %1$d বছর বলে মনে হচ্ছে?</item>
+        <item quantity="other">আপনার বয়স কি %1$d বছর বলে মনে হচ্ছে?</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">%1$d দিন আগে</item>
+        <item quantity="other">%1$d দিন আগে</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">%1$d ঘণ্টা আগে</item>
+        <item quantity="other">%1$d ঘণ্টা আগে</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">%1$d মিনিট আগে</item>
+        <item quantity="other">%1$d মিনিট আগে</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">%1$d মাস আগে</item>
+        <item quantity="other">%1$d মাস আগে</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">%1$d সপ্তাহ আগে</item>
+        <item quantity="other">%1$d সপ্তাহ আগে</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">%1$d বছর আগে</item>
+        <item quantity="other">%1$d বছর আগে</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$sটি গান একসাথে</item>
+        <item quantity="other">%1$sটি গান একসাথে</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">&lt;b&gt;%1$sটি গান&lt;/b&gt; রেকর্ড করা হয়েছে</item>
+        <item quantity="other">&lt;b&gt;%1$sটি গান&lt;/b&gt; রেকর্ড করা হয়েছে</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">টপ গান:&lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">টপ গান:&lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">&lt;b&gt;%1$s: %2$s&lt;/b&gt;-এর টপ গান</item>
+        <item quantity="other">&lt;b&gt;%1$s: %2$s&lt;/b&gt;-এর টপ গান</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">&lt;b&gt;%1$s জন শিল্পীর&lt;/b&gt; সাথে কাজ করেছেন</item>
+        <item quantity="other">&lt;b&gt;%1$s জন শিল্পীর&lt;/b&gt; সাথে কাজ করেছেন</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s জন সহযোগী</item>
+        <item quantity="other">%1$s জন সহযোগী</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$sটি গান</item>
+        <item quantity="other">%1$sটি গান</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$sটি গান</item>
+        <item quantity="other">%1$sটি গান</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s জন সহযোগী</item>
+        <item quantity="other">%1$s জন সহযোগী</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">%1$sটি গান একসাথে দেখুন</item>
+        <item quantity="other">%1$s টি গান একসাথে দেখুন</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + আরও %2$dটি</item>
+        <item quantity="other">%1$s + আরও %2$dটি</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d জন অবদানকারী</item>
+        <item quantity="other">%1$d জন অবদানকারী</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$dটি স্যাম্পল</item>
+        <item quantity="other">%1$dটি স্যাম্পল</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s বার চালানো হয়েছে</item>
+        <item quantity="other">%1$s বার চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">রোল: %1$s</item>
+        <item quantity="other">রোল: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,dটি নতুন এন্ট্রি</item>
+        <item quantity="other">%1$,dটি নতুন এন্ট্রি</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d টি গান যোগ করা হয়েছে</item>
+        <item quantity="other">%1$d টি গানগুলি যোগ করা হয়েছে</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$dটি গান চালানো হয়েছে</item>
+        <item quantity="other">%1$dটি গান চালানো হয়েছে</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">গতি বাড়িয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+        <item quantity="other">গতি বাড়িয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">গতি কমিয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+        <item quantity="other">গতি কমিয়ে প্রতি মিনিটে %1$d বিট করা হয়েছে</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d জন বন্ধু এখন চালাচ্ছেন</item>
+        <item quantity="other">%1$d জন বন্ধু এখন চালাচ্ছেন</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$dটি আইটেম</item>
+        <item quantity="other">%1$dটি আইটেম</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$dটি বাক্য বেছে নেওয়া হয়েছে</item>
+        <item quantity="other">%1$s, %2$s, %3$dটি বাক্য বেছে নেওয়া হয়েছে</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d ঘণ্টা %2$d মিনিট</item>
+        <item quantity="other">%1$d ঘণ্টা %2$d মিনিট</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">%1$d ঘণ্টা বাকি</item>
+        <item quantity="other">%1$d ঘণ্টা বাকি</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">%1$d ঘণ্টা %2$d মিনিট বাকি</item>
+        <item quantity="other">%1$d ঘণ্টা %2$d মিনিট বাকি</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s, আপনার সাথে একটি Jam-এ যোগ দিতে চান!</item>
+        <item quantity="other">%1$s ও অন্যান্য %2$d জন আপনার Jam-এ যোগ দিতে চান!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s, আপনার Jam-এ যোগ দিতে চান!</item>
+        <item quantity="other">%1$s ও অন্যান্য %2$d জন আপনার Jam-এ যোগ দিতে চান!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%1$s/%2$d ঘণ্টা শোনা হয়েছে</item>
+        <item quantity="other">%1$s/%2$d ঘণ্টা শোনা হয়েছে</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+        <item quantity="other">%1$d দিনের মধ্যে রিলিজ করা হচ্ছে</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">%1$d দিনের মধ্যে আগাম Premium অ্যাক্সেস করার সুবিধা</item>
+        <item quantity="other">%1$d দিনের মধ্যে আগাম Premium অ্যাক্সেস করার সুবিধা</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">%1$sটি শোয়ের জন্য চালু করা আছে</item>
+        <item quantity="other">%1$sটি শোয়ের জন্য চালু করা আছে</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%2$dটি গানের মধ্যে %1$d নম্বর</item>
+        <item quantity="other">%2$dটি গানের মধ্যে %1$d নম্বর</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">চলছে, %1$d শতাংশ সম্পূর্ণ হয়েছে</item>
+        <item quantity="other">চলছে, %1$d শতাংশ সম্পূর্ণ হয়েছে</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">আপনি একবারে শুধু %1$dটি আইটেম পিন করতে পারবেন।</item>
+        <item quantity="other">আপনি একবারে শুধু %1$dটি আইটেম পিন করতে পারবেন।</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">আপনি একবারে শুধু %1$dটি আইটেম পিন করতে পারবেন।</item>
+        <item quantity="other">আপনি একবারে শুধু %1$dটি আইটেম পিন করতে পারবেন।</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">আগেই শোনা হয়েছে, এখন আবার শোনা হচ্ছে এবং %1$d শতাংশ সম্পূর্ণ হয়েছে</item>
+        <item quantity="other">আগেই শোনা হয়েছে, এখন আবার শোনা হচ্ছে এবং %1$d শতাংশ সম্পূর্ণ হয়েছে</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d ঘণ্টা</item>
+        <item quantity="other">%1$d ঘণ্টা</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d মিনিট</item>
+        <item quantity="other">%1$d মিনিট</item>
+    </plurals>
+</resources>

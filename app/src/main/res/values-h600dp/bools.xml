@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="context_menu_should_expand_fully">false</bool>
+</resources>

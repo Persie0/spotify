@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.artist.creatorcommon.view.ArtistBiographyImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/artist_bio_image"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/mobile_artist_gallery_margin"
+    android:scaleType="centerCrop"/>

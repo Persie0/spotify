@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodyMediumBold"
+        android:textColor="@color/encore_row_title"
+        android:id="@+id/share_option_item_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacer_8"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textAppearance="@style/TextAppearance.Encore.BodySmall"
+        android:textColor="@color/encore_row_subtitle"
+        android:gravity="start"
+        android:id="@+id/share_option_item_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacer_8"
+        android:layout_marginEnd="@dimen/spacer_12"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@+id/share_option_item_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/share_option_item_title"/>
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:id="@+id/share_option_action_button"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/share_options_expand_qr_code_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/share_option_item_subtitle"
+        style="@style/Encore.Button.Secondary.Small"/>
+    <ImageView
+        android:id="@+id/share_option_item_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

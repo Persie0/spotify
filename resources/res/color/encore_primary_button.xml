@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:state_pressed="true"
+        android:color="?attr/backgroundBase"
+        android:alpha="@dimen/opacity_70"/>
+    <item
+        android:state_enabled="false"
+        android:color="?attr/backgroundBase"
+        android:alpha="@dimen/opacity_30"/>
+    <item android:color="?attr/backgroundBase"/>
+</selector>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.component.buttons.EncoreButton
+        android:layout_gravity="center"
+        android:id="@+id/clear_search_history_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/assisted_curation_search_search_history_clear"
+        style="@style/Encore.Button.Secondary.Small"/>
+</FrameLayout>

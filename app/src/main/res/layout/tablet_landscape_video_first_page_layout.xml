@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/content"
+    android:background="?attr/pasteColorBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView
+        android:id="@+id/overlay_controls_layout"
+        android:background="@drawable/nowplaying_overlay_gradient"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.spotify.encoremobile.viewstub.EncoreViewStub
+            android:id="@+id/video_first_track_carousel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+        <include layout="@layout/tablet_landscape_video_first_overlay"/>
+    </com.spotify.nowplaying.uiusecases.overlay.OverlayHidingGradientBackgroundView>
+    <FrameLayout
+        android:id="@+id/immersive_video_overlay_ui_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.spotify.encoremobile.viewstub.EncoreViewStub
+            android:layout_gravity="end|top"
+            android:id="@+id/skip_ad_button_stub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacer_48"
+            android:layout_marginEnd="@dimen/spacer_16"/>
+    </FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

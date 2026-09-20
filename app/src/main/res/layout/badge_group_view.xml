@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/first_badge"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/encore_badge_group_badge_height"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/second_badge"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/second_badge"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/encore_badge_group_badge_height"
+        android:layout_marginStart="@dimen/encore_badge_margin"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/third_badge"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/first_badge"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <com.spotify.encoremobile.viewstub.EncoreViewStub
+        android:id="@+id/third_badge"
+        android:visibility="gone"
+        android:duplicateParentState="true"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/encore_badge_group_badge_height"
+        android:layout_marginStart="@dimen/encore_badge_margin"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@+id/second_badge"
+        app:layout_constraintTop_toTopOf="parent"/>
+</merge>

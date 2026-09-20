@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/transcript_line_loading_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <View
+        android:id="@+id/placeholder_line"
+        android:background="@color/gray_15"
+        android:layout_width="150dp"
+        android:layout_height="24dp"
+        android:layout_marginBottom="@dimen/spacer_12"/>
+</FrameLayout>

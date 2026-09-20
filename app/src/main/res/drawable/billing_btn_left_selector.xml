@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/billing_btn_bg"/>
+            <corners
+                android:topLeftRadius="@dimen/billing_btn_border_radius"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="@dimen/billing_btn_border_radius"
+                android:bottomRightRadius="0dp"/>
+            <stroke
+                android:width="@dimen/billing_btn_border_size"
+                android:color="@color/billing_btn_selected_border"/>
+        </shape>
+    </item>
+    <item android:state_selected="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/billing_btn_bg"/>
+            <corners
+                android:topLeftRadius="@dimen/billing_btn_border_radius"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="@dimen/billing_btn_border_radius"
+                android:bottomRightRadius="0dp"/>
+            <stroke
+                android:width="@dimen/billing_btn_border_size"
+                android:color="@color/billing_btn_not_selected_border"/>
+        </shape>
+    </item>
+</selector>

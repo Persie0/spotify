@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="your_library_quick_scroll_use_date_utils">true</bool>
+</resources>

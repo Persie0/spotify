@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/ellipse_middle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.spotify.encoremobile.facepile.FaceView
+        android:id="@+id/user_profile_picture"
+        android:focusable="false"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"/>
+</LinearLayout>

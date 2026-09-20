@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAppearance="@style/TextAppearance.Encore.BodyMedium"
+    android:textColor="@color/white"
+    android:gravity="center_vertical"
+    android:id="@+id/pronoun_name"
+    android:background="?attr/selectableItemBackground"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="?android:attr/listPreferredItemHeight"
+    android:paddingHorizontal="16dp"/>

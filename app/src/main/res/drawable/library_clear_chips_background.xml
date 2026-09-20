@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="@dimen/library_chip_corner_radius"/>
+    <solid android:color="?attr/baseBackgroundTintedHighlight"/>
+    <size
+        android:height="@dimen/library_clear_chips_circle_size"
+        android:width="@dimen/library_clear_chips_circle_size"/>
+</shape>

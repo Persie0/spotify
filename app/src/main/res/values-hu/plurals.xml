@@ -1,0 +1,1283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="about_card_monthly_listeners">
+        <item quantity="one">%1$s hallgató havonta</item>
+        <item quantity="other">%1$s hallgató havonta</item>
+    </plurals>
+    <plurals name="accessibility_grouped_speakers_count">
+        <item quantity="one">%1$d csoportosított hangszóró</item>
+        <item quantity="other">%1$d csoportosított hangszóró</item>
+    </plurals>
+    <plurals name="accessibility_rating_bar_state">
+        <item quantity="one">%1$d csillag az 5-ből</item>
+        <item quantity="other">%1$d csillag az 5-ből</item>
+    </plurals>
+    <plurals name="accessibility_rating_stars_state">
+        <item quantity="one">%1$d csillag az 5-ből</item>
+        <item quantity="other">%1$d csillag az 5-ből</item>
+    </plurals>
+    <plurals name="accessibility_select_star">
+        <item quantity="one">%1$d csillag kiválasztása</item>
+        <item quantity="other">%1$d csillag kiválasztása</item>
+    </plurals>
+    <plurals name="accessibility_star_label">
+        <item quantity="one">%1$d csillag</item>
+        <item quantity="other">%1$d csillag</item>
+    </plurals>
+    <plurals name="account_switcher_face_pile_accessibility_label">
+        <item quantity="one">%1$d további fiók</item>
+        <item quantity="other">%1$d további fiók</item>
+    </plurals>
+    <plurals name="account_switcher_other_users_subtitle">
+        <item quantity="one">És %1$d további fiók</item>
+        <item quantity="other">És %1$d további fiók</item>
+    </plurals>
+    <plurals name="add_to_playlist_filter_items_count_changed_announcement">
+        <item quantity="one">%1$d tétel</item>
+        <item quantity="other">%1$d tétel</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_folders_count">
+        <item quantity="one">%1$s mappa</item>
+        <item quantity="other">%1$s mappa</item>
+    </plurals>
+    <plurals name="add_to_playlist_folder_subtitle_playlists_count">
+        <item quantity="one">%1$s műsorlista</item>
+        <item quantity="other">%1$s műsorlista</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_audiobooks_count">
+        <item quantity="one">%1$s hangoskönyv</item>
+        <item quantity="other">%1$s hangoskönyv</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_chapters_count">
+        <item quantity="one">%1$s fejezet</item>
+        <item quantity="other">%1$s fejezet</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_clips_count">
+        <item quantity="one">%1$s részlet</item>
+        <item quantity="other">%1$s részlet</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_episodes_count">
+        <item quantity="one">%1$s epizód</item>
+        <item quantity="other">%1$s epizód</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_songs_count">
+        <item quantity="one">%1$s dal</item>
+        <item quantity="other">%1$s dal</item>
+    </plurals>
+    <plurals name="add_to_playlist_subtitle_tracks_count">
+        <item quantity="one">%1$s szám</item>
+        <item quantity="other">%1$s szám</item>
+    </plurals>
+    <plurals name="ads_skip_delay_content_description">
+        <item quantity="one">%1$d másodperc és átugorhatod a hirdetést, időzítő</item>
+        <item quantity="other">%1$d másodperc és átugorhatod a hirdetést, időzítő</item>
+    </plurals>
+    <plurals name="advertisement_subtext_skippable_delay">
+        <item quantity="one">Átugorható %1$d másodperc múlva</item>
+        <item quantity="other">Átugorható %1$d másodperc múlva</item>
+    </plurals>
+    <plurals name="advertisement_text_skippable_delay">
+        <item quantity="one">Hirdetés • Átugrás %1$d másodperc után</item>
+        <item quantity="other">Hirdetés • Átugrás %1$d másodperc után</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_message">
+        <item quantity="one">Figyelem! Nem vagy elég idős a Spotify használatához, ezért a fiókodat letiltottuk, és %1$s napon belül inaktiváljuk. Tévedtünk? Próbáld meg személyazonosító igazolvánnyal igazolni az életkorodat.</item>
+        <item quantity="other">Figyelem! Nem vagy elég idős a Spotify használatához, ezért a fiókodat letiltottuk, és %1$s napon belül inaktiváljuk. Tévedtünk? Próbáld meg személyazonosító igazolvánnyal igazolni az életkorodat.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_pending_disabled_parental_consent_message">
+        <item quantity="one">Úgy tűnik, még nem vagy elég idős ahhoz, hogy saját Spotify-fiókod legyen. Lehet viszont kezelt fiókod, ha a szülőd vagy törvényes képviselőd beleegyezik.\n\nA fiókodat %1$s napon belül inaktiváljuk.</item>
+        <item quantity="other">Úgy tűnik, még nem vagy elég idős ahhoz, hogy saját Spotify-fiókod legyen. Lehet viszont kezelt fiókod, ha a szülőd vagy törvényes képviselőd beleegyezik.\n\nA fiókodat %1$s napon belül inaktiváljuk.</item>
+    </plurals>
+    <plurals name="age_assurance_underage_blocking_reactivated_message">
+        <item quantity="one">A fiókod újraaktiválásához erősítsd meg az életkorodat személyazonosító igazolvánnyal. Ha az életkor ellenőrzése nem igazolja vissza, hogy elég idős vagy a Spotify használatához, vagy ha nem teszel semmit %1$s napon belül, a fiókodat véglegesen töröljük.</item>
+        <item quantity="other">A fiókod újraaktiválásához erősítsd meg az életkorodat személyazonosító igazolvánnyal. Ha az életkor ellenőrzése nem igazolja vissza, hogy elég idős vagy a Spotify használatához, vagy ha nem teszel semmit %1$s napon belül, a fiókodat véglegesen töröljük.</item>
+    </plurals>
+    <plurals name="age_verification_ineligible_subtitle">
+        <item quantity="one">Mivel még nem múltál el %1$d éves, nem vagy jogosult arra, hogy szülői beleegyezést adj.\n\nEzenfelül egyes tartalmak és funkciók az életkorod miatt még nem érhetők el neked. Elrejtettük őket.</item>
+        <item quantity="other">Mivel még nem múltál el %1$d éves, nem vagy jogosult arra, hogy szülői beleegyezést adj.\n\nEzenfelül egyes tartalmak és funkciók az életkorod miatt még nem érhetők el neked. Elrejtettük őket.</item>
+    </plurals>
+    <plurals name="album_track_count_and_duration">
+        <item quantity="one">%1$d dal • %2$s</item>
+        <item quantity="other">%1$d dal • %2$s</item>
+    </plurals>
+    <plurals name="allboarding_selected_nb_label">
+        <item quantity="one">%1$d kiválasztva</item>
+        <item quantity="other">%1$d kiválasztva</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_content_desc">
+        <item quantity="one">%1$d kiválasztva</item>
+        <item quantity="other">%1$d kiválasztva</item>
+    </plurals>
+    <plurals name="allboarding_selection_summary_with_requirement_content_desc">
+        <item quantity="one">%1$d kiválasztva. A folytatáshoz jelölj be még legalább ennyit: %2$d.</item>
+        <item quantity="other">%1$d kiválasztva. A folytatáshoz jelölj be még legalább ennyit: %2$d.</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="android_auto_podcast_episode_time_format_min">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="artifact_page_word_limit_error">
+        <item quantity="one">%1$d karakterrel túllépted a korlátot.</item>
+        <item quantity="other">%1$d karakterrel túllépted a korlátot.</item>
+    </plurals>
+    <plurals name="artist_chip_more_artists">
+        <item quantity="one">+ %1$d további</item>
+        <item quantity="other">+ %1$d további</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_releases">
+        <item quantity="one">%1$,d megjelenés</item>
+        <item quantity="other">%1$,d megjelenés</item>
+    </plurals>
+    <plurals name="artist_number_of_liked_songs">
+        <item quantity="one">%1$,d dal</item>
+        <item quantity="other">%1$,d dal</item>
+    </plurals>
+    <plurals name="artist_row_number_of_events_near_you">
+        <item quantity="one">%1$s esemény a közeledben</item>
+        <item quantity="other">%1$s esemény a közeledben</item>
+    </plurals>
+    <plurals name="artist_saved_songs_releases">
+        <item quantity="one">%1$d megjelenés</item>
+        <item quantity="other">%1$d megjelenés</item>
+    </plurals>
+    <plurals name="artist_saved_songs_subtitle">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="assisted_curation_search_filter_items_count_changed_announcement">
+        <item quantity="one">A keresés (%1$s) %2$d találatot eredményezett</item>
+        <item quantity="other">A keresés (%1$s) %2$d találatot eredményezett</item>
+    </plurals>
+    <plurals name="audiobook_progress_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="audiobook_progress_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="audiobooks_added">
+        <item quantity="one">%1$d hangoskönyvet hozzáadtál</item>
+        <item quantity="other">%1$d hangoskönyvet hozzáadtál</item>
+    </plurals>
+    <plurals name="audiobooks_played">
+        <item quantity="one">%1$d hangoskönyv lejátszva</item>
+        <item quantity="other">%1$d hangoskönyv lejátszva</item>
+    </plurals>
+    <plurals name="auto_download_limit_option">
+        <item quantity="one">%1$s új epizód műsoronként</item>
+        <item quantity="other">%1$s új epizód műsoronként</item>
+    </plurals>
+    <plurals name="bluejay_show_picker_subtitle">
+        <item quantity="one">Podcast • %1$d epizód</item>
+        <item quantity="other">Podcast • %1$d epizód</item>
+    </plurals>
+    <plurals name="cal_duration_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="cal_duration_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="cal_duration_seconds">
+        <item quantity="one">%1$d mp</item>
+        <item quantity="other">%1$d mp</item>
+    </plurals>
+    <plurals name="campfire_chat_members_page_feedback_success_multiple">
+        <item quantity="one">%1$s személyt a csoporthoz</item>
+        <item quantity="other">%1$s személyt a csoporthoz</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_days_content_description">
+        <item quantity="one">%1$d nappal ezelőtt</item>
+        <item quantity="other">%1$d nappal ezelőtt</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_hours_content_description">
+        <item quantity="one">%1$d órája</item>
+        <item quantity="other">%1$d órája</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_minutes_content_description">
+        <item quantity="one">%1$d perce</item>
+        <item quantity="other">%1$d perce</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_photos">
+        <item quantity="one">%1$d fénykép</item>
+        <item quantity="other">%1$d fénykép</item>
+    </plurals>
+    <plurals name="campfire_chats_preview_ugc_videos">
+        <item quantity="one">%1$d videó</item>
+        <item quantity="other">%1$d videó</item>
+    </plurals>
+    <plurals name="campfire_group_chat_details_subtitle_people">
+        <item quantity="one">%1$s személy</item>
+        <item quantity="other">%1$s személy</item>
+    </plurals>
+    <plurals name="campfire_sharedbychip_label_multiple">
+        <item quantity="one">%1$s ismerős</item>
+        <item quantity="other">%1$s ismerős</item>
+    </plurals>
+    <plurals name="capping_subtitle_days">
+        <item quantity="one">Ez %1$d nap múlva lejár, gyere vissza akkor. Addig is használhatod az AI-műsorlistát, vagy készíthetsz egyet te is.</item>
+        <item quantity="other">Ez %1$d nap múlva lejár, gyere vissza akkor. Addig is használhatod az AI-műsorlistát, vagy készíthetsz egyet te is.</item>
+    </plurals>
+    <plurals name="capping_subtitle_days_instant">
+        <item quantity="one">Ez %1$d nap múlva lejár, gyere vissza akkor. Addig is használhatod az Azonnali műsorlistát, vagy készíthetsz egyet te is.</item>
+        <item quantity="other">Ez %1$d nap múlva lejár, gyere vissza akkor. Addig is használhatod az Azonnali műsorlistát, vagy készíthetsz egyet te is.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours">
+        <item quantity="one">Ez %1$d óra múlva lejár, gyere vissza akkor. Addig is használhatod az AI-műsorlistát, vagy készíthetsz egyet te is.</item>
+        <item quantity="other">Ez %1$d óra múlva lejár, gyere vissza akkor. Addig is használhatod az AI-műsorlistát, vagy készíthetsz egyet te is.</item>
+    </plurals>
+    <plurals name="capping_subtitle_hours_instant">
+        <item quantity="one">Ez %1$d óra múlva lejár, gyere vissza akkor. Addig is használhatod az Azonnali műsorlistát, vagy készíthetsz egyet te is.</item>
+        <item quantity="other">Ez %1$d óra múlva lejár, gyere vissza akkor. Addig is használhatod az Azonnali műsorlistát, vagy készíthetsz egyet te is.</item>
+    </plurals>
+    <plurals name="charts_header_new_entry_count">
+        <item quantity="one">%1$,d új szereplő</item>
+        <item quantity="other">%1$,d új szereplő</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message">
+        <item quantity="one">%1$s nem tud közvetlenül üzenetet küldeni neked. Kiléphetsz a csevegésből, ha nem szeretnél kapcsolatba lépni vele.</item>
+        <item quantity="other">%1$s nem tudnak közvetlenül üzenetet küldeni neked. Kiléphetsz a csevegésből, ha nem szeretnél kapcsolatba lépni velük.</item>
+    </plurals>
+    <plurals name="chat_blocked_user_joined_message_and_other_count">
+        <item quantity="one">%1$d további</item>
+        <item quantity="other">%1$d további</item>
+    </plurals>
+    <plurals name="chat_header_group_members_count">
+        <item quantity="one">Csoport • %1$d személy</item>
+        <item quantity="other">Csoport • %1$d személy</item>
+    </plurals>
+    <plurals name="chat_header_group_pending_members_count">
+        <item quantity="one">(%1$d függőben)</item>
+        <item quantity="other">(%1$d függőben)</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_completed">
+        <item quantity="one">%1$d fénykép letöltve</item>
+        <item quantity="other">%1$d fénykép letöltve</item>
+    </plurals>
+    <plurals name="chat_image_download_snackbar_failed">
+        <item quantity="one">Nem sikerült letölteni %1$d fényképet</item>
+        <item quantity="other">Nem sikerült letölteni %1$d fényképet</item>
+    </plurals>
+    <plurals name="chat_join_group_with_blocked_users_subtitle">
+        <item quantity="one">%1$s, akit letiltottál, tagja ennek a csevegésnek. Ha nem szeretnél kapcsolatba lépni vele, törölheted ezt a csoportos üzenetküldési kérést.</item>
+        <item quantity="other">%1$s, akiket letiltottál, tagjai ennek a csevegésnek. Ha nem szeretnél kapcsolatba lépni velük, törölheted ezt a csoportos üzenetküldési kérést.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_button_disabled_reason_too_many">
+        <item quantity="one">Egy csoport legfeljebb %1$d főből állhat</item>
+        <item quantity="other">Egy csoport legfeljebb %1$d főből állhat</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_message">
+        <item quantity="one">Amint %1$s elfogadja a meghívást, láthatja a meghívása óta küldött összes üzenetet a csevegésben.</item>
+        <item quantity="other">Amint valaki elfogadja a meghívást, láthatja a meghívása óta küldött összes üzenetet a csevegésben.</item>
+    </plurals>
+    <plurals name="chat_share_add_to_group_invite_confirmation_dialog_title_without_number_of_people">
+        <item quantity="one">Meghívod %1$s felhasználót ebbe a csevegésbe?</item>
+        <item quantity="other">Meghívod a kiválasztott személyeket ebbe a csevegésbe?</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_completed">
+        <item quantity="one">%1$d videó letöltve</item>
+        <item quantity="other">%1$d videó letöltve</item>
+    </plurals>
+    <plurals name="chat_video_download_snackbar_failed">
+        <item quantity="one">Nem sikerült letölteni %1$d videót</item>
+        <item quantity="other">Nem sikerült letölteni %1$d videót</item>
+    </plurals>
+    <plurals name="collaborator_bubble_more_roles">
+        <item quantity="one">+ %1$d szerepkör</item>
+        <item quantity="other">+ %1$d szerepkör</item>
+    </plurals>
+    <plurals name="comment_days_ago">
+        <item quantity="one">%1$d nappal ezelőtt</item>
+        <item quantity="other">%1$d nappal ezelőtt</item>
+    </plurals>
+    <plurals name="comment_hours_ago">
+        <item quantity="one">%1$d órája</item>
+        <item quantity="other">%1$d órája</item>
+    </plurals>
+    <plurals name="comment_minutes_ago">
+        <item quantity="one">%1$d perce</item>
+        <item quantity="other">%1$d perce</item>
+    </plurals>
+    <plurals name="comment_months_ago">
+        <item quantity="one">%1$d hónappal ezelőtt</item>
+        <item quantity="other">%1$d hónappal ezelőtt</item>
+    </plurals>
+    <plurals name="comment_reply_preview">
+        <item quantity="one">%1$s válasz</item>
+        <item quantity="other">%1$s válasz</item>
+    </plurals>
+    <plurals name="comment_row_content_description_also_reaction_count">
+        <item quantity="one">%1$s személy szintén reagált.</item>
+        <item quantity="other">%1$s személy szintén reagált.</item>
+    </plurals>
+    <plurals name="comment_row_content_description_reaction_count">
+        <item quantity="one">%1$s személy reagált erre a hozzászólásra.</item>
+        <item quantity="other">%1$s személy reagált erre a hozzászólásra.</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining">
+        <item quantity="one">%1$s válasz</item>
+        <item quantity="other">%1$s válasz</item>
+    </plurals>
+    <plurals name="comment_thread_replies_remaining_action_label">
+        <item quantity="one">Koppints duplán %1$s további válasz megjelenítéséhez.</item>
+        <item quantity="other">Koppints duplán %1$s további válasz megjelenítéséhez.</item>
+    </plurals>
+    <plurals name="comment_weeks_ago">
+        <item quantity="one">%1$d héttel ezelőtt</item>
+        <item quantity="other">%1$d héttel ezelőtt</item>
+    </plurals>
+    <plurals name="comment_years_ago">
+        <item quantity="one">%1$d éve</item>
+        <item quantity="other">%1$d éve</item>
+    </plurals>
+    <plurals name="complex_playlist_number_of_songs">
+        <item quantity="one">%1$,d dal</item>
+        <item quantity="other">%1$,d dal</item>
+    </plurals>
+    <plurals name="connect_device_multiple_listeners">
+        <item quantity="one">%1$d hallgató</item>
+        <item quantity="other">%1$d hallgató</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="context_menu_sleep_timer_mins">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="contributor_sheet_blend_card_title">
+        <item quantity="one">%1$d közös dal</item>
+        <item quantity="other">%1$d közös dal</item>
+    </plurals>
+    <plurals name="contributor_sheet_collaborator_songs">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="contributor_sheet_songs_together">
+        <item quantity="one">%1$d közös dal</item>
+        <item quantity="other">%1$d közös dal</item>
+    </plurals>
+    <plurals name="countdown_days">
+        <item quantity="one">%1$d nap</item>
+        <item quantity="other">%1$d nap</item>
+    </plurals>
+    <plurals name="countdown_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="countdown_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="countdown_seconds">
+        <item quantity="one">%1$d mp</item>
+        <item quantity="other">%1$d mp</item>
+    </plurals>
+    <plurals name="creator_artist_listeners_content_description">
+        <item quantity="one">%1$s hallgató havonta</item>
+        <item quantity="other">%1$s hallgató havonta</item>
+    </plurals>
+    <plurals name="creator_row_content_description">
+        <item quantity="one">Szerző: %1$s</item>
+        <item quantity="other">Szerzők: %1$s</item>
+    </plurals>
+    <plurals name="creators_button_title_counter">
+        <item quantity="one">%1$s és még további %2$d</item>
+        <item quantity="other">%1$s és még további %2$d</item>
+    </plurals>
+    <plurals name="creators_row_accessibility_hint">
+        <item quantity="one">További tartalmakhoz navigál innen: %1$s</item>
+        <item quantity="other">A(z) %1$s összes navigálható listáját mutatja meg</item>
+    </plurals>
+    <plurals name="data_download_preparation_time">
+        <item quantity="one">%1$d nap alatt készül el</item>
+        <item quantity="other">%1$d nap alatt készül el</item>
+    </plurals>
+    <plurals name="data_download_requested_days">
+        <item quantity="one">%1$d nap</item>
+        <item quantity="other">%1$d nap</item>
+    </plurals>
+    <plurals name="days_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;nap&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;nap&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="days_left_until_release_date">
+        <item quantity="one">%1$d nap múlva jelenik meg</item>
+        <item quantity="other">%1$d nap múlva jelenik meg</item>
+    </plurals>
+    <plurals name="days_to_expire">
+        <item quantity="one">%1$d nap múlva lejárnak a hallgatási órák</item>
+        <item quantity="other">%1$d nap múlva lejárnak a hallgatási órák</item>
+    </plurals>
+    <plurals name="days_to_renew">
+        <item quantity="one">%1$d nap múlva indul újra a hallgatási idő</item>
+        <item quantity="other">%1$d nap múlva indul újra a hallgatási idő</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title">
+        <item quantity="one">Törlöd ezt a(z) %1$d fényképet?</item>
+        <item quantity="other">Törlöd ezt a(z) %1$d fényképet?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_generic">
+        <item quantity="one">Törölsz %1$d elemet?</item>
+        <item quantity="other">Törölsz %1$d elemet?</item>
+    </plurals>
+    <plurals name="delete_media_dialog_title_video">
+        <item quantity="one">Törölsz %1$d videót?</item>
+        <item quantity="other">Törölsz %1$d videót?</item>
+    </plurals>
+    <plurals name="edit_bio_character_count_accessibility">
+        <item quantity="one">%1$d/%2$d karakter</item>
+        <item quantity="other">%1$d/%2$d karakter</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="edit_bio_error_rate_limited_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="edit_playlist_items_drag_group_title">
+        <item quantity="one">%1$s és %2$d további</item>
+        <item quantity="other">%1$s és %2$d további</item>
+    </plurals>
+    <plurals name="edit_playlist_items_selected_count">
+        <item quantity="one">%1$d kiválasztva</item>
+        <item quantity="other">%1$d kiválasztva</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_rate_limit_message">
+        <item quantity="one">A felhasználónevedet %2$d napon belül legfeljebb %1$d alkalommal módosíthatod.</item>
+        <item quantity="other">A felhasználónevedet %2$d napon belül legfeljebb %1$d alkalommal módosíthatod.</item>
+    </plurals>
+    <plurals name="edit_profile_social_handle_try_again_days">
+        <item quantity="one">Próbáld újra %1$d nap múlva.</item>
+        <item quantity="other">Próbáld újra %1$d nap múlva.</item>
+    </plurals>
+    <plurals name="edit_social_handle_info_frequency">
+        <item quantity="one">A felhasználónevedet %2$d napon belül %1$d alkalommal módosíthatod.</item>
+        <item quantity="other">A felhasználónevedet %2$d napon belül %1$d alkalommal módosíthatod.</item>
+    </plurals>
+    <plurals name="editor_profile_curated_playlists_saves">
+        <item quantity="one">%1$s mentés</item>
+        <item quantity="other">%1$s mentés</item>
+    </plurals>
+    <plurals name="entity_action_row_downloading_progress_content_description">
+        <item quantity="one">%1$d százalék letöltve</item>
+        <item quantity="other">%1$d százalék letöltve</item>
+    </plurals>
+    <plurals name="episodes_added">
+        <item quantity="one">%1$d epizód hozzáadva</item>
+        <item quantity="other">%1$d epizód hozzáadva</item>
+    </plurals>
+    <plurals name="episodes_played">
+        <item quantity="one">%1$d epizód lejátszva</item>
+        <item quantity="other">%1$d epizód lejátszva</item>
+    </plurals>
+    <plurals name="error_dialog_body_resend_limit">
+        <item quantity="one">Várj %1$d másodpercet, aztán kérj új kódot.</item>
+        <item quantity="other">Várj %1$d másodpercet, aztán kérj új kódot.</item>
+    </plurals>
+    <plurals name="error_dialog_title_resend_limit">
+        <item quantity="one">Próbáld újra %1$d másodperc múlva</item>
+        <item quantity="other">Próbáld újra %1$d másodperc múlva</item>
+    </plurals>
+    <plurals name="event_card_number_of_events_text">
+        <item quantity="one">%1$d esemény</item>
+        <item quantity="other">%1$d esemény</item>
+    </plurals>
+    <plurals name="fop_plus_n_button_content_description">
+        <item quantity="one">További %1$d fizetési mód megjelenítése</item>
+        <item quantity="other">További %1$d fizetési mód megjelenítése</item>
+    </plurals>
+    <plurals name="granular_ratings_card_accessibility_label">
+        <item quantity="one">5/%1$s csillag a Spotifyon, %2$s értékelés alapján</item>
+        <item quantity="other">5/%1$s csillag a Spotifyon, %2$s értékelés alapján</item>
+    </plurals>
+    <plurals name="granular_ratings_star_row_accessibility_label">
+        <item quantity="one">%1$d csillag: %2$d%%</item>
+        <item quantity="other">%1$d csillag: %2$d%%</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners">
+        <item quantity="one">%1$d hallgató</item>
+        <item quantity="other">%1$d hallgató</item>
+    </plurals>
+    <plurals name="group_listening_activity_multiple_active_listeners_content_description">
+        <item quantity="one">%1$d hallgató</item>
+        <item quantity="other">%1$d hallgató</item>
+    </plurals>
+    <plurals name="group_session_now_playing_bar_listen_along_participants_attachment_title">
+        <item quantity="one">%1$s Jamje – %2$d személy hallgatja</item>
+        <item quantity="other">%1$s Jamje – %2$d személy hallgatja</item>
+    </plurals>
+    <plurals name="header_common_likes_count">
+        <item quantity="one">%1$s mentés</item>
+        <item quantity="other">%1$s mentés</item>
+    </plurals>
+    <plurals name="hours_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;óra&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;óra&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="hours_to_expire">
+        <item quantity="one">%1$d óra múlva lejárnak a hallgatási órák</item>
+        <item quantity="other">%1$d óra múlva lejárnak a hallgatási órák</item>
+    </plurals>
+    <plurals name="hours_to_renew">
+        <item quantity="one">%1$d óra múlva újraindulnak a hallgatási órák</item>
+        <item quantity="other">%1$d óra múlva újraindulnak a hallgatási órák</item>
+    </plurals>
+    <plurals name="insights_play_count">
+        <item quantity="one">%1$s lejátszás</item>
+        <item quantity="other">%1$s lejátszás</item>
+    </plurals>
+    <plurals name="ipl_new_joiner_nudge">
+        <item quantity="one">%1$s csatlakozott a Jamedhez</item>
+        <item quantity="other">%2$d további felhasználó csatlakozott a Jamedhez</item>
+    </plurals>
+    <plurals name="item_description_folder_folders_count">
+        <item quantity="one">%1$s mappa</item>
+        <item quantity="other">%1$s mappa</item>
+    </plurals>
+    <plurals name="item_description_folder_playlists_count">
+        <item quantity="one">%1$s műsorlista</item>
+        <item quantity="other">%1$s műsorlista</item>
+    </plurals>
+    <plurals name="item_description_liked_songs_filtered">
+        <item quantity="one">%1$s dal</item>
+        <item quantity="other">%1$s dal</item>
+    </plurals>
+    <plurals name="item_description_local_files">
+        <item quantity="one">Műsorlista • %1$s szám</item>
+        <item quantity="other">Műsorlista • %1$s szám</item>
+    </plurals>
+    <plurals name="item_description_local_files_filtered">
+        <item quantity="one">%1$s szám</item>
+        <item quantity="other">%1$s szám</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded">
+        <item quantity="one">%1$s letöltött epizód • %2$s</item>
+        <item quantity="other">%1$s letöltött epizód • %2$s</item>
+    </plurals>
+    <plurals name="item_description_show_downloaded_no_creator">
+        <item quantity="one">%1$s letöltött epizód</item>
+        <item quantity="other">%1$s letöltött epizód</item>
+    </plurals>
+    <plurals name="items_added">
+        <item quantity="one">%1$d elem hozzáadva</item>
+        <item quantity="other">%1$d elem hozzáadva</item>
+    </plurals>
+    <plurals name="items_played">
+        <item quantity="one">%1$d elem lejátszva</item>
+        <item quantity="other">%1$d elem lejátszva</item>
+    </plurals>
+    <plurals name="jam_learn_more_listening_activity_description">
+        <item quantity="one">Azért kaptad meg %1$s Jamre vonatkozó kérelmét, mert megosztod a hallgatási tevékenységedet vele: %1$s.</item>
+        <item quantity="other">Azért kaptad meg %1$s és %2$d Jamre vonatkozó kérelmét, mert megosztod a hallgatási tevékenységedet velük.</item>
+    </plurals>
+    <plurals name="jam_learn_more_phone_speakers_description">
+        <item quantity="one">Azért kaptad meg %1$s csatlakozási kérelmét a Jamedhez, mert be vannak kapcsolva nálad az automatikus Jam-meghívók, és:</item>
+        <item quantity="other">Azért kaptad meg %1$s és %2$d másik személy csatlakozási kérelmét a Jamedhez, mert be vannak kapcsolva nálad az automatikus Jam-meghívók, és:</item>
+    </plurals>
+    <plurals name="jam_manage_participants_roles_sheet_n_others">
+        <item quantity="one">+%1$d további</item>
+        <item quantity="other">+%1$d további</item>
+    </plurals>
+    <plurals name="liked_songs_header_metadata_text">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="liked_songs_header_subtitle">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="line_selected">
+        <item quantity="one">%1$d sor kiválasztva</item>
+        <item quantity="other">%1$d sor kiválasztva</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle">
+        <item quantity="one">%1$d epizód</item>
+        <item quantity="other">%1$d epizód</item>
+    </plurals>
+    <plurals name="listen_later_header_subtitle_generic">
+        <item quantity="one">%1$d elem</item>
+        <item quantity="other">%1$d elem</item>
+    </plurals>
+    <plurals name="listening_activity_audience_subtitle_person_count">
+        <item quantity="one">%1$d személy</item>
+        <item quantity="other">%1$d személy</item>
+    </plurals>
+    <plurals name="listening_activity_carousel_group_listening_count">
+        <item quantity="one">%1$d hallgató</item>
+        <item quantity="other">%1$d hallgató</item>
+    </plurals>
+    <plurals name="listening_hours_card_complete">
+        <item quantity="one">Meghallgattad a havi csomagod részeként rendelkezésedre álló %1$d órányi hangoskönyvet.</item>
+        <item quantity="other">Meghallgattad a havi csomagod részeként rendelkezésedre álló %1$d órányi hangoskönyvet.</item>
+    </plurals>
+    <plurals name="listening_hours_card_text">
+        <item quantity="one">Hallgass meg a havi csomagod részeként %1$d órányi hangoskönyvet előfizetői katalógusunkból.</item>
+        <item quantity="other">Hallgass meg a havi csomagod részeként %1$d órányi hangoskönyvet előfizetői katalógusunkból.</item>
+    </plurals>
+    <plurals name="listening_hours_listened">
+        <item quantity="one">%1$d óra hallgatási idő</item>
+        <item quantity="other">%1$d óra hallgatási idő</item>
+    </plurals>
+    <plurals name="livestream_hosted_by_multiple">
+        <item quantity="one">Házigazda: %1$s%2$s + %3$d további</item>
+        <item quantity="other">Házigazda: %1$s%2$s + %3$d további</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_days">
+        <item quantity="one">%1$d nap</item>
+        <item quantity="other">%1$d nap</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="livestream_time_info_countdown_seconds">
+        <item quantity="one">%1$s mp</item>
+        <item quantity="other">%1$s mp</item>
+    </plurals>
+    <plurals name="lp_voting_votes_left_count">
+        <item quantity="one">%1$d szavazat</item>
+        <item quantity="other">%1$d szavazat</item>
+    </plurals>
+    <plurals name="lyrics_credits_contributors_label">
+        <item quantity="one">%1$d közreműködő</item>
+        <item quantity="other">%1$d közreműködő</item>
+    </plurals>
+    <plurals name="lyrics_credits_samples_label">
+        <item quantity="one">%1$d hangminta</item>
+        <item quantity="other">%1$d hangminta</item>
+    </plurals>
+    <plurals name="lyrics_share_selector_lines_selected">
+        <item quantity="one">%1$d sor kiválasztva</item>
+        <item quantity="other">%1$d sor kiválasztva</item>
+    </plurals>
+    <plurals name="martini_history_section_header_days_ago">
+        <item quantity="one">%1$d nappal ezelőtt</item>
+        <item quantity="other">%1$d nappal ezelőtt</item>
+    </plurals>
+    <plurals name="martini_history_section_header_months_ago">
+        <item quantity="one">%1$d hónappal ezelőtt</item>
+        <item quantity="other">%1$d hónappal ezelőtt</item>
+    </plurals>
+    <plurals name="martini_history_section_header_weeks_ago">
+        <item quantity="one">%1$d héttel ezelőtt</item>
+        <item quantity="other">%1$d héttel ezelőtt</item>
+    </plurals>
+    <plurals name="martini_history_section_header_years_ago">
+        <item quantity="one">%1$d éve</item>
+        <item quantity="other">%1$d éve</item>
+    </plurals>
+    <plurals name="media_download_dialog_title">
+        <item quantity="one">Letöltesz %1$d fényképet?</item>
+        <item quantity="other">Letöltesz %1$d fényképet?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_generic">
+        <item quantity="one">Letöltesz %1$d elemet?</item>
+        <item quantity="other">Letöltesz %1$d elemet?</item>
+    </plurals>
+    <plurals name="media_download_dialog_title_video">
+        <item quantity="one">Letöltesz %1$d videót?</item>
+        <item quantity="other">Letöltesz %1$d videót?</item>
+    </plurals>
+    <plurals name="media_picker_helper_text_videos">
+        <item quantity="one">Egyszerre legfeljebb %1$d videót küldhetsz el.</item>
+        <item quantity="other">Egyszerre legfeljebb %1$d videót küldhetsz el.</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator">
+        <item quantity="one">%1$d fénykép</item>
+        <item quantity="other">%1$d fénykép</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_generic">
+        <item quantity="one">%1$d elem</item>
+        <item quantity="other">%1$d elem</item>
+    </plurals>
+    <plurals name="media_uploaded_indicator_video">
+        <item quantity="one">%1$d videó</item>
+        <item quantity="other">%1$d videó</item>
+    </plurals>
+    <plurals name="minutes_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;perc&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;perc&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="mtrl_badge_content_description">
+        <item quantity="one">%d új értesítés</item>
+        <item quantity="other">%d új értesítés</item>
+    </plurals>
+    <plurals name="note_counter_approaching_limit">
+        <item quantity="one">%1$d karakter maradt, közel a korlát</item>
+        <item quantity="other">%1$d karakter maradt, közel a korlát</item>
+    </plurals>
+    <plurals name="note_counter_characters_remaining">
+        <item quantity="one">%1$d karakter maradt</item>
+        <item quantity="other">%1$d karakter maradt</item>
+    </plurals>
+    <plurals name="notification_import_text">
+        <item quantity="one">%2$,d/%1$,d (%3$,d%% kész)</item>
+        <item quantity="other">%2$,d/%1$,d (%3$,d%% kész)</item>
+    </plurals>
+    <plurals name="notification_syncing_text">
+        <item quantity="one">%1$,d/%2$,d (%3$,d%%) kész</item>
+        <item quantity="other">%1$,d/%2$,d (%3$,d%%) kész</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_faster_content_description">
+        <item quantity="one">Felgyorsítva %1$d bpm-re</item>
+        <item quantity="other">Felgyorsítva %1$d bpm-re</item>
+    </plurals>
+    <plurals name="nowplayingbar_speed_badge_slower_content_description">
+        <item quantity="one">Lelassítva %1$d bpm-re</item>
+        <item quantity="other">Lelassítva %1$d bpm-re</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_hours">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="npv_header_audiobook_progress_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="num_available_downloads">
+        <item quantity="one">%1$s tétel letölthető</item>
+        <item quantity="other">%1$s tétel letölthető</item>
+    </plurals>
+    <plurals name="num_items_selected">
+        <item quantity="one">%1$d elem kiválasztva</item>
+        <item quantity="other">%1$d elem kiválasztva</item>
+    </plurals>
+    <plurals name="number_of_books">
+        <item quantity="one">%1$s könyv</item>
+        <item quantity="other">%1$s könyv</item>
+    </plurals>
+    <plurals name="number_of_episodes">
+        <item quantity="one">%1$s epizód</item>
+        <item quantity="other">%1$s epizód</item>
+    </plurals>
+    <plurals name="number_of_items">
+        <item quantity="one">%1$s elem</item>
+        <item quantity="other">%1$s elem</item>
+    </plurals>
+    <plurals name="number_of_live_events">
+        <item quantity="one">%1$s esemény</item>
+        <item quantity="other">%1$s esemény</item>
+    </plurals>
+    <plurals name="number_of_play_count">
+        <item quantity="one">%1$,d hallgatás</item>
+        <item quantity="other">%1$,d hallgatás</item>
+    </plurals>
+    <plurals name="number_of_songs">
+        <item quantity="one">%1$,d dal</item>
+        <item quantity="other">%1$,d dal</item>
+    </plurals>
+    <plurals name="offline_available_songs_count">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="ondemand_info_dialog_description">
+        <item quantity="one">Ez egy új album, ezért még %1$d napig tetszőleges sorrendben játszhatod le. A Premiummal ez mindig így van.</item>
+        <item quantity="other">Ez egy új album, ezért még %1$d napig tetszőleges sorrendben játszhatod le. A Premiummal ez mindig így van.</item>
+    </plurals>
+    <plurals name="ondemand_new_releases_banner_text">
+        <item quantity="one">Lejátszás tetszőleges sorrendben még %1$d napig</item>
+        <item quantity="other">Lejátszás tetszőleges sorrendben még %1$d napig</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_download_mini_trial">
+        <item quantity="one">Hallgass zenét wifi és mobiladat-forgalom felhasználása nélkül. Próbáld ki ezt és a Premium további előnyeit 24 óráig ingyen.</item>
+        <item quantity="other">Hallgass zenét wifi és mobiladat-forgalom felhasználása nélkül. Próbáld ki ezt és a Premium további előnyeit %1$d napig ingyen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_pick_track_mini_trial">
+        <item quantity="one">Mindig eldöntheted, mikor milyen sorrendben játszod le a dalokat. Próbáld ki ezt és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Mindig eldöntheted, mikor milyen sorrendben játszod le a dalokat. Próbáld ki ezt és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_queue_mini_trial">
+        <item quantity="one">Műsor átrendezése és még sok minden más. Próbáld ki ezt és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Műsor átrendezése és még sok minden más. Próbáld ki ezt és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_seekbar_mini_trial">
+        <item quantity="one">Vedd át a teljes irányítást a zenéid felett. Próbáld ki ezt és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Vedd át a teljes irányítást a zenéid felett. Próbáld ki ezt és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_shuffle_mini_trial">
+        <item quantity="one">Lejátszás tetszőleges sorrendben vagy véletlen sorrendben. Próbáld ki ezt és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Lejátszás tetszőleges sorrendben vagy véletlen sorrendben. Próbáld ki ezt és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_limit_mini_trial">
+        <item quantity="one">Próbáld ki a korlátlan számátugrást és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Próbáld ki a korlátlan számátugrást és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_initial_subtitle_skip_previous_mini_trial">
+        <item quantity="one">Vedd át a teljes irányítást a zenéid felett. Próbáld ki ezt és a Premium további előnyeit 24 óráig díjmentesen.</item>
+        <item quantity="other">Vedd át a teljes irányítást a zenéid felett. Próbáld ki ezt és a Premium további előnyeit %1$d napig díjmentesen.</item>
+    </plurals>
+    <plurals name="opt_in_trial_dialog_success_subtitle_mini_trial">
+        <item quantity="one">A következő 24 órában kipróbálhatod a Premium néhány előnyét.</item>
+        <item quantity="other">A következő %1$d napban kipróbálhatod a Premium néhány előnyét.</item>
+    </plurals>
+    <plurals name="otp_description_alt">
+        <item quantity="one">Elküldtünk egy %1$d számjegyből álló kódot a következő számra: %2$s.</item>
+        <item quantity="other">Elküldtünk egy %1$d számjegyből álló kódot a következő számra: %2$s.</item>
+    </plurals>
+    <plurals name="parental_age_denied_subtitle">
+        <item quantity="one">Mivel még nem múltál el %1$d éves, nem vagy jogosult arra, hogy szülői beleegyezést adj.\n\nEzenfelül egyes tartalmak és funkciók az életkorod miatt még nem érhetők el neked. Elrejtettük őket.</item>
+        <item quantity="other">Mivel még nem múltál el %1$d éves, nem vagy jogosult arra, hogy szülői beleegyezést adj.\n\nEzenfelül egyes tartalmak és funkciók az életkorod miatt még nem érhetők el neked. Elrejtettük őket.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_long_delay_error_message">
+        <item quantity="one">Hibás PIN-kód, próbáld újra %1$d perc múlva.</item>
+        <item quantity="other">Hibás PIN-kód, próbáld újra %1$d perc múlva.</item>
+    </plurals>
+    <plurals name="pin_gate_wrong_pin_short_delay_error_message">
+        <item quantity="one">Hibás PIN-kód, próbáld újra %1$d másodperc múlva.</item>
+        <item quantity="other">Hibás PIN-kód, próbáld újra %1$d másodperc múlva.</item>
+    </plurals>
+    <plurals name="plan_overview_subscription_owner">
+        <item quantity="one">%1$d Premium-fiók</item>
+        <item quantity="other">%1$d Premium-fiók</item>
+    </plurals>
+    <plurals name="playback_settings_crossfade_slider_seconds_full">
+        <item quantity="one">%1$d másodperc</item>
+        <item quantity="other">%1$d másodperc</item>
+    </plurals>
+    <plurals name="playlist_header_collaborators">
+        <item quantity="one">%1$s és még további %2$d</item>
+        <item quantity="other">%1$s és még további %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_auto_mixed_collaborators">
+        <item quantity="one">%1$s és %2$d további · Mixelt</item>
+        <item quantity="other">%1$s és %2$d további · Mixelt</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_collaborators">
+        <item quantity="one">%1$s és még további %2$d</item>
+        <item quantity="other">%1$s és még további %2$d</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_mixed_by_collaborators">
+        <item quantity="one">%1$s és további %2$d közreműködő mixelte</item>
+        <item quantity="other">%1$s és további %2$d közreműködő mixelte</item>
+    </plurals>
+    <plurals name="playlist_header_creator_row_with_collaborators_content_description">
+        <item quantity="one">Készítette: %1$s és %2$d másik személy</item>
+        <item quantity="other">Készítette: %1$s és %2$d másik személy</item>
+    </plurals>
+    <plurals name="playlist_header_creator_with_collaborators_content_description">
+        <item quantity="one">Készítette: %1$s és %2$d másik személy</item>
+        <item quantity="other">Készítette: %1$s és %2$d másik személy</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_episodes">
+        <item quantity="one">%1$d epizód</item>
+        <item quantity="other">%1$d epizód</item>
+    </plurals>
+    <plurals name="playlist_participants_row_subtitle_tracks">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_episodes">
+        <item quantity="one">%1$,d EPIZÓD</item>
+        <item quantity="other">%1$,d EPIZÓD</item>
+    </plurals>
+    <plurals name="playlist_trackcloud_includes_label_songs">
+        <item quantity="one">%1$,d DAL</item>
+        <item quantity="other">%1$,d DAL</item>
+    </plurals>
+    <plurals name="podcast_poll_days_left_label">
+        <item quantity="one">%1$d nap</item>
+        <item quantity="other">%1$d nap</item>
+    </plurals>
+    <plurals name="podcast_poll_hours_left_label">
+        <item quantity="one">%1$d óra van hátra</item>
+        <item quantity="other">%1$d óra van hátra</item>
+    </plurals>
+    <plurals name="podcast_poll_minutes_left_label">
+        <item quantity="one">%1$d perc van hátra</item>
+        <item quantity="other">%1$d perc van hátra</item>
+    </plurals>
+    <plurals name="podcast_poll_poll_subtitle">
+        <item quantity="one">%1$d szavazat • %2$s</item>
+        <item quantity="other">%1$d szavazat • %2$s</item>
+    </plurals>
+    <plurals name="premium_plan_card_days_remaining">
+        <item quantity="one">%1$d nap Premium</item>
+        <item quantity="other">%1$d nap Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_months_remaining">
+        <item quantity="one">%1$d hónap Premium</item>
+        <item quantity="other">%1$d hónap Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_weeks_remaining">
+        <item quantity="one">%1$d hét Premium</item>
+        <item quantity="other">%1$d hét Premium</item>
+    </plurals>
+    <plurals name="premium_plan_card_years_remaining">
+        <item quantity="one">%1$d év Premium</item>
+        <item quantity="other">%1$d év Premium</item>
+    </plurals>
+    <plurals name="presave_count">
+        <item quantity="one">%1$s előzetes mentés</item>
+        <item quantity="other">%1$s előzetes mentés</item>
+    </plurals>
+    <plurals name="profile_followers_count">
+        <item quantity="one">%1$d követő</item>
+        <item quantity="other">%1$d követő</item>
+    </plurals>
+    <plurals name="profile_following_count">
+        <item quantity="one">%1$d követés</item>
+        <item quantity="other">%1$d követés</item>
+    </plurals>
+    <plurals name="profile_friends_count">
+        <item quantity="one">%1$d ismerős</item>
+        <item quantity="other">%1$d ismerős</item>
+    </plurals>
+    <plurals name="profile_list_item_followers_count">
+        <item quantity="one">%1$,d követő</item>
+        <item quantity="other">%1$,d követő</item>
+    </plurals>
+    <plurals name="profile_list_item_saves_count">
+        <item quantity="one">%1$,d mentés</item>
+        <item quantity="other">%1$,d mentés</item>
+    </plurals>
+    <plurals name="profile_playlists_subtitle">
+        <item quantity="one">%1$,d mentés</item>
+        <item quantity="other">%1$,d mentés</item>
+    </plurals>
+    <plurals name="profile_recently_played_subtitle">
+        <item quantity="one">%1$,d követő</item>
+        <item quantity="other">%1$,d követő</item>
+    </plurals>
+    <plurals name="queue_items_added">
+        <item quantity="one">%1$d szám hozzáadva</item>
+        <item quantity="other">%1$d szám hozzáadva</item>
+    </plurals>
+    <plurals name="queue_items_removed">
+        <item quantity="one">%1$d szám eltávolítva</item>
+        <item quantity="other">%1$d szám eltávolítva</item>
+    </plurals>
+    <plurals name="reaction_badge_content_description">
+        <item quantity="one">%1$d reakció</item>
+        <item quantity="other">%1$d reakció</item>
+    </plurals>
+    <plurals name="recaps_button_dialog_not_enough_progress_message">
+        <item quantity="one">Az összefoglalód akkor válik elérhetővé, ha lejátszottad a hangoskönyv első %1$d percét.</item>
+        <item quantity="other">Az összefoglalód akkor válik elérhetővé, ha lejátszottad a hangoskönyv első %1$d percét.</item>
+    </plurals>
+    <plurals name="receipt_indicator_listening_count">
+        <item quantity="one">%1$d hallgató</item>
+        <item quantity="other">%1$d hallgató</item>
+    </plurals>
+    <plurals name="receipt_indicator_played_count">
+        <item quantity="one">%1$d lejátszotta</item>
+        <item quantity="other">%1$d lejátszotta</item>
+    </plurals>
+    <plurals name="receipt_indicator_saved_count">
+        <item quantity="one">%1$d lementette</item>
+        <item quantity="other">%1$d lementette</item>
+    </plurals>
+    <plurals name="receipt_indicator_seen_count">
+        <item quantity="one">%1$d látta</item>
+        <item quantity="other">%1$d látta</item>
+    </plurals>
+    <plurals name="release_row_pre_title_premium_early_access_in_days">
+        <item quantity="one">Korai Premium-hozzáférés %1$d nap múlva</item>
+        <item quantity="other">Korai Premium-hozzáférés %1$d nap múlva</item>
+    </plurals>
+    <plurals name="release_row_pre_title_releases_in_days">
+        <item quantity="one">%1$d nap múlva jelenik meg</item>
+        <item quantity="other">%1$d nap múlva jelenik meg</item>
+    </plurals>
+    <plurals name="release_row_recording_count">
+        <item quantity="one">%1$d felvétel</item>
+        <item quantity="other">%1$d felvétel</item>
+    </plurals>
+    <plurals name="remote_downloads_active_days_ago">
+        <item quantity="one">Legutóbb %1$d napja volt aktív</item>
+        <item quantity="other">Legutóbb %1$d napja volt aktív</item>
+    </plurals>
+    <plurals name="remote_downloads_device_limit_warning">
+        <item quantity="one">Legfeljebb %1$d eszközre tölthetsz le.</item>
+        <item quantity="other">Legfeljebb %1$d eszközre tölthetsz le.</item>
+    </plurals>
+    <plurals name="remote_downloads_onboarding_playlist_subtitle">
+        <item quantity="one">Műsorlista • %1$d dal</item>
+        <item quantity="other">Műsorlista • %1$d dal</item>
+    </plurals>
+    <plurals name="reply_preview_count_action_label">
+        <item quantity="one">Koppints duplán %1$s válasz megjelenítéséhez.</item>
+        <item quantity="other">Koppints duplán %1$s válasz megjelenítéséhez.</item>
+    </plurals>
+    <plurals name="search_saves_playlist_row_string">
+        <item quantity="one">%1$s mentés</item>
+        <item quantity="other">%1$s mentés</item>
+    </plurals>
+    <plurals name="seconds_label">
+        <item quantity="one">%1$s&lt;br/&gt;&lt;b&gt;másodperc&lt;/b&gt;</item>
+        <item quantity="other">%1$s&lt;br/&gt;&lt;b&gt;másodperc&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="selection_line_quantity_subtitle">
+        <item quantity="one">%1$d sor kiválasztva</item>
+        <item quantity="other">%1$d sor kiválasztva</item>
+    </plurals>
+    <plurals name="series_row_book_count">
+        <item quantity="one">%1$d hangoskönyv</item>
+        <item quantity="other">%1$d hangoskönyv</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_items">
+        <item quantity="one">%1$d elem</item>
+        <item quantity="other">%1$d elem</item>
+    </plurals>
+    <plurals name="settings_default_save_location_item_count_songs">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="settings_item_offline_mode_time_left_days">
+        <item quantity="one">%1$,d nap múlva ismét online módba kell kapcsolnod</item>
+        <item quantity="other">%1$,d nap múlva ismét online módba kell kapcsolnod</item>
+    </plurals>
+    <plurals name="settings_item_plan_overview_description_time_remaining">
+        <item quantity="one">Hátralévő idő: %1$d nap</item>
+        <item quantity="other">Hátralévő idő: %1$d nap</item>
+    </plurals>
+    <plurals name="shared_by_bottomsheet_title">
+        <item quantity="one">%1$s ismerős osztotta meg</item>
+        <item quantity="other">%1$s ismerős osztotta meg</item>
+    </plurals>
+    <plurals name="shared_items">
+        <item quantity="one">%1$d megosztás</item>
+        <item quantity="other">%1$d megosztás</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_body">
+        <item quantity="one">A születési dátumod alapján jelenleg %1$d éves vagy.</item>
+        <item quantity="other">A születési dátumod alapján jelenleg %1$d éves vagy.</item>
+    </plurals>
+    <plurals name="signup_age_confirmation_dialog_title">
+        <item quantity="one">Úgy tűnik, %1$d éves vagy.</item>
+        <item quantity="other">Úgy tűnik, %1$d éves vagy.</item>
+    </plurals>
+    <plurals name="social_interactivity_days_ago">
+        <item quantity="one">%1$d napja</item>
+        <item quantity="other">%1$d napja</item>
+    </plurals>
+    <plurals name="social_interactivity_hours_ago">
+        <item quantity="one">%1$d órája</item>
+        <item quantity="other">%1$d órája</item>
+    </plurals>
+    <plurals name="social_interactivity_minutes_ago">
+        <item quantity="one">%1$d perce</item>
+        <item quantity="other">%1$d perce</item>
+    </plurals>
+    <plurals name="social_interactivity_months_ago">
+        <item quantity="one">%1$d hónapja</item>
+        <item quantity="other">%1$d hónapja</item>
+    </plurals>
+    <plurals name="social_interactivity_weeks_ago">
+        <item quantity="one">%1$d hete</item>
+        <item quantity="other">%1$d hete</item>
+    </plurals>
+    <plurals name="social_interactivity_years_ago">
+        <item quantity="one">%1$d éve</item>
+        <item quantity="other">%1$d éve</item>
+    </plurals>
+    <plurals name="song_dna_artist_blend_label_worked_on_tracks">
+        <item quantity="one">%1$s közös dal</item>
+        <item quantity="other">%1$s közös dal</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_number_of_tracks">
+        <item quantity="one">&lt;b&gt;%1$s dalt&lt;/b&gt; vett fel</item>
+        <item quantity="other">&lt;b&gt;%1$s dalt&lt;/b&gt; vett fel</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_single_artist">
+        <item quantity="one">Legnépszerűbb dal: &lt;b&gt;%1$s&lt;/b&gt;</item>
+        <item quantity="other">Legnépszerűbb dalok: &lt;b&gt;%1$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_top_songs_with_collaborator">
+        <item quantity="one">Legnépszerűbb dala &lt;b&gt;%1$s előadóval: %2$s&lt;/b&gt;</item>
+        <item quantity="other">Legnépszerűbb dalai &lt;b&gt;%1$s előadóval: %2$s&lt;/b&gt;</item>
+    </plurals>
+    <plurals name="song_dna_artist_card_description_worked_with_artist">
+        <item quantity="one">&lt;b&gt;%1$s előadóval&lt;/b&gt; dolgozott együtt</item>
+        <item quantity="other">&lt;b&gt;%1$s előadóval&lt;/b&gt; dolgozott együtt</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_collaborators">
+        <item quantity="one">%1$s együttműködő</item>
+        <item quantity="other">%1$s együttműködő</item>
+    </plurals>
+    <plurals name="song_dna_artist_view_header_label_tracks">
+        <item quantity="one">%1$s dal</item>
+        <item quantity="other">%1$s dal</item>
+    </plurals>
+    <plurals name="song_dna_bubble_on_songs">
+        <item quantity="one">%1$s dal</item>
+        <item quantity="other">%1$s dal</item>
+    </plurals>
+    <plurals name="song_dna_bubble_worked_with_artists">
+        <item quantity="one">%1$s együttműködő</item>
+        <item quantity="other">%1$s együttműködő</item>
+    </plurals>
+    <plurals name="song_dna_collaborator_card_label_view_number_of_tracks_with">
+        <item quantity="one">%1$s közös dal megtekintése</item>
+        <item quantity="other">%1$s közös dal megtekintése</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_artist_roles_label">
+        <item quantity="one">%1$s + további %2$d</item>
+        <item quantity="other">%1$s + további %2$d</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_contributors_label">
+        <item quantity="one">%1$d közreműködő</item>
+        <item quantity="other">%1$d közreműködő</item>
+    </plurals>
+    <plurals name="song_dna_npv_card_samples_label">
+        <item quantity="one">%1$d hangminta</item>
+        <item quantity="other">%1$d hangminta</item>
+    </plurals>
+    <plurals name="song_dna_row_subtitle_number_of_play_label">
+        <item quantity="one">%1$s lejátszás</item>
+        <item quantity="other">%1$s lejátszás</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_minutes_accessibility">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="song_dna_sample_timestamp_seconds_accessibility">
+        <item quantity="one">%1$d másodperc</item>
+        <item quantity="other">%1$d másodperc</item>
+    </plurals>
+    <plurals name="song_dna_track_row_main_artist_roles">
+        <item quantity="one">Szerepkör: %1$s</item>
+        <item quantity="other">Szerepkörök: %1$s</item>
+    </plurals>
+    <plurals name="songdnacovers_header_metadata_new_entries">
+        <item quantity="one">%1$,d új bejegyzés</item>
+        <item quantity="other">%1$,d új bejegyzés</item>
+    </plurals>
+    <plurals name="songs_added">
+        <item quantity="one">%1$d dal hozzáadva</item>
+        <item quantity="other">%1$d dal hozzáadva</item>
+    </plurals>
+    <plurals name="songs_played">
+        <item quantity="one">%1$d dal lejátszva</item>
+        <item quantity="other">%1$d dal lejátszva</item>
+    </plurals>
+    <plurals name="speed_badge_bpm_label">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="speed_badge_faster_content_description">
+        <item quantity="one">Felgyorsítva %1$d bpm-re</item>
+        <item quantity="other">Felgyorsítva %1$d bpm-re</item>
+    </plurals>
+    <plurals name="speed_badge_slower_content_description">
+        <item quantity="one">Lelassítva %1$d bpm-re</item>
+        <item quantity="other">Lelassítva %1$d bpm-re</item>
+    </plurals>
+    <plurals name="speed_control_bpm_format">
+        <item quantity="one">%1$d bpm</item>
+        <item quantity="other">%1$d bpm</item>
+    </plurals>
+    <plurals name="stats_card_friends_active">
+        <item quantity="one">%1$d ismerős hallgat éppen zenét</item>
+        <item quantity="other">%1$d ismerős hallgat éppen zenét</item>
+    </plurals>
+    <plurals name="sts_local_files_item_count">
+        <item quantity="one">%1$d elem</item>
+        <item quantity="other">%1$d elem</item>
+    </plurals>
+    <plurals name="text_selector_handle_state">
+        <item quantity="one">%1$s, %2$s, %3$d mondat kiválasztva</item>
+        <item quantity="other">%1$s, %2$s, %3$d mondat kiválasztva</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_content_description">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="time_format_duration_hour_minute_content_description">
+        <item quantity="one">%1$d óra %2$d perc</item>
+        <item quantity="other">%1$d óra %2$d perc</item>
+    </plurals>
+    <plurals name="time_format_duration_second_content_description">
+        <item quantity="one">%1$d másodperc</item>
+        <item quantity="other">%1$d másodperc</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_content_description">
+        <item quantity="one">%1$d óra van hátra</item>
+        <item quantity="other">%1$d óra van hátra</item>
+    </plurals>
+    <plurals name="time_format_time_left_hour_minute_content_description">
+        <item quantity="one">%1$d óra %2$d perc van hátra</item>
+        <item quantity="other">%1$d óra %2$d perc van hátra</item>
+    </plurals>
+    <plurals name="title_listening_activity_requesters_want_to_join">
+        <item quantity="one">%1$s szeretne veled csatlakozni egy Jamhez!</item>
+        <item quantity="other">%1$s és további %2$d másik felhasználó szeretne csatlakozni a Jamedhez!</item>
+    </plurals>
+    <plurals name="title_phone_speaker_requesters_want_to_join">
+        <item quantity="one">%1$s szeretne csatlakozni a Jamedhez!</item>
+        <item quantity="other">%1$s és további %2$d másik felhasználó szeretne csatlakozni a Jamedhez!</item>
+    </plurals>
+    <plurals name="top_ups_hours_listened">
+        <item quantity="one">%2$d/%1$s hallgatással töltött óra</item>
+        <item quantity="other">%2$d/%1$s hallgatással töltött óra</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_days">
+        <item quantity="one">%1$d nap múlva jelenik meg</item>
+        <item quantity="other">%1$d nap múlva jelenik meg</item>
+    </plurals>
+    <plurals name="upcoming_release_pretitle_premium_early_access_in_days">
+        <item quantity="one">Korai Premium-hozzáférés %1$d nap múlva</item>
+        <item quantity="other">Korai Premium-hozzáférés %1$d nap múlva</item>
+    </plurals>
+    <plurals name="workout_settings_duration_content_description">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="workout_summary_bar_minutes_a11y">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+    <plurals name="your_episodes_settings_option_auto_download_enabled_shows">
+        <item quantity="one">Bekapcsolva %1$s műsornál</item>
+        <item quantity="other">Bekapcsolva %1$s műsornál</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_cached_count">
+        <item quantity="one">%1$d dal</item>
+        <item quantity="other">%1$d dal</item>
+    </plurals>
+    <plurals name="your_library_also_available_offline_subtitle">
+        <item quantity="one">%2$d/%1$d dal</item>
+        <item quantity="other">%2$d/%1$d dal</item>
+    </plurals>
+    <plurals name="your_library_in_progress_progress_status_description">
+        <item quantity="one">Folyamatban van, %1$d százalék kész</item>
+        <item quantity="other">Folyamatban van, %1$d százalék kész</item>
+    </plurals>
+    <plurals name="your_library_pin_failed_body_item_pin_limit_reached">
+        <item quantity="one">Egy időben csak %1$d elemet tűzhetsz ki.</item>
+        <item quantity="other">Egy időben csak %1$d elemet tűzhetsz ki.</item>
+    </plurals>
+    <plurals name="your_library_pinning_failed_body_item_pin_limit_reached">
+        <item quantity="one">Egy időben csak %1$d elemet tűzhetsz ki.</item>
+        <item quantity="other">Egy időben csak %1$d elemet tűzhetsz ki.</item>
+    </plurals>
+    <plurals name="your_library_previously_finished_in_progress_progress_status_description">
+        <item quantity="one">Korábban befejezett, folyamatban van, %1$d százalék kész</item>
+        <item quantity="other">Korábban befejezett, folyamatban van, %1$d százalék kész</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_hours_accessibility_reader">
+        <item quantity="one">%1$d óra</item>
+        <item quantity="other">%1$d óra</item>
+    </plurals>
+    <plurals name="yourupdates_timestamp_minutes_accessibility_reader">
+        <item quantity="one">%1$d perc</item>
+        <item quantity="other">%1$d perc</item>
+    </plurals>
+</resources>

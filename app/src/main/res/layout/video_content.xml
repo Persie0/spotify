@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/video_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+        <com.spotify.betamax.player.VideoSurfaceView
+            android:id="@+id/video_surface"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+        <com.spotify.encoremobile.viewstub.EncoreViewStub
+            android:id="@+id/video_thumbnail"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </FrameLayout>
+    <LinearLayout
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/peek_placeholder"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.spotify.encoremobile.component.icons.IconTrack
+            android:id="@+id/track_icon"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
+            app:tint="?attr/baseTextSubdued"/>
+        <TextView
+            android:textColor="@color/white"
+            android:padding="10dp"
+            android:layout_width="170dp"
+            android:layout_height="wrap_content"
+            android:text="@string/player_radio_no_forecasting"
+            style="@style/TextAppearance.Cat.Secondary"/>
+    </LinearLayout>
+</FrameLayout>

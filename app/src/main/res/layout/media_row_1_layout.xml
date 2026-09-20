@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.spotify.watchfeed.uiusecases.element.mediaitemsframelayout.MediaItemsFrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:maxChildHeightPercent="0.8"
+    app:maxChildWidthPercent="0.8">
+    <FrameLayout
+        android:layout_gravity="center"
+        android:id="@+id/media_item_1_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</com.spotify.watchfeed.uiusecases.element.mediaitemsframelayout.MediaItemsFrameLayout>

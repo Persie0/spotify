@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp">
+    <TextView
+        android:textAppearance="?attr/pasteTextAppearanceMetadata"
+        android:textColor="@color/white"
+        android:gravity="center"
+        android:id="@+id/title"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="13dp"
+        android:textDirection="locale"/>
+    <com.spotify.legacyglue.gluelib.components.trackcloud.TrackCloudTextView
+        android:textAppearance="?attr/pasteTextAppearanceBodyMedium"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:id="@+id/track_cloud"
+        android:duplicateParentState="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lineSpacingExtra="8dp"
+        android:textDirection="locale"/>
+</LinearLayout>
