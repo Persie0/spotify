@@ -1,0 +1,159 @@
+name: Map Orbit restriction fields
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-field-map.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download x86_64 Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Map restriction schema xrefs
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          cat > /tmp/map.py <<'PY'
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          names=[
+            'disallow_pausing_reasons','disallow_resuming_reasons','disallow_seeking_reasons',
+            'disallow_peeking_prev_reasons','disallow_peeking_next_reasons',
+            'disallow_skipping_prev_reasons','disallow_skipping_next_reasons',
+            'disallow_swipe_prev_reasons','disallow_swipe_next_reasons',
+            'disallow_toggling_repeat_context_reasons','disallow_toggling_repeat_track_reasons',
+            'disallow_toggling_shuffle_reasons','disallow_set_queue_reasons',
+            'disallow_add_to_queue_reasons','disallow_interrupting_playback_reasons',
+            'disallow_transferring_playback_reasons','disallow_remote_control_reasons',
+            'disallow_inserting_into_next_tracks_reasons','disallow_inserting_into_context_tracks_reasons',
+            'disallow_reordering_in_next_tracks_reasons','disallow_reordering_in_context_tracks_reasons',
+            'disallow_removing_from_next_tracks_reasons','disallow_removing_from_context_tracks_reasons',
+            'disallow_updating_context_reasons','disallow_setting_playback_speed_reasons',
+            'disallow_signals','disallow_play_as_next_in_queue_reasons',
+            'disallow_sleep_timer_clear_reasons','disallow_sleep_timer_duration_reasons',
+            'disallow_sleep_timer_end_of_track_reasons','disallow_add_to_queue_track_reasons',
+            'disallow_tap_to_play_track_in_next_tracks_reasons',
+            'disallow_reordering_track_in_next_tracks_reasons',
+            'disallow_reordering_episode_in_next_tracks_reasons',
+            'disallow_reordering_enqueued_track_in_next_tracks_reasons',
+            'disallow_reordering_enqueued_episode_in_next_tracks_reasons',
+            'disallow_viewing_queue_reasons','disallow_viewing_ordered_tracks_in_next_tracks_reasons',
+          ]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            def off2va(off):
+              for a,b,v in loads:
+                if a <= off < b: return v+(off-a)
+              return off
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a: fdes.append((a,b))
+            fdes.sort()
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0] <= addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-4),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b: return (a,b)
+            return None
+
+          target={}
+          for name in names:
+            b=name.encode(); poss=[]; p=0
+            while True:
+              p=data.find(b,p)
+              if p<0: break
+              poss.append(off2va(p)); p+=1
+            target[name]=poss
+
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          xrefs=[]
+          for idx,line in enumerate(dis):
+            ma=re.match(r'^\s*([0-9a-f]+):',line)
+            if not ma or '#' not in line: continue
+            src=int(ma.group(1),16)
+            md=re.match(r'\s*([0-9a-f]+)\b',line.split('#',1)[1])
+            if not md: continue
+            dst=int(md.group(1),16)
+            for name,vas in target.items():
+              if dst in vas:
+                xrefs.append((src,dst,name,idx,fde_for(src)))
+
+          print('# Orbit restriction field map')
+          print()
+          print('Direct native references to public restriction schema names, grouped by ELF unwind function.')
+          print()
+          for name in names:
+            hs=[x for x in xrefs if x[2]==name]
+            suffix=(' @ '+', '.join(f'0x{x[0]:x}' for x in hs)) if hs else ''
+            print(f'- {name}: {len(hs)} direct xref(s){suffix}')
+          print()
+
+          groups={}
+          for x in xrefs:
+            groups.setdefault(x[4],[]).append(x)
+          for fr,hits in sorted(groups.items(),key=lambda kv:(kv[0][0] if kv[0] else 1<<62)):
+            print(f'## Function 0x{fr[0]:x}..0x{fr[1]:x}' if fr else '## Function unknown')
+            print()
+            print('Fields in instruction order:')
+            for src,dst,name,idx,_ in sorted(hits):
+              print(f'- 0x{src:x}: {name}')
+            print()
+            for src,dst,name,idx,_ in sorted(hits):
+              print(f'### {name} @ 0x{src:x}')
+              for line in dis[max(0,idx-11):min(len(dis),idx+15)]:
+                print('    '+line)
+              print()
+          PY
+          python3 /tmp/map.py > analysis/native-restriction-field-map.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-field-map.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Map Orbit restriction schema fields"
+          git pull --rebase origin main
+          git push origin HEAD:main
