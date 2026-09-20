@@ -532,18 +532,30 @@ The decisive bytecode is in `la01.smali`: a `jo20` UI/presenter object yields it
 
 `jo20` itself is constructed with two playback-state `Flowable` inputs plus the same `p8p0` command API. The legacy `skip_ad_button_stub` resource is only a host that is replaced by Compose content; the actual command is the player signal above.
 
-This confirms the architecture:
+The Android readiness gate is now recovered exactly. `p4h1.smali` copies `EsContextPlayerState.getSignalsList()` directly into `PlayerState.Builder.signals(...)`. In the Skip Ad reducer, `g511.smali` then evaluates:
+
+```text
+PlayerState.signals().contains("skip-ad")
+```
+
+and passes that Boolean directly into the `jk21` Skip Ad UI model.
+
+So the confirmed architecture is:
 
 ```text
 skippable_ad_delay
-    -> native "ad_skip" readiness timer
+    -> native "ad_skip" timer
+    -> subtype 6
     -> adObject+0x1b8 = 1
-    -> Skip Ad UI becomes actionable
+    -> native player state recomputed
+    -> EsContextPlayerState.signals includes "skip-ad"
+    -> p4h1 copies signals into PlayerState.signals()
+    -> Skip Ad UI tests signals.contains("skip-ad")
     -> SignalCommand("skip-ad")
-    -> player command API
+    -> ContextPlayer / Signal
 ```
 
-Ordinary MediaSession/next-track skipping remains a separate path governed by `disallowSkippingNextReasons`.
+This is separate from ordinary MediaSession/next-track skipping, which remains governed by `disallowSkippingNextReasons` and the next-command set.
 
 The command facade is now resolved one layer further. `hrw` is the concrete `p8p0` implementation, `b8p0` selects its `zqw` Signal branch, and `zqw` sends an `EsSignalRequest$SignalRequest` through `ClientBase.callSingle("spotify.player.esperanto.proto.ContextPlayer", "Signal", request)`. Ordinary next-track uses a different `ContextPlayer/SkipNext` branch. The remaining question is below the Esperanto boundary: **where Orbit consumes signal ID `skip-ad`, how it performs the ad transition, and how successful execution becomes the later `ad_skipped` state/telemetry.**
 
