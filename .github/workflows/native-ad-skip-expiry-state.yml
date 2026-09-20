@@ -1,0 +1,232 @@
+name: Trace ad_skip expiry state transition
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-skip-expiry-state.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace expiry event into owner state
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          python3 - <<'PY' > analysis/native-ad-skip-expiry-state.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a: fdes.append((a,b))
+            fdes.sort()
+
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):
+                continue
+              for rel in sec.iter_relocations():
+                addend = rel.entry.get('r_addend')
+                if addend is not None:
+                  relocs.append((rel['r_offset'], addend, sec.name))
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr: lo=m+1
+              else: hi=m
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def dump_fde(addr, title=None, limit=2000):
+            fr=fde_for(addr)
+            print(f'## {title or hex(addr)}')
+            print('FDE: '+(f'0x{fr[0]:x}..0x{fr[1]:x} (size 0x{fr[1]-fr[0]:x})' if fr else 'none'))
+            if fr:
+              n=0
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:
+                  print('    '+l); n+=1
+                  if n>=limit:
+                    print('    ... truncated ...'); break
+            print()
+
+          def context(i,before=18,after=24):
+            for x in lines[max(0,i-before):min(len(lines),i+after+1)]:
+              print('    '+x)
+
+          def direct_callers(target):
+            out=[]
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if m and int(m.group(1),16)==target:
+                out.append((a,i,fde_for(a)))
+            return out
+
+          print('# ad_skip expiry -> restriction-owner state trace')
+          print()
+          print('Known anchors:')
+          print('- ad delay parser: nested ad-object vtable +0xe8 -> 0x14e24e8')
+          print('- ad_skip timer/event constructor sites: 0x139ba71 and 0x139be38')
+          print('- generic schedule helper: 0x139c09a')
+          print('- subtype-6 owner consumer: 0x10a9668')
+          print('- restriction rebuild: 0x10a6464')
+          print('- nested optional reset: 0x1089a72')
+          print('- lower state copy assignment: 0x1089f9e')
+          print('- owner wrapper around reset: 0x10a9e38')
+          print('- owner state copy wrapper: 0x10a9fbe')
+          print()
+
+          dump_fde(0x139c09a, 'Generic event/timer schedule helper 0x139c09a')
+          dump_fde(0x10a9668, 'Subtype-6 restriction-owner consumer 0x10a9668')
+          dump_fde(0x1089f9e, 'Lower owner-state copy assignment 0x1089f9e')
+          dump_fde(0x10a9fbe, 'Owner wrapper around lower state copy 0x10a9fbe')
+
+          print('## Direct callees of 0x139c09a')
+          fr=fde_for(0x139c09a)
+          seen=set()
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]): continue
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if not m: continue
+              t=int(m.group(1),16)
+              if t in seen: continue
+              seen.add(t)
+              tf=fde_for(t)
+              print(f'- call @0x{a:x} -> 0x{t:x}; target FDE={tf}')
+          print()
+
+          print('## Relocations/vtable slots targeting subtype-6 consumer 0x10a9668')
+          hits=[x for x in relocs if x[1]==0x10a9668]
+          if not hits:
+            print('- no RELATIVE relocation addend equals 0x10a9668')
+          for off,add,sec in hits:
+            print(f'- slot 0x{off:x} in {sec} -> 0x{add:x}')
+            # raw neighborhood helps identify the surrounding vtable.
+            for va in range(max(0,off-0x40),off+0x48,8):
+              raw=None
+              for po,pe,pv in loads:
+                if pv<=va<pv+(pe-po):
+                  fo=po+(va-pv)
+                  if fo+8<=len(data): raw=struct.unpack_from('<Q',data,fo)[0]
+                  break
+              rel=[r for r in relocs if r[0]==va]
+              if rel:
+                print(f'    0x{va:x}: reloc -> 0x{rel[0][1]:x}')
+              elif raw is not None:
+                print(f'    0x{va:x}: raw 0x{raw:x}')
+          print()
+
+          print('## Direct callers of owner-state reset/copy helpers')
+          targets={
+            0x1089a72:'nested payload destroy/reset',
+            0x108daf0:'nested payload assignment',
+            0x108dc54:'nested payload construct',
+            0x1089f9e:'lower state copy assignment',
+            0x10a9e38:'owner wrapper reset/destructor path',
+            0x10a9fbe:'owner wrapper state copy',
+            0x10aa70a:'owner wrapper payload assignment',
+          }
+          for t,name in targets.items():
+            print(f'### {name} 0x{t:x}')
+            cs=direct_callers(t)
+            if not cs: print('- no direct callers')
+            for a,i,frc in cs:
+              print(f'- caller insn 0x{a:x}; FDE={frc}')
+              context(i,12,18)
+            print()
+
+          print('## Concrete optional engagement writes in state-helper / owner clusters')
+          # Keep only immediate byte writes at the exact decoded optional offsets.
+          pats=('0x428]','0x550]','0x560]','0x470]','0x598]')
+          for a,i,op,l in ins:
+            if not ((0x1088000<=a<0x108e000) or (0x10a0000<=a<0x10ab000)):
+              continue
+            if not any(p in op for p in pats):
+              continue
+            if not re.search(r'\b(?:mov|and|or|xor)\b',op):
+              continue
+            # Skip obvious reads: destination must be memory operand before comma.
+            left=op.split(',',1)[0]
+            if '[' not in left: continue
+            print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}')
+            context(i,8,12)
+            print()
+
+          print('## All subtype-6 comparisons/writes near known player/event clusters')
+          for a,i,op,l in ins:
+            if not (0x1000000<=a<0x1500000): continue
+            if '0x38]' not in op or '0x6' not in op: continue
+            if not re.search(r'\b(?:cmp|mov)\b',op): continue
+            print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}')
+            context(i,10,16)
+            print()
+
+          print('## Calls from subtype-6 consumer/rebuild neighborhood into state-copy/reset helpers')
+          for a,i,op,l in ins:
+            if not (0x10a9000<=a<0x10aa900): continue
+            m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+            if not m: continue
+            t=int(m.group(1),16)
+            if t in targets or t in (0x10a6464,0x10a9668):
+              print(f'- 0x{a:x}: {op}; FDE={fde_for(a)}')
+              context(i,10,14)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-skip-expiry-state.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ad_skip expiry state transition"
+          git pull --rebase origin main
+          git push origin HEAD:main
