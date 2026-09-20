@@ -225,3 +225,5 @@ jobs:
           git commit -m "Trace Orbit ad runtime vtable"
           git pull --rebase origin main
           git push origin HEAD:main
+
+# rerun after concurrent report commits
