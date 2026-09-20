@@ -44,7 +44,7 @@ jobs:
           rm -rf analysis/smali-targets
           mkdir -p analysis/smali-targets
 
-          targets="pqd0 pdp0 rpd0 sc11 qm0 fzg1 be11"
+          targets="pqd0 pdp0 rpd0 sc11 qm0 fzg1 be11 f5x0 eio0"
           for target in $targets; do
             found="$(find /tmp/spotify-smali -type f -path '*/p/'"$target"'.smali' -print -quit)"
             if [ -z "$found" ]; then
@@ -65,7 +65,7 @@ jobs:
             echo
             echo "These files preserve bytecode-level control flow for target classes where JADX reconstruction is incomplete."
             echo
-            echo "Targets: pqd0, pdp0, rpd0, sc11, qm0, fzg1, be11."
+            echo "Targets: pqd0, pdp0, rpd0, sc11, qm0, fzg1, be11, f5x0, eio0."
           } > analysis/smali-targets/README.md
 
           test -f analysis/smali-targets/pqd0.smali
@@ -90,6 +90,12 @@ jobs:
             echo
             echo "# disallowSkippingNext references"
             grep -R -n -B8 -A12 -E 'disallowSkippingNext|disallow_skipping_next' /tmp/spotify-smali/smali* 2>/dev/null || true
+            echo
+            echo "# Esperanto Restrictions -> domain Restrictions mapper references"
+            grep -R -n -B14 -A40 -E 'EsRestrictions\\$Restrictions;.*Restrictions\\$Builder|Lp/f5x0;->' /tmp/spotify-smali/smali* 2>/dev/null || true
+            echo
+            echo "# ContextPlayerState restrictions accessor references"
+            grep -R -n -B12 -A20 -E 'EsContextPlayerState\\$ContextPlayerState;->N\\(' /tmp/spotify-smali/smali* 2>/dev/null || true
           } > analysis/smali-targets/xrefs.txt
 
           # Keep the report manageable while preserving matching context.
