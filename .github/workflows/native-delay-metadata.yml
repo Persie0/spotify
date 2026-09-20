@@ -40,11 +40,7 @@ jobs:
             echo
             echo "## strings around file offset"
             echo
-            strings -a -t x "$SO" | awk '
-              {
-                off=strtonum("0x"$1);
-                if (off>=strtonum("0x437000") && off<=strtonum("0x439800")) print
-              }'
+            strings -a -t x "$SO" | perl -lane '$o=hex($F[0]); print if $o>=0x437000 && $o<=0x439800'
             echo
             echo "## raw bytes around exact key"
             echo
