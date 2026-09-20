@@ -1,0 +1,62 @@
+name: Decode copied restriction gate fields fast
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-copied-gate-fields-fast.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Decode only 0x1089f9e
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Lower restriction-owner state copy assignment"
+            echo
+            echo "Function 0x1089f9e..0x108a477 is called first by 0x10a9fbe, which then copies fields from +0x638 onward."
+            echo "Destination/source bases are the owner+0x38 state subobjects."
+            echo "Therefore sub+0x438 = owner+0x470 and sub+0x560 = owner+0x598."
+            echo
+            objdump -d -M intel --start-address=0x1089f9e --stop-address=0x108a477 "$SO"
+            echo
+            echo "## Gate-offset references"
+            objdump -d -M intel --start-address=0x1089f9e --stop-address=0x108a477 "$SO" |
+              grep -n -B12 -A16 -E '\+0x438\]|\+0x560\]|\+0x430\]|\+0x440\]|\+0x558\]|\+0x568\]' || true
+            echo
+            echo "## Nearby calls"
+            objdump -d -M intel --start-address=0x1089f9e --stop-address=0x108a477 "$SO" |
+              grep -E '\bcall\b|\bjmp\b' || true
+          } > analysis/native-copied-gate-fields-fast.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-copied-gate-fields-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode copied restriction gate fields fast"
+          git pull --rebase origin main
+          git push origin HEAD:main
