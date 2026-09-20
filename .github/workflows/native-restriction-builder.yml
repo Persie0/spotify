@@ -112,6 +112,18 @@ jobs:
             print('- '+s.replace('\n','\\n'))
 
           print()
+          print('## Destination restriction containers')
+          print()
+          for src,dst,s,i in refs:
+            dest=None
+            for line2 in asm[i+1:min(len(asm),i+14)]:
+              md=re.search(r'lea\s+rdi,\[r14\+0x([0-9a-f]+)\]', line2)
+              if md:
+                dest=int(md.group(1),16)
+                break
+            if dest is not None:
+              print(f'- 0x{src:x}: {s.replace(chr(10),"\\n")} -> r14+0x{dest:x}')
+          print()
           print('## Restriction-reason assignments')
           print()
           for src,dst,s,i in refs:
