@@ -1,0 +1,100 @@
+name: Find restriction owner ad-gate writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-owner-ad-gate-writer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          APK="input/spotify-9-1-84-2205.apk"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Find sub+0x438 field writers
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x1080000 --stop-address=0x10b0000 "$SO" > /tmp/owner.disasm
+          python3 - <<'PY' > analysis/native-owner-ad-gate-writer.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/owner.disasm').read_text(errors='replace').splitlines()
+
+          def addr(line):
+            m=re.match(r'^\s*([0-9a-f]+):',line)
+            return int(m.group(1),16) if m else None
+
+          def asm(line):
+            parts=line.split('\t')
+            return parts[-1].strip() if parts else line.strip()
+
+          refs=[]
+          for i,l in enumerate(lines):
+            a=addr(l)
+            if a is None: continue
+            t=asm(l)
+            m=re.search(r'\[([a-z][a-z0-9]*)\+0x438\]',t)
+            if not m: continue
+            base=m.group(1)
+            op=t.split(None,1)[0] if t else ''
+            dst=t.split(None,1)[1].split(',',1)[0].strip() if ' ' in t else ''
+            write=op in {'mov','movb','movw','movl','movq','and','or','xor','add','sub','inc','dec','xchg','cmpxchg','bts','btr','btc'} and f'[{base}+0x438]' in dst
+            refs.append((a,i,t,base,write))
+
+          print('# Restriction-owner ad-gate writer scan')
+          print()
+          print('Coordinate: owner+0x470 == (owner+0x38 state subobject)+0x438.')
+          print('Scan range: 0x1080000..0x10b0000, covering the concrete 0x18b0-byte owner and its lower state helpers.')
+          print()
+          print(f'Total direct sub+0x438 operands: {len(refs)}')
+          print(f'Direct syntactic writes: {sum(x[4] for x in refs)}')
+          print()
+          for a,i,t,base,write in refs:
+            print(f'## 0x{a:x}' + (' WRITE' if write else ''))
+            print(f'- base={base}: {t}')
+            print()
+            for x in lines[max(0,i-12):min(len(lines),i+16)]:
+              print('    '+x)
+            print()
+
+          print('## Calls from owner 0x10a... code into 0x108... helper range')
+          print()
+          for i,l in enumerate(lines):
+            a=addr(l)
+            if a is None or not (0x10a0000<=a<0x10b0000): continue
+            t=asm(l)
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',t)
+            if not m: continue
+            dst=int(m.group(1),16)
+            if 0x1080000<=dst<0x1090000:
+              print(f'- 0x{a:x} -> 0x{dst:x}: {t}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-owner-ad-gate-writer.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find restriction owner ad gate writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
