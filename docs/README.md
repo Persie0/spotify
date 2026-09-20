@@ -17,6 +17,9 @@ The APK analyzed here is **Spotify 9.1.84.2205** from release `r1`, decompiled w
 - [Subsystem / package map](08-package-map.md)
 - [Spotify Ad Muter architecture](09-spotify-muter.md)
 - [Research index and open questions](10-research-index.md)
+- [Android component inventory](11-android-components.md)
+- [Runtime and framework stack](12-runtime-stack.md)
+- [Top-level Spotify package index](13-top-level-package-index.md)
 
 ## High-level mental model
 
