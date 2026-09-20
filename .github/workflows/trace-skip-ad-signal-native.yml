@@ -1,0 +1,230 @@
+name: Trace skip-ad Signal into native
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-signal-native.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download APK
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipadsig
+          gh release download r1 --repo "\${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          APK=input/spotify-9-1-84-2205.apk
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipadsig
+          echo "APK=$APK" >> "$GITHUB_ENV"
+
+      - name: Decode target bytecode
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool binutils
+          rm -rf /tmp/skipadsig/apk
+          apktool d -f "$APK" -o /tmp/skipadsig/apk >/dev/null
+
+      - name: Install native helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Build Android and native trace
+        run: |
+          SO=/tmp/skipadsig/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipadsig/orbit.disasm
+          python3 - <<'PY' > analysis/skip-ad-signal-native.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          root=Path('/tmp/skipadsig/apk')
+          smalis=list(root.glob('smali*/**/*.smali'))
+          so=Path('/tmp/skipadsig/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/skipadsig/orbit.disasm').read_text(errors='replace').splitlines()
+
+          print('# Skip Ad Signal -> Esperanto/native trace')
+          print()
+          print('Established Android path:')
+          print('SignalCommand("skip-ad") -> b8p0 -> zqw -> EsSignalRequest -> ContextPlayer/Signal')
+          print()
+
+          def find_class(name):
+            suffix=f'/p/{name}.smali'
+            return next((p for p in smalis if str(p).endswith(suffix)),None)
+
+          def dump_selected(path, terms, radius=120):
+            if not path:
+              print('- class not found')
+              return
+            lines=path.read_text(errors='replace').splitlines()
+            print(f'- path: {path}')
+            hits=[]
+            for i,l in enumerate(lines):
+              if any(t in l for t in terms):
+                hits.append(i)
+            if not hits:
+              print('- no matching terms')
+              return
+            ranges=[]
+            for i in hits:
+              a=max(0,i-radius); b=min(len(lines),i+radius+1)
+              if ranges and a<=ranges[-1][1]+1:ranges[-1]=(ranges[-1][0],max(ranges[-1][1],b))
+              else:ranges.append((a,b))
+            for a,b in ranges[:20]:
+              print('~~~smali')
+              for l in lines[a:b]:print(l)
+              print('~~~')
+
+          print('## xcw SignalCommand -> EsSignalRequest builder')
+          dump_selected(find_class('xcw'),[
+            'EsSignalRequest$SignalRequest','SignalCommand','signalId','parameters',
+            'm81225r','m81224q','Lp/tow;','case 5',':pswitch_'
+          ],90)
+          print()
+
+          print('## zqw Signal RPC dispatch')
+          dump_selected(find_class('zqw'),[
+            'Lp/b8p0;','EsSignalRequest$SignalRequest','ContextPlayer','const-string v2, "Signal"',
+            'callSingle'
+          ],80)
+          print()
+
+          print('## Signal model / request schema')
+          for n in ['b8p0','h8p0','tow']:
+            print(f'### {n}')
+            dump_selected(find_class(n),['SignalCommand','EsSignalRequest','signalId','parameters','options','logging'],55)
+            print()
+
+          print('## Whole-APK exact skip-ad literals')
+          for p in smalis:
+            try:t=p.read_text(errors='replace')
+            except:continue
+            if '"skip-ad"' in t or 'ad_skipped' in t:
+              print(f'### {p}')
+              lines=t.splitlines()
+              for i,l in enumerate(lines):
+                if '"skip-ad"' in l or 'ad_skipped' in l:
+                  print('~~~smali')
+                  for x in lines[max(0,i-60):min(len(lines),i+100)]:print(x)
+                  print('~~~')
+          print()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def off2va(off):
+            for a,b,v in loads:
+              if a<=off<b:return v+(off-a)
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          targets=[b'skip-ad',b'ad_skipped',b'ad-skipped',b'skip_ad',b'ad_skip']
+          print('## Native semantic strings and direct xrefs')
+          for needle in targets:
+            print(f'### {needle.decode()}')
+            start=0; locs=[]
+            while True:
+              o=data.find(needle,start)
+              if o<0:break
+              locs.append(o); start=o+1
+            if not locs:
+              print('- not present')
+              print()
+              continue
+            vas=[]
+            for o in locs:
+              va=off2va(o)
+              if va is not None:vas.append((o,va))
+            for o,va in vas:
+              end=data.find(b'\0',o,min(len(data),o+160))
+              raw=data[o:(end if end>o else o+len(needle))]
+              print(f'- file+0x{o:x} / VA 0x{va:x}: {raw!r}')
+              refs=[]
+              for a,i,op,l in ins:
+                if '#' not in l:continue
+                rhs=l.split('#',1)[1]
+                m=re.match(r'\s*([0-9a-f]+)\b',rhs)
+                if m and int(m.group(1),16)==va:
+                  refs.append((a,i,op,l))
+              print(f'  direct code refs: {len(refs)}')
+              for a,i,op,l in refs[:40]:
+                fr=fde_for(a)
+                print(f'  - 0x{a:x}; FDE={fr}')
+                for x in dis[max(0,i-20):min(len(dis),i+36)]:print('      '+x)
+            print()
+
+          print('## Native ContextPlayer/Signal neighborhood')
+          for needle in [b'spotify.player.esperanto.proto.ContextPlayer',b'Signal']:
+            print(f'### {needle.decode(errors="replace")}')
+            offs=[]; st=0
+            while True:
+              o=data.find(needle,st)
+              if o<0:break
+              offs.append(o); st=o+1
+            shown=0
+            for o in offs:
+              va=off2va(o)
+              if va is None:continue
+              refs=[]
+              for a,i,op,l in ins:
+                if '#' not in l:continue
+                m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+                if m and int(m.group(1),16)==va:refs.append((a,i,l))
+              if refs:
+                print(f'- file+0x{o:x}/VA 0x{va:x}, refs={len(refs)}')
+                for a,i,l in refs[:20]:
+                  print(f'  - 0x{a:x}; FDE={fde_for(a)}')
+                  for x in dis[max(0,i-12):min(len(dis),i+24)]:print('      '+x)
+                  shown+=1
+                  if shown>=40:break
+              if shown>=40:break
+            if shown==0:print('- no direct code xrefs')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-signal-native.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace skip-ad Signal into native"
+          git pull --rebase origin main
+          git push origin HEAD:main
