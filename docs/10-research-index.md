@@ -166,7 +166,17 @@ mft_disallow -> r14+0x14a0
 ad_disallow  -> r14+0x14a0
 ```
 
-The ad skip-next write is guarded by `r14+0x598` and `r14+0x470`. The first is reused in active/playing-context logic; the second is the current ad-specific anchor.
+The ad skip-next write is guarded by `r14+0x598` and `r14+0x470`.
+
+The restriction-owner object is now concretely identified independently of the earlier smaller player-side object trace. Its constructor path at `0x10a578a..0x10a5d2d` allocates `0x18b0` bytes at `0x10a58b9`, then installs:
+
+```text
+object+0x0 -> vtable/address point 0x184c738
+object+0x8 -> secondary interface address point 0x184c858
+```
+
+The secondary table has an Itanium `offset-to-top = -8` layout, consistent with a secondary interface subobject. The destructor path `0x10a8812` touches fields through at least `+0x18a0`, matching the large allocation. Therefore `+0x470`, `+0x598`, and `+0x14a0` below are fields of this large Orbit restriction-owner/player-core object; calling them direct fields of the smaller `0x4e0` ContextPlayer-side object was an unsupported earlier assumption.
+ The first is reused in active/playing-context logic; the second is the current ad-specific anchor.
 
 The indirect native delay consumer is now resolved. Orbit maps `ad.skippable_ad_delay` to an internal `skippable_ad_delay` key. ELF relocations reconstruct the ad-model runtime vtable at `0x1879950`:
 
@@ -178,11 +188,11 @@ The indirect native delay consumer is now resolved. Orbit maps `ad.skippable_ad_
 
 The derived predicate returns true when object byte `+0x1b8` is set; otherwise a positive delay suppresses skippability and zero/non-positive delay falls back to the raw `skippable` property.
 
-A ContextPlayer event handler at `0x10a9668` can set `currentTrackObject+0x1b8 = 1` for event subtype `6` and immediately rebuild restrictions. This is a concrete state bridge, but it is **not yet the proven skip-next unlock**: skip-next `ad_disallow` insertion happens earlier in the builder and remains gated by ContextPlayer bytes `+0x598` and `+0x470`.
+A callback on the Orbit restriction-owner object at `0x10a9668` can set `currentTrackObject+0x1b8 = 1` for event subtype `6` and immediately rebuild restrictions. This is a concrete state bridge, but it is **not yet the proven skip-next unlock**: skip-next `ad_disallow` insertion happens earlier in the builder and remains gated by restriction-owner bytes `+0x598` and `+0x470`.
 
 Current target:
 
-- identify the true ContextPlayer writers/semantic meaning of byte gates `+0x470` and `+0x598`
+- identify the true restriction-owner writers/semantic meaning of byte gates `+0x470` and `+0x598`
 - resolve event subtype `6` and the role of the `+0x1b8` ad-object flag
 - determine whether delay expiry changes the skip-next gate locally or via another player-core event
 - trace available-command synchronization after the native skip-next restriction set changes
