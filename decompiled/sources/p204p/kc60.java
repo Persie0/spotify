@@ -134,17 +134,21 @@ public final class kc60 implements Application.ActivityLifecycleCallbacks {
     public final void m56016e(eh00 eh00Var) {
         dc60 dc60Var;
         synchronized (this.f121386d) {
-            synchronized (this.f121387e) {
-                dc60Var = (dc60) eh00Var.invoke();
-            }
-            if (dc60Var == null) {
-                return;
-            }
-            for (lc60 lc60Var : dc60Var.f47440b) {
-                Iterator it = dc60Var.f47439a.iterator();
-                while (it.hasNext()) {
-                    ((kol0) it.next()).m57002a(lc60Var);
+            try {
+                synchronized (this.f121387e) {
+                    dc60Var = (dc60) eh00Var.invoke();
                 }
+                if (dc60Var == null) {
+                    return;
+                }
+                for (lc60 lc60Var : dc60Var.f47440b) {
+                    Iterator it = dc60Var.f47439a.iterator();
+                    while (it.hasNext()) {
+                        ((kol0) it.next()).m57002a(lc60Var);
+                    }
+                }
+            } catch (Throwable th) {
+                throw th;
             }
         }
     }

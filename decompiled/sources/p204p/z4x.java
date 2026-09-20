@@ -42,43 +42,39 @@ public final class z4x {
 
     /* JADX INFO: renamed from: a */
     public final synchronized void m95381a() {
+        if (p2l.f173365a.contains(this)) {
+            return;
+        }
         try {
-            if (p2l.f173365a.contains(this)) {
+            lty ltyVarM71031k = pty.m71031k(p8y.m69344b(), false);
+            if (ltyVarM71031k == null) {
                 return;
             }
-            try {
-                lty ltyVarM71031k = pty.m71031k(p8y.m69344b(), false);
-                if (ltyVarM71031k == null) {
-                    return;
-                }
-                String str = ltyVarM71031k.f136916l;
-                if (str != null && str.length() > 0) {
-                    JSONObject jSONObject = new JSONObject(str);
-                    f279399c.clear();
-                    Iterator<String> itKeys = jSONObject.keys();
-                    while (itKeys.hasNext()) {
-                        String next = itKeys.next();
-                        JSONObject jSONObject2 = jSONObject.getJSONObject(next);
-                        if (jSONObject2 != null) {
-                            if (jSONObject2.optBoolean("is_deprecated_event")) {
-                                f279400d.add(next);
-                            } else {
-                                JSONArray jSONArrayOptJSONArray = jSONObject2.optJSONArray("deprecated_param");
-                                y4x y4xVar = new y4x(next, new ArrayList());
-                                if (jSONArrayOptJSONArray != null) {
-                                    y4xVar.m92822a(n0b1.m63366f(jSONArrayOptJSONArray));
-                                }
-                                f279399c.add(y4xVar);
+            String str = ltyVarM71031k.f136916l;
+            if (str != null && str.length() > 0) {
+                JSONObject jSONObject = new JSONObject(str);
+                f279399c.clear();
+                Iterator<String> itKeys = jSONObject.keys();
+                while (itKeys.hasNext()) {
+                    String next = itKeys.next();
+                    JSONObject jSONObject2 = jSONObject.getJSONObject(next);
+                    if (jSONObject2 != null) {
+                        if (jSONObject2.optBoolean("is_deprecated_event")) {
+                            f279400d.add(next);
+                        } else {
+                            JSONArray jSONArrayOptJSONArray = jSONObject2.optJSONArray("deprecated_param");
+                            y4x y4xVar = new y4x(next, new ArrayList());
+                            if (jSONArrayOptJSONArray != null) {
+                                y4xVar.m92822a(n0b1.m63366f(jSONArrayOptJSONArray));
                             }
+                            f279399c.add(y4xVar);
                         }
                     }
                 }
-            } catch (Exception unused) {
-            } catch (Throwable th) {
-                p2l.m68953a(this, th);
             }
-        } catch (Throwable th2) {
-            throw th2;
+        } catch (Exception unused) {
+        } catch (Throwable th) {
+            p2l.m68953a(this, th);
         }
     }
 }

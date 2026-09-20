@@ -464,27 +464,31 @@ public class p0y0 implements ck81 {
                 return;
             }
             synchronized (this) {
-                if (this.f172859p == 0) {
-                    z3 = j2 > this.f172865v;
-                } else {
-                    synchronized (this) {
-                        long jMax = Math.max(this.f172865v, m68745o(this.f172862s));
-                        if (jMax >= j2) {
-                            z3 = false;
-                        } else {
-                            int i6 = this.f172859p;
-                            int iM68747q = m68747q(i6 - 1);
-                            while (i6 > this.f172862s && this.f172857n[iM68747q] >= j2) {
-                                i6--;
-                                iM68747q--;
-                                if (iM68747q == -1) {
-                                    iM68747q = this.f172852i - 1;
+                try {
+                    if (this.f172859p == 0) {
+                        z3 = j2 > this.f172865v;
+                    } else {
+                        synchronized (this) {
+                            long jMax = Math.max(this.f172865v, m68745o(this.f172862s));
+                            if (jMax >= j2) {
+                                z3 = false;
+                            } else {
+                                int i6 = this.f172859p;
+                                int iM68747q = m68747q(i6 - 1);
+                                while (i6 > this.f172862s && this.f172857n[iM68747q] >= j2) {
+                                    i6--;
+                                    iM68747q--;
+                                    if (iM68747q == -1) {
+                                        iM68747q = this.f172852i - 1;
+                                    }
                                 }
+                                m68741k(this.f172860q + i6);
+                                z3 = true;
                             }
-                            m68741k(this.f172860q + i6);
-                            z3 = true;
                         }
                     }
+                } catch (Throwable th) {
+                    throw th;
                 }
             }
             if (!z3) {
@@ -620,8 +624,8 @@ public class p0y0 implements ck81 {
                     this.f172861r = 0;
                     this.f172852i = i10;
                 }
-            } catch (Throwable th) {
-                throw th;
+            } catch (Throwable th2) {
+                throw th2;
             }
         }
     }
