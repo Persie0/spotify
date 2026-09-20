@@ -1,0 +1,230 @@
+name: Trace native Spotify player strings
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-player-xrefs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Spotify r1 APK
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          mkdir -p input
+          gh release download r1 --repo "\${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          echo "APK=$(find input -type f -name '*.apk' -print -quit)" >> "$GITHUB_ENV"
+
+      - name: Extract orbit libraries
+        run: |
+          rm -rf /tmp/native
+          mkdir -p /tmp/native/arm64 /tmp/native/x86_64
+          unzip -j "$APK" 'lib/arm64-v8a/liborbit-jni-spotify.so' -d /tmp/native/arm64
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native/x86_64
+          file /tmp/native/*/*.so
+
+      - name: Install native analysis helpers
+        run: python3 -m pip install --quiet capstone pyelftools
+
+      - name: Build string and code xref report
+        run: |
+          mkdir -p analysis
+          cat > /tmp/xrefs.py <<'PY'
+          from pathlib import Path
+          from elftools.elf.elffile import ELFFile
+          from capstone import *
+          from capstone.x86 import *
+          from capstone.arm64 import *
+
+          TARGETS = [
+              b"ad.skippable_ad_delay",
+              b"ad.is_skippable",
+              b"ad_disallow",
+              b"mft_disallow",
+              b"disallow_skipping_next_reasons",
+              b"SKIP_TO_NEXT_RESTRICTED",
+              b"skip_to_next_restricted",
+          ]
+
+          def load_elf(path):
+              f = open(path, "rb")
+              elf = ELFFile(f)
+              data = Path(path).read_bytes()
+              return f, elf, data
+
+          def fileoff_to_va(elf, off):
+              for seg in elf.iter_segments():
+                  if seg["p_type"] == "PT_LOAD":
+                      p0 = seg["p_offset"]
+                      p1 = p0 + seg["p_filesz"]
+                      if p0 <= off < p1:
+                          return seg["p_vaddr"] + (off - p0)
+              return None
+
+          def find_strings(data, elf):
+              out = {}
+              for t in TARGETS:
+                  starts = []
+                  p = 0
+                  while True:
+                      p = data.find(t, p)
+                      if p < 0:
+                          break
+                      starts.append((p, fileoff_to_va(elf, p)))
+                      p += 1
+                  out[t.decode()] = starts
+              return out
+
+          def executable_sections(elf):
+              for sec in elf.iter_sections():
+                  try:
+                      flags = sec["sh_flags"]
+                  except Exception:
+                      continue
+                  if flags & 0x4 and sec["sh_size"]:
+                      yield sec
+
+          def closest_symbol(elf, addr):
+              best = None
+              for name in (".symtab", ".dynsym"):
+                  sec = elf.get_section_by_name(name)
+                  if not sec:
+                      continue
+                  for sym in sec.iter_symbols():
+                      val = sym["st_value"]
+                      size = sym["st_size"]
+                      if val and val <= addr and (size == 0 or addr < val + size):
+                          d = addr - val
+                          if best is None or d < best[0]:
+                              best = (d, sym.name, val, size)
+              return best
+
+          def report_x86(elf, strings):
+              md = Cs(CS_ARCH_X86, CS_MODE_64)
+              md.detail = True
+              wanted = {}
+              for name, occ in strings.items():
+                  for _, va in occ:
+                      if va is not None:
+                          wanted.setdefault(va, []).append(name)
+              insns = []
+              for sec in executable_sections(elf):
+                  insns.extend(md.disasm(sec.data(), sec["sh_addr"]))
+              hits = []
+              for i, ins in enumerate(insns):
+                  for op in ins.operands:
+                      if op.type == X86_OP_MEM and op.mem.base == X86_REG_RIP:
+                          target = ins.address + ins.size + op.mem.disp
+                          names = wanted.get(target)
+                          if names:
+                              hits.append((i, ins, target, names))
+              return insns, hits
+
+          def report_arm64(elf, strings):
+              md = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
+              md.detail = True
+              wanted = {}
+              for name, occ in strings.items():
+                  for _, va in occ:
+                      if va is not None:
+                          wanted.setdefault(va, []).append(name)
+              insns = []
+              for sec in executable_sections(elf):
+                  insns.extend(md.disasm(sec.data(), sec["sh_addr"]))
+              hits = []
+              for i, ins in enumerate(insns):
+                  if ins.mnemonic == "adr" and len(ins.operands) >= 2 and ins.operands[1].type == ARM64_OP_IMM:
+                      target = ins.operands[1].imm
+                      if target in wanted:
+                          hits.append((i, ins, target, wanted[target]))
+                  if ins.mnemonic == "adrp" and len(ins.operands) >= 2 and ins.operands[0].type == ARM64_OP_REG and ins.operands[1].type == ARM64_OP_IMM:
+                      reg = ins.operands[0].reg
+                      page = ins.operands[1].imm
+                      for j in range(i + 1, min(i + 7, len(insns))):
+                          x = insns[j]
+                          if x.address - ins.address > 28:
+                              break
+                          if x.mnemonic == "add" and len(x.operands) >= 3 and x.operands[1].type == ARM64_OP_REG and x.operands[1].reg == reg and x.operands[2].type == ARM64_OP_IMM:
+                              target = page + x.operands[2].imm
+                              if target in wanted:
+                                  hits.append((i, ins, target, wanted[target]))
+                                  break
+              return insns, hits
+
+          def context(insns, idx, radius=10):
+              lo = max(0, idx - radius)
+              hi = min(len(insns), idx + radius + 1)
+              return "\n".join(f"    {x.address:016x}: {x.mnemonic:8} {x.op_str}" for x in insns[lo:hi])
+
+          paths = [
+              ("x86_64", "/tmp/native/x86_64/liborbit-jni-spotify.so"),
+              ("arm64", "/tmp/native/arm64/liborbit-jni-spotify.so"),
+          ]
+
+          print("# Native player semantic xrefs")
+          print()
+          print("Static xref scan of liborbit-jni-spotify.so. Absence of an xref is not proof of no runtime use; indirect/generated accesses can evade this scan.")
+          for arch, path in paths:
+              f, elf, data = load_elf(path)
+              strings = find_strings(data, elf)
+              print(f"\n## {arch}")
+              print(f"ELF machine: {elf['e_machine']}")
+              print("\n### Target string locations")
+              for name, occ in strings.items():
+                  locations = ", ".join(
+                      f"file+0x{o:x} / VA 0x{v:x}" if v is not None else f"file+0x{o:x}"
+                      for o, v in occ
+                  )
+                  print(f"- {name}: {locations or 'NOT FOUND'}")
+              if arch == "x86_64":
+                  insns, hits = report_x86(elf, strings)
+              else:
+                  insns, hits = report_arm64(elf, strings)
+              print(f"\n### Direct code xrefs ({len(hits)})")
+              for n, (idx, ins, target, names) in enumerate(hits, 1):
+                  sym = closest_symbol(elf, ins.address)
+                  symtxt = f"{sym[1]}+0x{ins.address-sym[2]:x}" if sym and sym[1] else "<stripped/unknown>"
+                  print(f"\n#### hit {n}: {', '.join(names)}")
+                  print(f"xref @ 0x{ins.address:x}, target 0x{target:x}, symbol {symtxt}")
+                  print()
+                  print(context(insns, idx))
+              f.close()
+          PY
+
+          python3 /tmp/xrefs.py > analysis/native-player-xrefs.md
+
+          {
+            echo
+            echo "# Dynamic symbols related to player/skip/restrictions"
+            for so in /tmp/native/*/liborbit-jni-spotify.so; do
+              echo
+              echo "## $so"
+              nm -D -C "$so" 2>/dev/null | grep -Ei 'skip|restrict|contextplayer|player|advert|(^|[^a-z])ad([^a-z]|$)' | head -n 400 || true
+            done
+          } >> analysis/native-player-xrefs.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-player-xrefs.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Trace native player skip and ad string xrefs"
+          git pull --rebase origin main
+          git push origin HEAD:main
