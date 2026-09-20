@@ -44,7 +44,7 @@ jobs:
           rm -rf analysis/smali-targets
           mkdir -p analysis/smali-targets
 
-          targets="pqd0 pdp0 rpd0 sc11 qm0 fzg1 be11 f5x0 eio0"
+          targets="pqd0 pdp0 rpd0 sc11 qm0 fzg1 be11 f5x0 eio0 p4h1"
           for target in $targets; do
             found="$(find /tmp/spotify-smali -type f -path '*/p/'"$target"'.smali' -print -quit)"
             if [ -z "$found" ]; then
@@ -65,7 +65,7 @@ jobs:
             echo
             echo "These files preserve bytecode-level control flow for target classes where JADX reconstruction is incomplete."
             echo
-            echo "Targets: pqd0, pdp0, rpd0, sc11, qm0, fzg1, be11, f5x0, eio0."
+            echo "Targets: pqd0, pdp0, rpd0, sc11, qm0, fzg1, be11, f5x0, eio0, p4h1."
           } > analysis/smali-targets/README.md
 
           test -f analysis/smali-targets/pqd0.smali
@@ -101,6 +101,23 @@ jobs:
           # Keep the report manageable while preserving matching context.
           wc -l analysis/smali-targets/xrefs.txt
 
+      - name: Scan native libraries for skip/ad state strings
+        run: |
+          {
+            echo "# Native library inventory"
+            find /tmp/spotify-smali -type f -name '*.so' -print | sort || true
+            echo
+            echo "# Exact semantic string hits"
+            for so in $(find /tmp/spotify-smali -type f -name '*.so' -print); do
+              hits="$(strings -a "$so" | grep -E -i 'ad\.skippable_ad_delay|ad\.is_skippable|disallow_skipping_next_reasons|ad_disallow|mft_disallow|SKIP_TO_NEXT_RESTRICTED' || true)"
+              if [ -n "$hits" ]; then
+                echo "## $so"
+                printf '%s\n' "$hits"
+                echo
+              fi
+            done
+          } > analysis/smali-targets/native-string-scan.txt
+
       - name: Commit target smali
         run: |
           git config user.name "github-actions[bot]"
@@ -111,4 +128,5 @@ jobs:
             exit 0
           fi
           git commit -m "Extract target Spotify smali for deep tracing"
+          git pull --rebase origin main
           git push origin HEAD:main
