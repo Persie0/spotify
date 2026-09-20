@@ -1,0 +1,146 @@
+name: Decode native skip-ad availability and dispatch
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skip-ad-availability-dispatch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/nskip
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/nskip
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode skip-ad producer and consumer
+        run: |
+          SO=/tmp/nskip/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/nskip/orbit.disasm
+          python3 - <<'PY' > analysis/native-skip-ad-availability-dispatch.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/nskip/liborbit-jni-spotify.so')
+          lines=Path('/tmp/nskip/orbit.disasm').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; b=a+e['address_range']
+                      if b>a:fdes.append((a,b))
+              fdes.sort()
+              rels=[]
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] in ('SHT_RELA','SHT_REL'):
+                      for rel in sec.iter_relocations():
+                          add=rel.entry.get('r_addend')
+                          if add is not None:rels.append((rel['r_offset'],add,sec.name))
+
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+              for a,b in fdes:
+                  if a<=addr<b:return a,b
+          def dump(addr,title):
+              fr=fde(addr)
+              print(f'## {title} @ 0x{addr:x}')
+              print(f'FDE: {fr}')
+              if fr:
+                  for a,i,op,l in ins:
+                      if fr[0]<=a<fr[1]:print('    '+l)
+              print()
+          def callers(target):
+              out=[]
+              for a,i,op,l in ins:
+                  m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+                  if m and int(m.group(1),16)==target:out.append((a,i,fde(a),l))
+              return out
+          def ctx(i,b=18,a=28):
+              for l in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+l)
+
+          print('# Native skip-ad availability / dispatch trace')
+          print()
+          print('Anchors from prior scan:')
+          print('- 0xfd381a references "skip-ad" and conditionally inserts it into a collection')
+          print('- 0xfd38d6 compares an incoming signal ID against "skip-ad"')
+          print('- 0x12044d8 compares another command/signal string against "skip-ad"')
+          print('- the first two paths call the same receiver virtual slot +0x140')
+          print()
+
+          for addr,title in [
+              (0xfd381a,'available-signal producer'),
+              (0xfd38d6,'incoming signal discriminator'),
+              (0x12044d8,'secondary skip-ad discriminator'),
+              (0xd23a2c,'string/collection insertion helper'),
+              (0xfd69d4,'generic signal request builder/dispatcher candidate'),
+              (0xfd65d4,'signal dispatch/result helper candidate'),
+          ]:
+              dump(addr,title)
+
+          print('## Direct callers / vtable relocations')
+          for t in [0xfd381a,0xfd38d6,0xd23a2c,0xfd69d4,0xfd65d4]:
+              print(f'### target 0x{t:x}')
+              cs=callers(t)
+              if not cs: print('- no direct call/jmp')
+              for a,i,fr,l in cs[:80]:
+                  print(f'- 0x{a:x}, FDE={fr}: {l.strip()}')
+                  ctx(i,12,18)
+              rh=[r for r in rels if r[1]==t]
+              for off,add,sec in rh:
+                  print(f'- relocation/vtable slot 0x{off:x} ({sec}) -> 0x{add:x}')
+              print()
+
+          print('## Functions that call virtual slot +0x140')
+          for a,i,op,l in ins:
+              if re.search(r'\bcall\s+QWORD PTR \[[a-z][a-z0-9]*\+0x140\]',op):
+                  fr=fde(a)
+                  if fr and (fr[0] < 0x1400000):
+                      print(f'### 0x{a:x}; FDE={fr}')
+                      ctx(i,14,22)
+                      print()
+
+          print('## Nearby exact ad-state accesses')
+          for a,i,op,l in ins:
+              if not (0xf00000<=a<0x1300000):continue
+              if any(x in op for x in ('+0x1b8]','+0x438]','+0x470]','+0x598]')):
+                  print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+                  ctx(i,10,16)
+                  print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skip-ad-availability-dispatch.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode native skip-ad availability and dispatch"
+          git pull --rebase origin main
+          git push origin HEAD:main
