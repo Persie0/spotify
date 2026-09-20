@@ -1,0 +1,123 @@
+name: Decompile Spotify APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decompile-spotify.yml"
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spotify-decompile
+  cancel-in-progress: true
+
+jobs:
+  decompile:
+    if: github.event_name != 'release' || github.event.release.tag_name == 'r1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Add swap for JADX
+        run: |
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
+      - name: Download Spotify APK from release r1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf input
+          mkdir -p input
+          gh release download r1 \
+            --repo "${{ github.repository }}" \
+            --pattern "spotify-*.apk" \
+            --dir input
+
+          APK="$(find input -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          sha256sum "$APK"
+
+      - name: Download JADX 1.5.6
+        run: |
+          curl -fL \
+            "https://github.com/skylot/jadx/releases/download/v1.5.6/jadx-1.5.6.zip" \
+            -o jadx.zip
+          echo "545ea2be9c242511bc145755cf4bda2485ade42966e096f8b4d3da2a230e8974  jadx.zip" | sha256sum -c -
+          rm -rf .tools/jadx
+          mkdir -p .tools/jadx
+          unzip -q jadx.zip -d .tools/jadx
+          .tools/jadx/bin/jadx --version
+
+      - name: Decompile and deobfuscate
+        env:
+          JAVA_OPTS: -Xms512m -Xmx6g -XX:+UseG1GC
+        run: |
+          rm -rf decompiled
+          mkdir -p decompiled
+
+          .tools/jadx/bin/jadx \
+            --threads-count 1 \
+            --no-res \
+            --deobf \
+            --deobf-cfg-file "decompiled/spotify.jobf" \
+            --deobf-cfg-file-mode overwrite \
+            --deobf-res-name-source auto \
+            --use-source-name-as-class-name-alias if-better \
+            --rename-flags "case,valid,printable" \
+            --comments-level info \
+            --log-level progress \
+            --output-dir decompiled \
+            "$APK"
+
+      - name: Record decompilation metadata
+        run: |
+          {
+            echo "# Decompiled Spotify sources"
+            echo
+            echo "- Input release: \`r1\`"
+            echo "- Input APK: \`$(basename "$APK")\`"
+            echo "- Input SHA-256: \`$(sha256sum "$APK" | awk '{print $1}')\`"
+            echo "- JADX: \`1.5.6\`"
+            echo "- Deobfuscation: JADX \`--deobf\`, generated mapping in \`spotify.jobf\`"
+            echo "- Resources are intentionally not duplicated here; decoded resources already live in this repository."
+            echo
+            echo "JADX deobfuscation improves generated identifiers but cannot recover original names that were removed by R8/ProGuard without an original mapping file."
+          } > decompiled/README.md
+
+          echo "Source files: $(find decompiled/sources -type f | wc -l)"
+          du -sh decompiled
+
+      - name: Commit generated sources
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A decompiled
+
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Decompile and deobfuscate Spotify r1 with JADX 1.5.6"
+          git push origin HEAD:main
