@@ -236,9 +236,10 @@ MediaSession/skip-next -> disallowSkippingNextReasons
 
 Current target:
 
-- resolve `p8p0`, `h8p0`, and `b8p0` to the concrete player/Esperanto implementation
-- trace serialization/dispatch of `SignalCommand("skip-ad")`
-- find the native/ContextPlayer signal handler that executes the ad transition
+- `p8p0` implementation: **resolved to `hrw`**
+- `SignalCommand("skip-ad")` variant dispatch: **resolved through `b8p0 -> zqw`**
+- Esperanto endpoint: **resolved to `spotify.player.esperanto.proto.ContextPlayer / Signal` with `EsSignalRequest`**
+- find the native/Orbit signal handler that consumes signal ID `skip-ad`
 - link command completion to `ad_skipped` event/telemetry
 - determine whether Connect uses the same signal or a remote equivalent
 
