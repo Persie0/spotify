@@ -1,0 +1,145 @@
+name: Resolve Orbit skippable vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skippable-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Resolve function-pointer tables
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          readelf -lW "$SO" > /tmp/phdr.txt
+          objdump -d -M intel --start-address=0x14e2380 --stop-address=0x14e2650 "$SO" > /tmp/cluster.asm
+
+          python3 - <<'PY' > analysis/native-skippable-vtable.md
+          from pathlib import Path
+          import struct
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          ph=Path('/tmp/phdr.txt').read_text().splitlines()
+          loads=[]
+          for line in ph:
+            if line.strip().startswith('LOAD'):
+              p=line.split()
+              try:
+                off=int(p[1],16); va=int(p[2],16); fs=int(p[4],16)
+                loads.append((off,off+fs,va))
+              except Exception:
+                pass
+
+          def off2va(off):
+            for a,b,v in loads:
+              if a<=off<b:return v+(off-a)
+            return off
+
+          targets={
+            'skippable metadata getter':0x14e2472,
+            'derived skippable predicate':0x14e248a,
+            'seekable metadata getter':0x14e24b8,
+            'interruptible metadata getter':0x14e24d0,
+            'skippable_ad_delay parser':0x14e24e8,
+            'generic metadata getter':0x14e25e7,
+          }
+
+          print('# Orbit skippable vtable resolution')
+          print()
+          print('The derived predicate dispatches through virtual offsets +0xc8 and +0xe8.')
+          print()
+
+          hits=[]
+          for name,addr in targets.items():
+            needle=struct.pack('<Q',addr)
+            p=0
+            cur=[]
+            while True:
+              p=data.find(needle,p)
+              if p<0:break
+              va=off2va(p)
+              cur.append((p,va))
+              hits.append((name,addr,p,va))
+              p+=1
+            print(f'## {name} 0x{addr:x}')
+            if cur:
+              for off,va in cur:
+                print(f'- pointer file+0x{off:x}, VA 0x{va:x}')
+            else:
+              print('- no literal 64-bit function pointer found')
+            print()
+
+          print('## Pointer-table neighborhoods')
+          print()
+          seen=set()
+          for name,addr,off,va in hits:
+            base=off & ~0x7f
+            if base in seen:continue
+            seen.add(base)
+            lo=max(0,base-0x40); hi=min(len(data),base+0x180)
+            print(f'### around file+0x{off:x} / VA 0x{va:x}')
+            for qoff in range(lo,hi,8):
+              if qoff+8>len(data):break
+              q=struct.unpack_from('<Q',data,qoff)[0]
+              labels=[n for n,a in targets.items() if a==q]
+              if labels or (0x14e2000 <= q <= 0x14e3000):
+                lab=' ; '+', '.join(labels) if labels else ''
+                print(f'- slot VA 0x{off2va(qoff):x}: 0x{q:x}{lab}')
+            print()
+
+          print('## Exact +0xc8 / +0xe8 dispatch candidates')
+          print()
+          found=False
+          for off in range(0,len(data)-0xf0,8):
+            c8=struct.unpack_from('<Q',data,off+0xc8)[0]
+            e8=struct.unpack_from('<Q',data,off+0xe8)[0]
+            if c8==targets['skippable metadata getter'] and e8==targets['skippable_ad_delay parser']:
+              found=True
+              print(f'- vtable-like base file+0x{off:x}, VA 0x{off2va(off):x}')
+              for rel in range(0xa0,0x101,8):
+                q=struct.unpack_from('<Q',data,off+rel)[0]
+                labels=[n for n,a in targets.items() if a==q]
+                lab=' ; '+', '.join(labels) if labels else ''
+                print(f'  - +0x{rel:x}: 0x{q:x}{lab}')
+          if not found:
+            print('- no exact literal table match; dispatch may use thunks or a secondary interface vtable')
+
+          print()
+          print('## Target function cluster disassembly')
+          print()
+          for line in Path('/tmp/cluster.asm').read_text(errors='replace').splitlines():
+            print('    '+line)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skippable-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Orbit skippable vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
