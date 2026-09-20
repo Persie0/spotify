@@ -1,0 +1,164 @@
+name: Resolve potential restriction gate field registration
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-potential-gate-field-registration.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install pyelftools
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve field registration candidate
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x1059800 --stop-address=0x105bc00 "$SO" > /tmp/candidate.disasm
+
+          python3 - <<'PY' > analysis/native-potential-gate-field-registration.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/candidate.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):
+                return a+(va-v)
+            return va if 0<=va<len(data) else None
+
+          def cstring(va,maxlen=500):
+            off=va2off(va)
+            if off is None:return None
+            end=data.find(b'\0',off,min(len(data),off+maxlen))
+            if end<=off:return None
+            raw=data[off:end]
+            if not raw:return None
+            return raw.decode('utf-8','replace')
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def all_lines(fr):
+            out=[]
+            for l in dis:
+              m=re.match(r'^\s*([0-9a-f]+):',l)
+              if m and fr[0]<=int(m.group(1),16)<fr[1]:
+                out.append(l)
+            return out
+
+          print('# Potential restriction +0x470 field registration/parser trace')
+          print()
+          for va in (0x325e59,0x325e65):
+            print(f'- 0x{va:x}: {cstring(va)!r}')
+          print()
+
+          site=0x105a45c
+          fr=fde_for(site)
+          print(f'## Candidate caller around 0x{site:x}')
+          print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'Function: unknown')
+          print()
+          if fr:
+            for l in all_lines(fr):
+              print('    '+l)
+          print()
+
+          helper=0x105b134
+          frh=fde_for(helper)
+          print(f'## Helper 0x{helper:x}')
+          print(f'Function: 0x{frh[0]:x}..0x{frh[1]:x}' if frh else 'Function: unknown')
+          print()
+          if frh:
+            for l in all_lines(frh):
+              print('    '+l)
+          print()
+
+          # Extract printable strings referenced by caller/helper.
+          for title,frx in [('caller',fr),('helper',frh)]:
+            print(f'## Printable strings in {title}')
+            print()
+            seen=set()
+            if frx:
+              for l in all_lines(frx):
+                if '#' not in l:continue
+                m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+                if not m:continue
+                dst=int(m.group(1),16)
+                s=cstring(dst)
+                if s and s not in seen and all((ord(ch)>=32 or ch in '\t\r\n') for ch in s[:100]):
+                  seen.add(s)
+                  print(f'- 0x{dst:x}: {s.replace(chr(10),"\\n")}')
+            if not seen:print('- none')
+            print()
+
+          print('## Calls targeting helper 0x105b134 in candidate disassembly')
+          print()
+          for l in dis:
+            if re.search(r'\bcall\s+105b134\b',l):
+              print('    '+l)
+          print()
+
+          print('## Nearby offset references around the candidate object')
+          print()
+          for l in dis:
+            if re.search(r'\+0x(438|470|478|548|560|598)\]',l):
+              print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-potential-gate-field-registration.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve potential restriction gate field registration"
+          git pull --rebase origin main
+          git push origin HEAD:main
