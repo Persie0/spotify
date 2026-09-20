@@ -1,0 +1,157 @@
+name: Decode ContextPlayer ad guard object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-guard-object.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode target functions
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          cat > /tmp/decode.py <<'PY'
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            def va2off(va):
+              for a,b,v in loads:
+                if v<=va<v+(b-a):return a+(va-v)
+              return va if 0<=va<len(data) else None
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def cstring(va,maxlen=220):
+            o=va2off(va)
+            if o is None:return None
+            end=data.find(b'\0',o,min(len(data),o+maxlen))
+            if end<0:return None
+            raw=data[o:end]
+            if len(raw)<3:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.96:return None
+            try:return raw.decode()
+            except:return None
+
+          targets={
+            'guard-subobject ctor/helper':0xb2828e,
+            'guard-subobject destructor/helper':0x17d9e66,
+            'ContextPlayer main init tail':0x10a1440,
+            'restriction update event':0x10a9668,
+            'restriction rebuild path':0x10a8d97,
+            'restriction builder':0x10a6464,
+          }
+
+          print('# ContextPlayer ad guard object trace')
+          print()
+          for name,addr in targets.items():
+            fr=fde(addr)
+            print(f'## {name}: 0x{addr:x}')
+            if not fr:
+              print('No FDE found.'); print(); continue
+            print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}')
+            print()
+            strings=[]
+            for a,i,l in ins:
+              if fr[0]<=a<fr[1] and '#' in l:
+                m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+                if m:
+                  s=cstring(int(m.group(1),16))
+                  if s and s not in strings: strings.append(s)
+            if strings:
+              print('Strings:')
+              for s in strings[:200]:print('- '+s.replace('\n','\\n'))
+              print()
+            print('Disassembly:')
+            for a,i,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          print('## Direct call/jump xrefs to target methods')
+          print()
+          for name,target in targets.items():
+            print(f'### {name} 0x{target:x}')
+            found=0
+            for a,i,l in ins:
+              # Match immediate direct call/jmp target exactly.
+              if re.search(rf'\b(?:call|jmp)\s+{target:x}\b',l):
+                found+=1
+                fr=fde(a)
+                ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+                print(f'- xref 0x{a:x} from {ftxt}')
+                for ctx in lines[max(0,i-9):min(len(lines),i+10)]:
+                  print('    '+ctx)
+                print()
+            if not found:print('- none')
+            print()
+          PY
+          python3 /tmp/decode.py > analysis/native-ad-guard-object.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+Persie0@users.noreply.github.com"
+          git add analysis/native-ad-guard-object.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode ContextPlayer ad guard object"
+          git pull --rebase origin main
+          git push origin HEAD:main
