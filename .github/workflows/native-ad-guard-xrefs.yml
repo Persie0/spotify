@@ -94,27 +94,62 @@ jobs:
             m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',line)
             if m: ins.append((int(m.group(1),16),i,m.group(2),line))
 
-          guard=[]
-          for addr,i,op,line in ins:
-            if re.search(r'\+0x470\]',op):
-              fr=fde_for(addr)
-              before=op.split(',',1)[0]
-              is_write=bool(re.match(r'^(mov|movzx|movsx|and|or|xor|inc|dec|add|sub|cmpxchg|xchg)\b',op)) and '[' in before
-              guard.append((addr,i,op,fr,is_write))
+          tracked_offsets={'438','470','598','14a0','1488','14b8'}
+          stack_bases={'rsp','rbp','esp','ebp'}
+          mem_re=re.compile(r'\[([a-z][a-z0-9]*)\+0x(438|470|598|14a0|1488|14b8)\]')
+          write_ops={'mov','movb','movw','movl','movq','and','or','xor','inc','dec','add','sub','cmpxchg','xchg','bts','btr','btc'}
 
-          # Functions that mention both the ad guard and the broad active-context flag.
+          def opcode(op):
+            return op.split(None,1)[0].lower() if op.strip() else ''
+
+          def first_operand(op):
+            parts=op.split(None,1)
+            if len(parts)<2:return ''
+            return parts[1].split(',',1)[0].strip()
+
+          def object_refs(op):
+            # Ignore stack-frame coincidences, RIP-relative constants, vtable
+            # dispatch and LEA-only address arithmetic.
+            if opcode(op) in {'call','jmp','lea'}:
+              return []
+            out=[]
+            for m in mem_re.finditer(op):
+              base,off=m.group(1),m.group(2)
+              if base in stack_bases or base=='rip':
+                continue
+              out.append((base,off))
+            return out
+
+          def is_direct_field_write(op,base,off):
+            if opcode(op) not in write_ops:
+              return False
+            dst=first_operand(op)
+            return re.search(r'\['+re.escape(base)+r'\+0x'+re.escape(off)+r'\]',dst) is not None
+
+          guard=[]
           funcs={}
+          refs_by_key={}
           for addr,i,op,line in ins:
             fr=fde_for(addr)
-            if not fr: continue
-            if re.search(r'\+0x(470|598|438|14a0)\]',op):
-              funcs.setdefault(fr,set()).update(re.findall(r'\+0x(470|598|438|14a0)\]',op))
+            for base,off in object_refs(op):
+              is_write=is_direct_field_write(op,base,off)
+              if off=='470':
+                guard.append((addr,i,op,fr,base,is_write))
+              if fr:
+                key=(fr,base)
+                funcs.setdefault(key,set()).add(off)
+                refs_by_key.setdefault(key,[]).append((addr,i,op,off,is_write))
 
-          # Direct calls/jumps to the known restriction builder start.
-          callers=[]
+          strong={}
+          for key,offs in funcs.items():
+            if '470' in offs and ({'598','438','14a0'} & offs):
+              strong[key]=offs
+
+          callers={0x10a6464:[],0x10a9668:[]}
           for addr,i,op,line in ins:
-            if re.search(r'\b(call|jmp)\s+10a6464\b',op):
-              callers.append((addr,i,op,fde_for(addr)))
+            for target in callers:
+              if re.search(r'\b(call|jmp)\s+'+format(target,'x')+r'\b',op):
+                callers[target].append((addr,i,op,fde_for(addr)))
 
           print('# Orbit ad skip guard trace')
           print()
@@ -123,38 +158,60 @@ jobs:
           print('Known ad skip guard in that builder: r14+0x470')
           print()
 
-          print('## All +0x470 memory references')
+          print('## Plausible object +0x470 references')
           print()
-          print(f'Total references: {len(guard)}; syntactic writes: {sum(x[4] for x in guard)}')
+          print(f'Non-stack/non-vtable references: {len(guard)}; direct writes: {sum(x[5] for x in guard)}')
           print()
-          for addr,i,op,fr,is_write in guard:
+          for addr,i,op,fr,base,is_write in guard:
             ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
-            print(f'### 0x{addr:x} ({ftxt})' + (' WRITE' if is_write else ''))
+            print(f'- 0x{addr:x} in {ftxt}: {base}+0x470' + (' WRITE' if is_write else '') + f' :: {op}')
+
+          print()
+          print('## Direct +0x470 writers')
+          print()
+          writers=[x for x in guard if x[5]]
+          if not writers:
+            print('- none found as simple direct stores; producer may copy a larger struct or write through an alias/pointer')
+          for addr,i,op,fr,base,is_write in writers:
+            ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{addr:x} ({ftxt}) {base}+0x470')
             for l in dis[max(0,i-10):min(len(dis),i+12)]:
               print('    '+l)
             print()
 
-          print('## Candidate same-object functions')
+          print('## Strong same-object candidates')
           print()
-          for fr,offs in sorted(funcs.items()):
-            if '470' in offs:
-              print(f'- 0x{fr[0]:x}..0x{fr[1]:x}: offsets '+', '.join('0x'+x for x in sorted(offs)))
-
-          print()
-          print('## Direct callers of 0x10a6464')
-          print()
-          if not callers:
-            print('- none found; likely invoked indirectly/virtually or function boundary is an internal method body')
-          for addr,i,op,fr in callers:
-            ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
-            print(f'### 0x{addr:x} from {ftxt}')
-            for l in dis[max(0,i-12):min(len(dis),i+13)]:
-              print('    '+l)
+          if not strong:
+            print('- none')
+          for (fr,base),offs in sorted(strong.items(), key=lambda kv:(kv[0][0][0],kv[0][1])):
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x} base={base}')
+            print('Offsets: '+', '.join('0x'+x for x in sorted(offs, key=lambda x:int(x,16))))
             print()
+            for addr,i,op,off,is_write in refs_by_key[(fr,base)]:
+              print(f'- 0x{addr:x}: +0x{off}' + (' WRITE' if is_write else '') + f' :: {op}')
+            print()
+            for addr,i,op,off,is_write in refs_by_key[(fr,base)]:
+              if off!='470': continue
+              print(f'Context around +0x470 @ 0x{addr:x}:')
+              for l in dis[max(0,i-8):min(len(dis),i+10)]:
+                print('    '+l)
+              print()
 
-          # Printable RIP-relative strings inside any function with a +0x470 reference.
-          candidate_ranges=sorted({x[3] for x in guard if x[3]})
-          print('## Printable strings in +0x470 functions')
+          for target,hits in callers.items():
+            print(f'## Direct callers/jumpers of 0x{target:x}')
+            print()
+            if not hits:
+              print('- none found; likely indirect/virtual or reached through a nearby thunk')
+            for addr,i,op,fr in hits:
+              ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+              print(f'### 0x{addr:x} from {ftxt}')
+              for l in dis[max(0,i-12):min(len(dis),i+13)]:
+                print('    '+l)
+              print()
+
+          # Printable RIP-relative strings only in strong same-object candidates.
+          candidate_ranges=sorted({fr for (fr,base) in strong})
+          print('## Printable strings in strong same-object functions')
           print()
           for fr in candidate_ranges:
             vals=[]
