@@ -361,18 +361,46 @@ Thus Orbit itself constructs both the MFT and advertisement reasons in the **ski
 The advertisement branch at `0x10a7492..0x10a74d1` requires two bytes to be nonzero before inserting `ad_disallow` into skip-next:
 
 ```text
-r14+0x598
-r14+0x470
+restrictionOwner+0x598
+restrictionOwner+0x470
 ```
 
-The `+0x598` flag is broadly reused by the restriction builder and is associated with active/playing-context logic. The `+0x470` flag is only observed in this ad block inside the decoded function, making it the current best anchor for the ad-specific restriction condition.
+Those fields are now decoded as nested optional engagement bytes.
 
-What is **not** yet proven is what writes `+0x470` or whether its transition is the direct result of `ad.skippable_ad_delay` expiry. The delay key still has no simple RIP-relative native string xref, so the timer/state input may be accessed through generic metadata or another internal object.
+The restriction-owner constructor passes `owner+0x38` to the nested state initializer. From that coordinate system:
 
+```text
+owner+0x598 = state+0x560
+             engagement byte for an outer optional
 
-### Native delay predicate and its boundary with skip-next
+outer optional payload starts at owner+0x48
+payload size = 0x550
 
-The indirect native delay lookup is now resolved.
+owner+0x438 = payload+0x3f0
+             inner optional value storage
+
+owner+0x470 = payload+0x428
+             inner optional engagement byte
+```
+
+The inner value begins with a shared-pointer-like pair. Its copy constructor copies `object*` plus a control-block pointer and increments the control-block refcount. Its reset/destructor path clears the engagement byte at `owner+0x470`.
+
+So the skip-next condition is not:
+
+```text
+active_flag && ad_flag
+```
+
+but structurally:
+
+```text
+outer current-state payload exists
+&& nested polymorphic object exists
+```
+
+### Exact nested-object vtable and delay interface
+
+The nested object at `owner+0x438` is now tied to the same interface that exposes `ad.skippable_ad_delay`.
 
 Orbit translates:
 
@@ -383,17 +411,19 @@ ad.skippable_ad_delay
 skippable_ad_delay
 ```
 
-and the ad-model virtual interface is reconstructed from ELF relocations. The runtime vtable base is `0x1879950`:
+and the exact vtable address point `0x1879950` has:
 
 ```text
 +0xc8 -> 0x14e2472  raw skippable metadata getter
 +0xd0 -> 0x14e248a  derived skippable/timing predicate
++0xd8 -> 0x14e24b8  seekable metadata getter
++0xe0 -> 0x14e24d0  interruptible metadata getter
 +0xe8 -> 0x14e24e8  skippable_ad_delay integer parser
 ```
 
-`0x14e24e8` first asks the raw-skippable virtual method whether the property is applicable, then retrieves `skippable_ad_delay` and parses it to an integer.
+The restriction builder loads `owner+0x438` and calls exactly `+0xd0`, `+0xd8`, and `+0xe0` through that object.
 
-The derived predicate is:
+The derived `+0xd0` predicate is:
 
 ```text
 if adObject[+0x1b8] != 0:
@@ -403,7 +433,7 @@ if skippable_ad_delay() > 0:
 return raw_skippable()
 ```
 
-A ContextPlayer event handler at `0x10a9668..0x10a969c` performs:
+The ContextPlayer event handler at `0x10a9668..0x10a969c` performs:
 
 ```text
 if event[+0x38] == 6:
@@ -415,25 +445,21 @@ if event[+0x38] == 6:
     rebuild restrictions
 ```
 
-This is the first concrete native link between a ContextPlayer event and the ad model's derived skippability state.
+This proves that subtype `6` mutates the same polymorphic object whose `+0xd0` method incorporates the delay/skippability state.
 
-It does **not** by itself prove that subtype `6` is the countdown-expiry event or that `+0x1b8` removes the skip-next restriction. The skip-next `ad_disallow` insertion at `r14+0x14a0` occurs earlier in the restriction builder and is gated directly by:
+It still does **not** prove subtype `6` is the countdown-expiry event, because the skip-next branch itself is evaluated before these virtual capability checks and tests only outer/inner optional presence. The unresolved transition is now precise:
 
-```text
-restrictionOwner[+0x598] != 0
-restrictionOwner[+0x470] != 0
-```
-
-The derived virtual method at `+0xd0` is consulted later for a different ad restriction container. The remaining skip-next transition is therefore narrowed to the two restriction-owner gate bytes, especially `+0x470`.
+> When skip-next becomes permitted, is the inner optional at `owner+0x438/+0x470` cleared or replaced, or does another player-core state transition bypass/remove `ad_disallow`?
 
 Reports:
 
+- `analysis/native-restriction-gate-optional.md`
+- `analysis/native-restriction-payload-copy.md`
+- `analysis/native-inner-ad-object-vtable.md`
 - `analysis/native-delay-xrefs.md`
 - `analysis/native-skippable-vtable.md`
 - `analysis/native-ad-delay-link.md`
-- `analysis/native-ad-method-table-xrefs.md`
 - `analysis/native-ad-runtime-vtable.md`
-
 
 ## 8. MediaSession PlaybackState builder recovered from smali
 
@@ -566,20 +592,22 @@ That automatically follows Spotify's own current permission state and remains le
 
 ## 14. Remaining questions
 
-The three original research questions are now resolved except for one deeper transition:
+Most of the original trace is now resolved:
 
 - exact ad event strings: **resolved**
 - MediaSession skip action generation: **resolved**
-- delay vs Restrictions relation: **resolved through the Android/Esperanto mapping boundary**
-- `EsContextPlayerState` -> domain `PlayerState`: **resolved**
-- restricted-skip error path: **resolved through `ContextPlayer.GetError`**
-- native library containing the relevant concepts: **resolved as `liborbit-jni-spotify.so`**
-- exact native/backend mechanism that removes `ad_disallow` / skip-next restriction at expiry: **open**
+- delay vs Restrictions relation through Android/Esperanto: **resolved**
+- native `ad_disallow` insertion into skip-next: **resolved**
+- restriction-owner identity: **resolved**
+- meaning of `owner+0x598` and `owner+0x470`: **resolved structurally as outer/inner optional engagement bytes**
+- identity of the nested interface at `owner+0x438`: **resolved to the vtable family containing skippable/seekable/interruptible/delay methods**
+- restricted-skip error path: **resolved**
+- exact native transition that stops skip-next `ad_disallow`: **open**
 
 Next targets:
 
-1. identify the true writers and semantic meaning of ContextPlayer byte gates `+0x470` and `+0x598`
-2. resolve ContextPlayer event subtype `6` and the `currentTrackObject+0x1b8` state
-3. determine whether delay expiry changes the skip-next gate locally or through another player-core event
-4. available-command-set synchronization with the ContextPlayer restriction update
-5. Connect-device equivalent path
+1. trace the producer/lifetime of the inner optional at `owner+0x438/+0x470`
+2. resolve ContextPlayer event subtype `6` semantically and determine whether it is tied to delay expiry
+3. determine whether the inner object is cleared, swapped, or retained when skip-next unlocks
+4. trace available-command-set synchronization with that native restriction update
+5. map the equivalent path for Connect/remote playback
