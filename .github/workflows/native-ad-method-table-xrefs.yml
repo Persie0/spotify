@@ -1,0 +1,76 @@
+name: Trace Orbit ad method table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-method-table-xrefs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Trace registration-table users
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" | grep -E -B12 -A20 '# 162(4|5|6)[0-9a-f]{3}\b' > /tmp/table-code.txt || true
+          objdump -d -M intel --start-address=0xb28100 --stop-address=0xb28520 "$SO" > /tmp/guard-ctor.asm
+          objdump -d -M intel --start-address=0x10a1300 --stop-address=0x10a1600 "$SO" > /tmp/context-init.asm
+          objdump -s --start-address=0x162400 --stop-address=0x162700 "$SO" > /tmp/table-bytes.txt
+          readelf -rW "$SO" | grep -E '0000000000162(4|5|6)[0-9a-f]{3}|14e2472|14e248a|14e24e8' > /tmp/table-relocs.txt || true
+
+          {
+            echo "# Orbit ad method-table xrefs"
+            echo
+            echo "The static table around VA 0x162578 contains raw-skippable, derived-skippable, seekable, interruptible, and delay-parser entrypoints at 0x18-byte intervals."
+            echo
+            echo "## Code references to table range"
+            echo
+            cat /tmp/table-code.txt
+            echo
+            echo "## Guard/current-track constructor neighborhood (0xb2828e)"
+            echo
+            cat /tmp/guard-ctor.asm
+            echo
+            echo "## ContextPlayer init neighborhood (0x10a1440)"
+            echo
+            cat /tmp/context-init.asm
+            echo
+            echo "## Table bytes"
+            echo
+            cat /tmp/table-bytes.txt
+            echo
+            echo "## Table relocations"
+            echo
+            cat /tmp/table-relocs.txt
+          } > analysis/native-ad-method-table-xrefs.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-method-table-xrefs.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Orbit ad method table"
+          git pull --rebase origin main
+          git push origin HEAD:main
