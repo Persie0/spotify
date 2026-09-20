@@ -1,0 +1,141 @@
+name: Decode Orbit restriction builder
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-builder.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download and extract x86_64 Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Decode restriction-builder function references
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          START=0x10a6464
+          STOP=0x10a7f52
+          objdump -d -M intel --start-address=$START --stop-address=$STOP "$SO" > /tmp/builder.asm
+          readelf -lW "$SO" > /tmp/phdr.txt
+
+          python3 - <<'PY' > analysis/native-restriction-builder.md
+          from pathlib import Path
+          import re
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          ph=Path('/tmp/phdr.txt').read_text().splitlines()
+          loads=[]
+          for line in ph:
+            if line.strip().startswith('LOAD'):
+              p=line.split()
+              try:
+                off=int(p[1],16); va=int(p[2],16); fs=int(p[4],16)
+                loads.append((off,off+fs,va))
+              except Exception:
+                pass
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v <= va < v+(b-a):
+                return a+(va-v)
+            return None
+
+          def cstring_at(va,maxlen=300):
+            off=va2off(va)
+            if off is None or off>=len(data): return None
+            end=data.find(b'\x00',off,min(len(data),off+maxlen))
+            if end<0: return None
+            raw=data[off:end]
+            if len(raw)<3: return None
+            printable=sum(32<=b<127 or b in (9,10,13) for b in raw)
+            if printable/len(raw)<0.95: return None
+            try: return raw.decode('utf-8')
+            except: return raw.decode('latin1','replace')
+
+          asm=Path('/tmp/builder.asm').read_text(errors='replace').splitlines()
+          refs=[]
+          for i,line in enumerate(asm):
+            msrc=re.match(r'^\s*([0-9a-f]+):',line)
+            if not msrc or '#' not in line: continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',line.split('#',1)[1])
+            if not m: continue
+            src=int(msrc.group(1),16); dst=int(m.group(1),16)
+            s=cstring_at(dst)
+            if s is not None:
+              refs.append((src,dst,s,i))
+
+          print('# Orbit restriction-builder function')
+          print()
+          print('Function range from ELF .eh_frame grouping: 0x10a6464..0x10a7f52.')
+          print()
+          print('This one native function contains the main direct xref clusters for both mft_disallow and ad_disallow.')
+          print()
+          print('## Referenced printable strings in source order')
+          print()
+          for src,dst,s,i in refs:
+            safe=s.replace('\n','\\n')
+            print(f'- 0x{src:x} -> 0x{dst:x}: {safe}')
+
+          print()
+          print('## Unique strings')
+          print()
+          seen=[]
+          for _,_,s,_ in refs:
+            if s not in seen: seen.append(s)
+          for s in seen:
+            print('- '+s.replace('\n','\\n'))
+
+          print()
+          print('## Restriction-reason assignments')
+          print()
+          for src,dst,s,i in refs:
+            if ('disallow' in s.lower() or 'no_' in s.lower() or 'not_' in s.lower()
+                or 'filtered' in s.lower() or 'capping' in s.lower() or 'protocol' in s.lower()):
+              print(f'### {s} @ 0x{src:x}')
+              print()
+              for line in asm[max(0,i-9):min(len(asm),i+13)]:
+                print('    '+line)
+              print()
+
+          print('## Function prologue')
+          print()
+          for line in asm[:100]:
+            print('    '+line)
+
+          print()
+          print('## Function epilogue')
+          print()
+          for line in asm[-100:]:
+            print('    '+line)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-builder.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Orbit restriction builder"
+          git pull --rebase origin main
+          git push origin HEAD:main
