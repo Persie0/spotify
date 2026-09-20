@@ -1,0 +1,168 @@
+name: Decode restriction gate optional payload
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-gate-optional.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode optional state helpers
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          python3 - <<'PY' > analysis/native-restriction-gate-optional.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return None
+
+          def cstring(va,maxlen=240):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if not raw:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def strings_in(fr):
+            vals=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]) or '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              s=cstring(int(m.group(1),16))
+              if s and s not in vals:vals.append(s)
+            return vals
+
+          targets={
+            'optional-state assign existing':0x108daf0,
+            'optional-state destroy/reset':0x1089a72,
+            'optional-state construct from source':0x108dc54,
+            'owner wrapper around 1089b98':0x10a9df9,
+            'owner wrapper around reset':0x10a9e38,
+            'owner wrapper around 108daf0':0x10aa70a,
+            'helper 1089b98':0x1089b98,
+          }
+
+          print('# Restriction-owner +0x598 optional-state payload trace')
+          print()
+          print('Coordinate: helper state base = owner+0x38; engagement byte sub+0x560 = owner+0x598.')
+          print()
+
+          for name,addr in targets.items():
+            fr=fde_for(addr)
+            print(f'## {name}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); continue
+            print(f'Function: 0x{fr[0]:x}..0x{fr[1]:x}')
+            ss=strings_in(fr)
+            if ss:
+              print('Strings:')
+              for s in ss[:120]:print('- '+s.replace('\n','\\n'))
+            print('Disassembly:')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          print('## Direct xrefs to optional helper trio')
+          print()
+          targetset={0x108daf0,0x1089a72,0x108dc54,0x1089b98}
+          for target in targetset:
+            print(f'### target 0x{target:x}')
+            for a,i,op,l in ins:
+              m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+              if not m or int(m.group(1),16)!=target:continue
+              fr=fde_for(a)
+              print(f'- 0x{a:x} from '+(f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'))
+              for x in lines[max(0,i-9):min(len(lines),i+11)]:
+                print('    '+x)
+              print()
+
+          # Find stores of immediate 1/0 around +0x560 in the known state-helper family.
+          print('## +0x560 accesses in 0x1088000..0x108e000')
+          print()
+          for a,i,op,l in ins:
+            if not(0x1088000<=a<0x108e000):continue
+            if '+0x560]' in op:
+              print(f'### 0x{a:x}: {op}')
+              for x in lines[max(0,i-8):min(len(lines),i+10)]:
+                print('    '+x)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-gate-optional.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode restriction gate optional payload"
+          git pull --rebase origin main
+          git push origin HEAD:main
