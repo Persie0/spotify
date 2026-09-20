@@ -1,0 +1,133 @@
+name: Trace Skip Ad player signal dispatch
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-player-dispatch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download and decode
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipdispatch/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool binutils
+          apktool d -f -r input/spotify-9-1-84-2205.apk -o /tmp/skipdispatch/apk >/dev/null
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipdispatch/native
+
+      - name: Trace Android visitor dispatch and native signal strings
+        run: |
+          python3 - <<'PY' > analysis/skip-ad-player-dispatch.md
+          from pathlib import Path
+          import re, subprocess, struct
+
+          root=Path('/tmp/skipdispatch/apk')
+          classes=['h8p0','b8p0','hrw','brw','crw','h7u','b5p','k9u','i2v','d9p','drw','erw','xqw','yqw','zqw','arw','r7k']
+          smalis=list(root.glob('smali*/**/*.smali'))
+
+          def locate(c):
+              xs=list(root.glob(f'smali*/p/{c}.smali'))
+              return xs[0] if xs else None
+          def methods(txt):
+              out=[]
+              for m in re.finditer(r'(?m)^\.method[^\n]*',txt):
+                  s=m.start()
+                  e=txt.find('\n.end method',s)
+                  e=len(txt) if e<0 else e+len('\n.end method')
+                  out.append(txt[s:e])
+              return out
+          def emit(title,b):
+              print('## '+title+'\n~~~smali\n'+b.rstrip()+'\n~~~\n')
+
+          print('# Skip Ad player-signal dispatch trace\n')
+          print('Goal: resolve b8p0(SignalCommand) through h8p0/hrw to the concrete Esperanto ContextPlayer endpoint and locate native skip-ad handling.\n')
+
+          for c in classes:
+              p=locate(c)
+              print('## Class '+c+'\n- '+(str(p) if p else 'not found')+'\n')
+              if not p: continue
+              txt=p.read_text(errors='replace')
+              for b in methods(txt):
+                  if c in ('h8p0','b8p0','hrw') or any(x in b for x in (
+                      'EsSignalRequest','ContextPlayer','Signal','Lp/b8p0;',
+                      'callSingle','signalId','Lp/r7k;','mo25046a')):
+                      emit(c,b)
+
+          print('# Whole-APK Esperanto Signal xrefs\n')
+          for f in smalis:
+              try:t=f.read_text(errors='replace')
+              except:continue
+              if 'EsSignalRequest$SignalRequest' not in t and '"Signal"' not in t:
+                  continue
+              for b in methods(t):
+                  if 'EsSignalRequest$SignalRequest' in b or ('ContextPlayer' in b and '"Signal"' in b):
+                      emit(str(f.relative_to(root)),b)
+
+          print('# b8p0 field/constructor xrefs\n')
+          for f in smalis:
+              try:t=f.read_text(errors='replace')
+              except:continue
+              if 'Lp/b8p0;' not in t: continue
+              for b in methods(t):
+                  if 'Lp/b8p0;' in b:
+                      emit(str(f.relative_to(root)),b)
+
+          print('# Native strings / xrefs\n')
+          so=Path('/tmp/skipdispatch/native/liborbit-jni-spotify.so')
+          s=subprocess.run(['strings','-a','-t','x',str(so)],capture_output=True,text=True).stdout.splitlines()
+          needles=('skip-ad','skip_ad','ad_skipped','ad_skip','signal')
+          hits=[]
+          for line in s:
+              low=line.lower()
+              if any(n in low for n in needles):
+                  hits.append(line)
+          print('## strings hits\n~~~text')
+          print('\n'.join(hits[:2500]))
+          print('~~~\n')
+
+          # Readelf sections gives file-offset -> virtual-address mapping for string hits.
+          readelf=subprocess.run(['readelf','-W','-S',str(so)],capture_output=True,text=True).stdout
+          print('## ELF sections\n~~~text\n'+readelf+'\n~~~\n')
+
+          # Disassembly grep of literal symbols/nearby recognizable signal code.
+          dis=subprocess.run(['objdump','-d','-M','intel',str(so)],capture_output=True,text=True).stdout
+          dlines=dis.splitlines()
+          # Also report functions containing immediate calls around known signal-name parsing strings if objdump resolves them.
+          for needle in ('skip-ad','ad_skipped','ad_skip'):
+              print('## Disassembly textual matches for '+needle+'\n')
+              found=False
+              for i,l in enumerate(dlines):
+                  if needle in l:
+                      found=True
+                      print('~~~asm')
+                      print('\n'.join(dlines[max(0,i-30):i+50]))
+                      print('~~~')
+              if not found: print('- none (expected for stripped RIP-relative references)\n')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-player-dispatch.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad player signal dispatch"
+          git pull --rebase origin main
+          git push origin HEAD:main
