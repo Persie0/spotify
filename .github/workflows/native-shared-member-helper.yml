@@ -1,0 +1,66 @@
+name: Decode Orbit shared member helper
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-shared-member-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Decode helper
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Shared member initializer behind b2828e"
+            echo
+            echo "b2828e is a tiny wrapper around 0x17d9e02."
+            echo
+            echo "## b28270..b282b0 wrappers"
+            echo
+            objdump -d -M intel --start-address=0xb28270 --stop-address=0xb282b0 "$SO"
+            echo
+            echo "## 0x17d9e02 implementation"
+            echo
+            objdump -d -M intel --start-address=0x17d9dc0 --stop-address=0x17d9e80 "$SO"
+            echo
+            echo "## Nearby dynamic symbols"
+            echo
+            readelf -Ws "$SO" | grep -E '17d9|decodeWaveformTag|basic_string|vector|optional|unique_ptr|shared_ptr' | head -n 300 || true
+            echo
+            echo "## Direct relocations near helper"
+            echo
+            readelf -rW "$SO" | grep -E '17d9d|17d9e|17d9f' | head -n 300 || true
+          } > analysis/native-shared-member-helper.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-shared-member-helper.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode shared Orbit member helper"
+          git pull --rebase origin main
+          git push origin HEAD:main
