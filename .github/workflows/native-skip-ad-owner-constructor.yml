@@ -1,0 +1,78 @@
+name: Trace skip-ad owner constructor and gate receiver
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-skip-ad-owner-constructor.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/saowner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/saowner
+
+      - name: Build owner trace
+        run: |
+          set -euo pipefail
+          SO=/tmp/saowner/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/saowner/all.dis
+          {
+            echo '# Skip Ad signal-owner constructor / gate receiver trace'
+            echo
+            echo '## Constructor neighborhood that installs 0x1841fc0 / 0x18421b0'
+            objdump -d -M intel --start-address=0xefc400 --stop-address=0xefc780 "$SO"
+            echo
+            echo '## Copy/clone path for the same owner'
+            objdump -d -M intel --start-address=0xfd4bd0 --stop-address=0xfd4d10 "$SO"
+            echo
+            echo '## Destructor path'
+            objdump -d -M intel --start-address=0xfd47d0 --stop-address=0xfd4840 "$SO"
+            echo
+            echo '## Direct callers of constructor-containing FDE area'
+            grep -E -B24 -A40 '\b(call|jmp)[[:space:]]+efc[4-7][0-9a-f]{2}\b' /tmp/saowner/all.dis | head -n 18000 || true
+            echo
+            echo '## Exact refs to owner address points'
+            grep -E -B25 -A50 '# (1841fc0|18421b0)\b' /tmp/saowner/all.dis | head -n 22000 || true
+            echo
+            echo '## Candidate gate receiver provenance: writes to owner/base +0x40 / actual +0x58'
+            grep -E -B25 -A45 'mov[[:space:]]+QWORD PTR \[[^]]+\+0x(40|58)\],' /tmp/saowner/all.dis | grep -E -B25 -A45 'efc|fd4' | head -n 22000 || true
+            echo
+            echo '## Known adjacent signal strings'
+            python3 - "$SO" <<'PY'
+          import sys
+          p=sys.argv[1]
+          b=open(p,'rb').read()
+          for a in (0x387721,0x387742,0x33c93e,0x34708a,0x342d23,0x35aaf0):
+              e=b.find(b'\0',a,a+256)
+              if e<0:e=min(len(b),a+256)
+              print(f'0x{a:x}: {b[a:e]!r}')
+          PY
+          } > analysis/native-skip-ad-owner-constructor.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-skip-ad-owner-constructor.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace skip-ad gate receiver constructor"
+          git pull --rebase origin main
+          git push origin HEAD:main
