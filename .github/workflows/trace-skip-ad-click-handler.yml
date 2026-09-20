@@ -1,0 +1,146 @@
+name: Trace Skip Ad click handler
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-click-handler.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download and decode Spotify APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/spotify
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          sudo apt-get update -qq
+          sudo apt-get install -y apktool
+          apktool d -f input/spotify-9-1-84-2205.apk -o /tmp/spotify >/dev/null
+
+      - name: Recover exact Skip Ad click classes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > analysis/skip-ad-click-handler.md
+          from pathlib import Path
+          import re
+
+          root=Path('/tmp/spotify')
+          classes=['jo20','od21','kk21','eq0','co21','mn21','yn21','zn21']
+
+          def locate(cls):
+              xs=list(root.glob(f'smali*/p/{cls}.smali'))
+              return xs[0] if xs else None
+
+          def method_blocks(txt):
+              out=[]
+              starts=[m.start() for m in re.finditer(r'(?m)^\\.method\\b',txt)]
+              for s in starts:
+                  e=txt.find('\\n.end method',s)
+                  if e<0: e=len(txt)
+                  else: e += len('\\n.end method')
+                  out.append(txt[s:e])
+              return out
+
+          def print_block(title, block):
+              print('## '+title+'\\n')
+              print('~~~smali')
+              print(block.rstrip())
+              print('~~~\\n')
+
+          print('# Skip Ad UI click-handler trace\\n')
+          print('Targets: skip_ad_element_button, skip_ad_title, od21(selector=1), the mounted kk21(5, null) component, and downstream player/effect calls.\\n')
+
+          for cls in classes:
+              p=locate(cls)
+              print('## Class '+cls)
+              print('- path: '+(str(p) if p else 'not found'))
+              if not p:
+                  print(); continue
+              txt=p.read_text(errors='replace')
+              print('- methods:')
+              for m in re.finditer(r'(?m)^\\.method[^\\n]*',txt):
+                  print('  - '+m.group(0))
+              print()
+
+              blocks=method_blocks(txt)
+              for i,b in enumerate(blocks):
+                  anchors=('skip_ad_element_button','0x7f13273a','0x7f110011','Lp/od21;','Lp/kk21;',
+                           'Lp/co21;','Lp/yn21;','Lp/zn21;','android.support.v4.media.session.action.SKIP_AD')
+                  if cls in ('od21','kk21','eq0') or any(a in b for a in anchors):
+                      print_block(f'{cls} relevant method {i+1}',b)
+
+          print('# Cross references\\n')
+          patterns=[
+              'skip_ad_element_button',
+              '0x7f13273a',
+              '0x7f0b0eb1',
+              'Lp/od21;-><init>(Ljava/lang/String;I)V',
+              'Lp/kk21;-><init>(ILp/gh00;)V',
+              'Lp/co21;',
+              'android.support.v4.media.session.action.SKIP_AD',
+              'ad_skipped',
+          ]
+          smalis=list(root.glob('smali*/**/*.smali'))
+          for pat in patterns:
+              print('## Xrefs for '+pat+'\\n')
+              hits=0
+              for p in smalis:
+                  try: lines=p.read_text(errors='replace').splitlines()
+                  except Exception: continue
+                  for n,line in enumerate(lines):
+                      if pat not in line: continue
+                      hits+=1
+                      print(f'### {p.relative_to(root)}:{n+1}')
+                      print('~~~smali')
+                      for j in range(max(0,n-28),min(len(lines),n+45)):
+                          print(f'{j+1:6}: {lines[j]}')
+                      print('~~~\\n')
+              if not hits: print('- no hits\\n')
+
+          p=locate('od21')
+          if p:
+              txt=p.read_text(errors='replace')
+              print('# od21 selector dispatcher\\n')
+              for b in method_blocks(txt):
+                  if re.search(r'(?m)^\\.method.*\\b(?:invoke|invokeSuspend)\\b',b) or 'packed-switch' in b or 'sparse-switch' in b:
+                      print_block('od21 dispatcher/invoke',b)
+
+          print('# Candidate downstream calls from od21\\n')
+          if p:
+              txt=p.read_text(errors='replace')
+              for b in method_blocks(txt):
+                  if 'packed-switch' not in b and 'sparse-switch' not in b and ' invoke' not in b:
+                      continue
+                  calls=re.findall(r'invoke-(?:virtual|static|direct|interface|super)(?:/range)?\\s+\\{[^}]*\\},\\s+([^\\s]+)',b)
+                  if calls:
+                      print('## method calls')
+                      for c in calls:
+                          if any(k in c.lower() for k in ('player','skip','next','ad','context','event','effect','invoke','track')) or c.startswith('Lp/'):
+                              print('- '+c)
+                      print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-click-handler.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad click handler"
+          git pull --rebase origin main
+          git push origin HEAD:main
