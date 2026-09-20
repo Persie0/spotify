@@ -128,7 +128,7 @@ jobs:
           # Search all one/two-level initialization code for relative string-triple fields.
           roots=[0x10a5fec,0x1088fd0,0x10a87cc]
           root_frs=[fde_for(x) for x in roots if fde_for(x)]
-          print('## Constructor-chain accesses mapping to owner +0x470 string triple')
+          print('## Constructor-chain accesses near owner +0x470 / +0x478')
           print()
           found=False
           for fr in root_frs:
@@ -158,12 +158,12 @@ jobs:
           print()
 
           # Find calls to known libc++ string helpers with member address as argument in nearby code.
-          print('## Evidence that owner+0x470 is libc++ std::string-like')
+          print('## Field-type correction around owner+0x470')
           print()
-          print('- empty libc++ short string has first byte 0; non-empty short string stores size<<1 there; long form has low-bit marker')
-          print('- owner builder uses cmp BYTE PTR [owner+0x470],0')
-          print('- owner builder separately takes owner+0x478 as an address/data field')
-          print('- 0x470,0x478,0x480 form the expected 24-byte libc++ string footprint')
+          print('- owner+0x478 is passed as the std::string argument to 0x1488d69, which repeatedly compares it with libc++ string constants')
+          print('- therefore the string begins at owner+0x478, not owner+0x470')
+          print('- owner+0x470 is an adjacent state field eight bytes before that string; the restriction builder only tests its first byte for zero/nonzero')
+          print('- its exact type/meaning remains open until its writer is identified')
           print()
 
           # Resolve the function at 0x1488d69 which consumes owner+0x478.
