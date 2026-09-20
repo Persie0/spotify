@@ -1,0 +1,173 @@
+name: Link ContextPlayer ad state to delay model
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-delay-link.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace link
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          cat > /tmp/link.py <<'PY'
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            def off2va(o):
+              for a,b,v in loads:
+                if a<=o<b:return v+(o-a)
+              return o
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          targets={
+            'ad metadata mapper':0x14e06e2,
+            'ad skippable metadata getter':0x14e2472,
+            'ad state/timing decision':0x14e248a,
+            'ad seekable getter':0x14e24b8,
+            'ad interruptible getter':0x14e24d0,
+            'ad skippable delay integer getter':0x14e24e8,
+            'generic ad metadata getter':0x14e25e7,
+            'ContextPlayer restriction event':0x10a9668,
+            'ContextPlayer restriction builder':0x10a6464,
+          }
+
+          print('# Native ContextPlayer ↔ ad delay link')
+          print()
+
+          # Compact full bodies for small ad methods.
+          print('## Ad-model method bodies')
+          print()
+          for name,addr in list(targets.items())[:7]:
+            fr=fde(addr)
+            print(f'### {name}: 0x{addr:x} ({("0x%x..0x%x"%fr) if fr else "unknown"})')
+            if fr and fr[1]-fr[0] <= 0x1200:
+              for a,i,l in ins:
+                if fr[0]<=a<fr[1]: print('    '+l)
+            print()
+
+          print('## Direct code xrefs')
+          print()
+          for name,target in targets.items():
+            hits=[]
+            for a,i,l in ins:
+              if re.search(rf'\b(?:call|jmp)\s+{target:x}\b',l):
+                hits.append((a,i,fde(a)))
+            print(f'### {name}: 0x{target:x} — {len(hits)} direct xref(s)')
+            for a,i,fr in hits[:80]:
+              ft=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+              print(f'- 0x{a:x} from {ft}')
+              for x in lines[max(0,i-7):min(len(lines),i+9)]: print('    '+x)
+              print()
+            print()
+
+          print('## Static function-pointer slots')
+          print()
+          for name,target in targets.items():
+            needle=struct.pack('<Q',target)
+            offs=[];p=0
+            while True:
+              p=data.find(needle,p)
+              if p<0:break
+              offs.append(p);p+=1
+            print(f'### {name}: 0x{target:x}')
+            if not offs:
+              print('- none')
+            for o in offs[:40]:
+              va=off2va(o)
+              print(f'- file 0x{o:x} / VA 0x{va:x}')
+              lo=max(0,o-0x60);hi=min(len(data),o+0x80)
+              # Decode neighboring aligned qwords as probable function pointers.
+              start=(lo+7)&~7
+              for q in range(start,hi-7,8):
+                v=struct.unpack_from('<Q',data,q)[0]
+                if 0xa00000 <= v <= 0x1800000:
+                  print(f'    +{q-o:+#x}: 0x{v:x}')
+            print()
+
+          print('## +0x1b8 references in relevant native areas')
+          print()
+          for a,i,l in ins:
+            if '+0x1b8]' in l:
+              fr=fde(a)
+              if fr and (
+                0x1000000 <= fr[0] <= 0x10b0000 or
+                0x1400000 <= fr[0] <= 0x1500000
+              ):
+                print(f'### 0x{a:x} in 0x{fr[0]:x}..0x{fr[1]:x}')
+                for x in lines[max(0,i-9):min(len(lines),i+11)]:print('    '+x)
+                print()
+          PY
+          python3 /tmp/link.py > analysis/native-ad-delay-link.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+Persie0@users.noreply.github.com"
+          git add analysis/native-ad-delay-link.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Link ContextPlayer ad state to delay model"
+          git pull --rebase origin main
+          git push origin HEAD:main
