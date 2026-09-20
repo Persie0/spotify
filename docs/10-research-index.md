@@ -221,17 +221,35 @@ jo20
 
 This comes from the concrete Skip Ad branch in `la01.smali`. The symbolic resource `skip_ad_button_stub` is only the now-playing host view; it is replaced with Compose content. `skip_ad_title` resolves into the same UI family, while `jo20` is constructed with two playback-state streams and the command API.
 
+The Android readiness export is now exact as well:
+
+```text
+EsContextPlayerState.signals_
+    -> p4h1.getSignalsList()
+    -> PlayerState.signals()
+    -> g511: signals.contains("skip-ad")
+    -> jk21 Skip Ad UI state
+```
+
 So the end-to-end split is now explicit:
 
 ```text
 readiness:
-skippable_ad_delay -> native "ad_skip" timer -> subtype 6 -> object+0x1b8 = 1
+skippable_ad_delay
+  -> native "ad_skip" timer
+  -> subtype 6
+  -> object+0x1b8 = 1
+  -> later ContextPlayer state exposes signal "skip-ad"
+  -> Skip Ad UI enabled
 
 execution:
-Skip Ad UI -> SignalCommand("skip-ad") -> p8p0 player command API
+Skip Ad UI
+  -> SignalCommand("skip-ad")
+  -> ContextPlayer / Signal
 
 ordinary next:
-MediaSession/skip-next -> disallowSkippingNextReasons
+MediaSession/skip-next
+  -> disallowSkippingNextReasons + next-command set
 ```
 
 Current target:
