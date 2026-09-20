@@ -1,0 +1,226 @@
+name: Recover Orbit restriction owner class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-owner.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Recover owner
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          python3 - <<'PY' > analysis/native-restriction-owner.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          rel=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+            return va if 0<=va<len(data) else None
+
+          def cstring(va,maxlen=400):
+            off=va2off(va)
+            if off is None:return None
+            end=data.find(b'\0',off,min(len(data),off+maxlen))
+            if end<=off:return None
+            raw=data[off:end]
+            if len(raw)<2:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.9:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):',l)
+            if m:ins.append((int(m.group(1),16),i,l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          LO,HI=0x184c200,0x184ca00
+
+          print('# Orbit restriction-owner class recovery')
+          print()
+          print('The restriction builder uses an object larger than +0x1890. The callback containing 0x10a9668 is registered in data.rel.ro around 0x184c840.')
+          print('This report finds constructors/vptr stores that reference that exact data.rel.ro neighborhood.')
+          print()
+
+          print('## Relocations in callback/vtable neighborhood')
+          print()
+          entries=[]
+          for line in rel:
+            m=re.match(r'^([0-9a-fA-F]+)\s+\S+\s+\S+\s+([0-9a-fA-F]+)',line.strip())
+            if not m:continue
+            slot=int(m.group(1),16)
+            if LO<=slot<HI:
+              toks=line.split()
+              add=None
+              try:add=int(toks[-1],16)
+              except:pass
+              entries.append((slot,add,line))
+              print('    '+line)
+          print()
+
+          # Find executable RIP-relative references into the data.rel.ro neighborhood.
+          xrefs=[]
+          for a,i,l in ins:
+            if '#' not in l:continue
+            m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+            if not m:continue
+            dst=int(m.group(1),16)
+            if LO<=dst<HI:
+              xrefs.append((a,i,l,dst,fde_for(a)))
+
+          print('## Executable xrefs to 0x184c200..0x184ca00')
+          print()
+          print(f'Total: {len(xrefs)}')
+          for a,i,l,dst,fr in xrefs:
+            fs=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{a:x} -> 0x{dst:x} from {fs}')
+            for ctx in dis[max(0,i-12):min(len(dis),i+20)]:
+              print('    '+ctx)
+            print()
+
+          # Group xrefs by function and extract allocation sizes, vptr stores,
+          # large-field accesses and printable strings.
+          groups={}
+          for hit in xrefs:
+            fr=hit[4]
+            if fr:groups.setdefault(fr,[]).append(hit)
+
+          print('## Candidate owner/constructor functions')
+          print()
+          for fr,hits in sorted(groups.items()):
+            fl=[(a,i,l) for a,i,l in ins if fr[0]<=a<fr[1]]
+            has_large=any(re.search(r'\+0x(?:1[4-9][0-9a-f]{2})\]',l) for _,_,l in fl)
+            # look for immediate allocation sizes >= 0x1900 in the function
+            alloc=[]
+            for n,(a,i,l) in enumerate(fl):
+              m=re.search(r'\bmov\s+edi,0x([0-9a-f]+)',l)
+              if m and int(m.group(1),16)>=0x1900:
+                for _,_,l2 in fl[n:min(len(fl),n+5)]:
+                  if '17edf00' in l2 or '_Znwm' in l2:
+                    alloc.append((a,int(m.group(1),16)));break
+            print(f'### 0x{fr[0]:x}..0x{fr[1]:x}')
+            print('Callback-table refs: '+', '.join(f'0x{x[0]:x}->0x{x[3]:x}' for x in hits))
+            print('Touches >=0x1400-like fields: '+str(has_large))
+            if alloc:print('Large allocations: '+', '.join(f'0x{s:x} @0x{a:x}' for a,s in alloc))
+            print('Relevant object-field accesses:')
+            for a,i,l in fl:
+              if re.search(r'\+0x(?:438|470|598|14a0|1858|1890)\]',l):
+                print('    '+l)
+            refs=[]
+            for a,i,l in fl:
+              if '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              dst=int(m.group(1),16); s=cstring(dst)
+              if s and s not in [x[2] for x in refs]:refs.append((a,dst,s))
+            print('Printable strings:')
+            for a,dst,s in refs[:100]:
+              print(f'- 0x{a:x}: {s.replace(chr(10),"\\n")}')
+            if not refs:print('- none')
+            print()
+
+          # Decode potential Itanium ABI typeinfo around table starts.
+          print('## Potential Itanium vtable/typeinfo headers')
+          print()
+          reloc_by_slot={slot:add for slot,add,_ in entries if add is not None}
+          # A vtable address point is commonly 16 bytes after [offset-to-top,typeinfo].
+          for address_point in sorted({dst for _,_,_,dst,_ in xrefs}):
+            header=address_point-16
+            off=va2off(header)
+            if off is None or off+16>len(data):continue
+            top=struct.unpack_from('<q',data,off)[0]
+            ti=reloc_by_slot.get(header+8)
+            if ti is None:
+              # raw qword may already contain relocated link-time value in some builds
+              ti=struct.unpack_from('<Q',data,off+8)[0]
+            if abs(top)>0x100000:continue
+            print(f'### address-point candidate 0x{address_point:x}')
+            print(f'- offset-to-top raw: {top}')
+            print(f'- typeinfo candidate: 0x{ti:x}')
+            # Itanium typeinfo object usually has name pointer at +8.
+            tioff=va2off(ti)
+            if tioff is not None and tioff+16<=len(data):
+              nameptr=reloc_by_slot.get(ti+8)
+              if nameptr is None:nameptr=struct.unpack_from('<Q',data,tioff+8)[0]
+              name=cstring(nameptr)
+              print(f'- type-name pointer candidate: 0x{nameptr:x}')
+              print(f'- type-name: {name!r}')
+            print()
+
+          print('## Known restriction owner methods')
+          print()
+          print('- 0x10a6464..0x10a7f52: restriction builder')
+          print('- 0x10a9668..0x10a969c: event subtype-6 handler then restriction rebuild')
+          print('- object fields include +0x470, +0x598, +0x14a0, +0x1858, +0x1890')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-owner.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Recover Orbit restriction owner class"
+          git pull --rebase origin main
+          git push origin HEAD:main
