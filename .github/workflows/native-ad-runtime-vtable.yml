@@ -1,0 +1,227 @@
+name: Trace Orbit ad runtime vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-ad-runtime-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace object construction and vtables
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+          readelf -SW "$SO" > /tmp/sections.txt
+          readelf -rW "$SO" > /tmp/relocs.txt
+
+          cat > /tmp/trace.py <<'PY'
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+          relocs=Path('/tmp/relocs.txt').read_text(errors='replace').splitlines()
+          sections=Path('/tmp/sections.txt').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            def off2va(off):
+              for a,b,v in loads:
+                if a<=off<b:return v+(off-a)
+              return off
+            def va2off(va):
+              for a,b,v in loads:
+                if v<=va<v+(b-a):return a+(va-v)
+              return va if 0<=va<len(data) else None
+
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          instructions=[]
+          for idx,line in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):',line)
+            if m: instructions.append((int(m.group(1),16),idx,line))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def lines_for(fr):
+            return [(a,i,l) for a,i,l in instructions if fr[0]<=a<fr[1]]
+
+          def refs_in(fr):
+            out=[]
+            for a,i,l in lines_for(fr):
+              if '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if m:out.append((a,int(m.group(1),16),l))
+            return out
+
+          targets={
+            'guard ctor/helper':0xb2828e,
+            'ContextPlayer init tail':0x10a1440,
+            'restriction builder':0x10a6464,
+            'ad-state transition':0x10a9668,
+            'raw skippable getter':0x14e2472,
+            'derived skippable predicate':0x14e248a,
+            'delay parser':0x14e24e8,
+          }
+
+          print('# Orbit ad runtime object / vtable trace')
+          print()
+          print('Goal: connect ContextPlayer+0x438 / object+0x1b8 to the skippable/delay virtual interface.')
+          print()
+
+          print('## Relevant ELF sections')
+          print()
+          for line in sections:
+            if any(x in line for x in ('.text','.rodata','.data.rel.ro','.data','.bss')):
+              print('    '+line)
+          print()
+
+          for name,addr in targets.items():
+            fr=fde_for(addr)
+            print(f'## {name}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); continue
+            print(f'Function range: 0x{fr[0]:x}..0x{fr[1]:x}')
+            print()
+            print('Disassembly:')
+            for a,i,l in lines_for(fr):
+              print('    '+l)
+            print()
+            print('RIP-relative/comment targets:')
+            for a,dst,l in refs_in(fr):
+              print(f'- 0x{a:x} -> 0x{dst:x}')
+            print()
+
+          print('## Direct xrefs to target entrypoints')
+          print()
+          for name,target in targets.items():
+            hits=[]
+            for a,i,l in instructions:
+              if re.search(rf'\b(?:call|jmp)\s+{target:x}\b',l):
+                hits.append((a,i,l,fde_for(a)))
+            print(f'### {name} 0x{target:x}: {len(hits)}')
+            for a,i,l,fr in hits[:120]:
+              ftxt=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+              print(f'- 0x{a:x} from {ftxt}')
+              for ctx in dis[max(0,i-8):min(len(dis),i+10)]:
+                print('    '+ctx)
+            print()
+
+          # Find literal function pointers and show their local table neighborhoods.
+          print('## Literal function-pointer table neighborhoods')
+          print()
+          fp_targets={k:v for k,v in targets.items() if v>=0x14e2000}
+          seen=set()
+          for name,addr in fp_targets.items():
+            needle=struct.pack('<Q',addr)
+            p=0
+            while True:
+              p=data.find(needle,p)
+              if p<0:break
+              base=max(0,(p & ~0x7f)-0x80)
+              key=(base,p)
+              if key not in seen:
+                seen.add(key)
+                print(f'### {name} pointer at file+0x{p:x}, VA 0x{off2va(p):x}')
+                for off in range(base,min(len(data),base+0x280),8):
+                  q=struct.unpack_from('<Q',data,off)[0]
+                  labs=[n for n,v in targets.items() if v==q]
+                  if labs or (0x14e1000<=q<=0x14e4000):
+                    lab=' ; '+', '.join(labs) if labs else ''
+                    print(f'- slot VA 0x{off2va(off):x}: 0x{q:x}{lab}')
+                print()
+              p+=1
+
+          # Vptr-store candidates: RIP-relative LEA followed shortly by a store to [rdi]/[reg]
+          # in the constructor/init functions.
+          print('## Constructor/init vptr-store candidates')
+          print()
+          for name in ('guard ctor/helper','ContextPlayer init tail'):
+            fr=fde_for(targets[name])
+            if not fr:continue
+            ls=lines_for(fr)
+            print(f'### {name}')
+            for n,(a,i,l) in enumerate(ls):
+              if 'lea' not in l or '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              dst=int(m.group(1),16)
+              # vtable/RTTI addresses normally lie outside .text and are aligned.
+              if dst<0x1000000:continue
+              print(f'Candidate address 0x{dst:x} loaded @ 0x{a:x}')
+              for _,_,ctx in ls[max(0,n-3):min(len(ls),n+8)]:
+                print('    '+ctx)
+              print()
+
+          # Show relocations mentioning the target code addresses or table neighborhood 0x162000..0x163000.
+          print('## Relevant dynamic relocations')
+          print()
+          wanted=[format(v,'x') for v in targets.values()]
+          count=0
+          for line in relocs:
+            low=line.lower()
+            if any(w in low for w in wanted) or re.match(r'^0*162[0-9a-f]{3}\s',low.strip()):
+              print('    '+line)
+              count+=1
+              if count>=500:break
+          if count==0: print('- none matched textually')
+          PY
+          python3 /tmp/trace.py > analysis/native-ad-runtime-vtable.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-ad-runtime-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Orbit ad runtime vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
