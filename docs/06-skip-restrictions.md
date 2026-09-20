@@ -386,14 +386,47 @@ The ad write is guarded by:
 [r14+0x470] != 0
 ```
 
-The first flag is used widely across the same builder and participates in `not_playing_context` logic, so it is a broad active/playing-context state. The second flag appears only in this ad-restriction block in the decoded function and is therefore the ad-specific guard for this family of restrictions.
+Those are **not two independent Boolean policy flags**. The copied state layout is now decoded:
 
-This strengthens the ownership conclusion:
+```text
+restriction owner
+  +0x38  nested state subobject
+    |
+    +-- outer optional
+          payload starts at owner+0x48
+          payload size = 0x550
+          engagement byte = owner+0x598
+
+          payload+0x3f0 = owner+0x438
+              inner optional value storage
+              begins with shared_ptr-like {object*, control_block*}
+
+          payload+0x428 = owner+0x470
+              inner optional engagement byte
+```
+
+The outer optional machinery is initialized and copied by the `0x1088fd0 / 0x1089f9e / 0x108daf0` state helpers. The inner optional's constructor/copy path increments the shared-pointer control-block refcount, and its destroy/reset path clears the engagement byte at `owner+0x470`.
+
+So the skip-next branch is more accurately:
+
+```text
+outer current-state payload exists
+AND nested polymorphic media/ad-policy object exists
+        |
+        v
+insert ad_disallow into disallowSkippingNextReasons
+```
+
+This replaces the earlier interpretation of `+0x598` as a broad active-context Boolean and `+0x470` as an ad-specific Boolean.
+
+The ownership chain is therefore:
 
 ```text
 Orbit/native restriction builder
         |
-        +-- evaluates player/ad state
+        +-- current state optional engaged?      owner+0x598
+        +-- nested object optional engaged?      owner+0x470
+        +-- nested object pointer                owner+0x438
         |
         +-- inserts ad_disallow into skip-next set
         |
@@ -407,8 +440,7 @@ ContextPlayer.GetState
 Android PlayerState.restrictions
 ```
 
-What remains unresolved is narrower: the exact producer/meaning of the native ad guard at `+0x470`, and whether its transition is driven by elapsed `ad.skippable_ad_delay`, another native timer/state machine, or a deeper player-state event.
-
+The remaining question is no longer what the two bytes are. It is **what lifecycle transition clears/replaces the inner object (or otherwise stops the skip-next ad branch) when skipping becomes permitted**.
 
 ### Native `skippable_ad_delay` predicate decoded
 
@@ -426,17 +458,19 @@ to the internal metadata key:
 skippable_ad_delay
 ```
 
-and exposes a small ad-model virtual interface. ELF relocation entries reconstruct the relevant runtime vtable base at:
+The exact polymorphic interface used by the nested object at `owner+0x438` is reconstructed from ELF relocations. Its runtime vtable address point is:
 
 ```text
 0x1879950
 ```
 
-with:
+with the consecutive capability methods:
 
 ```text
 +0xc8 -> 0x14e2472  raw "skippable" metadata getter
 +0xd0 -> 0x14e248a  derived skippable/timing predicate
++0xd8 -> 0x14e24b8  "seekable" metadata getter
++0xe0 -> 0x14e24d0  "interruptible" metadata getter
 +0xe8 -> 0x14e24e8  skippable_ad_delay integer parser
 ```
 
@@ -454,30 +488,24 @@ if skippable_ad_delay() > 0:
 return raw_skippable()
 ```
 
-A callback on the same Orbit restriction-owner object at `0x10a9668` sets the current-track/ad object's `+0x1b8` byte for event subtype `6`, then rebuilds restrictions.
+This is now tied to the restriction-owner layout directly. The nested optional at `owner+0x438` contains the polymorphic object on which the restriction builder invokes `+0xd0`, `+0xd8`, and `+0xe0`. Event subtype `6` at `0x10a9668` checks both optional engagement bytes, takes that same `owner+0x438` object, sets `object+0x1b8 = 1`, and rebuilds restrictions.
 
-However, this predicate must **not** be confused with the skip-next gate. Inside the restriction builder, the proven skip-next insertion:
+There is still one important boundary:
 
-```text
-ad_disallow -> r14+0x14a0
-```
+- skip-next `ad_disallow -> owner+0x14a0` is inserted from **presence of the outer and inner optionals**
+- the later `+0xd0/+0xd8/+0xe0` capability calls govern other ad-restriction decisions
+- therefore changing `object+0x1b8` changes the derived skippability method, but the skip-next branch does not directly test that return value
 
-occurs **earlier** and is controlled by:
-
-```text
-restriction-owner +0x598 != 0
-restriction-owner +0x470 != 0
-```
-
-The `+0xd0` derived predicate is consulted later in the ad block for another restriction container. Therefore the remaining skip-next question is now specifically the origin and transition of the two restriction-owner gate bytes, especially `+0x470`.
+The open native question is consequently the lifetime/state transition of the nested optional: whether the inner object is reset or replaced when the ad becomes skippable, or whether another player-core transition removes `ad_disallow` by changing the surrounding state.
 
 Evidence:
 
+- `analysis/native-restriction-gate-optional.md`
+- `analysis/native-restriction-payload-copy.md`
+- `analysis/native-inner-ad-object-vtable.md`
 - `analysis/native-delay-xrefs.md`
 - `analysis/native-skippable-vtable.md`
-- `analysis/native-ad-method-table-xrefs.md`
 - `analysis/native-ad-runtime-vtable.md`
-
 
 ## Practical consequence for spotify-muter
 
