@@ -1,0 +1,66 @@
+name: Inspect Orbit ad delay metadata table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-delay-metadata.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Inspect delay-key neighborhood
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          {
+            echo "# Orbit ad.skippable_ad_delay metadata neighborhood"
+            echo
+            echo "Exact known x86_64 file offset: 0x438801"
+            echo
+            echo "## strings around file offset"
+            echo
+            strings -a -t x "$SO" | awk '
+              {
+                off=strtonum("0x"$1);
+                if (off>=strtonum("0x437000") && off<=strtonum("0x439800")) print
+              }'
+            echo
+            echo "## raw bytes around exact key"
+            echo
+            xxd -g1 -s 0x438700 -l 0x300 "$SO"
+            echo
+            echo "## nearby ad/metadata-looking strings"
+            echo
+            strings -a -t x "$SO" | grep -Ei 'skippable|advert|metadata|manifest|duration|ad\.is_|is_advertisement' | head -n 1000 || true
+          } > analysis/native-delay-metadata.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-delay-metadata.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Inspect Orbit ad delay metadata table"
+          git pull --rebase origin main
+          git push origin HEAD:main
