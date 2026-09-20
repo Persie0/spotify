@@ -1243,6 +1243,244 @@ This one native function contains the main direct xref clusters for both mft_dis
      10a7de3:	e8 24 d7 a2 ff       	call   ad550c <_ZN4asio6detail16service_registry6createINS0_9schedulerENS_17execution_contextEEEPNS4_7serviceEPv@@Base+0x224ac>
      10a7de8:	48 8d bc 24 10 08 00 	lea    rdi,[rsp+0x810]
 
+## Ad skip guard flag references
+
+### r14+0x470
+     10a746b:	00 
+     10a746c:	e8 0d 26 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7471:	49 8d be 18 15 00 00 	lea    rdi,[r14+0x1518]
+     10a7478:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a747f:	00 
+     10a7480:	e8 0b 66 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a7485:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a748c:	00 
+     10a748d:	e8 fe 69 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a7492:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a7499:	00 
+     10a749a:	0f 84 cc 01 00 00    	je     10a766c <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26ea82>
+     10a74a0:	41 80 be 70 04 00 00 	cmp    BYTE PTR [r14+0x470],0x0
+     10a74a7:	00 
+     10a74a8:	0f 84 be 01 00 00    	je     10a766c <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26ea82>
+     10a74ae:	48 8d 35 90 68 2c ff 	lea    rsi,[rip+0xffffffffff2c6890]        # 36dd45 <_ZTSSt12bad_any_cast@@Base-0x22483>
+     10a74b5:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a74bc:	00 
+     10a74bd:	e8 bc 25 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a74c2:	49 8d be a0 14 00 00 	lea    rdi,[r14+0x14a0]
+     10a74c9:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a74d0:	00 
+     10a74d1:	e8 ba 65 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a74d6:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a74dd:	00 
+
+### r14+0x598
+     10a6795:	00 
+     10a6796:	e8 e3 32 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a679b:	49 8d be 70 17 00 00 	lea    rdi,[r14+0x1770]
+     10a67a2:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a67a9:	00 
+     10a67aa:	e8 e1 72 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a67af:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a67b6:	00 
+     10a67b7:	e8 d4 76 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a67bc:	41 80 be 58 18 00 00 	cmp    BYTE PTR [r14+0x1858],0x0
+     10a67c3:	00 
+     10a67c4:	0f 85 de 03 00 00    	jne    10a6ba8 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26dfbe>
+     10a67ca:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a67d1:	00 
+     10a67d2:	74 64                	je     10a6838 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26dc4e>
+     10a67d4:	4c 8d bc 24 40 04 00 	lea    r15,[rsp+0x440]
+     10a67db:	00 
+     10a67dc:	41 83 67 38 00       	and    DWORD PTR [r15+0x38],0x0
+     10a67e1:	0f 57 c0             	xorps  xmm0,xmm0
+     10a67e4:	41 0f 29 07          	movaps XMMWORD PTR [r15],xmm0
+     10a67e8:	41 0f 29 47 10       	movaps XMMWORD PTR [r15+0x10],xmm0
+     10a67ed:	41 0f 29 47 20       	movaps XMMWORD PTR [r15+0x20],xmm0
+     10a67f2:	49 8d be 90 00 00 00 	lea    rdi,[r14+0x90]
+     10a67f9:	e8 38 50 9d ff       	call   a7b836 <JNI_OnUnload@@Base+0x3103>
+     10a67fe:	4c 89 ff             	mov    rdi,r15
+
+     10a6b71:	75 35                	jne    10a6ba8 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26dfbe>
+     10a6b73:	48 8d 35 2c 53 28 ff 	lea    rsi,[rip+0xffffffffff28532c]        # 32bea6 <_ZTSSt12bad_any_cast@@Base-0x64322>
+     10a6b7a:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a6b81:	00 
+     10a6b82:	e8 f7 2e 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a6b87:	49 8d be 90 15 00 00 	lea    rdi,[r14+0x1590]
+     10a6b8e:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a6b95:	00 
+     10a6b96:	e8 f5 6e d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a6b9b:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a6ba2:	00 
+     10a6ba3:	e8 e8 72 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a6ba8:	45 8a be 98 05 00 00 	mov    r15b,BYTE PTR [r14+0x598]
+     10a6baf:	45 84 ff             	test   r15b,r15b
+     10a6bb2:	74 19                	je     10a6bcd <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26dfe3>
+     10a6bb4:	49 8b 86 b8 05 00 00 	mov    rax,QWORD PTR [r14+0x5b8]
+     10a6bbb:	49 3b 86 c0 05 00 00 	cmp    rax,QWORD PTR [r14+0x5c0]
+     10a6bc2:	75 43                	jne    10a6c07 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e01d>
+     10a6bc4:	48 8d 35 1f a4 2d ff 	lea    rsi,[rip+0xffffffffff2da41f]        # 380fea <_ZTSSt12bad_any_cast@@Base-0xf1de>
+     10a6bcb:	eb 07                	jmp    10a6bd4 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26dfea>
+     10a6bcd:	48 8d 35 97 36 2a ff 	lea    rsi,[rip+0xffffffffff2a3697]        # 34a26b <_ZTSSt12bad_any_cast@@Base-0x45f5d>
+     10a6bd4:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a6bdb:	00 
+     10a6bdc:	e8 9d 2e 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a6be1:	49 8d be d0 14 00 00 	lea    rdi,[r14+0x14d0]
+
+     10a6d87:	75 2c                	jne    10a6db5 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e1cb>
+     10a6d89:	48 8d 35 3a 96 28 ff 	lea    rsi,[rip+0xffffffffff28963a]        # 3303ca <_ZTSSt12bad_any_cast@@Base-0x5fdfe>
+     10a6d90:	48 8d 7c 24 30       	lea    rdi,[rsp+0x30]
+     10a6d95:	e8 e4 2c 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a6d9a:	49 8d be 30 15 00 00 	lea    rdi,[r14+0x1530]
+     10a6da1:	48 8d 74 24 30       	lea    rsi,[rsp+0x30]
+     10a6da6:	e8 e5 6c d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a6dab:	48 8d 7c 24 30       	lea    rdi,[rsp+0x30]
+     10a6db0:	e8 db 70 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a6db5:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a6dbc:	00 
+     10a6dbd:	e8 6c e5 61 00       	call   16c532e <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12system_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x7949a>
+     10a6dc2:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a6dc9:	00 
+     10a6dca:	0f 84 f0 00 00 00    	je     10a6ec0 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e2d6>
+     10a6dd0:	4c 8d a4 24 40 04 00 	lea    r12,[rsp+0x440]
+     10a6dd7:	00 
+     10a6dd8:	41 83 64 24 38 00    	and    DWORD PTR [r12+0x38],0x0
+     10a6dde:	0f 57 c0             	xorps  xmm0,xmm0
+     10a6de1:	41 0f 29 04 24       	movaps XMMWORD PTR [r12],xmm0
+     10a6de6:	41 0f 29 44 24 10    	movaps XMMWORD PTR [r12+0x10],xmm0
+     10a6dec:	41 0f 29 44 24 20    	movaps XMMWORD PTR [r12+0x20],xmm0
+     10a6df2:	49 8d be 90 00 00 00 	lea    rdi,[r14+0x90]
+     10a6df9:	e8 38 4a 9d ff       	call   a7b836 <JNI_OnUnload@@Base+0x3103>
+     10a6dfe:	4c 89 e7             	mov    rdi,r12
+
+     10a7000:	48 8d 35 e1 07 2d ff 	lea    rsi,[rip+0xffffffffff2d07e1]        # 3777e8 <_ZTSSt12bad_any_cast@@Base-0x189e0>
+     10a7007:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a700e:	00 
+     10a700f:	e8 6a 2a 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7014:	49 8d be 48 15 00 00 	lea    rdi,[r14+0x1548]
+     10a701b:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a7022:	00 
+     10a7023:	e8 68 6a d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a7028:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a702f:	00 
+     10a7030:	e8 5b 6e 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a7035:	e9 cf 00 00 00       	jmp    10a7109 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e51f>
+     10a703a:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a7041:	00 
+     10a7042:	0f 84 c1 00 00 00    	je     10a7109 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e51f>
+     10a7048:	41 80 be 88 05 00 00 	cmp    BYTE PTR [r14+0x588],0x0
+     10a704f:	00 
+     10a7050:	0f 84 b3 00 00 00    	je     10a7109 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e51f>
+     10a7056:	49 8d b6 78 04 00 00 	lea    rsi,[r14+0x478]
+     10a705d:	4c 8d a4 24 40 04 00 	lea    r12,[rsp+0x440]
+     10a7064:	00 
+     10a7065:	4c 89 e7             	mov    rdi,r12
+     10a7068:	e8 fc 1c 3e 00       	call   1488d69 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3tcpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x2ce2ed>
+     10a706d:	41 83 3c 24 09       	cmp    DWORD PTR [r12],0x9
+     10a7072:	0f 85 84 00 00 00    	jne    10a70fc <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e512>
+
+     10a72e2:	e8 a9 6b 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a72e7:	48 8d 35 15 b2 28 ff 	lea    rsi,[rip+0xffffffffff28b215]        # 332503 <_ZTSSt12bad_any_cast@@Base-0x5dcc5>
+     10a72ee:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a72f5:	00 
+     10a72f6:	e8 83 27 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a72fb:	49 8d be c0 15 00 00 	lea    rdi,[r14+0x15c0]
+     10a7302:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a7309:	00 
+     10a730a:	e8 81 67 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a730f:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a7316:	00 
+     10a7317:	e8 74 6b 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a731c:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a7323:	00 
+     10a7324:	74 7e                	je     10a73a4 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e7ba>
+     10a7326:	41 80 be 94 05 00 00 	cmp    BYTE PTR [r14+0x594],0x0
+     10a732d:	00 
+     10a732e:	74 74                	je     10a73a4 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e7ba>
+     10a7330:	48 8d 35 9e 09 2c ff 	lea    rsi,[rip+0xffffffffff2c099e]        # 367cd5 <_ZTSSt12bad_any_cast@@Base-0x284f3>
+     10a7337:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a733e:	00 
+     10a733f:	e8 3a 27 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7344:	49 8d be c0 15 00 00 	lea    rdi,[r14+0x15c0]
+     10a734b:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a7352:	00 
+
+     10a736d:	74 35                	je     10a73a4 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e7ba>
+     10a736f:	48 8d 35 5f 09 2c ff 	lea    rsi,[rip+0xffffffffff2c095f]        # 367cd5 <_ZTSSt12bad_any_cast@@Base-0x284f3>
+     10a7376:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a737d:	00 
+     10a737e:	e8 fb 26 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7383:	49 8d be 88 14 00 00 	lea    rdi,[r14+0x1488]
+     10a738a:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a7391:	00 
+     10a7392:	e8 f9 66 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a7397:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a739e:	00 
+     10a739f:	e8 ec 6a 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a73a4:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a73ab:	00 
+     10a73ac:	74 34                	je     10a73e2 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e7f8>
+     10a73ae:	41 80 be 97 05 00 00 	cmp    BYTE PTR [r14+0x597],0x0
+     10a73b5:	00 
+     10a73b6:	75 5f                	jne    10a7417 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26e82d>
+     10a73b8:	48 8d 35 8a 44 2c ff 	lea    rsi,[rip+0xffffffffff2c448a]        # 36b849 <_ZTSSt12bad_any_cast@@Base-0x2497f>
+     10a73bf:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a73c6:	00 
+     10a73c7:	e8 b2 26 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a73cc:	49 8d be 98 16 00 00 	lea    rdi,[r14+0x1698]
+     10a73d3:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a73da:	00 
+
+     10a7458:	e8 33 6a 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a745d:	48 8d 35 e1 68 2c ff 	lea    rsi,[rip+0xffffffffff2c68e1]        # 36dd45 <_ZTSSt12bad_any_cast@@Base-0x22483>
+     10a7464:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a746b:	00 
+     10a746c:	e8 0d 26 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7471:	49 8d be 18 15 00 00 	lea    rdi,[r14+0x1518]
+     10a7478:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a747f:	00 
+     10a7480:	e8 0b 66 d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a7485:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a748c:	00 
+     10a748d:	e8 fe 69 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a7492:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a7499:	00 
+     10a749a:	0f 84 cc 01 00 00    	je     10a766c <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26ea82>
+     10a74a0:	41 80 be 70 04 00 00 	cmp    BYTE PTR [r14+0x470],0x0
+     10a74a7:	00 
+     10a74a8:	0f 84 be 01 00 00    	je     10a766c <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26ea82>
+     10a74ae:	48 8d 35 90 68 2c ff 	lea    rsi,[rip+0xffffffffff2c6890]        # 36dd45 <_ZTSSt12bad_any_cast@@Base-0x22483>
+     10a74b5:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a74bc:	00 
+     10a74bd:	e8 bc 25 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a74c2:	49 8d be a0 14 00 00 	lea    rdi,[r14+0x14a0]
+     10a74c9:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a74d0:	00 
+
+     10a7ab4:	75 31                	jne    10a7ae7 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26eefd>
+     10a7ab6:	48 8d 35 ad ac 28 ff 	lea    rsi,[rip+0xffffffffff28acad]        # 33276a <_ZTSSt12bad_any_cast@@Base-0x5da5e>
+     10a7abd:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a7ac4:	00 
+     10a7ac5:	e8 b4 1f 9d ff       	call   a79a7e <JNI_OnUnload@@Base+0x134b>
+     10a7aca:	48 8d b4 24 40 04 00 	lea    rsi,[rsp+0x440]
+     10a7ad1:	00 
+     10a7ad2:	4c 89 e7             	mov    rdi,r12
+     10a7ad5:	e8 b6 5f d8 ff       	call   e2da90 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3udpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0xfab16>
+     10a7ada:	48 8d bc 24 40 04 00 	lea    rdi,[rsp+0x440]
+     10a7ae1:	00 
+     10a7ae2:	e8 a9 63 74 00       	call   17ede90 <_ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED2Ev@plt>
+     10a7ae7:	41 80 be 98 05 00 00 	cmp    BYTE PTR [r14+0x598],0x0
+     10a7aee:	00 
+     10a7aef:	0f 84 a4 01 00 00    	je     10a7c99 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26f0af>
+     10a7af5:	49 8b b6 98 00 00 00 	mov    rsi,QWORD PTR [r14+0x98]
+     10a7afc:	41 8b be 90 00 00 00 	mov    edi,DWORD PTR [r14+0x90]
+     10a7b03:	e8 18 3d 9d ff       	call   a7b820 <JNI_OnUnload@@Base+0x30ed>
+     10a7b08:	84 c0                	test   al,al
+     10a7b0a:	0f 85 89 01 00 00    	jne    10a7c99 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26f0af>
+     10a7b10:	4d 8d ae 90 00 00 00 	lea    r13,[r14+0x90]
+     10a7b17:	4c 89 ef             	mov    rdi,r13
+     10a7b1a:	e8 c3 36 4b 00       	call   155b1e2 <_ZN4asio6detail16service_registry6createINS0_23reactive_socket_serviceINS_2ip3tcpEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x3a0766>
+     10a7b1f:	84 c0                	test   al,al
+     10a7b21:	0f 84 72 01 00 00    	je     10a7c99 <_ZN4asio6detail16service_registry6createINS0_22deadline_timer_serviceINS0_18chrono_time_traitsINSt6__ndk16chrono12steady_clockENS_11wait_traitsIS7_EEEEEENS_10io_contextEEEPNS_17execution_context7serviceEPv@@Base+0x26f0af>
+
 ## Function prologue
 
     
