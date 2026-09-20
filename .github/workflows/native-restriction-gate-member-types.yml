@@ -1,0 +1,207 @@
+name: Decode restriction-owner gate member types
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/native-restriction-gate-member-types.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/native
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-*.apk" --dir input
+          APK="$(find input -type f -name '*.apk' -print -quit)"
+          unzip -j "$APK" 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/native
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode members
+        run: |
+          SO=/tmp/native/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/orbit.disasm
+
+          python3 - <<'PY' > analysis/native-restriction-gate-member-types.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/native/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/orbit.disasm').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+            return None
+
+          def cstring(va,maxlen=300):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+maxlen))
+            if e<=o:return None
+            raw=data[o:e]
+            if len(raw)<2:return None
+            if sum(32<=x<127 or x in (9,10,13) for x in raw)/len(raw)<.95:return None
+            return raw.decode('utf-8','replace')
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-5),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+            return None
+
+          def show_fde(title,addr):
+            fr=fde_for(addr)
+            print(f'## {title}: 0x{addr:x}')
+            if not fr:
+              print('- no FDE'); print(); return
+            print(f'Function 0x{fr[0]:x}..0x{fr[1]:x}')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          print('# Restriction-owner gate member types')
+          print()
+          print('Owner constructor passes owner+0x38 to 0x10a5fec.')
+          print('Therefore relative +0x438/+0x440/+0x448 inside that subobject correspond owner +0x470/+0x478/+0x480,')
+          print('and relative +0x560 corresponds owner +0x598.')
+          print()
+
+          show_fde('subobject base initializer',0x1088fd0)
+
+          # Summarize exact write to relative +0x560 and origin of AL.
+          fr=fde_for(0x1088fd0)
+          print('## +0x598 initialization dataflow')
+          print()
+          if fr:
+            fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for n,(a,i,op,l) in enumerate(fl):
+              if re.search(r'\+0x560\]',op):
+                print(f'### 0x{a:x}: {op}')
+                for _,_,_,ctx in fl[max(0,n-16):min(len(fl),n+15)]:
+                  print('    '+ctx)
+                print()
+
+          # Search all one/two-level initialization code for relative string-triple fields.
+          roots=[0x10a5fec,0x1088fd0,0x10a87cc]
+          root_frs=[fde_for(x) for x in roots if fde_for(x)]
+          print('## Constructor-chain accesses mapping to owner +0x470 string triple')
+          print()
+          found=False
+          for fr in root_frs:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if re.search(r'\+0x(438|440|448)\]',op):
+                found=True
+                print(f'- 0x{a:x} in 0x{fr[0]:x}..0x{fr[1]:x}: {op}')
+          if not found:print('- none in first-level constructor helpers')
+          print()
+
+          # Within actual owner implementation region, find use of the 0x470/0x478/0x480 triple.
+          print('## Owner-region references to +0x470/+0x478/+0x480')
+          print()
+          refs=[]
+          for a,i,op,l in ins:
+            if not (0x10a5000<=a<0x10aa500):continue
+            if re.search(r'\+0x(470|478|480)\]',op):
+              refs.append((a,i,op,fde_for(a)))
+          for a,i,op,fr in refs:
+            fs=f'0x{fr[0]:x}..0x{fr[1]:x}' if fr else 'unknown'
+            print(f'### 0x{a:x} in {fs}: {op}')
+            for ctx in lines[max(0,i-7):min(len(lines),i+10)]:
+              print('    '+ctx)
+            print()
+          if not refs:print('- none')
+          print()
+
+          # Find calls to known libc++ string helpers with member address as argument in nearby code.
+          print('## Evidence that owner+0x470 is libc++ std::string-like')
+          print()
+          print('- empty libc++ short string has first byte 0; non-empty short string stores size<<1 there; long form has low-bit marker')
+          print('- owner builder uses cmp BYTE PTR [owner+0x470],0')
+          print('- owner builder separately takes owner+0x478 as an address/data field')
+          print('- 0x470,0x478,0x480 form the expected 24-byte libc++ string footprint')
+          print()
+
+          # Resolve the function at 0x1488d69 which consumes owner+0x478.
+          show_fde('consumer called with owner+0x478',0x1488d69)
+
+          # Search entire binary for helper calls where rdi/rsi is formed from +0x470 or subobject +0x438 nearby.
+          print('## Address-taking sites for potential +0x470 mutation')
+          print()
+          for n,(a,i,op,l) in enumerate(ins):
+            if not (0x1000000<=a<0x1100000):continue
+            if not re.search(r'lea\s+(r(?:di|si|dx|cx|8|9|1[0-5])),\[[a-z][a-z0-9]*\+0x(470|438)\]',op):
+              continue
+            print(f'### 0x{a:x}: {op}')
+            for ctx in lines[max(0,i-5):min(len(lines),i+10)]:
+              print('    '+ctx)
+            print()
+
+          # Strings in 1088fd0 if any.
+          print('## Printable strings in 0x1088fd0 initializer')
+          print()
+          if fr:
+            vals=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]) or '#' not in l:continue
+              m=re.match(r'\s*([0-9a-f]+)\b',l.split('#',1)[1])
+              if not m:continue
+              s=cstring(int(m.group(1),16))
+              if s and s not in vals:vals.append(s)
+            for s in vals:print('- '+s.replace('\n','\\n'))
+            if not vals:print('- none')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-restriction-gate-member-types.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode restriction gate member types"
+          git pull --rebase origin main
+          git push origin HEAD:main
