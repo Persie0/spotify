@@ -74,9 +74,7 @@ No Android-side countdown mutation exists between the streamed protocol state an
 
 Native ownership is now resolved further: Orbit's restriction builder directly inserts `ad_disallow` into the internal slot mapped to `disallowSkippingNextReasons`.
 
-Remaining question:
-
-> What flips the ad-specific native guard controlling that insertion, and is the transition driven by `ad.skippable_ad_delay`, another local player timer/state machine, or a deeper player-state event?
+Native gate layout is now resolved beyond the Android boundary: the two tested bytes are optional-engagement bytes, not standalone policy flags. The remaining question is the lifecycle transition that removes/replaces the nested ad/media-policy object (or otherwise stops the native `ad_disallow` branch) when skip becomes available.
 
 ## 3. MediaSession ACTION_SKIP_TO_NEXT generation — RESOLVED
 
@@ -168,33 +166,40 @@ ad_disallow  -> r14+0x14a0
 
 The ad skip-next write is guarded by `r14+0x598` and `r14+0x470`.
 
-The restriction-owner object is now concretely identified independently of the earlier smaller player-side object trace. Its constructor path at `0x10a578a..0x10a5d2d` allocates `0x18b0` bytes at `0x10a58b9`, then installs:
+The restriction-owner object is the `0x18b0`-byte object created by `0x10a578a..0x10a5d2d`, with primary vtable address point `0x184c738`. Its nested state begins at `owner+0x38`.
+
+The gate layout is now structurally decoded:
 
 ```text
-object+0x0 -> vtable/address point 0x184c738
-object+0x8 -> secondary interface address point 0x184c858
+owner+0x598 = engagement byte of an outer optional
+owner+0x48  = start of that optional's 0x550-byte payload
+
+owner+0x438 = start of an inner optional value inside the payload
+              first fields are shared_ptr-like {object*, control_block*}
+owner+0x470 = engagement byte of that inner optional
 ```
 
-The secondary table has an Itanium `offset-to-top = -8` layout, consistent with a secondary interface subobject. The destructor path `0x10a8812` touches fields through at least `+0x18a0`, matching the large allocation. Therefore `+0x470`, `+0x598`, and `+0x14a0` below are fields of this large Orbit restriction-owner/player-core object; calling them direct fields of the smaller `0x4e0` ContextPlayer-side object was an unsupported earlier assumption.
- The first is reused in active/playing-context logic; the second is the current ad-specific anchor.
+Thus `+0x598 && +0x470` means **outer state exists and the nested polymorphic object exists**. It is not a pair of independent Boolean restriction flags.
 
-The indirect native delay consumer is now resolved. Orbit maps `ad.skippable_ad_delay` to an internal `skippable_ad_delay` key. ELF relocations reconstruct the ad-model runtime vtable at `0x1879950`:
+The inner object is also now tied to the previously decoded ad metadata interface. ELF relocations at vtable address point `0x1879950` resolve:
 
 ```text
-+0xc8 -> raw skippable metadata getter
-+0xd0 -> derived skippable/timing predicate
-+0xe8 -> skippable_ad_delay integer parser
++0xc8 -> 0x14e2472  raw skippable getter
++0xd0 -> 0x14e248a  derived skippable/timing predicate
++0xd8 -> 0x14e24b8  seekable getter
++0xe0 -> 0x14e24d0  interruptible getter
++0xe8 -> 0x14e24e8  skippable_ad_delay parser
 ```
 
-The derived predicate returns true when object byte `+0x1b8` is set; otherwise a positive delay suppresses skippability and zero/non-positive delay falls back to the raw `skippable` property.
+The restriction builder loads the pointer from `owner+0x438` and calls exactly `+0xd0/+0xd8/+0xe0`. Event subtype `6` at `0x10a9668` checks the two optional engagement bytes, sets `[owner+0x438]+0x1b8 = 1`, and rebuilds restrictions. The `+0xd0` predicate returns true immediately when `+0x1b8` is set; otherwise a positive `skippable_ad_delay` suppresses the predicate and zero/non-positive delay falls back to raw `skippable`.
 
-A callback on the Orbit restriction-owner object at `0x10a9668` can set `currentTrackObject+0x1b8 = 1` for event subtype `6` and immediately rebuild restrictions. This is a concrete state bridge, but it is **not yet the proven skip-next unlock**: skip-next `ad_disallow` insertion happens earlier in the builder and remains gated by restriction-owner bytes `+0x598` and `+0x470`.
+The remaining native question is narrower but important: skip-next `ad_disallow` is inserted from **optional presence** before the builder invokes `+0xd0`. We therefore still need to determine whether expiry/event subtype `6` causes the nested optional/object to be reset or swapped, or whether a separate player-core transition removes the skip-next restriction.
 
 Current target:
 
-- identify the true restriction-owner writers/semantic meaning of byte gates `+0x470` and `+0x598`
-- resolve event subtype `6` and the role of the `+0x1b8` ad-object flag
-- determine whether delay expiry changes the skip-next gate locally or via another player-core event
+- trace producers and lifetime transitions of the inner optional at `owner+0x438/+0x470`
+- resolve event subtype `6` semantically and determine whether it coincides with delay expiry
+- trace the exact state change that makes the skip-next `ad_disallow` branch stop firing
 - trace available-command synchronization after the native skip-next restriction set changes
 
 ## 6. Connect-device behavior — OPEN
