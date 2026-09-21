@@ -1,0 +1,62 @@
+name: Fast decode skip-ad execution provider
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-skip-ad-execution-provider.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sapfast
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sapfast
+
+      - name: Dump exact provider windows
+        run: |
+          set -euo pipefail
+          SO=/tmp/sapfast/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sapfast/all.dis
+          {
+            echo '# Fast Skip Ad execution provider decode'
+            echo
+            echo '## b8f02e exact window'
+            objdump -d -M intel --start-address=0xb8ef80 --stop-address=0xb8f180 "$SO"
+            echo
+            echo '## Caller chain around b8f02e and provider +0x28'
+            objdump -d -M intel --start-address=0x11ee670 --stop-address=0x11ee930 "$SO"
+            echo
+            echo '## Direct call xrefs to b8f02e'
+            grep -E -B12 -A18 '\bcall[[:space:]]+b8f02e\b' /tmp/sapfast/all.dis | head -n 8000 || true
+            echo
+            echo '## Immediate code xrefs to any constant address returned/loaded by b8f02e'
+            # Keep raw body comments/LEAs visible for manual follow-up.
+            grep -E -B20 -A30 'b8f02e:' /tmp/sapfast/all.dis | head -n 2000 || true
+          } > analysis/skip-ad-execution-provider-fast.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-execution-provider-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast decode skip-ad execution provider"
+          git pull --rebase origin main
+          git push origin HEAD:main
