@@ -1,0 +1,197 @@
+name: Rank true service184 vtables fast
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-true-service184-vtables-fast.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184fasttrue
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184fasttrue
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Fast structural scan
+        run: |
+          SO=/tmp/s184fasttrue/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184fasttrue/all.dis
+          python3 - <<'PY' > analysis/service184-true-vtables-fast.md
+          from pathlib import Path
+          import re,struct,bisect
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184fasttrue/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/s184fasttrue/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs[rel['r_offset']]=add
+
+          starts=[a for a,b in fdes]
+          def fde_idx(addr):
+            i=bisect.bisect_right(starts,addr)-1
+            if i>=0 and fdes[i][0]<=addr<fdes[i][1]:return i
+          def fde(addr):
+            i=fde_idx(addr)
+            return fdes[i] if i is not None else None
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def sq(v): return v-(1<<64) if v is not None and v&(1<<63) else v
+          def iscode(v): return v is not None and fde_idx(v) is not None
+
+          ins=[]
+          bodies=defaultdict(list)
+          refs=defaultdict(list)
+          for line in dl:
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',line)
+            if not m:continue
+            a=int(m.group(1),16);op=m.group(2)
+            item=(a,op,line)
+            ins.append(item)
+            fi=fde_idx(a)
+            if fi is not None:bodies[fi].append(item)
+            cm=re.search(r'#\s*([0-9a-f]+)\b',line)
+            if cm:refs[int(cm.group(1),16)].append(item)
+
+          def body(addr):
+            fi=fde_idx(addr)
+            return bodies.get(fi,[]) if fi is not None else []
+
+          def header(ap):
+            ott=sq(qword(ap-16));ti=qword(ap-8)
+            if ott is None or not(-0x10000<=ott<=0x10000):return None
+            if ti is None or iscode(ti):return None
+            if ti!=0 and va2off(ti) is None:return None
+            return ott,ti
+
+          def getter_score(addr):
+            b=body(addr)
+            if not b:return -999,[]
+            ops=[o for a,o,l in b]
+            s=0;w=[]
+            if len(b)<=12:s+=12;w.append('compact')
+            if len(b)<=30:s+=4
+            if any(re.search(r'lea\s+rax,\[rdi\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=28;w.append('this-relative-pointer')
+            if any(re.search(r'mov\s+rax,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=28;w.append('pointer-field')
+            if any(re.search(r'mov\s+rdi,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops) and any(re.search(r'(jmp|call)\s+QWORD PTR \[rax\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=22;w.append('delegated-pointer-getter')
+            if any(re.search(r'movzx\s+eax,BYTE PTR|set[a-z]+\s+al|movss\s+xmm0|movsd\s+xmm0',o) for o in ops):
+              s-=30;w.append('scalar-looking')
+            return s,w
+
+          def sret_score(addr):
+            b=body(addr)
+            if not b:return -999,[]
+            ops=[o for a,o,l in b];s=0;w=[]
+            if any(re.search(r'\[rdi(?:\+0x[0-9a-f]+)?\]',o) and re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|or)',o) for o in ops):
+              s+=18;w.append('writes-rdi-output')
+            if any(re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',o) for o in ops):
+              s+=10;w.append('reads-rsi-this')
+            # allow thunk style rdi/rsi shuffle + tail jmp
+            if len(b)<=12 and any(re.match(r'jmp\s+',o) for o in ops):
+              s+=5;w.append('compact-thunk')
+            return s,w
+
+          cands=[]
+          # Only relocation offsets themselves can be vtable APs in this stripped binary.
+          for ap,first in relocs.items():
+            h=header(ap)
+            if not h:continue
+            if not(iscode(first) and iscode(qword(ap+8))):continue
+            f28=qword(ap+0x28);f30=qword(ap+0x30);f38=qword(ap+0x38)
+            if not all(iscode(x) for x in (f28,f30,f38)):continue
+            s28,w28=getter_score(f28);s30,w30=getter_score(f30);s38,w38=sret_score(f38)
+            if s28<0 or s30<0 or s38<0:continue
+            score=s28+s30+s38
+            if h[0]==0:score+=8
+            dr=len(refs.get(ap,[]))
+            score+=min(dr,5)*4
+            cands.append((score,ap,h,f28,f30,f38,w28,w30,w38,dr))
+
+          cands.sort(reverse=True)
+          print('# Fast structurally valid service184 vtable ranking')
+          print()
+          print(f'- candidates after structural + ABI filters: {len(cands)}')
+          print()
+          for rank,x in enumerate(cands[:100],1):
+            score,ap,h,f28,f30,f38,w28,w30,w38,dr=x
+            print(f'## rank {rank}: score={score} AP=0x{ap:x} offset_to_top={h[0]} typeinfo=0x{h[1]:x} direct_refs={dr}')
+            print(f'- +0x28=0x{f28:x} {w28}')
+            print(f'- +0x30=0x{f30:x} {w30}')
+            print(f'- +0x38=0x{f38:x} {w38}')
+            for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78):
+              v=qword(ap+off)
+              print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else "None"} FDE={fde(v) if v else None}')
+            print('### +0x28 body')
+            for a,o,l in body(f28)[:80]:print('    '+l)
+            print('### +0x30 body')
+            for a,o,l in body(f30)[:80]:print('    '+l)
+            print('### +0x38 body')
+            for a,o,l in body(f38)[:140]:print('    '+l)
+            if refs.get(ap):
+              print('### AP materializations')
+              for a,o,l in refs[ap][:20]:print('    '+l)
+            print()
+
+          print('## Known address-point sanity checks')
+          for ap in (0x184c738,0x184c858,0x185b8d0,0x185bf88):
+            print(f'- 0x{ap:x}: header={header(ap)} first=0x{qword(ap):x} second=0x{qword(ap+8):x}')
+
+          print('## Old shifted windows')
+          for ap in (0x18228d8,0x1821448,0x1822988,0x181f788,0x1867b28,0x1870480,0x187b208):
+            print(f'- 0x{ap:x}: header={header(ap)} AP-16={sq(qword(ap-16))} AP-8={qword(ap-8)}')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-true-vtables-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast rank true service184 vtables"
+          git pull --rebase origin main
+          git push origin HEAD:main
