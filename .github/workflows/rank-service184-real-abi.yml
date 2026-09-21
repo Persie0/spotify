@@ -1,0 +1,224 @@
+name: Rank real service184 vtable ABI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-service184-real-abi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184realabi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184realabi
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Rank exact real ABI
+        run: |
+          SO=/tmp/s184realabi/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184realabi/all.dis
+          python3 - <<'PY' > analysis/service184-real-abi-rank.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184realabi/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184realabi/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                ad=rr.entry.get('r_addend')
+                if ad is not None:rel[rr['r_offset']]=ad
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          byfr={}
+          for fr in fdes:byfr[fr]=[]
+          fi=0
+          for x in ins:
+            while fi<len(fdes) and fdes[fi][1]<=x[0]:fi+=1
+            for k in range(max(0,fi-2),min(len(fdes),fi+3)):
+              if fdes[k][0]<=x[0]<fdes[k][1]:
+                byfr[fdes[k]].append(x);break
+
+          def body(addr,limit=120):
+            fr=fde(addr)
+            if not fr:return []
+            xs=byfr.get(fr,[])
+            return xs[:limit]
+
+          # Registers that are extra incoming args for a one-arg C++ method.
+          extras={
+            'rsi':('rsi','esi','si','sil'),
+            'rdx':('rdx','edx','dx','dl'),
+            'rcx':('rcx','ecx','cx','cl'),
+            'r8':('r8','r8d','r8w','r8b'),
+            'r9':('r9','r9d','r9w','r9b')
+          }
+          def dst_regs(op):
+            # Conservative destination detection for common instructions.
+            first=op.split(',',1)[0].strip()
+            m=re.match(r'(?:mov|lea|xor|and|or|sub|add|pop|movzx|movsx|movsxd|set[a-z]+)\s+([a-z0-9]+)$',first)
+            return {m.group(1)} if m else set()
+          def uses_token(op,toks):
+            return any(re.search(rf'(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])',op) for t in toks)
+
+          def incoming_extra_uses(addr,n=35):
+            defined=set()
+            bad=[]
+            for a,i,op,l in body(addr,n):
+              # Skip obvious prologue / stack canary noise but still inspect argument copies.
+              for canon,toks in extras.items():
+                if canon not in defined and uses_token(op,toks):
+                  # If this instruction itself defines that register without reading it, don't count.
+                  first=op.split(',',1)[0]
+                  if any(re.search(rf'\b{re.escape(t)}\b',first) for t in toks) and re.match(r'(mov|lea|xor|pop|movzx|movsx|movsxd)\s+',first):
+                    pass
+                  else:
+                    bad.append((canon,a,op))
+              ds=dst_regs(op)
+              for canon,toks in extras.items():
+                if any(d in toks for d in ds):defined.add(canon)
+            return bad
+
+          def score_getter(addr):
+            xs=body(addr,80)
+            if not xs:return -999,[]
+            text='\n'.join(x[2] for x in xs)
+            bad=incoming_extra_uses(addr,35)
+            s=0;why=[]
+            if not bad:s+=18;why.append('no-extra-incoming-args')
+            else:s-=10*min(3,len({x[0] for x in bad}));why.append('extra-incoming='+','.join(sorted({x[0] for x in bad})))
+            # Strong direct-this getter patterns.
+            if re.search(r'mov\s+rax,QWORD PTR \[rdi(?:\+0x[0-9a-f]+)?\]',text):
+              s+=12;why.append('rax<-this-field')
+            if re.search(r'lea\s+rax,\[rdi(?:\+0x[0-9a-f]+)?\]',text):
+              s+=12;why.append('rax<-this-relative')
+            # This may be moved to a callee-saved register first.
+            m=re.search(r'mov\s+(r(?:bx|bp|1[2345])),rdi',text)
+            if m:
+              reg=m.group(1)
+              if re.search(rf'(?:mov\s+rax,QWORD PTR|lea\s+rax,) \[{reg}(?:\+0x[0-9a-f]+)?\]',text):
+                s+=10;why.append('rax<-saved-this')
+            calls=sum(1 for x in xs if re.search(r'\bcall\b',x[2]))
+            if calls==0:s+=5;why.append('leaf')
+            elif calls<=2:s+=2;why.append('few-calls')
+            if len(xs)<=40:s+=3;why.append('compact')
+            return s,why
+
+          def score_sret(addr):
+            xs=body(addr,100)
+            if not xs:return -999,[]
+            text='\n'.join(x[2] for x in xs)
+            s=0;why=[]
+            # sret caller proves rdi=destination, rsi=this.
+            if re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',text):
+              s+=10;why.append('reads-this-rsi')
+            if re.search(r'(?:mov|movups|movdqu|movaps|movdqa)\s+(?:QWORD PTR |XMMWORD PTR )?\[rdi(?:\+0x[0-9a-f]+)?\]',text):
+              s+=12;why.append('writes-dest-rdi')
+            if re.search(r'mov\s+r(?:bx|bp|1[2345]),rsi',text):
+              s+=5;why.append('saves-this-rsi')
+            if re.search(r'mov\s+r(?:bx|bp|1[2345]),rdi',text):
+              s+=3;why.append('saves-dest-rdi')
+            # Penalize methods that clearly treat rdi as a stream/cursor before touching rsi object.
+            if re.search(r'mov\s+rax,QWORD PTR \[rdi\]\n.*movsx.*\[rax\]',text[:600]):
+              s-=15;why.append('cursor-like-rdi')
+            return s,why
+
+          def code(q):return q is not None and 0xa00000<=q<0x1800000 and fde(q)
+          bases=set()
+          for slot in rel:
+            base=slot-0x28
+            q28=rel.get(base+0x28);q30=rel.get(base+0x30);q38=rel.get(base+0x38)
+            if code(q28) and code(q30) and code(q38):bases.add(base)
+
+          ranked=[]
+          for base in bases:
+            vals={o:rel.get(base+o) for o in (0x28,0x30,0x38,0x68)}
+            s28,w28=score_getter(vals[0x28])
+            s30,w30=score_getter(vals[0x30])
+            s38,w38=score_sret(vals[0x38])
+            total=s28+s30+s38
+            if 0x1800000<=base<0x19d0000:total+=2
+            # Reward having a plausible +0x68 too, but don't assume service +0x68 is execution dep.
+            if code(vals.get(0x68)):total+=1
+            ranked.append((total,base,vals,(s28,w28,s30,w30,s38,w38)))
+          ranked.sort(reverse=True)
+
+          print('# Real service184 vtable ABI ranking')
+          print()
+          print('Only proven real-service constraints are used:')
+          print('- +0x28: one-argument C++ method (rdi=this), returns persistent pointer dependency')
+          print('- +0x30: one-argument C++ method (rdi=this), returns pointer')
+          print('- +0x38: sret method (rdi=destination, rsi=this)')
+          print('The previously assumed +0x20 constraint is excluded because it came from an unrelated raw +0x5c0 offset collision.')
+          print()
+          for total,base,vals,meta in ranked[:120]:
+            s28,w28,s30,w30,s38,w38=meta
+            print(f'## score={total} address-point=0x{base:x}')
+            for o,s,w in ((0x28,s28,w28),(0x30,s30,w30),(0x38,s38,w38)):
+              q=vals[o]
+              print(f'- +0x{o:x} -> 0x{q:x}; score={s}; {";".join(w)}; FDE={fde(q)}')
+              for x in body(q,24):print('    '+x[3])
+            q68=vals.get(0x68)
+            print(f'- +0x68 -> {("0x%x"%q68) if q68 else "none"} FDE={fde(q68) if q68 else None}')
+            print()
+
+          print('## Materialization sites for top 30 candidate address points')
+          tops={x[1] for x in ranked[:30]}
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)',op)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va not in tops:continue
+            print(f'### vptr 0x{va:x} @0x{a:x}, FDE={fde(a)}')
+            for z in lines[max(0,i-12):min(len(lines),i+26)]:print('    '+z)
+            print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-real-abi-rank.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank real service184 vtable ABI"
+          git pull --rebase origin main
+          git push origin HEAD:main
