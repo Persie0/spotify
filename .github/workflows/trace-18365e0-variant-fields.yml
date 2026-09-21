@@ -144,7 +144,7 @@ jobs:
               print('- +0x1b5:')
               for a,op in a1b5[:12]:print(f'  - 0x{a:x}: {op}')
               # show nearest pair contexts
-              a,b=min(((x,y) for x in a10 for y in a1b5),key=lambda p:abs(p[0]-p[1]))
+              a,b=min(((x,y) for x in a10 for y in a1b5),key=lambda p:abs(p[0][0]-p[1][0]))
               print(ctx(min(a[0],b[0]),18,70));print()
 
           # Find writes of literal 1 / register byte to +0x1b5 globally, with nearby +0x10.
