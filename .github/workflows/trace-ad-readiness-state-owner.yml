@@ -1,0 +1,136 @@
+name: Trace ad readiness state owner
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-ad-readiness-state-owner.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/adowner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/adowner
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace owner
+        run: |
+          SO=/tmp/adowner/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/adowner/all.dis
+          python3 - <<'PY' > analysis/ad-readiness-state-owner.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/adowner/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/adowner/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f);dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+            return out
+          def ctx(a,b=16,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+
+          anchor=0x1352813
+          fr=fde(anchor)
+          print('# adObject+0x1b8-gated state owner')
+          print()
+          print('Known:')
+          print('- when adObject+0x1b8 != 0, a 0x90-byte state object is built')
+          print('- 0x1352813 calls 0x1353454(destination=[rsp+0x38], state)')
+          print('- 0x1353454 swaps the state into destination')
+          print()
+          print(f'## Containing factory FDE: {fr}')
+          rows=body(fr) if fr else []
+          print()
+
+          print('## Every rsp+0x38 reference')
+          for k,(a,i,op,l) in enumerate(rows):
+            if '[rsp+0x38]' in op:
+              side='WRITE' if '[rsp+0x38]' in op.split(',',1)[0] else 'READ'
+              print(f'### {side} 0x{a:x}: {op}')
+              for x in rows[max(0,k-18):min(len(rows),k+35)]:print('    '+x[3])
+              print()
+
+          print('## Definition reaching rsp+0x38 before install')
+          # Collect all writes and nearest one before install.
+          ws=[]
+          for k,(a,i,op,l) in enumerate(rows):
+            if a>=anchor:break
+            if '[rsp+0x38]' in op.split(',',1)[0]:
+              ws.append((k,a,op))
+          for k,a,op in ws:
+            print(f'- 0x{a:x}: {op}')
+          if ws:
+            k,a,op=ws[-1]
+            print('### nearest definition')
+            for x in rows[max(0,k-30):min(len(rows),k+50)]:print('    '+x[3])
+          print()
+
+          print('## 1353454 swap helper')
+          for a,i,op,l in ins:
+            if 0x1353454<=a<0x13534ca:print('    '+l)
+          print()
+
+          # If rsp+0x38 is an address into an owner, trace LEA base+offset.
+          print('## Address-producing LEAs assigned into rsp+0x38 aliases')
+          for k,(a,i,op,l) in enumerate(rows):
+            if a>=anchor:break
+            if re.match(r'lea\s+r\w+,\[[^]]+\]',op):
+              # Show LEAs followed within 8 insns by write to rsp+0x38.
+              nxt=rows[k:k+9]
+              if any('[rsp+0x38]' in x[2].split(',',1)[0] for x in nxt):
+                print(f'### 0x{a:x}: {op}')
+                for x in rows[max(0,k-8):min(len(rows),k+14)]:print('    '+x[3])
+                print()
+
+          print('## Consumers of helper 1353454')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+1353454\b',op):
+              print(f'### caller 0x{a:x}; FDE={fde(a)}')
+              ctx(a,16,24);print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ad-readiness-state-owner.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ad readiness state owner"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
