@@ -1,0 +1,111 @@
+name: Trace owner428 to fd4c04
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-owner428-to-fd4c04.yml"
+permissions:
+  contents: write
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/o428
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/o428
+      - name: Trace
+        run: |
+          SO=/tmp/o428/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/o428/all.dis
+          {
+            echo '# owner+0x428 -> fd4c04 wrapper bridge'
+            echo
+            echo '## Proven upstream'
+            echo '- e95a7d loads owner+0x428'
+            echo '- e95c3f pushes that exact stable rsp+0x228 value as e99d07 incoming arg'
+            echo '- e9c8e4/e9c8ec copy it to local rsp+0x770'
+            echo '- e9ccf3 copies it to downstream state+0x10'
+            echo
+            echo '## c8be5a exact body'
+            objdump -d -M intel --start-address=0xc8be5a --stop-address=0xc8bf70 "$SO"
+            echo
+            echo '## f2505a exact body'
+            objdump -d -M intel --start-address=0xf2505a --stop-address=0xf25220 "$SO"
+            echo
+            echo '## f25204 sibling exact body'
+            objdump -d -M intel --start-address=0xf25204 --stop-address=0xf25350 "$SO"
+            echo
+            echo '## fd4c04 exact body'
+            objdump -d -M intel --start-address=0xfd4c04 --stop-address=0xfd4d10 "$SO"
+            echo
+            echo '## all direct calls to f2505a'
+            grep -nE 'call[[:space:]]+f2505a\b' /tmp/o428/all.dis || true
+            echo
+            echo '## all direct calls to c8be5a'
+            grep -nE 'call[[:space:]]+c8be5a\b' /tmp/o428/all.dis || true
+            echo
+            echo '## all direct calls to fd4c04'
+            grep -nE 'call[[:space:]]+fd4c04\b' /tmp/o428/all.dis || true
+          } > analysis/owner428-fd4c04-bridge.md
+
+          python3 - <<'PY' >> analysis/owner428-fd4c04-bridge.md
+          from pathlib import Path
+          import re,bisect
+          lines=Path('/tmp/o428/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=28,n=42):
+            j=ix(a); return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          print()
+          print('## f2505a callsites with full setup')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+f2505a\b',op):
+              print(f'### 0x{a:x}')
+              print(ctx(a));print()
+          print('## c8be5a callsites near native signal/state family')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+c8be5a\b',op) and 0xe00000<a<0x1100000:
+              print(f'### 0x{a:x}')
+              print(ctx(a));print()
+          print('## fd4c04 callsites with source argument setup')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+fd4c04\b',op):
+              print(f'### 0x{a:x}')
+              print(ctx(a,36,55));print()
+          print('## Writes to wrapper offsets +0,+8,+0x10 in helper/caller neighborhoods')
+          ranges=[(0xc8be5a,0xc8bf70),(0xf2505a,0xf25350),(0xfd4700,0xfd6500)]
+          for lo,hi in ranges:
+            print(f'### range 0x{lo:x}..0x{hi:x}')
+            for a,i,op,l in ins:
+              if not(lo<=a<hi):continue
+              if re.search(r'\[[a-z0-9]+(?:\+0x(?:8|10))?\]',op) and re.match(r'(mov|lea|movups|movdqu|movaps|movdqa)',op):
+                print('    '+l)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/owner428-fd4c04-bridge.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace owner428 to fd4c04 bridge"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
