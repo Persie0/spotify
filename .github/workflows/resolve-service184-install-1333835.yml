@@ -1,0 +1,122 @@
+name: Resolve service184 install candidate 1333835
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-install-1333835.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184i
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184i
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace install source
+        run: |
+          SO=/tmp/s184i/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184i/all.dis
+          python3 - <<'PY' > analysis/service184-install-1333835.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184i/liborbit-jni-spotify.so')
+          lines=Path('/tmp/s184i/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+
+          target=0x1333835
+          fr=fde_for(target)
+          print('# Service-184 install candidate 0x1333835')
+          print()
+          print('FDE:', fr)
+          print()
+          if not fr: raise SystemExit
+          fin=[x for x in ins if fr[0]<=x[0]<fr[1]]
+
+          print('## Function prologue / first 500 instructions')
+          for x in fin[:500]: print('    '+x[3])
+          print()
+
+          print('## All accesses to rsp+0x28')
+          for pos,x in enumerate(fin):
+            a,i,op,l=x
+            if '[rsp+0x28]' in op:
+              print(f'### 0x{a:x}: {op}')
+              for y in fin[max(0,pos-18):min(len(fin),pos+22)]:print('    '+y[3])
+              print()
+
+          print('## All writes to +0x5c0 in FDE')
+          for pos,x in enumerate(fin):
+            a,i,op,l=x
+            left=op.split(',',1)[0]
+            if '+0x5c0]' in left:
+              print(f'### 0x{a:x}: {op}')
+              for y in fin[max(0,pos-18):min(len(fin),pos+22)]:print('    '+y[3])
+              print()
+
+          print('## Vptr loads / constructor-looking LEAs in FDE')
+          for pos,x in enumerate(fin):
+            a,i,op,l=x
+            if '#' in l and re.search(r'#\s*18[0-9a-f]{5,}\b',l):
+              print(f'### 0x{a:x}: {op}')
+              for y in fin[max(0,pos-6):min(len(fin),pos+10)]:print('    '+y[3])
+              print()
+
+          print('## Calls using value loaded from rsp+0x28 or +0x5c0')
+          for pos,x in enumerate(fin):
+            a,i,op,l=x
+            if re.search(r'call\s+QWORD PTR \[[^\]]+\+0x(?:20|28|30|38|68)\]',op):
+              if abs(a-target)<0x800:
+                print(f'### 0x{a:x}: {op}')
+                for y in fin[max(0,pos-12):min(len(fin),pos+16)]:print('    '+y[3])
+                print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-install-1333835.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 install candidate"
+          git pull --rebase origin main
+          git push origin HEAD:main
