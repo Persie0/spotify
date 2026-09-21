@@ -1,0 +1,154 @@
+name: Resolve service184 by object layout
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-layout.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184layout
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184layout
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Scan layout
+        run: |
+          SO=/tmp/s184layout/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184layout/all.dis
+          python3 - <<'PY' > analysis/service184-layout-candidates.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184layout/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184layout/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                ad=rr.entry.get('r_addend')
+                if ad is not None:rel[rr['r_offset']]=ad
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          groups=defaultdict(list)
+          for x in ins:
+            fr=fde(x[0])
+            if fr:groups[fr].append(x)
+
+          print('# Service184 object-layout candidates')
+          print()
+          print('Proven real service184 layout evidence at 0x135c7b3:')
+          print('- pointer/value read from service+0x148')
+          print('- address service+0x20 passed as a subobject')
+          print()
+
+          candidates=[]
+          for fr,xs in groups.items():
+            text='\n'.join(x[2] for x in xs)
+            # For each register, require exact +0x148 and +0x20 on same register.
+            for reg in ('rdi','rsi','rdx','rcx','rax','rbx','rbp','r12','r13','r14','r15'):
+              if f'[{reg}+0x148]' not in text:continue
+              if not (f'[{reg}+0x20]' in text or re.search(rf'lea\s+\w+,\[{reg}\+0x20\]',text)):
+                continue
+              score=20
+              # Constructor-like vptr store through same base.
+              vptrs=[]
+              for j,(a,i,op,l) in enumerate(xs):
+                if not re.search(rf'mov\s+QWORD PTR \[{reg}\],',op):continue
+                # Track immediately preceding LEA of source reg to high rodata.
+                src=op.split(',',1)[1].strip() if ',' in op else ''
+                for aa,ii,oo,ll in xs[max(0,j-6):j]:
+                  m=re.search(r'lea\s+([a-z0-9]+),\[rip[^#]*#\s*([0-9a-f]+)',oo)
+                  if m and m.group(1)==src:
+                    va=int(m.group(2),16)
+                    if 0x1800000<=va<0x19d0000:
+                      vptrs.append((a,va,ll));score+=20
+              # Reward broad object layout around +0x100..+0x160.
+              offs=set()
+              for m in re.finditer(rf'\[{reg}\+0x([0-9a-f]+)\]',text):
+                offs.add(int(m.group(1),16))
+              score+=sum(1 for o in offs if 0x100<=o<=0x170)
+              candidates.append((score,fr,reg,sorted(offs),vptrs))
+
+          candidates.sort(reverse=True)
+          print(f'Candidate function/register pairs: {len(candidates)}')
+          for score,fr,reg,offs,vptrs in candidates[:120]:
+            print(f'## score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x} base={reg}')
+            print('offsets='+','.join(hex(o) for o in offs))
+            if vptrs:
+              for a,va,ll in vptrs:print(f'vptr=0x{va:x} store@0x{a:x}: {ll}')
+            for a,i,op,l in groups[fr]:
+              if f'[{reg}+0x148]' in op or f'[{reg}+0x20]' in op or re.search(rf'\[{reg}\+0x1[0-6][0-9a-f]\]',op):
+                print('    '+l)
+            print()
+
+          # Stronger constructor scan: high address point written to object start, then same object
+          # later initializes/accesses +0x148 even if base register changes through mov.
+          print('## High-vptr constructor-like materializations near +0x148 initialization')
+          for fr,xs in groups.items():
+            has148=any('+0x148]' in x[2] for x in xs)
+            if not has148:continue
+            for j,(a,i,op,l) in enumerate(xs):
+              m=re.search(r'lea\s+([a-z0-9]+),\[rip[^#]*#\s*([0-9a-f]+)',op)
+              if not m:continue
+              va=int(m.group(2),16)
+              if not (0x1800000<=va<0x19d0000):continue
+              reg=m.group(1)
+              for aa,ii,oo,ll in xs[j+1:min(len(xs),j+8)]:
+                if re.search(rf'mov\s+QWORD PTR \[[a-z0-9]+\],{reg}\b',oo):
+                  print(f'### FDE=0x{fr[0]:x}..0x{fr[1]:x} vptr=0x{va:x} materialized@0x{a:x}')
+                  for z in xs[max(0,j-12):min(len(xs),j+45)]:print('    '+z[3])
+                  print()
+                  break
+
+          print('## Exact proven real-service layout site')
+          for a,i,op,l in ins:
+            if 0x135c780<=a<0x135c820:print('    '+l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-layout-candidates.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 by object layout"
+          git pull --rebase origin main
+          git push origin HEAD:main
