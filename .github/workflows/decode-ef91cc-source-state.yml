@@ -1,0 +1,152 @@
+name: Decode ef91cc source state builder
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-ef91cc-source-state.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/e91src
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/e91src
+
+      - name: Decode source builder
+        run: |
+          SO=/tmp/e91src/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/e91src/all.dis
+          python3 - <<'PY' > analysis/ef91cc-source-state-builder.md
+          from pathlib import Path
+          import re,bisect
+
+          lines=Path('/tmp/e91src/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=14,n=28):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          start,end=0xcea164,0xceabe2
+          rows=[x for x in ins if start<=x[0]<end]
+          print('# ef91cc large source-state builder')
+          print()
+          print('Why this FDE matters:')
+          print('- ef91cc later tests source+0x1b5 and reads source+0x10')
+          print('- this builder writes local +0x1b5/+0x1b7 from r15+0xb5/+0xb6')
+          print('- resolving local +0x10 and the completed object output can identify the real readiness receiver source')
+          print()
+
+          print('## Full FDE 0xcea164..0xceabe2')
+          for x in rows:print('    '+x[3])
+          print()
+
+          print('## Stack object references at key source offsets')
+          for off in [0x0,0x8,0x10,0x18,0x20,0xb0,0x150,0x158,0x1b0,0x1b4,0x1b5,0x1b6,0x1b7,0x1b8,0x1d4,0x1dc,0x250,0x258,0x348,0x350]:
+              pat=f'rsp+0x{off:x}'
+              hs=[x for x in rows if pat in x[2]]
+              if not hs:continue
+              print(f'### +0x{off:x}')
+              for a,i,op,l in hs:
+                  print(f'- 0x{a:x}: {op}')
+                  print(ctx(a,6,10))
+              print()
+
+          print('## Writes to local +0x10 / nearby head')
+          for k,(a,i,op,l) in enumerate(rows):
+              left=op.split(',',1)[0]
+              if re.search(r'\[rsp\+0x(?:8|10|18|20|28|30|38|40)\]',left):
+                  print(f'### 0x{a:x}: {op}')
+                  for x in rows[max(0,k-10):min(len(rows),k+18)]:print('    '+x[3])
+                  print()
+
+          print('## r15 provenance and all r15 field reads')
+          for k,(a,i,op,l) in enumerate(rows):
+              if re.match(r'(mov|lea|xchg|pop)\s+r15\b',op):
+                  print(f'### r15 definition 0x{a:x}: {op}')
+                  for x in rows[max(0,k-20):min(len(rows),k+35)]:print('    '+x[3])
+                  print()
+          for a,i,op,l in rows:
+              if re.search(r'\[r15\+0x[0-9a-f]+\]',op):
+                  print(f'- r15 field @0x{a:x}: {op}')
+          print()
+
+          print('## Incoming argument saves / provenance')
+          for a,i,op,l in rows[:100]:
+              if re.search(r'\b(rdi|rsi|rdx|rcx|r8|r9)\b',op):
+                  print('    '+l)
+          print()
+
+          print('## Calls after +0x1b5/+0x1b7 construction')
+          for a,i,op,l in rows:
+              if a>=0xcea888 and re.search(r'\bcall\b',op):
+                  print(f'### 0x{a:x}: {op}')
+                  print(ctx(a,12,20));print()
+
+          print('## Potential completed-object consumers')
+          # Detect passing rsp or lea of low stack offsets as rdi/rsi/rdx before calls.
+          for k,(a,i,op,l) in enumerate(rows):
+              if not re.search(r'\bcall\b',op):continue
+              prev=rows[max(0,k-18):k]
+              if any(re.search(r'(?:mov|lea)\s+(?:rdi|rsi|rdx),\[?rsp(?:\+0x[0-9a-f]+)?\]?',x[2]) for x in prev):
+                  print(f'### call 0x{a:x}: {op}')
+                  for x in prev:print('    '+x[3])
+                  print()
+
+          print('## Final 0x180 bytes / return path')
+          for a,i,op,l in rows:
+              if a>=end-0x180:print('    '+l)
+          print()
+
+          print('## Direct callers of 0xcea164')
+          for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+cea164\b',op):
+                  print(f'### caller 0x{a:x}')
+                  print(ctx(a,28,45));print()
+
+          # Also references to likely interior public entry if first actual instruction differs.
+          print('## Direct refs to nearby entry addresses')
+          for target in [0xcea164,0xcea190,0xcea2a0]:
+              n=0
+              for a,i,op,l in ins:
+                  if re.search(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b',op):
+                      n+=1
+                      print(f'- target 0x{target:x} caller 0x{a:x}')
+                      print(ctx(a,15,25))
+              print(f'- target 0x{target:x}: {n} refs')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ef91cc-source-state-builder.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode ef91cc source state builder"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
