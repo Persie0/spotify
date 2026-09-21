@@ -1,0 +1,83 @@
+name: Decode TimelineConductor skip action literals
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-timeline-skip-action-literals.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tllit
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tllit
+      - name: Decode literals
+        run: |
+          python3 -m pip install --quiet pyelftools
+          python3 - <<'PY' > analysis/timeline-conductor-skip-action-literals.md
+          from pathlib import Path
+          from elftools.elf.elffile import ELFFile
+          so=Path('/tmp/tllit/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              loads=[]
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+          def vaoff(v):
+              for a,b,o in loads:
+                  if a<=v<b:return o+(v-a)
+          def raw(v,n):
+              o=vaoff(v)
+              return data[o:o+n] if o is not None else b''
+          def cstr(v,cap=256):
+              o=vaoff(v)
+              if o is None:return b''
+              e=data.find(b'\0',o,min(len(data),o+cap))
+              if e<0:e=min(len(data),o+cap)
+              return data[o:e]
+          print('# TimelineConductor Skip Ad +0x68 literals')
+          print()
+          print('Exact side-effect method: dependency AP 0x1868200 +0x68 -> 0x1371d90.')
+          print('The exact native "skip-ad" branch invokes it this-only; the branch label is not an argument.')
+          print()
+          for v,n in [(0x371518,0x1a),(0x34d976,0x1e)]:
+              b=raw(v,n)
+              cs=cstr(v)
+              print(f'## 0x{v:x}')
+              print(f'- fixed-length ({n}): {b!r}')
+              print(f'- c-string: {cs!r}')
+              try: print(f'- utf8: {cs.decode("utf-8")}')
+              except Exception as e: print(f'- utf8: <decode error {e}>')
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-skip-action-literals.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode TimelineConductor skip action literals"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
