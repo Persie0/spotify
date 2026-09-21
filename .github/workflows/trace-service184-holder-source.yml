@@ -1,0 +1,125 @@
+name: Trace service184 holder source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-holder-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184holder
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184holder
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace holder provenance
+        run: |
+          SO=/tmp/s184holder/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184holder/all.dis
+          python3 - <<'PY' > analysis/service184-holder-source.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184holder/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184holder/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def show(lo,hi):
+            for a,i,o,l in ins:
+              if lo<=a<hi: print(l)
+
+          print('# Service184 holder-source provenance')
+          print()
+          print('Proven chain:')
+          print('- map lookup 0x1334d26 returns node N')
+          print('- N+0xa0 is a shared-pointer-like pair')
+          print('- object = [N+0xa0]')
+          print('- service184 = [object+0x10], moved out at 0x1332fca/0x1332fce')
+          print('- 0x1334dea wraps that pointer; tagged payload later installs it at serviceTable[184]')
+          print()
+          print('## Exact producer/consumer window')
+          show(0x1332f60,0x1333048)
+          print()
+          print('## First-insertion / map-value path near 0x1334519')
+          show(0x13340c0,0x133459f)
+          print()
+          fr=fde(0x133452a)
+          print('## Definitions relevant to RAX before 0x133452a')
+          print('FDE='+str(fr))
+          if fr:
+            for a,i,o,l in ins:
+              if fr[0]<=a<=0x133452a and (
+                re.match(r'(mov|lea|cmov|xor|and|or|pop)\s+rax\b',o) or
+                re.search(r'\brsp\+0x(?:3b0|4f0|2e0|1f0|290|298|2a0)\b',o) or
+                re.search(r'\bcall\b',o) and a>=0x1333f00
+              ):
+                print(l)
+          print()
+          print('## Heap allocations in containing FDE before 0x133452a')
+          if fr:
+            fl=[x for x in ins if fr[0]<=x[0]<=0x133452a]
+            for j,(a,i,o,l) in enumerate(fl):
+              if re.search(r'call\s+17edf00\b',o):
+                print(f'### allocation call 0x{a:x}')
+                for x in fl[max(0,j-8):min(len(fl),j+28)]:print('    '+x[3])
+                print()
+          print('## Vptr/address-point writes in containing FDE before 0x133452a')
+          if fr:
+            fl=[x for x in ins if fr[0]<=x[0]<=0x133452a]
+            for j,(a,i,o,l) in enumerate(fl):
+              if re.match(r'lea\s+(r\w+),\[rip[^]]+\]',o):
+                # include only if followed shortly by store through a heap-looking register
+                nxt='\n'.join(x[2] for x in fl[j+1:j+7])
+                if re.search(r'mov\s+QWORD PTR \[[a-z0-9]+(?:\+0x[0-9a-f]+)?\],r\w+',nxt):
+                  print('    '+l)
+                  for x in fl[j+1:j+7]:print('    '+x[3])
+                  print()
+          print('## Stores to object +0x10 in containing FDE')
+          if fr:
+            for a,i,o,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'\[[a-z0-9]+\+0x10\]',o) and re.match(r'(mov|and|xchg)',o):
+                print(l)
+          print()
+          print('## 0x1334dea output construction')
+          show(0x1334dea,0x1334fce)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-holder-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 holder source"
+          git pull --rebase origin main
+          git push origin HEAD:main
