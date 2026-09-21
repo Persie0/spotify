@@ -1,0 +1,182 @@
+name: Decode candidate1817068 dependency vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-candidate1817068-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/c181dep
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/c181dep
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode dependency
+        run: |
+          SO=/tmp/c181dep/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/c181dep/all.dis
+          python3 - <<'PY' > analysis/candidate1817068-dependency-vtable.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/c181dep/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/c181dep/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':
+                loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          starts=[a for a,b in fdes]
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]: return fdes[i]
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(v,limit=400):
+            o=va2off(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+limit))
+            if e<0:return None
+            try:return data[o:e].decode('utf-8')
+            except:return None
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def body(fn,cap=1500):
+            fr=fde(fn); out=[]
+            if not fr:return out
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                out.append((a,i,op,l))
+                if len(out)>=cap:break
+            return out
+          def ctx(i,b=15,a=26):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          ap=0x1884978
+          print('# Candidate 0x1817068 returned dependency vtable')
+          print()
+          print('Proven constructor path under candidate owner:')
+          print('- owner AP 0x1817068 allocated at 0xc2c5f6')
+          print('- owner+0x10 starts null')
+          print('- 0xc2c7dc allocates 0x10 bytes')
+          print('- 0xc2c7e1 stores AP 0x1884978 into dependency[0]')
+          print('- 0xc2c7fc installs dependency into owner+0x10')
+          print('- owner virtual +0x28 returns [owner+0x10]')
+          print()
+
+          ott=q(ap-0x10); ti=q(ap-0x8)
+          if ott is not None and ott&(1<<63):ott-=1<<64
+          print(f'## Header AP=0x{ap:x}')
+          print(f'- offset-to-top: {ott}')
+          print(f'- typeinfo: {("0x%x"%ti) if ti is not None else None}')
+          if ti:
+            np=q(ti+8)
+            print(f'- type name ptr: {("0x%x"%np) if np else None}')
+            print(f'- raw type name: {cstr(np)!r}' if np else '- raw type name: None')
+          print()
+
+          print('## Vtable slots')
+          slots={}
+          for off in range(0,0x120,8):
+            v=q(ap+off); slots[off]=v
+            print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None} FDE={fde(v) if v else None}')
+          print()
+
+          for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88,0x90,0x98,0xa0,0xa8,0xb0,0xb8,0xc0):
+            fn=slots.get(off)
+            if not fn or not fde(fn):continue
+            print(f'## slot +0x{off:x} -> 0x{fn:x}')
+            for a,i,op,l in body(fn,500):print('    '+l)
+            # semantic strings referenced by body
+            seen=[]
+            for a,i,op,l in body(fn,500):
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              va=int(m.group(1),16)
+              s=cstr(va)
+              if s and 3<=len(s)<=180 and s not in seen and all(ord(ch)>=32 or ch in '\t\n\r' for ch in s):
+                seen.append(s)
+            if seen:
+              print('- strings: '+ ' | '.join(repr(x) for x in seen[:30]))
+            print()
+
+          print('## AP materializations')
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16)==ap:
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              ctx(i,12,22);print()
+
+          print('## Direct calls to dependency slot +0x68 implementation')
+          f68=slots.get(0x68)
+          if f68:
+            for a,i,op,l in ins:
+              if re.search(r'\bcall\s+'+format(f68,'x')+r'\b',op):
+                print(f'### call 0x{a:x}; FDE={fde(a)}')
+                ctx(i,10,20);print()
+
+          print('## Constructor field writes around owner+0x10')
+          for a,i,op,l in ins:
+            if 0xc2c5e0<=a<0xc2cdf0 and any(x in op for x in ('[rax+0x10]','[rcx]','[r15+0x10]')):
+              print(f'### 0x{a:x}: {op}')
+              ctx(i,8,12);print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/candidate1817068-dependency-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode candidate1817068 dependency vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
