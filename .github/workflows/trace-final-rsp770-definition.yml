@@ -1,0 +1,78 @@
+name: Trace final rsp770 definition
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-final-rsp770-definition.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r770
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r770
+      - name: Trace rsp770
+        run: |
+          SO=/tmp/r770/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0xe9c8e0 --stop-address=0xe9cd10 "$SO" > /tmp/r770/win.dis
+          python3 - <<'PY' > analysis/final-rsp770-definition.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/r770/win.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          print('# Final reaching definition of rsp+0x770 before e9ccf3')
+          print()
+          print('Known contradiction: 0x6b0 element begins with std::string, so e9c8ec cannot be the final receiver value reaching e9ccf3.')
+          print()
+          print('## Every direct rsp+0x770/778/780 reference e9c8e0..e9cd10')
+          for a,i,op,l in ins:
+              if any(x in op for x in ('rsp+0x770','rsp+0x778','rsp+0x780')):
+                  side='WRITE' if any(x in op.split(',',1)[0] for x in ('rsp+0x770','rsp+0x778','rsp+0x780')) else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  for x in lines[max(0,i-10):min(len(lines),i+22)]:print('    '+x)
+                  print()
+          print('## Any LEA aliases to rsp+0x770 and subsequent calls/stores')
+          aliases=[]
+          for k,(a,i,op,l) in enumerate(ins):
+              m=re.match(r'lea\s+(r\w+),\[rsp\+0x770\]',op)
+              if not m:continue
+              reg=m.group(1); aliases.append((a,reg))
+              print(f'### alias {reg} @0x{a:x}')
+              for aa,ii,oo,ll in ins[k:min(len(ins),k+80)]:
+                  if re.search(r'\b'+re.escape(reg)+r'\b',oo) or re.search(r'\bcall\b',oo):
+                      print('    '+ll)
+              print()
+          print('## Full compact window')
+          for a,i,op,l in ins: print(l)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/final-rsp770-definition.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace final rsp770 definition"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
