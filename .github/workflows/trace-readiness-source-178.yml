@@ -1,0 +1,146 @@
+name: Trace readiness source 178 table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-readiness-source-178.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r178
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r178
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace callers and +0x178
+        run: |
+          SO=/tmp/r178/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/r178/all.dis
+          readelf -rW "$SO" > /tmp/r178/rel.txt
+          python3 - <<'PY' > analysis/readiness-source-178.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/r178/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/r178/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f);dwarf=elf.get_dwarf_info();fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location'];z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+              if not fr:return []
+              j=idx(fr[0]);out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(rows,k,b=50,n=35):
+              for x in rows[max(0,k-b):min(len(rows),k+n+1)]:print('    '+x[3])
+
+          print('# readiness source +0x178 dispatch-table trace')
+          print()
+          print('Known: both builders pass source+0x178 as the head copied into host+0x428 handle.')
+          print()
+
+          targets=[0xece084,0xee6db8]
+          print('## Direct callers of source builders')
+          for target in targets:
+              print(f'### target 0x{target:x}')
+              found=0
+              for a,i,op,l in ins:
+                  if re.search(r'\bcall\s+'+format(target,'x')+r'\b',op):
+                      cf=fde(a);cr=body(cf);k=next(j for j,x in enumerate(cr) if x[0]==a)
+                      print(f'#### caller 0x{a:x}; FDE={cf}')
+                      ctx(cr,k,90,25);print()
+                      found+=1
+              print(f'- direct caller count={found}')
+              print()
+
+          print('## All writes to +0x178 in source-builder families')
+          # Scan FDEs that call builders plus the builders themselves.
+          fam=set()
+          for target in targets:
+              fam.add(fde(target))
+              for a,i,op,l in ins:
+                  if re.search(r'\bcall\s+'+format(target,'x')+r'\b',op):
+                      if fde(a):fam.add(fde(a))
+          for fr in sorted(x for x in fam if x):
+              print(f'### FDE {fr}')
+              rows=body(fr)
+              for k,(a,i,op,l) in enumerate(rows):
+                  if '+0x178]' in op and '[rsp' not in op:
+                      side='WRITE' if '+0x178]' in op.split(',',1)[0] else 'READ'
+                      print(f'#### {side} 0x{a:x}: {op}')
+                      ctx(rows,k,12,24);print()
+
+          print('## Global candidate writes to object+0x178 with static/high-address source')
+          for k,(a,i,op,l) in enumerate(ins):
+              if '+0x178]' not in op:continue
+              if '[rsp' in op:continue
+              lhs=op.split(',',1)[0]
+              if '+0x178]' not in lhs:continue
+              # nearby high address constant
+              hi=[]
+              for x in ins[max(0,k-10):k+2]:
+                  m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',x[3])
+                  if m:hi.append((x[0],int(m.group(1),16),x[2]))
+              if hi:
+                  print(f'### write 0x{a:x}: {op}; FDE={fde(a)}')
+                  for h in hi:print(f'- nearby high 0x{h[0]:x} -> 0x{h[1]:x}: {h[2]}')
+                  fr=fde(a);rows=body(fr);kk=next(j for j,x in enumerate(rows) if x[0]==a)
+                  ctx(rows,kk,18,28);print()
+
+          print('## Reads of +0x178 used as pointer/table')
+          for k,(a,i,op,l) in enumerate(ins):
+              if '+0x178]' not in op or '[rsp' in op:continue
+              lhs=op.split(',',1)[0]
+              if '+0x178]' in lhs:continue
+              # show if followed by indirect call
+              near=ins[k:k+15]
+              if any('call   QWORD PTR [' in x[3] or re.search(r'call\s+QWORD PTR',x[2]) for x in near):
+                  print(f'### read 0x{a:x}: {op}; FDE={fde(a)}')
+                  for x in near:print('    '+x[3])
+                  print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-source-178.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace readiness source 178 table"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
