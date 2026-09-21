@@ -1,0 +1,73 @@
+name: Check ef91cc owner slot 1d8
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/check-ef91cc-owner-1d8.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/ef1d8
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/ef1d8
+      - name: Inspect slot
+        run: |
+          SO=/tmp/ef1d8/liborbit-jni-spotify.so
+          readelf -rW "$SO" > /tmp/ef1d8/rel.txt
+          {
+            echo '# ef91cc owner AP 0x18365e0 slot +0x1d8'
+            echo
+            echo 'Structural fingerprint to test: d85524 receiver has +0x210 byte and +0x258 pointer; AP 0x18365e0 owner initializes/owns those same offsets.'
+            echo
+            echo '## Relocation at AP+0x1d8 = 0x18367b8'
+            grep -i '^00000000018367b8 ' /tmp/ef1d8/rel.txt || true
+            TARGET=$(grep -i '^00000000018367b8 ' /tmp/ef1d8/rel.txt | awk '{print $NF}' | head -1)
+            echo
+            echo "target=$TARGET"
+            if [ -n "$TARGET" ]; then
+              START=$((16#$TARGET - 64))
+              STOP=$((16#$TARGET + 256))
+              echo
+              echo '## Target body'
+              objdump -d -M intel --start-address=$START --stop-address=$STOP "$SO"
+            fi
+            echo
+            echo '## Table slice AP 0x18365e0 +0x180..+0x240'
+            for off in 180 188 190 198 1a0 1a8 1b0 1b8 1c0 1c8 1d0 1d8 1e0 1e8 1f0 1f8 200 208 210 218 220 228 230 238 240; do
+              VA=$(printf '%x' $((0x18365e0 + 0x$off)))
+              LINE=$(grep -i "^000000000$VA " /tmp/ef1d8/rel.txt | head -1 || true)
+              echo "+0x$off @0x$VA: $LINE"
+            done
+            echo
+            echo '## Compare authoritative state AP 0x1841fc0 +0x1d8'
+            grep -i '^0000000001842198 ' /tmp/ef1d8/rel.txt || true
+          } > analysis/ef91cc-owner-slot1d8.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ef91cc-owner-slot1d8.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Check ef91cc owner slot 1d8"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
