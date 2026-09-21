@@ -1,0 +1,58 @@
+name: Decode readiness gate fb1b50
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-readiness-gate-fb1b50.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/fb1b50
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/fb1b50
+      - name: Dump
+        run: |
+          SO=/tmp/fb1b50/liborbit-jni-spotify.so
+          {
+            echo '# Skip Ad readiness gate fb1b50'
+            echo
+            echo 'Proven receiver AP: 0x183ba50; +0x140 relocation at 0x183bb90 -> 0xfb1b50.'
+            echo
+            echo '## Method and adjacent helpers'
+            objdump -d -M intel --start-address=0xfb1ac0 --stop-address=0xfb1d20 "$SO"
+            echo
+            echo '## direct refs/callers'
+            objdump -d -M intel "$SO" | grep -E -B18 -A28 '\b(call|jmp)[[:space:]]+fb1b50\b' | head -n 18000 || true
+            echo
+            echo '## high/string refs from method neighborhood'
+            objdump -d -M intel --start-address=0xfb1ac0 --stop-address=0xfb1d20 "$SO" | grep -E '# [0-9a-f]+' || true
+          } > analysis/skip-ad-readiness-gate-fb1b50.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-gate-fb1b50.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad readiness gate fb1b50"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
