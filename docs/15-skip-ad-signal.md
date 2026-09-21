@@ -303,7 +303,11 @@ TimelineConductor seek/clip transition
 "smart-skip-embedded-podcast-ad" transition/reporting path
 ```
 
-The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek -> "smart-skip-embedded-podcast-ad" action/report`. The interval source provenance is also resolved at the registry layer: ID `0x2f` / `DownloadSetupImpl` feeds the primary source and ID `0x32` / `DspSetupImpl` feeds the fallback.
+The final **availability-export** edge is still open at one specific pointer boundary: the exact state propagation from `adObject+0x1b8` into the concrete object later used as signal-state `+0x40` / virtual `+0x140`. The raw 0x6b0 state record and the TimelineAds `0x18678f8` wrapper are both rejected as that final receiver: the former is data/string state rather than a polymorphic receiver, while `0x18678f8:+0x140 -> 0xa3fa60` always returns 1 even though `fd381a` exposes `"skip-ad"` only when its receiver returns 0.
+
+The **execution-side readiness propagation is now proven farther downstream**, however. `TimelineAdsSetupImpl` (registry ID `0xb7`) samples the AdsRuntime byte at `0x1352547`. On the true branch it installs the 0x90 readiness state at TimelineAds owner `+0x20` and the AP `0x18678f8` wrapper at owner `+0x10`. Later in the same factory, `0x1352de2..0x1352df2` reloads owner `+0x10` and inserts that wrapper pointer as the head of the second 0x20-byte intermediate element. That two-element intermediate is normalized before construction of a 0x8e8-byte object (primary AP `0x18674c8`, secondary AP `0x1867550`, embedded AP `0x1867980`); the normalized state is copied into that object's `+0x58/+0x68` region, and the object is installed at TimelineAds owner `+0x50` at `0x1353121..0x1353129`. TimelineAds virtual `+0x28` (`0xaa712a`) returns exactly owner `+0x50`, and TimelineConductor consumes it at `0x135cbe5..0x135cbf0`. Thus the AdsRuntime readiness transition is demonstrably carried into the object graph used by Skip Ad execution, without claiming that the intermediate TimelineAds wrapper is itself the final availability discriminator.
+
+The execution edge is concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek -> "smart-skip-embedded-podcast-ad" action/report`. The interval source provenance is also resolved at the registry layer: ID `0x2f` / `DownloadSetupImpl` feeds the primary source and ID `0x32` / `DspSetupImpl` feeds the fallback.
 
 ## 6. Relationship to ordinary next-track restrictions
 
@@ -326,8 +330,8 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 ## 7. Remaining targets
 
-1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
-2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
+1. recover the concrete interface/type behind the final signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator; specifically continue the corrected `owner+0x428 -> e99d07 -> fd4c04 -> source-inner+0x40` provenance rather than the rejected raw-0x6b0 / TimelineAds-wrapper aliases,
+2. connect the proven AdsRuntime/TimelineAds readiness graph (`AdsRuntime+0x1b8 -> TimelineAds owner+0x20/+0x10 -> owner+0x50`) to that final `owner+0x428` availability-state source and determine the exact derived/copied value crossing that boundary,
 3. determine the exact semantic payload carried from `DownloadSetupImpl` and `DspSetupImpl` into their TimelineConductor interval-helper subobjects, beyond the now-proven registry identities,
 4. classify the final common TimelineConductor action sink `0x1624e22` more precisely (transport/logging/state bus), without conflating it with the unrelated `ad_skipped` app-open metric,
 5. map the equivalent path during Connect/remote playback and verify whether it reuses the same TimelineConductor operation.
@@ -362,3 +366,8 @@ Evidence reports:
 - `analysis/smart-skip-provider-classes.md`
 - `analysis/smart-skip-accessor-ids.md`
 - `analysis/smart-skip-provider-names.md`
+- `analysis/timelineads-owner50-readiness-bridge.md`
+- `analysis/adssetup-readiness-source-proof.md`
+- `analysis/skip-ad-state-capability-source.md`
+- `analysis/final-rsp770-definition.md`
+- `analysis/skipad-state-virtual-family.md`
