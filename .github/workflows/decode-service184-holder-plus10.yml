@@ -1,0 +1,50 @@
+name: Decode service184 holder plus10 writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-holder-plus10.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184plus10
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184plus10
+      - name: Dump exact writer window
+        run: |
+          SO=/tmp/s184plus10/liborbit-jni-spotify.so
+          {
+            echo '# Service184 holder +0x10 writer'
+            echo
+            echo '## Exact 0x1333c40..0x1333d30 window'
+            objdump -d -M intel --start-address=0x1333c40 --stop-address=0x1333d30 "$SO"
+            echo
+            echo '## Slightly wider 0x1333b80..0x1333dd0 context'
+            objdump -d -M intel --start-address=0x1333b80 --stop-address=0x1333dd0 "$SO"
+          } > analysis/service184-holder-plus10.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-holder-plus10.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 holder plus10 writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
