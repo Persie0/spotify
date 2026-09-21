@@ -1,0 +1,100 @@
+name: Decode Skip Ad state virtual family
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skipad-state-virtual-family.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/svf
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/svf
+      - name: Decode aligned family
+        run: |
+          objdump -d -M intel /tmp/svf/liborbit-jni-spotify.so > /tmp/svf/all.dis
+          readelf -rW /tmp/svf/liborbit-jni-spotify.so > /tmp/svf/rel.txt
+          python3 - <<'PY' > analysis/skipad-state-virtual-family.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/svf/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          print('# Skip Ad state virtual family')
+          print()
+          print('Corrected table interpretation:')
+          print('- primary AP = 0x1841fc0')
+          print('- fd381a at AP+0x70')
+          print('- fd38d6 at AP+0x128')
+          print('- fd4a92 at AP+0x1d8')
+          print('- 0x1842150 is NOT a distinct AP; it is AP+0x190 within same contiguous table')
+          print()
+          print('## Aligned code fd47e6..fd4c04')
+          for a,i,op,l in ins:
+              if 0xfd47e6<=a<0xfd4c04: print('    '+l)
+          print()
+          print('## Exact fd4a92 body')
+          # Find instruction at fd4a92 and print until first ret + nearby.
+          start=next((k for k,x in enumerate(ins) if x[0]==0xfd4a92),None)
+          if start is not None:
+              for x in ins[start:start+180]:
+                  print('    '+x[3])
+                  if x[0]>0xfd4a92 and re.match(r'ret\b',x[2]): break
+          print()
+          print('## this-relative field references in fd4a92')
+          if start is not None:
+              for x in ins[start:start+180]:
+                  if re.search(r'\[(?:rsi|rbx|r14|r15)\+0x[0-9a-f]+\]',x[2]):
+                      print('    '+x[3])
+                  if x[0]>0xfd4a92 and re.match(r'ret\b',x[2]): break
+          print()
+          print('## Primary table slice')
+          rel={}
+          for l in Path('/tmp/svf/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=4 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  j=p.index('R_X86_64_RELATIVE')
+                  if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                      rel[int(p[0],16)]=int(p[j+1],16)
+          ap=0x1841fc0
+          for off in range(0,0x200,8):
+              v=rel.get(ap+off)
+              if v is not None: print(f'- +0x{off:x}: 0x{v:x}')
+          print()
+          print('## Table header/break evidence around 0x1842140..0x18421c8')
+          for a in range(0x1842130,0x18421d0,8):
+              v=rel.get(a)
+              print(f'- 0x{a:x}: {("0x%x"%v) if v is not None else "no RELATIVE relocation"}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-state-virtual-family.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Correct Skip Ad state virtual family"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
