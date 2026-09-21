@@ -1,0 +1,146 @@
+name: Decode readiness carrier and P methods
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-readiness-carrier-p-methods.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rmeth
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rmeth
+
+      - name: Dump methods
+        run: |
+          set -euo pipefail
+          SO=/tmp/rmeth/liborbit-jni-spotify.so
+          readelf -rW "$SO" > /tmp/rmeth/rel.txt
+          objdump -d -M intel "$SO" > /tmp/rmeth/all.dis
+          python3 - <<'PY' > analysis/readiness-carrier-p-methods.md
+          from pathlib import Path
+          import re,bisect
+          lines=Path('/tmp/rmeth/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          rel={}
+          for l in Path('/tmp/rmeth/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              j=p.index('R_X86_64_RELATIVE')
+              if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                rel[int(p[0],16)]=int(p[j+1],16)
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def dump(a,stop=None,n=120):
+            j=idx(a)
+            count=0
+            for x in ins[j:]:
+              if stop is not None and x[0]>=stop:break
+              print('    '+x[3]);count+=1
+              if stop is None and count>=n:break
+          def callers(target):
+            pat=re.compile(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b')
+            return [x for x in ins if pat.search(x[2])]
+          print('# Readiness carrier + P method decode')
+          print()
+          aps={
+            'carrier_1843bf8':0x1843bf8,
+            'P_1832be8':0x1832be8,
+          }
+          methods={}
+          for name,ap in aps.items():
+            print(f'## {name} real six-slot table')
+            vals=[]
+            for off in range(0,0x30,8):
+              t=rel.get(ap+off)
+              vals.append((off,t)); methods[(name,off)]=t
+              print(f'- +0x{off:x}: {("0x%x"%t) if t else "NO_RELOC"}')
+            print()
+          all_targets=sorted(set(t for t in methods.values() if t))
+          for t in all_targets:
+            j=idx(t)
+            # stop at next int3/ret after minimum few instructions, cap ~180
+            stop=None
+            count=0
+            for x in ins[j+1:min(len(ins),j+220)]:
+              count+=1
+              if count>6 and (x[2]=='int3' or x[2].startswith('ret')):
+                stop=x[0]+1;break
+            print(f'## Method 0x{t:x}')
+            dump(t,stop,n=180)
+            print()
+            cs=callers(t)
+            print(f'### direct callers/xrefs ({len(cs)})')
+            for a,i,op,l in cs[:30]:
+              print(f'- 0x{a:x}: {op}')
+            print()
+
+          print('## Carrier methods: accesses relative to this')
+          for off in range(0,0x30,8):
+            t=methods.get(('carrier_1843bf8',off))
+            if not t:continue
+            j=idx(t)
+            print(f'### slot +0x{off:x} target 0x{t:x}')
+            for x in ins[j:min(len(ins),j+180)]:
+              if x[2]=='int3' and x[0]>t+3:break
+              if re.search(r'\[(?:rdi|rbx|r12|r13|r14|r15)\+0x(?:8|10|18|20|28|30|38|40|48|50|58)\]',x[2]):
+                print('    '+x[3])
+            print()
+
+          print('## P methods: accesses to this+0x40 / outer+0x58')
+          for off in range(0,0x30,8):
+            t=methods.get(('P_1832be8',off))
+            if not t:continue
+            j=idx(t)
+            print(f'### slot +0x{off:x} target 0x{t:x}')
+            for x in ins[j:min(len(ins),j+220)]:
+              if x[2]=='int3' and x[0]>t+3:break
+              if '+0x40]' in x[2] or '+0x58]' in x[2]:
+                print('    '+x[3])
+            print()
+
+          print('## Indirect calls at carrier six slot offsets in giant factory e92f2c..e98f3b')
+          for a,i,op,l in ins:
+            if not (0xe92f2c<=a<0xe98f3b):continue
+            m=re.search(r'call\s+QWORD PTR \[[^]]+\+0x(0|8|10|18|20|28)\]',op)
+            if m:
+              print(f'### 0x{a:x}: {op}')
+              j=idx(a)
+              for x in ins[max(0,j-16):min(len(ins),j+22)]:print('    '+x[3])
+              print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-carrier-p-methods.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode readiness carrier and P methods"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
