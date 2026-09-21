@@ -1,0 +1,162 @@
+name: Resolve AdsSetup runtime object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-adssetup-runtime-object.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/adsrt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/adsrt
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Resolve
+        run: |
+          SO=/tmp/adsrt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/adsrt/all.dis
+          python3 - <<'PY' > analysis/adssetup-runtime-object.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/adsrt/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/adsrt/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]; loads=[]; rel={}
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+                  for rr in sec.iter_relocations():
+                      add=rr.entry.get('r_addend')
+                      if add is not None: rel[rr['r_offset']]=add
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def vo(v):
+              for po,pe,pv in loads:
+                  if pv<=v<pv+(pe-po): return po+(v-pv)
+          def q(v):
+              if v in rel:return rel[v]
+              o=vo(v)
+              if o is None or o+8>len(data):return None
+              return struct.unpack_from('<Q',data,o)[0]
+
+          target=0xb86086
+          fr=fde(target)
+          print('# AdsSetupImpl runtime object identity')
+          print()
+          print(f'## AdsSetupImpl factory 0xb86086 FDE={fr}')
+          rows=body(fr) if fr else []
+          for x in rows: print('    '+x[3])
+          print()
+
+          print('## Allocations and nearby vptr stores')
+          for k,(a,i,op,l) in enumerate(rows):
+              if re.search(r'call\s+17edf00\b',op):
+                  print(f'### allocation @0x{a:x}')
+                  for y in rows[max(0,k-12):min(len(rows),k+32)]:print('    '+y[3])
+                  print()
+
+          print('## High-address constants in factory')
+          highs=[]
+          for a,i,op,l in rows:
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:
+                  va=int(m.group(1),16); highs.append(va)
+                  print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## Candidate vtables referenced by factory')
+          seen=set()
+          for va in sorted(set(highs)):
+              for ap in range(max(0,va-0x20),va+0x21,8):
+                  if ap in seen:continue
+                  vals={off:q(ap+off) for off in range(0,0x180,8)}
+                  code=sum(1 for v in vals.values() if v is not None and 0x900000<=v<0x1800000 and fde(v))
+                  if code<6:continue
+                  seen.add(ap)
+                  print(f'### AP 0x{ap:x} codeSlots={code}')
+                  for off in range(0,0x178,8):
+                      v=vals.get(off)
+                      if v is not None:
+                          print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+                  v28=vals.get(0x28)
+                  if v28 and fde(v28):
+                      print('#### +0x28 body')
+                      for y in body(fde(v28)): print('    '+y[3])
+                  print()
+
+          print('## Factory return paths')
+          for k,(a,i,op,l) in enumerate(rows):
+              if op.strip()=='ret':
+                  print(f'### ret @0x{a:x}')
+                  for y in rows[max(0,k-25):k+1]: print('    '+y[3])
+                  print()
+
+          print('## All +0x1b5/+0x1b8 field accesses in factory-created candidate methods')
+          funcs=set()
+          for ap in seen:
+              for off in range(0,0x178,8):
+                  v=q(ap+off)
+                  if v and fde(v): funcs.add(fde(v))
+          for f in sorted(funcs):
+              hits=[]
+              for a,i,op,l in body(f):
+                  if '+0x1b5]' in op or '+0x1b8]' in op or '+0x10]' in op:
+                      hits.append((a,op))
+              if hits:
+                  print(f'### FDE 0x{f[0]:x}..0x{f[1]:x}')
+                  for a,op in hits:print(f'- 0x{a:x}: {op}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/adssetup-runtime-object.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve AdsSetup runtime object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
