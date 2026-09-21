@@ -1,0 +1,112 @@
+name: Resolve fd4a92 derived class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-fd4a92-derived-class.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/dc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/dc
+      - name: Decode derived class
+        run: |
+          SO=/tmp/dc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/dc/all.dis
+          readelf -rW "$SO" > /tmp/dc/rel.txt
+          python3 - <<'PY' > analysis/fd4a92-derived-class.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/dc/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          rel={}
+          for l in Path('/tmp/dc/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=4 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  i=p.index('R_X86_64_RELATIVE')
+                  if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                      rel[int(p[0],16)]=int(p[i+1],16)
+
+          ap=0x1842150
+          print('# fd4a92 derived class')
+          print()
+          print(f'- candidate AP 0x{ap:x}')
+          print('- fd4a92 is AP+0x48')
+          print()
+          print('## Vtable slice')
+          for off in range(0,0x60,8):
+              v=rel.get(ap+off)
+              print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None}')
+          print()
+
+          print('## Code materializations of AP 0x1842150')
+          hits=[]
+          needle='# 1842150 '
+          for k,(a,i,op,l) in enumerate(ins):
+              if needle in l:
+                  hits.append(k)
+                  print(f'### 0x{a:x}: {op}')
+                  for x in ins[max(0,k-25):min(len(ins),k+65)]:print('    '+x[3])
+                  print()
+          print(f'- materialization count={len(hits)}')
+          print()
+
+          print('## Writes of AP to object first word')
+          for k in hits:
+              a,i,op,l=ins[k]
+              m=re.match(r'lea\s+(r\w+),',op)
+              if not m:continue
+              reg=m.group(1)
+              for x in ins[k+1:k+12]:
+                  if re.match(r'mov\s+QWORD PTR \[[^]]+\],'+re.escape(reg)+r'\b',x[2]):
+                      print(f'### load 0x{a:x} -> store 0x{x[0]:x}: {x[2]}')
+                      for y in ins[max(0,k-12):min(len(ins),k+30)]:print('    '+y[3])
+                      print()
+                      break
+
+          print('## Direct references to fd4a92')
+          for k,(a,i,op,l) in enumerate(ins):
+              if re.search(r'\b(?:call|jmp)\s+fd4a92\b',op):
+                  print(f'### 0x{a:x}: {op}')
+                  for x in ins[max(0,k-18):min(len(ins),k+30)]:print('    '+x[3])
+                  print()
+
+          print('## Candidate this+0x10 stores in AP constructor neighborhoods')
+          for k in hits:
+              for x in ins[max(0,k-80):min(len(ins),k+160)]:
+                  if '+0x10]' in x[2] and re.match(r'(mov|movups|movdqu|xchg)',x[2]):
+                      print(f'- 0x{x[0]:x}: {x[2]}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/fd4a92-derived-class.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve fd4a92 derived class"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
