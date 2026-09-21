@@ -1,0 +1,144 @@
+name: Trace TimelineConductor c8 dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timeline-conductor-c8.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlc8
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlc8
+      - name: Trace
+        run: |
+          SO=/tmp/tlc8/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x135d056 --stop-address=0x1360c1b "$SO" > /tmp/tlc8/ctor.dis
+          objdump -d -M intel "$SO" > /tmp/tlc8/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-c8.md
+          from pathlib import Path
+          import re
+          ctor=Path('/tmp/tlc8/ctor.dis').read_text(errors='replace').splitlines()
+          all_lines=Path('/tmp/tlc8/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(ctor):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          def ctx(i,b=18,a=28):
+              for x in ctor[max(0,i-b):min(len(ctor),i+a+1)]: print('    '+x)
+          print('# TimelineConductor this+0xc8 dependency trace')
+          print()
+          print('Known: service AP 0x1867c98; +0x28 method 0xc2e960 returns [this+0xc8].')
+          print('Constructor forms &this+0xc8 at 0x135d182 and stores it to stack slot rsp+0x60 at 0x135d189.')
+          print()
+
+          # all stack-slot 0x60 refs
+          print('## All rsp+0x60 references in constructor')
+          for a,i,op,l in ins:
+              if re.search(r'\[rsp\+0x60\]',op):
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(i,12,20); print()
+
+          # track loads from [rsp+0x60] into a register and forward uses until reg clobber
+          print('## Forward slices from loads of &this+0xc8')
+          for idx,(a,i,op,l) in enumerate(ins):
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if not m: continue
+              reg=m.group(1)
+              print(f'### load @0x{a:x}: {reg} = &this+0xc8')
+              count=0
+              for aa,ii,oo,ll in ins[idx:idx+45]:
+                  if aa!=a and re.match(r'(mov|lea|xor|pop)\s+'+re.escape(reg)+r'(?:d)?\b',oo):
+                      print(f'    [clobber] {ll}'); break
+                  if reg in oo or re.search(r'\bcall\b',oo):
+                      print('    '+ll)
+                  count+=1
+              print()
+
+          # track direct writes through any alias loaded from stack slot
+          aliases=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if m: aliases.append((idx,a,m.group(1)))
+          print('## Writes through c8-address aliases')
+          for idx,a,reg in aliases:
+              for aa,ii,oo,ll in ins[idx:min(len(ins),idx+60)]:
+                  if aa!=a and re.match(r'(mov|lea|xor|pop)\s+'+re.escape(reg)+r'(?:d)?\b',oo): break
+                  left=oo.split(',',1)[0]
+                  if '['+reg+']' in left and re.match(r'(mov|movq|movups|movdqu|xchg|and|or|xor)',oo):
+                      print(f'### alias {reg} from 0x{a:x}; write 0x{aa:x}: {oo}')
+                      ctx(ii,12,18); print()
+
+          # Calls where c8 address is one of SysV argument registers by nearby move.
+          print('## Calls fed with c8 address')
+          argregs={'rdi','rsi','rdx','rcx','r8','r9'}
+          for idx,a,reg in aliases:
+              # propagate simple reg-to-reg moves for 30 ins
+              live={reg}
+              for aa,ii,oo,ll in ins[idx+1:idx+35]:
+                  m=re.match(r'mov\s+(r\w+),(r\w+)\b',oo)
+                  if m and m.group(2) in live: live.add(m.group(1))
+                  if re.search(r'\bcall\s+([0-9a-f]+)\b',oo) and (live & argregs):
+                      print(f'### from load 0x{a:x}; call 0x{aa:x}: {oo}; live={sorted(live)}')
+                      ctx(ii,16,24); print()
+                  # don't aggressively kill; context is compact enough
+
+          # all direct writes to +0xc8 in constructor (maybe base alias preserved differently)
+          print('## Explicit +0xc8 destination writes in constructor')
+          for a,i,op,l in ins:
+              left=op.split(',',1)[0]
+              if '+0xc8]' in left and '[' in left and re.match(r'(mov|movq|movups|movdqu|xchg|and|or|xor)',op):
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(i,12,20); print()
+
+          # Helpers called shortly after stack-slot accesses: dump direct target bodies compactly from full disasm.
+          targets=set()
+          for idx,(a,i,op,l) in enumerate(ins):
+              if '[rsp+0x60]' not in op: continue
+              for aa,ii,oo,ll in ins[idx:idx+25]:
+                  m=re.search(r'\bcall\s+([0-9a-f]+)\b',oo)
+                  if m: targets.add(int(m.group(1),16))
+          parsed_all=[]
+          for i,l in enumerate(all_lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: parsed_all.append((int(m.group(1),16),i,m.group(2),l))
+          print('## Nearby helper target snippets')
+          for t in sorted(targets):
+              print(f'### target 0x{t:x}')
+              hit=None
+              for j,x in enumerate(parsed_all):
+                  if x[0]>=t: hit=j;break
+              if hit is not None:
+                  for x in parsed_all[hit:hit+100]: print('    '+x[3])
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineConductor c8 dependency"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
