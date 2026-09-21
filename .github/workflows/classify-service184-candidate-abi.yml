@@ -1,0 +1,175 @@
+name: Classify service184 candidate ABI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-service184-candidate-abi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184abi2
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184abi2
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Classify candidates
+        run: |
+          SO=/tmp/s184abi2/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184abi2/all.dis
+          python3 - <<'PY' > analysis/service184-candidate-abi-v2.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184abi2/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184abi2/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs[rel['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-7),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def dump_func(addr):
+            fr=fde(addr)
+            if not fr:return []
+            return [(a,i,op,l) for a,i,op,l in ins if fr[0]<=a<fr[1]]
+          def summarize_func(addr):
+            rows=dump_func(addr)
+            if not rows:return {'fde':None}
+            regs=set()
+            mem_reads=[];mem_writes=[];calls=[];rets=[]
+            for a,i,op,l in rows:
+              if re.search(r'\bcall\b',op):calls.append((a,op))
+              # rough this/register convention clues
+              for reg in ('rdi','rsi','rdx','rcx','r8','r9'):
+                if reg in op:regs.add(reg)
+              # load/store memory operands
+              if '[' in op:
+                left=op.split(',',1)[0]
+                if '[' in left:mem_writes.append((a,op))
+                else:mem_reads.append((a,op))
+              if re.match(r'ret\b',op):rets.append((a,op))
+            return {
+              'fde':fde(addr),'nins':len(rows),'regs':sorted(regs),
+              'calls':calls[:12],'reads':mem_reads[:16],'writes':mem_writes[:16],
+              'tail':rows[-10:]
+            }
+
+          candidates=[0x18228d8,0x1821448,0x1822988,0x181f788]
+          print('# Service184 candidate ABI classification v2')
+          print()
+          print('Observed service184 call ABI:')
+          print('- +0x28: this in rdi, no explicit args, returns pointer in rax')
+          print('- +0x30: this in rdi, no explicit args, returns pointer in rax')
+          print('- +0x38: sret/output in rdi, this in rsi')
+          print('- object returned by +0x28 is later dereferenced as polymorphic and invoked at +0x68')
+          print()
+
+          for ap in candidates:
+            print(f'## Candidate 0x{ap:x}')
+            for off in (0x20,0x28,0x30,0x38):
+              fn=qword(ap+off)
+              print(f'### slot +0x{off:x} -> {("0x%x"%fn) if fn is not None else "None"}')
+              if fn is None: continue
+              s=summarize_func(fn)
+              print(f'- FDE={s.get("fde")} nins={s.get("nins")} regs={s.get("regs")}')
+              print('- calls:')
+              for a,op in s.get('calls',[]):print(f'  - 0x{a:x}: {op}')
+              print('- first reads:')
+              for a,op in s.get('reads',[]):print(f'  - 0x{a:x}: {op}')
+              print('- first writes:')
+              for a,op in s.get('writes',[]):print(f'  - 0x{a:x}: {op}')
+              print('- tail:')
+              for a,i,op,l in s.get('tail',[]):print('  '+l)
+              print()
+            print()
+
+          print('## Exact known call-site ABI examples')
+          for target in (0xb8ec45,0xc7d490,0xe8c9d1,0x10885e3,0x11ee6b0,0x1442026):
+            fr=fde(target)
+            print(f'### around 0x{target:x}; FDE={fr}')
+            for a,i,op,l in ins:
+              if target-0x18<=a<=target+0x40:print('    '+l)
+            print()
+
+          # For returned-dependency candidates, dump +0x68 implementation where statically identifiable.
+          print('## Returned-dependency +0x68 compatibility')
+          # Candidate 18228d8 getter -> this+0x218; inspect all constructor-like stores to [this+0x218]
+          # Candidate 181f788 getter -> [this+0x5e0], inspect common vptr use patterns on pointee.
+          for ap,getoff in ((0x18228d8,0x218),(0x181f788,0x5e0)):
+            getter=qword(ap+0x28)
+            print(f'### owner 0x{ap:x}; getter 0x{getter:x}; dependency offset 0x{getoff:x}')
+            for a,i,op,l in dump_func(getter):
+              print('    '+l)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-candidate-abi-v2.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify service184 candidate ABI"
+          git pull --rebase origin main
+          git push origin HEAD:main
