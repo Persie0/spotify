@@ -1,0 +1,66 @@
+name: Decode service184 embedded object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-embedded-object.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184obj
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184obj
+      - name: Decode candidate object
+        run: |
+          SO=/tmp/s184obj/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184obj/all.dis
+          {
+            echo '# Service184 embedded +0x578 object trace'
+            echo
+            echo '## Initializer 0x121e20e'
+            objdump -d -M intel --start-address=0x121e180 --stop-address=0x121e3a0 "$SO"
+            echo
+            echo '## Destructor/helper ae2666'
+            objdump -d -M intel --start-address=0xae25e0 --stop-address=0xae2780 "$SO"
+            echo
+            echo '## Root service install and immediate virtual use'
+            objdump -d -M intel --start-address=0x13337e0 --stop-address=0x13338e0 "$SO"
+            echo
+            echo '## Candidate record population'
+            objdump -d -M intel --start-address=0x1339270 --stop-address=0x1339500 "$SO"
+            echo
+            echo '## Candidate destruction'
+            objdump -d -M intel --start-address=0x133a030 --stop-address=0x133a0a0 "$SO"
+            echo
+            echo '## Direct callsites of 0x121e20e'
+            grep -n -E -B18 -A30 'call[[:space:]]+121e20e\\b' /tmp/s184obj/all.dis || true
+            echo
+            echo '## Direct callsites of ae2666 near player construction regions'
+            grep -n -E -B12 -A18 'call[[:space:]]+ae2666\\b' /tmp/s184obj/all.dis | grep -E -B20 -A20 '133[0-9a-f]{4}|132[0-9a-f]{4}|134[0-9a-f]{4}' || true
+          } > analysis/service184-embedded-object.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-embedded-object.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 embedded object"
+          git pull --rebase origin main
+          git push origin HEAD:main
