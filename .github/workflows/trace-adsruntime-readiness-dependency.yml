@@ -1,0 +1,201 @@
+name: Trace AdsRuntime readiness dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-adsruntime-readiness-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/adsdep
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/adsdep
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace dependency
+        run: |
+          SO=/tmp/adsdep/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/adsdep/all.dis
+          python3 - <<'PY' > analysis/adsruntime-readiness-dependency.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/adsdep/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/adsdep/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':
+                loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+          fdes.sort();starts=[a for a,z in fdes]
+
+          def fde(a):
+            if a is None:return None
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po): return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=32):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def body(fr,cap=2500):
+            if not fr:return []
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1] or len(out)>=cap:break
+              out.append(x)
+            return out
+
+          print('# AdsRuntime readiness dependency')
+          print()
+          print('Proven:')
+          print('- AdsSetupImpl +0x28 returns embedded runtime at this+0x10')
+          print('- runtime AP = 0x1879950')
+          print('- runtime +0x140 = 0x125bd98')
+          print('- 0x125bd98 does: dep=[this+0x18]; return dep->virtual+0x40()')
+          print()
+          print('Goal: resolve runtime+0x18 dependency class and its +0x40 method semantics.')
+          print()
+
+          # Exact runtime constructor family.
+          for target in (0x14e15e4,0x14cd946):
+            fr=fde(target)
+            print(f'## Constructor/helper 0x{target:x} FDE={fr}')
+            if fr:
+              for a,i,op,l in body(fr):
+                if '+0x18]' in op or '+0x10]' in op or '+0x1b8]' in op or '# 1879950' in l or re.search(r'\bcall\b',op):
+                  print('    '+l)
+            print()
+
+          print('## All writes to runtime-like +0x18 in constructor families')
+          for target in (0x14e15e4,0x14cd946):
+            fr=fde(target)
+            if not fr:continue
+            rows=body(fr)
+            for k,(a,i,op,l) in enumerate(rows):
+              first=op.split(',',1)[0]
+              if '+0x18]' in first and re.match(r'(mov|lea|xchg)',op):
+                print(f'### 0x{a:x}: {op}; FDE={fr}')
+                for x in rows[max(0,k-18):min(len(rows),k+35)]:print('    '+x[3])
+                print()
+
+          print('## Runtime +0x140 exact method')
+          ctx(0x125bd98,8,15)
+          print()
+
+          # Scan all code refs to AP 0x1879950 and nearby stores to +0x18.
+          print('## All materializations of runtime AP 0x1879950')
+          for a,i,op,l in ins:
+            if '# 1879950 ' in l:
+              print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+              ctx(a,15,30);print()
+
+          # Candidate dependency vptrs: high-address materializations near writes to runtime+0x18.
+          candidates=set()
+          for target in (0x14e15e4,0x14cd946):
+            fr=fde(target)
+            if not fr:continue
+            rows=body(fr)
+            for k,(a,i,op,l) in enumerate(rows):
+              if '+0x18]' not in op.split(',',1)[0]:continue
+              for aa,ii,oo,ll in rows[max(0,k-25):min(len(rows),k+10)]:
+                m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',ll)
+                if m:candidates.add(int(m.group(1),16))
+
+          print('## Nearby candidate dependency address points')
+          for ap in sorted(candidates):
+            vals={off:q(ap+off) for off in range(0,0x70,8)}
+            code=sum(1 for v in vals.values() if v and fde(v))
+            if code<4:continue
+            print(f'### AP 0x{ap:x}; codeSlots={code}; +0x40={("0x%x"%vals[0x40]) if vals[0x40] else None}')
+            print(f'- header[-0x10]={q(ap-0x10)} header[-0x8]={q(ap-8)}')
+            for off,v in vals.items():
+              print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None} FDE={fde(v) if v else None}')
+            t=vals.get(0x40)
+            if t and fde(t):
+              print('#### +0x40 body')
+              fr=fde(t);n=0
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:
+                  print('    '+l);n+=1
+                  if n>180:
+                    print('    ...truncated...');break
+            print()
+
+          # Global writers to +0x18 on objects known to have AP 0x1879950 in same FDE.
+          print('## FDEs containing both AP 0x1879950 and a +0x18 write')
+          ap_fdes=set()
+          for a,i,op,l in ins:
+            if '# 1879950 ' in l:
+              fr=fde(a)
+              if fr:ap_fdes.add(fr)
+          for fr in sorted(ap_fdes):
+            rows=body(fr)
+            writes=[x for x in rows if '+0x18]' in x[2].split(',',1)[0] and re.match(r'(mov|lea|xchg)',x[2])]
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}; writes={len(writes)}')
+            for a,i,op,l in writes:
+              print(f'- 0x{a:x}: {op}')
+              ctx(a,10,16)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/adsruntime-readiness-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace AdsRuntime readiness dependency"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
