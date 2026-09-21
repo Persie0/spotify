@@ -1,0 +1,213 @@
+name: Resolve service184 candidate constructors
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-candidate-constructors.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184ctors
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184ctors
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Resolve relocation-backed constructors
+        run: |
+          SO=/tmp/s184ctors/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184ctors/all.dis
+          python3 - <<'PY' > analysis/service184-candidate-constructors.md
+          from pathlib import Path
+          import re,struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184ctors/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184ctors/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs.append((rel['r_offset'],add,sec.name))
+          rmap={o:a for o,a,s in relocs}
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def qword(va):
+            if va in rmap:return rmap[va],'reloc'
+            o=va2off(va)
+            if o is None or o+8>len(data):return None,None
+            return struct.unpack_from('<Q',data,o)[0],'raw'
+          def ctx(i,b=14,a=26):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+          def dump_fde(fr,limit=1800):
+            n=0
+            for a,i,op,l in ins:
+              if fr and fr[0]<=a<fr[1]:
+                print('    '+l);n+=1
+                if n>=limit:print('    ...truncated...');break
+
+          candidates=[
+            {'ap':0x18228d8,'f28':0xd17212,'kind':'embedded','off':0x218},
+            {'ap':0x1821448,'f28':0xb7d2ca,'kind':'delegated','off':None},
+            {'ap':0x1822988,'f28':0xd1a440,'kind':'conditional','off':None},
+            {'ap':0x181f788,'f28':0xcc4eea,'kind':'field','off':0x5e0},
+          ]
+
+          print('# Service184 candidate constructors via relocation provenance')
+          print()
+          print('Hard requirement: service184 +0x28 return is passed unchanged to the dispatcher and later used as a polymorphic object: vptr=[dep], then call [vptr+0x68].')
+          print()
+
+          cref=defaultdict(list)
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m:cref[int(m.group(1),16)].append((a,i,op,l))
+
+          for c in candidates:
+            ap=c['ap']; f28=c['f28']; off=c['off']
+            print(f'## Candidate AP 0x{ap:x}')
+            print(f'- +0x28 = 0x{f28:x}; kind={c["kind"]}; returned-offset={hex(off) if off is not None else None}')
+            direct=cref.get(ap,[])
+            slots=[(o,s) for o,a,s in relocs if a==ap]
+            print(f'- direct AP refs: {len(direct)}')
+            print(f'- relocation slots -> AP: {len(slots)}')
+            print()
+
+            ctor_fdes=set()
+            print('### Direct AP references')
+            for a,i,op,l in direct[:60]:
+              fr=fde(a)
+              if fr:ctor_fdes.add(fr)
+              print(f'#### 0x{a:x} FDE={fr} :: {op}')
+              ctx(i);print()
+
+            print('### Relocation indirections')
+            for slot,sec in slots:
+              refs=cref.get(slot,[])
+              print(f'#### slot 0x{slot:x} ({sec}), code refs={len(refs)}')
+              for a,i,op,l in refs[:60]:
+                fr=fde(a)
+                if fr:ctor_fdes.add(fr)
+                print(f'##### 0x{a:x} FDE={fr} :: {op}')
+                ctx(i);print()
+
+            print('### Vtable group neighborhood')
+            for va in range(ap-0x60,ap+0xe0,8):
+              q,k=qword(va)
+              ann=f' FDE={fde(q)}' if q is not None and fde(q) else ''
+              print(f'- 0x{va:x}: {k} {("0x%x"%q) if q is not None else "None"}{ann}')
+            print()
+
+            fr28=fde(f28)
+            print(f'### +0x28 body FDE={fr28}')
+            dump_fde(fr28,700);print()
+
+            print(f'### Candidate-specific materializer FDEs: {len(ctor_fdes)}')
+            for fr in sorted(ctor_fdes):
+              print(f'#### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              dump_fde(fr);print()
+
+            if off is not None:
+              print(f'### Exact dependency offset +0x{off:x} inside candidate materializers')
+              found=0
+              for fr in sorted(ctor_fdes):
+                fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+                for j,(a,i,op,l) in enumerate(fl):
+                  if f'+0x{off:x}]' not in op and f'+0x{off:x},' not in op:continue
+                  found+=1
+                  print(f'#### 0x{a:x}: {op}')
+                  for aa,ii,oo,ll in fl[max(0,j-12):min(len(fl),j+24)]:print('    '+ll)
+                  print()
+              if not found: print('- no exact-offset hits in candidate-specific materializer FDEs')
+              print()
+
+              print('### Nearby vptr-looking constants at dependency-offset hits')
+              n=0
+              for fr in sorted(ctor_fdes):
+                fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+                for j,(a,i,op,l) in enumerate(fl):
+                  if f'+0x{off:x}]' not in op and f'+0x{off:x},' not in op:continue
+                  win=fl[max(0,j-14):min(len(fl),j+24)]
+                  highs=[]
+                  for aa,ii,oo,ll in win:
+                    mm=re.search(r'#\s*(18[0-9a-f]{5,})\b',ll)
+                    if mm:highs.append((aa,int(mm.group(1),16),oo))
+                  if highs:
+                    n+=1
+                    print(f'#### offset hit 0x{a:x}')
+                    for aa,v,oo in highs:print(f'- high constant 0x{v:x} at 0x{aa:x}: {oo}')
+                    for aa,ii,oo,ll in win:print('    '+ll)
+                    print()
+              if not n:print('- none')
+            print()
+
+          print('## Relocations containing candidate APs as neighboring vtable-group entries')
+          aps={c['ap'] for c in candidates}
+          for c in candidates:
+            ap=c['ap']
+            near=[]
+            for o,a,s in relocs:
+              if ap-0x100<=o<=ap+0x100 and a in aps:
+                near.append((o,a,s))
+            if near:
+              print(f'### AP 0x{ap:x}')
+              for o,a,s in near:print(f'- slot 0x{o:x} -> 0x{a:x} ({s})')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-candidate-constructors.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 candidate constructors"
+          git pull --rebase origin main
+          git push origin HEAD:main
