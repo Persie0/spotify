@@ -1,0 +1,132 @@
+name: Resolve service184 provider source b632a0
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-provider-b632a0.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184b632
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184b632
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace b632a0 return object and +0x28
+        run: |
+          SO=/tmp/s184b632/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184b632/all.dis
+          python3 - <<'PY' > analysis/service184-provider-source-b632a0.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184b632/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184b632/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs.append((rel['r_offset'],add,sec.name))
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def ctx(i,b=20,a=40):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+          def dump(fr):
+            if not fr:return
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+          print('# service184 host provider source: b632a0 -> virtual +0x28')
+          print()
+          print('Established sink: host+0x30 = return of virtual +0x28 on object returned by b632a0(r12).')
+          print()
+          target=0xb632a0
+          fr=fde(target)
+          print(f'## b632a0 FDE {fr}')
+          dump(fr);print()
+          print('## Direct callers of b632a0')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+b632a0\b',op):
+              print(f'### 0x{a:x} caller FDE={fde(a)}');ctx(i,16,30);print()
+          # Return provenance: find last writes to rax in function, especially field loads.
+          print('## Return-value definitions in b632a0')
+          if fr:
+            fs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for k,(a,i,op,l) in enumerate(fs):
+              if re.match(r'(mov|lea)\s+rax\b',op) or op=='ret':
+                print(f'### 0x{a:x}: {op}')
+                for x in fs[max(0,k-8):min(len(fs),k+10)]:print('    '+x[3])
+                print()
+          # If b632a0 is a field getter, identify every writer to that exact offset in nearby constructor families.
+          offsets=set()
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                m=re.search(r'\[rdi\+0x([0-9a-f]+)\]',op)
+                if m:offsets.add(int(m.group(1),16))
+          print(f'## Candidate returned field offsets: {[hex(x) for x in sorted(offsets)]}')
+          for off in sorted(offsets):
+            pat=f'+0x{off:x}]'
+            print(f'### Writes to offset +0x{off:x} in 0xd80000..0xe20000')
+            for a,i,op,l in ins:
+              if not (0xd80000<=a<0xe20000):continue
+              if pat not in op:continue
+              left=op.split(',',1)[0]
+              if '[' not in left:continue
+              print(f'- 0x{a:x}: {op}; FDE={fde(a)}')
+              ctx(i,10,18)
+            print()
+          # Find vtable entries whose +0x28 implementation is called on the returned object if direct vptr is materialized.
+          print('## Vtable slots with methods in b632a0 family')
+          if fr:
+            methods={a for a,i,op,l in ins if fr[0]<=a<fr[1]}
+            for off,add,sec in relocs:
+              if add in methods:
+                print(f'- relocation @0x{off:x} ({sec}) -> 0x{add:x}')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-provider-source-b632a0.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 provider source b632a0"
+          git pull --rebase origin main
+          git push origin HEAD:main
