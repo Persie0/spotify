@@ -1,0 +1,58 @@
+name: Trace registry facade constructors
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-registry-facade-constructors.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download and trace
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regfac2
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regfac2
+          objdump -d -M intel /tmp/regfac2/liborbit-jni-spotify.so > /tmp/regfac2/all.dis
+          {
+            echo '# Registry facade constructor candidates'
+            echo
+            for A in b0fa2f b633b2 b34da0; do
+              echo "## Candidate $A"
+              case "$A" in
+                b0fa2f) S=b0fa00; E=b0fb70 ;;
+                b633b2) S=b63390; E=b63470 ;;
+                b34da0) S=b34d70; E=b34e80 ;;
+              esac
+              objdump -d -M intel --start-address=0x$S --stop-address=0x$E /tmp/regfac2/liborbit-jni-spotify.so
+              echo
+              echo "### direct callers of $A"
+              grep -n -E -B18 -A38 "call[[:space:]]+$A\\b" /tmp/regfac2/all.dis | head -n 10000 || true
+              echo
+            done
+            echo '## Direct callers of b8f02e with receiver setup'
+            grep -n -E -B45 -A8 'call[[:space:]]+b8f02e\b' /tmp/regfac2/all.dis | head -n 30000 || true
+          } > analysis/registry-facade-constructors.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-constructors.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace registry facade constructors"
+          git pull --rebase origin main
+          git push origin HEAD:main
