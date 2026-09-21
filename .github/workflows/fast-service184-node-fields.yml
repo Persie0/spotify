@@ -1,0 +1,74 @@
+name: Fast trace service184 node fields
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-service184-node-fields.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184nf
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184nf
+
+      - name: Grep node writers
+        run: |
+          SO=/tmp/s184nf/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184nf/all.dis
+          {
+            echo '# Fast service184 weak-node field writers'
+            echo
+            echo '## +0xa0 stores in 0x1300000..0x1360000'
+            awk '
+              /^[[:space:]]*[0-9a-f]+:/ {
+                a=$1; gsub(":","",a);
+                if (a >= "1300000" && a < "1360000" && $0 ~ /\+0xa0\]/ && $0 ~ /mov/) print NR ":" $0
+              }' /tmp/s184nf/all.dis
+            echo
+            echo '## +0xa8 stores in 0x1300000..0x1360000'
+            awk '
+              /^[[:space:]]*[0-9a-f]+:/ {
+                a=$1; gsub(":","",a);
+                if (a >= "1300000" && a < "1360000" && $0 ~ /\+0xa8\]/ && $0 ~ /mov/) print NR ":" $0
+              }' /tmp/s184nf/all.dis
+            echo
+            echo '## Context around exact paired writer candidates'
+            grep -n -E -B18 -A28 'mov[^#]*\[[^]]+\+0xa0\]|mov[^#]*\[[^]]+\+0xa8\]' /tmp/s184nf/all.dis |               awk '
+                /^[0-9]+[-:][[:space:]]*[0-9a-f]+:/ {
+                  line=$0
+                  if (match(line,/[0-9a-f]+:/)) {
+                    a=substr(line,RSTART,RLENGTH-1)
+                    if (a >= "1300000" && a < "1360000") print
+                  }
+                }
+                /^[^-0-9]/ {print}
+              ' | head -n 30000 || true
+          } > analysis/service184-node-fields-fast.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-node-fields-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast trace service184 node fields"
+          git pull --rebase origin main
+          git push origin HEAD:main
