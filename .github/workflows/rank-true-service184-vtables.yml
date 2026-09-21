@@ -1,0 +1,244 @@
+name: Rank true service184 vtables
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-true-service184-vtables.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184true
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184true
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Scan true Itanium address points
+        run: |
+          SO=/tmp/s184true/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184true/all.dis
+          python3 - <<'PY' > analysis/service184-true-vtables.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184true/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184true/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            relocsecs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:
+                  relocs[rel['r_offset']]=add
+                  relocsecs[rel['r_offset']]=sec.name
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          def sqword(va):
+            q=qword(va)
+            if q is None:return None
+            return q-(1<<64) if q&(1<<63) else q
+
+          def is_code(v): return v is not None and fde(v) is not None
+
+          def method_body(addr,maxins=80):
+            fr=fde(addr)
+            if not fr:return []
+            out=[]
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                out.append((a,op,l))
+                if len(out)>=maxins:break
+            return out
+
+          def score_f28(addr):
+            body=method_body(addr,120)
+            if not body:return (-999,[])
+            ops=[op for _,op,_ in body]
+            score=0; why=[]
+            # service184 +0x28 is called with only this, must return a pointer directly.
+            if len(body)<=12: score+=10; why.append('compact')
+            if any(re.search(r'lea\s+rax,\[rdi\+0x[0-9a-f]+\]',op) for op in ops):
+              score+=22;why.append('returns-this-relative')
+            if any(re.search(r'mov\s+rax,QWORD PTR \[rdi\+0x[0-9a-f]+\]',op) for op in ops):
+              score+=22;why.append('returns-pointer-field')
+            if any(re.search(r'mov\s+rdi,QWORD PTR \[rdi\+0x[0-9a-f]+\]',op) for op in ops):
+              score+=10;why.append('delegates-through-member')
+            if any('call' in op or re.match(r'jmp\s+',op) for op in ops):
+              score+=3;why.append('delegated')
+            # Penalize obvious scalar returns.
+            if any(re.search(r'movzx\s+eax,BYTE PTR',op) for op in ops):
+              score-=20;why.append('scalar-byte-return')
+            if any(re.search(r'\bset[a-z]+\s+al\b',op) for op in ops):
+              score-=20;why.append('scalar-bool-return')
+            if any(re.search(r'cvtt|movss\s+xmm0|movsd\s+xmm0',op) for op in ops):
+              score-=20;why.append('scalar-fp-return')
+            return score,why
+
+          def score_f30(addr):
+            body=method_body(addr,80)
+            if not body:return (-999,[])
+            ops=[op for _,op,_ in body]; score=0;why=[]
+            if len(body)<=15:score+=8;why.append('compact')
+            if any(re.search(r'(lea|mov)\s+rax,.*\[rdi',op) for op in ops):
+              score+=8;why.append('pointer-like-return')
+            return score,why
+
+          def score_f38(addr):
+            body=method_body(addr,160)
+            if not body:return (-999,[])
+            ops=[op for _,op,_ in body];score=0;why=[]
+            # Proven ABI: +0x38 is used as sret with rdi=destination, rsi=this.
+            if any(re.search(r'\[rdi(?:\+0x[0-9a-f]+)?\]',op) and re.match(r'(mov|movups|movdqu|movaps|movdqa|and|xor|or)',op) for op in ops):
+              score+=10;why.append('writes-sret-destination')
+            if any(re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',op) for op in ops):
+              score+=6;why.append('reads-this-from-rsi')
+            return score,why
+
+          # Proven binary convention: RTTI is usually disabled, so address point has
+          # [AP-16] = small offset-to-top and [AP-8] = 0. Accept data-like RTTI too,
+          # but never a code pointer.
+          def valid_header(ap):
+            ott=sqword(ap-16); ti=qword(ap-8)
+            if ott is None or not (-0x10000<=ott<=0x10000):return False,None
+            if ti is None:return False,None
+            if is_code(ti):return False,None
+            # Typical seen value is 0; nonzero must point into mapped non-code data.
+            if ti!=0 and va2off(ti) is None:return False,None
+            return True,(ott,ti)
+
+          # Candidate APs only where first several qwords are code relocations/raw ptrs.
+          cand=[]
+          # Scan aligned addresses represented by reloc table plus nearby addresses.
+          seeds=set()
+          for o,a in relocs.items():
+            if is_code(a):
+              for d in range(0,0x80,8):
+                seeds.add(o-d)
+          for ap in sorted(seeds):
+            ok,h=valid_header(ap)
+            if not ok:continue
+            slots={}
+            for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68):
+              slots[off]=qword(ap+off)
+            if not all(is_code(slots[o]) for o in (0x28,0x30,0x38)):continue
+            # At least first two methods should be code for a real polymorphic class.
+            if not (is_code(slots[0]) and is_code(slots[8])):continue
+            s28,w28=score_f28(slots[0x28]);s30,w30=score_f30(slots[0x30]);s38,w38=score_f38(slots[0x38])
+            score=s28+s30+s38
+            # Prefer primary vtable (offset-to-top 0), but secondary remains possible.
+            if h[0]==0:score+=8
+            # +0x68 must exist on service itself only coincidentally, not required,
+            # but code there is slight evidence of a rich interface.
+            if is_code(slots[0x68]):score+=2
+            cand.append((score,ap,h,slots,w28,w30,w38))
+
+          # Deduplicate overlapping AP guesses by requiring preceding header to actually
+          # break a code-pointer run: AP-16 should not itself be an FDE pointer.
+          cand.sort(reverse=True)
+
+          print('# Structurally valid service184 vtable candidates')
+          print()
+          print('Requirements applied before ranking:')
+          print('- Itanium-like header at AP-0x10/AP-0x8: small offset-to-top, non-code/null RTTI')
+          print('- valid code slots at +0,+8,+0x28,+0x30,+0x38')
+          print('- +0x28 scored as direct pointer-return getter/delegator')
+          print('- +0x38 scored for sret ABI (writes rdi, reads rsi)')
+          print()
+          print(f'- total structurally valid ABI candidates: {len(cand)}')
+          print()
+
+          for rank,(score,ap,h,slots,w28,w30,w38) in enumerate(cand[:120],1):
+            print(f'## rank {rank} score={score} AP=0x{ap:x} offset_to_top={h[0]} typeinfo=0x{h[1]:x}')
+            print(f'- +0x28 -> 0x{slots[0x28]:x}; evidence={w28}')
+            print(f'- +0x30 -> 0x{slots[0x30]:x}; evidence={w30}')
+            print(f'- +0x38 -> 0x{slots[0x38]:x}; evidence={w38}')
+            for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68):
+              v=slots[off]
+              print(f'- slot +0x{off:x}: {("0x%x"%v) if v is not None else "None"} FDE={fde(v) if v else None}')
+            print('### +0x28 body')
+            for a,op,l in method_body(slots[0x28],120):print('    '+l)
+            print('### +0x30 body')
+            for a,op,l in method_body(slots[0x30],80):print('    '+l)
+            print('### +0x38 body')
+            for a,op,l in method_body(slots[0x38],160):print('    '+l)
+            print()
+
+          # Explicitly audit old top windows.
+          print('## Old ABI-rank windows under structural header test')
+          for ap in (0x18228d8,0x1821448,0x1822988,0x181f788,0x1867b28,0x1870480,0x187b208):
+            ok,h=valid_header(ap)
+            print(f'- 0x{ap:x}: valid_header={ok}; AP-0x10={sqword(ap-16)}; AP-0x8={qword(ap-8)}; parsed={h}')
+
+          # Ground-truth headers for known real vtables.
+          print('## Known-vtable sanity checks')
+          for ap in (0x184c738,0x184c858,0x185bf88):
+            ok,h=valid_header(ap)
+            print(f'- 0x{ap:x}: valid_header={ok}; header={h}; +0={qword(ap)} +8={qword(ap+8)}')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-true-vtables.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank structurally valid service184 vtables"
+          git pull --rebase origin main
+          git push origin HEAD:main
