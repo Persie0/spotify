@@ -1,0 +1,96 @@
+name: Backslice TimelineConductor c8 r14
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/backslice-timeline-c8-r14.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlc8r14
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlc8r14
+      - name: Backslice
+        run: |
+          SO=/tmp/tlc8r14/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlc8r14/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-c8-r14-backslice.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/tlc8r14/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def ctx_addr(lo,hi):
+              for a,i,op,l in ins:
+                  if lo<=a<=hi: print(l)
+
+          print('# TimelineConductor +0xc8 r14 backslice')
+          print()
+          print('Install:')
+          print('- 0x135fd57: [TimelineConductor+0xc8] = r14')
+          print()
+          print('## Raw disassembly 0x135fa00..0x135fd70')
+          ctx_addr(0x135fa00,0x135fd70)
+          print()
+
+          print('## Writes/definitions of r14 in range')
+          for a,i,op,l in ins:
+              if not (0x135f800<=a<=0x135fd57): continue
+              if re.match(r'(mov|lea|pop|xor|and|or|add|sub)\s+r14\b',op) or re.match(r'(mov|lea)\s+r14[dwb]\b',op):
+                  print(l)
+          print()
+
+          print('## Calls and immediate return captures in range')
+          rows=[x for x in ins if 0x135f800<=x[0]<=0x135fd57]
+          for k,(a,i,op,l) in enumerate(rows):
+              if not re.search(r'\bcall\b',op): continue
+              print(f'### {l}')
+              for x in rows[max(0,k-5):min(len(rows),k+8)]: print('    '+x[3])
+              print()
+
+          print('## Candidate object constructions in range')
+          for k,(a,i,op,l) in enumerate(rows):
+              if re.search(r'call\s+17edf00\b',op):
+                  print(f'### allocation {l}')
+                  for x in rows[max(0,k-8):min(len(rows),k+28)]: print('    '+x[3])
+                  print()
+
+          print('## r14 uses in final 0x120 bytes')
+          for a,i,op,l in rows:
+              if 0x135fc30<=a<=0x135fd57 and 'r14' in op:
+                  print(l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8-r14-backslice.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Backslice TimelineConductor c8 dependency producer"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
