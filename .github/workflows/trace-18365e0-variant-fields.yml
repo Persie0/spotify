@@ -1,0 +1,169 @@
+name: Trace 18365e0 variant fields
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-18365e0-variant-fields.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/v183
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/v183
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace variant fields
+        run: |
+          SO=/tmp/v183/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/v183/all.dis
+          python3 - <<'PY' > analysis/18365e0-variant-fields.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/v183/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/v183/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(a,b=14,n=26):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          print('# AP 0x18365e0 variant fields +0x10 / +0x1b5')
+          print()
+          print('Goal: prove whether the e9ccb0 instance keeps +0x1b5 false while +0x10 points at a 0x6b0 data record, and find any class path where +0x1b5 is true with a different +0x10 receiver.')
+          print()
+
+          # Enclosing huge builder that allocates e9ccb0 object.
+          fr=fde(0xe9ccb0)
+          print(f'## e9ccb0 owner builder FDE={fr}')
+          if fr:
+              rows=body(fr)
+              ai=next(k for k,x in enumerate(rows) if x[0]==0xe9ccb0)
+              # r12 becomes new object at e9ccb5. Track direct r12 accesses afterward.
+              print('### Direct r12 object accesses after allocation')
+              for a,i,op,l in rows[ai:]:
+                  if re.search(r'\[r12(?:\+0x[0-9a-f]+)?\]',op):
+                      if any(s in op for s in ('+0x10]','+0x1b5]','+0x1b4]','+0x1b6]','+0x1b7]','+0x1b8]')) or op.split(',',1)[0].startswith(('mov','and','or')):
+                          print(f'- 0x{a:x}: {op}')
+              print()
+              print('### All direct writes to r12+0x1b0..0x1bf')
+              for a,i,op,l in rows[ai:]:
+                  left=op.split(',',1)[0]
+                  if re.search(r'\[r12\+0x1b[0-9a-f]\]',left):
+                      print(f'#### 0x{a:x}: {op}')
+                      print(ctx(a,10,18));print()
+              print('### All direct writes to r12+0x10')
+              for a,i,op,l in rows[ai:]:
+                  left=op.split(',',1)[0]
+                  if '[r12+0x10]' in left:
+                      print(f'#### 0x{a:x}: {op}')
+                      print(ctx(a,10,18));print()
+
+          # Dump all vtable methods of AP 0x18365e0.
+          methods=[0xef90ca,0xef90de,0xef90f0,0xef9192,0xef91ac,0xef91b6,0xef91cc]
+          print('## 0x18365e0 virtual method family')
+          for m in methods:
+              mf=fde(m)
+              print(f'### 0x{m:x} FDE={mf}')
+              if mf:
+                  rows=body(mf)
+                  for x in rows: print('    '+x[3])
+                  print('#### +0x10/+0x1b5 accesses')
+                  for a,i,op,l in rows:
+                      if '+0x10]' in op or '+0x1b5]' in op:
+                          print('    '+l)
+              print()
+
+          # AP materializations identify constructors/destructors/copy paths.
+          print('## All AP 0x18365e0 materializations')
+          refs=[]
+          for a,i,op,l in ins:
+              if '# 18365e0' in l:
+                  refs.append((a,i,op))
+                  print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+                  print(ctx(a,18,40));print()
+
+          # Search same-base +0x10 and +0x1b5 in all functions, excluding rsp stack aliases.
+          print('## FDEs containing same-register accesses to both +0x10 and +0x1b5')
+          grouped={}
+          for a,i,op,l in ins:
+              frx=fde(a)
+              if not frx:continue
+              for reg in ('rbx','rbp','r12','r13','r14','r15','rdi','rsi','rdx','rcx'):
+                  if f'[{reg}+0x10]' in op:
+                      grouped.setdefault((frx,reg),[[],[]])[0].append((a,op))
+                  if f'[{reg}+0x1b5]' in op:
+                      grouped.setdefault((frx,reg),[[],[]])[1].append((a,op))
+          ranked=[]
+          for (frx,reg),(a10,a1b5) in grouped.items():
+              if a10 and a1b5:
+                  ranked.append((min(abs(x[0]-y[0]) for x in a10 for y in a1b5),frx,reg,a10,a1b5))
+          for dist,frx,reg,a10,a1b5 in sorted(ranked)[:80]:
+              print(f'### FDE 0x{frx[0]:x}..0x{frx[1]:x}, base={reg}, nearest=0x{dist:x}')
+              print('- +0x10:')
+              for a,op in a10[:12]:print(f'  - 0x{a:x}: {op}')
+              print('- +0x1b5:')
+              for a,op in a1b5[:12]:print(f'  - 0x{a:x}: {op}')
+              # show nearest pair contexts
+              a,b=min(((x,y) for x in a10 for y in a1b5),key=lambda p:abs(p[0]-p[1]))
+              print(ctx(min(a[0],b[0]),18,70));print()
+
+          # Find writes of literal 1 / register byte to +0x1b5 globally, with nearby +0x10.
+          print('## Global writers to +0x1b5')
+          for a,i,op,l in ins:
+              left=op.split(',',1)[0]
+              if '+0x1b5]' in left and re.match(r'(mov|or|and|xchg)',op):
+                  print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+                  print(ctx(a,18,28));print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/18365e0-variant-fields.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace 18365e0 variant fields"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
