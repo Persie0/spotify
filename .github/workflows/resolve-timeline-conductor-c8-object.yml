@@ -1,0 +1,127 @@
+name: Resolve TimelineConductor c8 object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-timeline-conductor-c8-object.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlc8obj
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlc8obj
+      - name: Decode c8 object
+        run: |
+          SO=/tmp/tlc8obj/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x135fa00 --stop-address=0x135fd70 "$SO" > /tmp/tlc8obj/window.dis
+          objdump -d -M intel "$SO" > /tmp/tlc8obj/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-c8-object.md
+          from pathlib import Path
+          import re
+          w=Path('/tmp/tlc8obj/window.dis').read_text(errors='replace').splitlines()
+          all_lines=Path('/tmp/tlc8obj/all.dis').read_text(errors='replace').splitlines()
+          parsed=[]
+          for i,l in enumerate(w):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: parsed.append((int(m.group(1),16),i,m.group(2),l))
+          print('# TimelineConductor +0xc8 object provenance')
+          print()
+          print('Known writer: 0x135fd57 stores r14 into [TimelineConductor+0xc8].')
+          print()
+          print('## Full pre-writer window')
+          for l in w: print('    '+l)
+          print()
+          print('## r14 definitions before writer')
+          defs=[]
+          for a,i,op,l in parsed:
+            if a>=0x135fd57: break
+            if re.match(r'(?:mov|lea|pop|xor)\s+r14\b',op) or re.match(r'mov\s+r14d\b',op):
+              defs.append((a,i,op,l))
+          for a,i,op,l in defs:
+            print(f'### 0x{a:x}: {op}')
+            for x in w[max(0,i-16):min(len(w),i+28)]: print('    '+x)
+            print()
+
+          print('## Last r14 definition before store')
+          prior=[x for x in defs if x[0]<0x135fd57]
+          if prior:
+            a,i,op,l=prior[-1]
+            print(f'- 0x{a:x}: {op}')
+            for x in w[max(0,i-40):min(len(w),i+80)]: print('    '+x)
+
+          print()
+          print('## High-address constants in pre-writer window')
+          highs=[]
+          for a,i,op,l in parsed:
+            if a>=0x135fd57:break
+            m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+            if m:
+              highs.append((a,int(m.group(1),16),l))
+          for a,v,l in highs:
+            print(f'- 0x{a:x}: high=0x{v:x} :: {l.strip()}')
+
+          # Infer candidate object vptr from writes [r14]=reg nearby.
+          print()
+          print('## Writes to [r14] and subobjects before c8 store')
+          for a,i,op,l in parsed:
+            if a>=0x135fd57:break
+            left=op.split(',',1)[0]
+            if '[r14' in left and re.match(r'(mov|movq|movups|movdqu|movaps|movdqa|and|or|xor)',op):
+              print(f'### 0x{a:x}: {op}')
+              for x in w[max(0,i-12):min(len(w),i+20)]:print('    '+x)
+              print()
+
+          # Exact high constants loaded into regs and then stored to [r14].
+          candidates=set()
+          for idx,(a,i,op,l) in enumerate(parsed):
+            if a>=0x135fd57:break
+            sm=re.match(r'mov\s+QWORD PTR \[r14(?:\+0x0)?\],(r\w+)',op)
+            if not sm: continue
+            reg=sm.group(1)
+            for aa,ii,oo,ll in parsed[max(0,idx-20):idx]:
+              mm=re.match(r'lea\s+'+re.escape(reg)+r',\[rip[^#]*#\s*([0-9a-f]+)',oo)
+              if mm:
+                v=int(mm.group(1),16)
+                if 0x1800000<=v<0x1a50000:candidates.add(v)
+          print('## Candidate dependency vtables')
+          print('- '+', '.join(hex(x) for x in sorted(candidates)) if candidates else '- none recovered locally')
+
+          # For each candidate, locate vtable entries using objdump comments is hard; use readelf via subprocess omitted.
+          # Instead dump all references to candidate AP and code around any +0x68 target if report can infer later.
+          for v in sorted(candidates):
+            print(f'### refs to AP 0x{v:x}')
+            for l in all_lines:
+              if f'# {v:x} ' in l or f'# {v:x}<' in l:
+                print('    '+l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8-object.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve TimelineConductor c8 object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
