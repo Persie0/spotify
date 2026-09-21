@@ -1,0 +1,222 @@
+name: Decode TimelineConductor service object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-timeline-conductor-service-object.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/timelineobj
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/timelineobj
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode object
+        run: |
+          SO=/tmp/timelineobj/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/timelineobj/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-service-object.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/timelineobj/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/timelineobj/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[x for x,y in fdes]
+
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]:return fdes[i]
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def ctx(i,b=14,a=24):
+            for x in dl[max(0,i-b):min(len(dl),i+a+1)]:print('    '+x)
+          def body(fn,limit=None):
+            fr=fde(fn)
+            if not fr:return []
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            return rows if limit is None else rows[:limit]
+
+          target=0x135d056
+          fr=fde(target)
+          rows=body(target)
+          print('# TimelineConductor service object construction')
+          print()
+          print('Proven factory chain:')
+          print('- descriptor ID 0xb8 = TimelineConductorSetupImpl, AP 0x1867c58')
+          print('- factory +0x28 = 0x135c878')
+          print('- factory allocates 0xf0 bytes at 0x135cc69')
+          print('- new object pointer -> r14')
+          print('- rdi=r14 at 0x135ce78')
+          print('- call 0x135d056 at 0x135ce8b')
+          print('- factory output receives r14 at 0x135cebf')
+          print()
+          print(f'## Constructor FDE {fr}')
+          print()
+
+          print('## Constructor prologue / first 0x280 bytes')
+          for a,i,op,l in rows:
+            if a<target+0x280:print('    '+l)
+          print()
+
+          # Track aliases that get the entry rdi before any redef.
+          aliases={'rdi'}
+          changed=True
+          while changed:
+            changed=False
+            for a,i,op,l in rows[:180]:
+              m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))\b',op)
+              if not m:continue
+              dst,src=m.groups()
+              if src in aliases and dst not in aliases:
+                aliases.add(dst);changed=True
+          print('## Entry-rdi aliases from prologue')
+          print('- '+', '.join(sorted(aliases)))
+          print()
+
+          print('## Writes to entry-object aliases at offsets < 0xf0')
+          objwrites=[]
+          for a,i,op,l in rows:
+            left=op.split(',',1)[0]
+            if '[' not in left or not re.match(r'(mov|movq|movups|movdqu|movaps|movdqa|and|or|xor|xchg|lea)',op):continue
+            for reg in aliases:
+              m=re.search(r'\['+re.escape(reg)+r'(?:\+0x([0-9a-f]+))?\]',left)
+              if not m:continue
+              off=int(m.group(1),16) if m.group(1) else 0
+              if off<0xf0:
+                objwrites.append((a,i,op,reg,off))
+          for a,i,op,reg,off in objwrites:
+            print(f'### 0x{a:x} {reg}+0x{off:x}: {op}')
+            ctx(i,5,8)
+            print()
+
+          print('## High-address materializations near object writes')
+          seen=set()
+          for a,i,op,reg,off in objwrites:
+            for wl in dl[max(0,i-10):i+3]:
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',wl)
+              if m:
+                va=int(m.group(1),16)
+                key=(a,va)
+                if key in seen:continue
+                seen.add(key)
+                print(f'- object write 0x{a:x} +0x{off:x}, nearby high VA 0x{va:x}')
+                print('  '+wl.strip())
+
+          print()
+          print('## Direct first-word writes in full constructor')
+          for a,i,op,l in rows:
+            left=op.split(',',1)[0]
+            for reg in aliases:
+              if re.fullmatch(r'(?:mov|xchg)\s+QWORD PTR \['+re.escape(reg)+r'\]',.*',op):
+                print(f'### 0x{a:x}: {op}')
+                ctx(i,12,16);print()
+
+          print('## Calls receiving entry-object alias as rdi')
+          # Find "mov rdi,alias" followed shortly by direct call.
+          for idx,(a,i,op,l) in enumerate(rows):
+            m=re.match(r'mov\s+rdi,(r\w+)\b',op)
+            if not m or m.group(1) not in aliases:continue
+            for aa,ii,oo,ll in rows[idx+1:idx+8]:
+              if re.search(r'\bcall\s+[0-9a-f]+\b',oo):
+                print(f'### set rdi={m.group(1)} @0x{a:x}; call @0x{aa:x}: {oo}')
+                ctx(ii,7,12);print()
+                break
+
+          # Once a candidate AP is found by first-word assignment, dump vtable.
+          print('## Candidate vtable APs from stores')
+          candidates=set()
+          for a,i,op,reg,off in objwrites:
+            if off!=0:continue
+            # Look backward for lea rhs reg,#high
+            rhs=op.split(',',1)[1].strip() if ',' in op else ''
+            if re.fullmatch(r'r\w+',rhs):
+              for aa,ii,oo,ll in rows:
+                if aa>=a or a-aa>0x50:continue
+                mm=re.match(r'lea\s+'+re.escape(rhs)+r',\[rip[^#]*#\s*([0-9a-f]+)',oo)
+                if mm:
+                  va=int(mm.group(1),16)
+                  if 0x1800000<=va<0x1a50000:candidates.add(va)
+          for ap in sorted(candidates):
+            print(f'### AP 0x{ap:x}')
+            for off in range(0,0x90,8):
+              fn=q(ap+off)
+              print(f'- +0x{off:x}: {("0x%x"%fn) if fn is not None else None} FDE={fde(fn) if fn else None}')
+            print()
+
+          print('## Candidate +0x28 method bodies')
+          for ap in sorted(candidates):
+            fn=q(ap+0x28)
+            if not fn or not fde(fn):continue
+            print(f'### AP 0x{ap:x} +0x28 -> 0x{fn:x}')
+            for a,i,op,l in body(fn,180):print('    '+l)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-service-object.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode TimelineConductor service object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
