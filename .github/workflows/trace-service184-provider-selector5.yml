@@ -1,0 +1,108 @@
+name: Trace service184 selector-5 provider
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-provider-selector5.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184p5
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184p5
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace provider
+        run: |
+          SO=/tmp/s184p5/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184p5/all.dis
+          python3 - <<'PY' > analysis/service184-provider-selector5.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184p5/liborbit-jni-spotify.so')
+          lines=Path('/tmp/s184p5/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde_for(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def ctx(i,b=24,a=45):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+x)
+          print('# Service184 selector-5 provider trace')
+          print()
+          print('Known site: [rbx+0x30] provider -> virtual +0x40(selector=5) -> result installed as service184.')
+          print()
+          for target in (0x11a3645,0x11a3636,0x11a3653):
+            print(f'## Context around 0x{target:x}')
+            hit=min(ins,key=lambda x:abs(x[0]-target))
+            ctx(hit[1],35,80); print()
+          fr=fde_for(0x11a3645)
+          print(f'## Containing FDE: {fr}')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]: print('    '+l)
+          print()
+          print('## Direct callers of containing FDE entry')
+          if fr:
+            t=fr[0]
+            for a,i,op,l in ins:
+              if re.search(r'\bcall\s+'+format(t,'x')+r'\b',op):
+                print(f'### caller 0x{a:x} FDE={fde_for(a)}'); ctx(i,25,55); print()
+          print('## Candidate writes to provider field +0x30 in same object-family neighborhood')
+          for a,i,op,l in ins:
+            if not (0x1180000<=a<0x11c0000): continue
+            if '[rbx+0x30]' in op or '[r14+0x30]' in op or '[r15+0x30]' in op:
+              if re.match(r'(mov|lea|xchg|and|or|xor)',op):
+                print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}'); ctx(i,12,20); print()
+          print('## Vptr materializations in containing caller family')
+          regions=[]
+          if fr: regions.append(fr)
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+'+format(fr[0],'x')+r'\b',op) if fr else False:
+              f=fde_for(a)
+              if f and f not in regions: regions.append(f)
+          for rg in regions:
+            print(f'### region {rg}')
+            for a,i,op,l in ins:
+              if rg[0]<=a<rg[1] and 'lea' in op and '# 18' in l:
+                print('    '+l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-provider-selector5.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 selector-5 provider"
+          git pull --rebase origin main
+          git push origin HEAD:main
