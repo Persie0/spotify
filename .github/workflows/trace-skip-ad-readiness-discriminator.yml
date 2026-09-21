@@ -1,0 +1,188 @@
+name: Trace Skip Ad readiness discriminator
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-readiness-discriminator.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readiness
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readiness
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace outer+0x58 / adapter+0x40
+        run: |
+          set -euo pipefail
+          SO=/tmp/readiness/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readiness/all.dis
+          readelf -rW "$SO" > /tmp/readiness/rel.txt
+          python3 - <<'PY' > analysis/skip-ad-readiness-discriminator.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readiness/liborbit-jni-spotify.so')
+          lines=Path('/tmp/readiness/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def body(fr,cap=2400):
+            if not fr:return []
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1] or len(out)>=cap:break
+              out.append(x)
+            return out
+
+          print('# Skip Ad readiness discriminator provenance')
+          print()
+          print('Coordinate transform:')
+          print('- adapter primary interface vptr 0x1841fc0 is installed at outer+0x18')
+          print('- fd381a/fd38d6 receive this = outer+0x18')
+          print('- adapter this+0x40 == outer+0x58')
+          print('- adapter this+0x68 == outer+0x80')
+          print('- therefore the +0x140 receiver is the pointer stored at outer+0x58')
+          print()
+
+          print('## Availability producer exact branch')
+          for a,i,op,l in ins:
+            if 0xfd381a<=a<0xfd38d6:print('    '+l)
+          print()
+
+          print('## Copy/materializer fd4c34 field map')
+          # This routine allocates 0x88 and installs 0x1841fc0 at new+0x18.
+          for a,i,op,l in ins:
+            if 0xfd4c34<=a<0xfd4da0:print('    '+l)
+          print()
+
+          print('## Writes to new outer+0x58 in fd4c34 materializer')
+          rows=[x for x in ins if 0xfd4c34<=x[0]<0xfd4da0]
+          for k,(a,i,op,l) in enumerate(rows):
+            if re.search(r'\[(?:rax|rdx|rbx|r1[2-5]|r[89])\+0x58\]',op) and re.match(r'(mov|xchg|lea)',op):
+              print(f'### 0x{a:x}: {op}')
+              ctx(a,16,24);print()
+
+          ctor_anchor=0xefc701
+          fr=fde(ctor_anchor)
+          print(f'## Constructor containing outer+0x58 store @0xefc701; FDE={fr}')
+          if fr:
+            # Keep only final ~0x500 bytes around the relevant construction.
+            lo=max(fr[0],0xefc480); hi=min(fr[1],0xefc900)
+            for a,i,op,l in ins:
+              if lo<=a<hi:print('    '+l)
+          print()
+
+          print('## r15 provenance before [outer+0x58] = r15 at 0xefc701')
+          if fr:
+            rows=body(fr)
+            target_i=next((k for k,x in enumerate(rows) if x[0]==0xefc701),None)
+            if target_i is not None:
+              for k in range(target_i-1,max(-1,target_i-220),-1):
+                a,i,op,l=rows[k]
+                if re.match(r'(mov|lea|pop|xchg)\s+r15\b',op):
+                  print(f'- nearest r15 definition 0x{a:x}: {op}')
+                  ctx(a,22,32)
+                  break
+                if re.search(r'call\s+',op) and k+1<len(rows) and re.match(r'mov\s+r15,rax\b',rows[k+1][2]):
+                  print(f'- call-return producer 0x{a:x}: {op}')
+                  ctx(a,22,32)
+                  break
+          print()
+
+          print('## All r15 definitions in relevant constructor FDE')
+          if fr:
+            for a,i,op,l in body(fr):
+              if a>0xefc701:break
+              if re.match(r'(mov|lea|pop|xchg)\s+r15\b',op):
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## All adapter-vptr materializers and outer+0x58 assignments')
+          # Restrict to functions that literally materialize 0x1841fc0.
+          refs=[]
+          for a,i,op,l in ins:
+            if '# 1841fc0 ' in l:
+              frx=fde(a)
+              if frx and frx not in refs:refs.append(frx)
+          for frx in refs:
+            print(f'### FDE 0x{frx[0]:x}..0x{frx[1]:x}')
+            rows=body(frx)
+            for a,i,op,l in rows:
+              if '# 1841fc0 ' in l or '+0x58]' in op or '+0x80]' in op or '+0x18]' in op or '+0x20]' in op:
+                print('    '+l)
+            print()
+
+          print('## Receiver-source helper calls around constructor')
+          if fr:
+            for a,i,op,l in body(fr):
+              if 0xefc450<=a<=0xefc701 and re.search(r'\bcall\b',op):
+                print(f'### call 0x{a:x}: {op}')
+                ctx(a,8,14);print()
+
+          print('## If outer+0x58 is copied from a source field, direct source-field reads')
+          # Print the exact source load immediately before any store to +0x58 in adapter materializers.
+          for frx in refs:
+            rows=body(frx)
+            for k,(a,i,op,l) in enumerate(rows):
+              if '+0x58]' not in op.split(',',1)[0]:continue
+              print(f'### outer+0x58 store 0x{a:x}: {op}')
+              for x in rows[max(0,k-8):k+4]:print('    '+x[3])
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-discriminator.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad readiness discriminator"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
