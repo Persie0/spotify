@@ -1,4 +1,4 @@
-name: Fingerprint Skip Ad readiness source class
+name: Fingerprint Skip Ad readiness source class v2
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
 jobs:
   trace:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,7 +75,7 @@ jobs:
               rw='w' if pat in left else 'r'
               hits[fr][(off,rw)].append((a,i,op))
 
-          print('# Skip Ad readiness source-class fingerprint')
+          print('# Skip Ad readiness source-class fingerprint v2')
           print()
           print('Target source object has:')
           print('- pointer/runtime dep at +0x10')
