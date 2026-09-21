@@ -1,0 +1,64 @@
+name: Backslice TimelineConductor c8 source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/backslice-timeline-c8-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlc8src
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlc8src
+
+      - name: Trace r14 source
+        run: |
+          SO=/tmp/tlc8src/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x135f800 --stop-address=0x135fd70 "$SO" > /tmp/tlc8src/win.dis
+          objdump -d -M intel "$SO" > /tmp/tlc8src/all.dis
+          {
+            echo '# TimelineConductor this+0xc8 source backslice'
+            echo
+            echo 'Target: 0x135fd57 stores r14 into [this+0xc8].'
+            echo
+            echo '## Window 0x135f800..0x135fd70'
+            cat /tmp/tlc8src/win.dis
+            echo
+            echo '## r14 definitions in window'
+            grep -E '^[[:space:]]*[0-9a-f]+:.*[[:space:]](mov|lea|pop|xchg)[[:space:]]+r14([^a-zA-Z0-9]|$)' /tmp/tlc8src/win.dis || true
+            echo
+            echo '## Calls producing/using r14 near final assignment'
+            grep -n -E -B18 -A28 'r14|135fd57' /tmp/tlc8src/win.dis || true
+          } > analysis/timeline-conductor-c8-source.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Backslice TimelineConductor c8 source"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
