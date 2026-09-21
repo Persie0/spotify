@@ -1,0 +1,222 @@
+name: Enumerate native provider descriptor IDs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/enumerate-native-provider-descriptor-ids.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/providerids
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/providerids
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Enumerate descriptors
+        run: |
+          SO=/tmp/providerids/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/providerids/all.dis
+          python3 - <<'PY' > analysis/native-provider-descriptor-ids.md
+          from pathlib import Path
+          import re, struct, bisect
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/providerids/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/providerids/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for r in sec.iter_relocations():
+                add=r.entry.get('r_addend')
+                if add is not None:rel[r['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]:return fdes[i]
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cbytes(v,n):
+            o=va2off(v)
+            if o is None:return b''
+            return data[o:o+n]
+          def cstr(v,limit=256):
+            o=va2off(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+limit))
+            if e<0:return None
+            raw=data[o:e]
+            try:return raw.decode('utf8')
+            except:return None
+
+          ins=[]
+          bodies=defaultdict(list)
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if not m:continue
+            a=int(m.group(1),16);op=m.group(2)
+            ins.append((a,i,op,l))
+            fr=fde(a)
+            if fr:bodies[fr].append((a,i,op,l))
+
+          def body(fn):
+            fr=fde(fn)
+            return bodies.get(fr,[])
+
+          def imm_return(fn):
+            b=body(fn)
+            if not b or len(b)>12:return None
+            # Accept mov al/eax,imm or push imm; pop rax/eax then ret.
+            for a,i,op,l in b:
+              m=re.match(r'mov\s+(?:al|eax|rax),0x([0-9a-f]+)',op)
+              if m:return int(m.group(1),16)
+            for j,(a,i,op,l) in enumerate(b[:-1]):
+              m=re.match(r'push\s+0x([0-9a-f]+)',op)
+              if m and any(re.match(r'pop\s+(?:rax|eax)',x[2]) for x in b[j+1:j+3]):
+                return int(m.group(1),16)
+            return None
+
+          def ptr_len_return(fn):
+            b=body(fn)
+            if not b or len(b)>16:return None
+            ptr=None;ln=None
+            for a,i,op,l in b:
+              m=re.search(r'lea\s+rax,\[rip[^#]*#\s*([0-9a-f]+)',l)
+              if m:ptr=int(m.group(1),16)
+              m=re.match(r'(?:mov\s+edx,0x|push\s+0x)([0-9a-f]+)',op)
+              if m:ln=int(m.group(1),16)
+            if ptr is not None and ln is not None:
+              raw=cbytes(ptr,ln)
+              try:s=raw.decode('utf8','replace')
+              except:s=repr(raw)
+              return ptr,ln,s
+            return None
+
+          # Recover vptr materializations that immediately feed an addb16 registration.
+          registrations=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+addb16\b',l):
+              continue
+            win=ins[max(0,idx-28):idx]
+            # Expected: operator new 8; lea rcx,[rip+...] # AP; mov [rax],rcx; store rax to [rsp+18].
+            aps=[]
+            for aa,ii,oo,ll in win:
+              m=re.search(r'lea\s+(?:rcx|rax|rdx),\[rip[^#]*#\s*([0-9a-f]+)',ll)
+              if m:
+                v=int(m.group(1),16)
+                # candidate AP requires methods at +10/+18/+20/+28 to be code-ish.
+                vals=[q(v+off) for off in (0x10,0x18,0x20,0x28)]
+                if all(x is not None and fde(x) for x in vals):
+                  aps.append((aa,v))
+            if aps:
+              # nearest candidate wins
+              aa,ap=aps[-1]
+              registrations.append((a,ap,aa))
+
+          # Deduplicate registration order.
+          seen=set(); ordered=[]
+          for call,ap,mat in registrations:
+            key=(call,ap)
+            if key not in seen:
+              seen.add(key);ordered.append((call,ap,mat))
+
+          print('# Native provider descriptor IDs registered through addb16')
+          print()
+          print(f'- recovered registrations: {len(ordered)}')
+          print()
+          idmap=defaultdict(list)
+          for n,(call,ap,mat) in enumerate(ordered,1):
+            f10=q(ap+0x10);f18=q(ap+0x18);f20=q(ap+0x20);f28=q(ap+0x28)
+            rid=imm_return(f10)
+            s18=ptr_len_return(f18)
+            s20=ptr_len_return(f20)
+            if rid is not None:idmap[rid].append(ap)
+            print(f'## {n}. addb16@0x{call:x} AP=0x{ap:x}')
+            print(f'- materialized @0x{mat:x}')
+            print(f'- +0x10 0x{f10:x} immediate={hex(rid) if rid is not None else None}')
+            print(f'- +0x18 0x{f18:x} metadata={s18!r}')
+            print(f'- +0x20 0x{f20:x} metadata={s20!r}')
+            print(f'- +0x28 0x{f28:x} FDE={fde(f28)}')
+            print()
+
+          print('## ID index')
+          for rid in sorted(idmap):
+            print(f'- 0x{rid:x} ({rid}): '+', '.join(f'0x{x:x}' for x in idmap[rid]))
+          print()
+
+          print('## Exact ID 0xb8 matches')
+          aps=idmap.get(0xb8,[])
+          if not aps:
+            print('- none among recovered addb16 descriptors')
+          for ap in aps:
+            print(f'### AP 0x{ap:x}')
+            for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68):
+              t=q(ap+off)
+              print(f'- +0x{off:x}: {("0x%x"%t) if t is not None else None} FDE={fde(t) if t else None}')
+            f28=q(ap+0x28)
+            print('#### factory +0x28')
+            for x in body(f28)[:500]:print('    '+x[3])
+            print()
+
+          # Show addb16 itself.
+          print('## addb16 implementation')
+          fr=fde(0xaddb16)
+          print(f'FDE={fr}')
+          for x in bodies.get(fr,[])[:1200]:print('    '+x[3])
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/native-provider-descriptor-ids.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Enumerate native provider descriptor IDs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
