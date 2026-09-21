@@ -1,0 +1,162 @@
+name: Fast exact service table writers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-service-table-writers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/stfast
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/stfast
+
+      - name: Scan writers
+        run: |
+          set -euo pipefail
+          SO=/tmp/stfast/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/stfast/all.dis
+          python3 - <<'PY' > analysis/service-table-writers-fast.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/stfast/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          # function symbol labels from objdump, used only for grouping/local bounds.
+          labels=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^([0-9a-f]+)\s+<[^>]+>:$',l)
+            if m: labels.append((int(m.group(1),16),i,l))
+          def label_for(addr):
+            lo=0;hi=len(labels)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if labels[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            return labels[lo-1] if lo else None
+          def context_line_index(li,b=50,a=70):
+            return '\n'.join('    '+x for x in lines[max(0,li-b):min(len(lines),li+a+1)])
+
+          def memory_dest(op,off):
+            left=op.split(',',1)[0]
+            return bool(re.match(r'(?:mov|movq|movups|movaps|movdqu|movdqa|and|or|xor|xchg)\b',op)
+                        and re.search(r'\[[^]]+\+0x'+off+r'\]',left))
+
+          print('# Fast exact service-table writer scan')
+          print()
+          print('Ground truth:')
+          print('- facade[0] = table')
+          print('- service ID 0x73 reads table+0x398')
+          print('- service ID 0xb8 reads table+0x5c0')
+          print()
+
+          hits={}
+          for off in ('398','5c0'):
+            hs=[]
+            for idx,(a,li,op,l) in enumerate(ins):
+              if memory_dest(op,off): hs.append((idx,a,li,op,l))
+            hits[off]=hs
+            print(f'## Direct destination writes to +0x{off}: {len(hs)}')
+            for n,(idx,a,li,op,l) in enumerate(hs,1):
+              lab=label_for(a)
+              print(f'### {n}. 0x{a:x}: {op}')
+              print(f'- nearest symbol block: {lab[2] if lab else None}')
+              # Track base register backwards in a short instruction window.
+              m=re.search(r'\[([a-z0-9]+)\+0x'+off+r'\]',op)
+              base=m.group(1) if m else None
+              if base:
+                print(f'- destination base register: {base}')
+                print('- recent definitions of base:')
+                count=0
+                for j in range(idx-1,max(-1,idx-100),-1):
+                  aa,lli,oo,ll=ins[j]
+                  if re.match(r'(?:mov|lea|pop|xchg)\s+'+re.escape(base)+r'\b',oo):
+                    print(f'  - 0x{aa:x}: {oo}')
+                    count+=1
+                    if count>=10:break
+              print('~~~asm')
+              print(context_line_index(li))
+              print('~~~')
+              print()
+
+          print('## Functions/blocks containing writes to BOTH +0x398 and +0x5c0')
+          g398={}
+          for h in hits['398']:
+            lab=label_for(h[1]); key=lab[0] if lab else None
+            g398.setdefault(key,[]).append(h)
+          g5={}
+          for h in hits['5c0']:
+            lab=label_for(h[1]); key=lab[0] if lab else None
+            g5.setdefault(key,[]).append(h)
+          common=set(g398)&set(g5)
+          if not common: print('- none by nearest objdump symbol block')
+          for key in sorted(x for x in common if x is not None):
+            lab=label_for(key)
+            print(f'### block {lab[2] if lab else hex(key)}')
+            for h in g398[key]:print(f'- +0x398 0x{h[1]:x}: {h[3]}')
+            for h in g5[key]:print(f'- +0x5c0 0x{h[1]:x}: {h[3]}')
+          print()
+
+          print('## Direct table reads for reference')
+          for off in ('398','5c0'):
+            print(f'### +0x{off}')
+            n=0
+            for a,li,op,l in ins:
+              if re.search(r'\[[^]]+\+0x'+off+r'\]',op) and not memory_dest(op,off):
+                print(f'- 0x{a:x}: {op}')
+                n+=1
+                if n>=100:break
+          print()
+
+          print('## Nearby explicit writes to table-sized offsets around each +0x5c0 writer')
+          for idx,a,li,op,l in hits['5c0']:
+            print(f'### +0x5c0 writer 0x{a:x}')
+            seen=[]
+            for j in range(max(0,idx-150),min(len(ins),idx+150)):
+              aa,lli,oo,ll=ins[j]
+              left=oo.split(',',1)[0]
+              m=re.search(r'\[([a-z0-9]+)\+0x([0-9a-f]+)\]',left)
+              if not m:continue
+              off=int(m.group(2),16)
+              if 0x100<=off<=0x800 and off%8==0 and re.match(r'(?:mov|movq|movups|movaps|movdqu|movdqa|and|or|xor|xchg)\b',oo):
+                tup=(aa,oo)
+                if tup not in seen:seen.append(tup)
+            for aa,oo in seen:print(f'- 0x{aa:x}: {oo}')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service-table-writers-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast trace service table writers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
