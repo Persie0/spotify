@@ -1,0 +1,192 @@
+name: Resolve d88caa secondary argument
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-d88caa-secondary-argument.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/d88arg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/d88arg
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve secondary interface and callers
+        run: |
+          SO=/tmp/d88arg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/d88arg/all.dis
+          readelf -rW "$SO" > /tmp/d88arg/rel.txt
+          python3 - <<'PY' > analysis/d88caa-secondary-argument.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/d88arg/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/d88arg/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); fstarts=[x[0] for x in fdes]
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def vaoff(v):
+            for a,z,o in loads:
+              if a<=v<z:return o+(v-a)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vaoff(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def sq(v):
+            x=q(v)
+            if x is None:return None
+            return x-(1<<64) if x&(1<<63) else x
+          def fde(a):
+            k=bisect.bisect_right(fstarts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def ix(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=32):
+            j=ix(a)
+            return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          target=0xd88caa
+          slots=sorted(v for v,t in rel.items() if t==target)
+          print('# d88caa secondary-argument interface')
+          print()
+          print('Known adapter:')
+          print('- d88caa subtracts 0x28 from RSI and calls d85524')
+          print('- d85524 later captures that adjusted RSI as carrier[0]')
+          print('- d8a5c2 eventually calls carrier[0]->vtable+0x1d8')
+          print()
+          print('## Relocation slots targeting d88caa')
+          print([hex(x) for x in slots])
+          print()
+
+          plausible=[]
+          print('## Plausible Itanium address points containing d88caa')
+          for slot in slots:
+            for ap in range(max(0,slot-0x300),slot+1,8):
+              ott=sq(ap-16); ti=q(ap-8)
+              if ott is None or not(-0x1000<=ott<=0x1000): continue
+              # typeinfo can be 0 in stripped tables, or rodata/high VA
+              if ti not in (0,None) and ti<0x1700000: continue
+              off=slot-ap
+              if off<0 or off>0x300: continue
+              # Need a useful density of code pointers after AP.
+              vals=[q(ap+o) for o in range(0,min(0x220,off+0x80),8)]
+              code=sum(1 for x in vals if x is not None and fde(x))
+              if code<5: continue
+              plausible.append((ap,off,ott,ti,code))
+          # dedupe/rank: prefer offset-to-top -0x28 or 0, and normal small method offset
+          plausible=sorted(set(plausible),key=lambda x:(0 if x[2]==-0x28 else 1 if x[2]==0 else 2, x[1],-x[4]))
+          for ap,off,ott,ti,code in plausible[:40]:
+            print(f'### AP 0x{ap:x}: d88caa at +0x{off:x}; offset-to-top={ott}; typeinfo={None if ti is None else hex(ti)}; codeSlots={code}')
+            for o in range(0,min(0x100,off+0x40),8):
+              v=q(ap+o)
+              if v is not None: print(f'- +0x{o:x}: 0x{v:x} FDE={fde(v)}')
+            print()
+
+          print('## Code materializations of plausible APs')
+          aps={x[0] for x in plausible[:40]}
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16) in aps:
+              print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+              print(ctx(a,14,24)); print()
+
+          print('## Candidate virtual call sites at matching slot offsets with RSI = base+0x28')
+          offsets=sorted(set(x[1] for x in plausible[:40]))
+          hits=[]
+          for k,(a,i,op,l) in enumerate(ins):
+            mo=re.search(r'call\s+QWORD PTR \[[^]]+\+0x([0-9a-f]+)\]',op)
+            if not mo: continue
+            off=int(mo.group(1),16)
+            if off not in offsets: continue
+            prev=ins[max(0,k-28):k]
+            # Require explicit construction/adjustment of rsi by 0x28 nearby.
+            ok=False
+            rsilines=[]
+            for aa,ii,oo,ll in prev:
+              if re.search(r'\b(?:lea\s+rsi,\[[^]]+\+0x28\]|add\s+rsi,0x28|sub\s+rsi,0xffffffffffffffd8)\b',oo):
+                ok=True; rsilines.append(ll)
+            if ok:
+              hits.append((a,off,fde(a),rsilines))
+              print(f'### call 0x{a:x} slot +0x{off:x}; FDE={fde(a)}')
+              print('- RSI setup: '+ ' | '.join(rsilines))
+              print(ctx(a,32,34)); print()
+
+          print('## Any indirect matching-slot calls with nearby RSI provenance (fallback)')
+          if not hits:
+            count=0
+            for k,(a,i,op,l) in enumerate(ins):
+              mo=re.search(r'call\s+QWORD PTR \[[^]]+\+0x([0-9a-f]+)\]',op)
+              if not mo:continue
+              off=int(mo.group(1),16)
+              if off not in offsets:continue
+              # only show calls where rsi was set in last 10 insns
+              prev=ins[max(0,k-10):k]
+              if any(re.match(r'(mov|lea|add|sub)\s+rsi\b',x[2]) for x in prev):
+                print(f'### 0x{a:x} slot +0x{off:x}; FDE={fde(a)}')
+                print(ctx(a,14,20)); print()
+                count+=1
+                if count>=80:break
+
+          print('## Exact d88caa adapter')
+          print(ctx(0xd88caa,8,16))
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/d88caa-secondary-argument.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve d88caa secondary argument"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
