@@ -1,0 +1,110 @@
+name: Decode final readiness secondary interface
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-final-readiness-secondary.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/finalread
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/finalread
+
+      - name: Decode interface
+        run: |
+          set -euo pipefail
+          SO=/tmp/finalread/liborbit-jni-spotify.so
+          readelf -rW "$SO" > /tmp/finalread/rel.txt
+          objdump -d -M intel "$SO" > /tmp/finalread/all.dis
+          python3 - <<'PY' > analysis/final-readiness-secondary-1843bf8.md
+          from pathlib import Path
+          import re,bisect
+          AP=0x1843bf8
+          SLOT=AP+0x140
+          rel={}
+          for l in Path('/tmp/finalread/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              i=p.index('R_X86_64_RELATIVE')
+              if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                rel[int(p[0],16)]=int(p[i+1],16)
+          lines=Path('/tmp/finalread/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=10,n=32):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          target=rel.get(SLOT)
+          print('# Final readiness secondary interface 0x1843bf8')
+          print()
+          print('Proven construction:')
+          print('- allocation base = 0x58-byte object at e948ff')
+          print('- primary vptr [base+0x0] = 0x1831a70 at e94917')
+          print('- secondary readiness vptr [base+0x18] = 0x1843bf8 at e94921')
+          print('- arg13 head = base+0x18; control/lifetime = base')
+          print('- this pair propagates through source+0x178 -> owner+0x428 to fd381a readiness test')
+          print()
+          print(f'## Vtable AP 0x{AP:x} through +0x1f8')
+          for off in range(0,0x200,8):
+            v=rel.get(AP+off)
+            print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else "NO_RELOC"}')
+          print()
+          print(f'## Exact +0x140 slot 0x{SLOT:x}')
+          print(f'- target = {("0x%x"%target) if target is not None else "NO_RELOC"}')
+          if target is not None:
+            print('### target disassembly')
+            ctx(target,12,60)
+          print()
+          print('## Constructor reference at e94921')
+          ctx(0xe94921,20,42)
+          print()
+          print('## All code materializations of AP 0x1843bf8')
+          for a,i,op,l in ins:
+            if '# 1843bf8' in l:
+              print(f'### 0x{a:x}: {op}')
+              ctx(a,10,24); print()
+          if target is not None:
+            print('## Direct callers/xrefs to +0x140 target')
+            pat=re.compile(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b')
+            for a,i,op,l in ins:
+              if pat.search(op):
+                print(f'### 0x{a:x}: {op}')
+                ctx(a,10,20); print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/final-readiness-secondary-1843bf8.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode final readiness secondary interface"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
