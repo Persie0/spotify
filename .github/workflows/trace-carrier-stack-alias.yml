@@ -1,0 +1,133 @@
+name: Trace carrier stack alias
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-carrier-stack-alias.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download and disassemble Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/calias
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/calias
+          objdump -d -M intel /tmp/calias/liborbit-jni-spotify.so > /tmp/calias/all.dis
+
+      - name: Extract alias flow
+        run: |
+          python3 - <<'PY' > analysis/readiness-carrier-stack-alias.md
+          from pathlib import Path
+          import bisect,re
+          raw=Path('/tmp/calias/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in raw:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',line)
+              if m:
+                  a=int(m.group(1),16)
+                  if 0xe94900 <= a < 0xe98f3b:
+                      ins.append((a,m.group(2).strip(),line))
+          addrs=[x[0] for x in ins]
+          def ctx(i,b=20,a=28):
+              return ins[max(0,i-b):min(len(ins),i+a+1)]
+
+          print('# Readiness carrier stack-alias trace')
+          print()
+          print('Anchor: e94996 stores carrier base in [rsp+0x48]. The carrier has P at +0x20 and outer at +0x28.')
+          print()
+
+          for token in ('[rsp+0x48]','+0x20]','+0x28]','+0x40]','+0x58]'):
+              print(f'## Hits containing {token}')
+              hits=[i for i,(_,op,_) in enumerate(ins) if token in op]
+              for i in hits:
+                  a,op,line=ins[i]
+                  print(f'### 0x{a:x}: {op}')
+                  for _,_,ln in ctx(i):
+                      print('    '+ln)
+              print()
+
+          print('## Simple straight-line taint from carrier loads')
+          regs=('rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15')
+          # Start at every load reg,[rsp+0x48], track exact carrier/P/outer aliases until control transfer/call.
+          load_re=re.compile(r'^mov\s+([a-z0-9]+),QWORD PTR \[rsp\+0x48\]$')
+          mov_re=re.compile(r'^mov\s+([a-z0-9]+),([a-z0-9]+)$')
+          lea_re=re.compile(r'^lea\s+([a-z0-9]+),\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]$')
+          deref_re=re.compile(r'^mov\s+([a-z0-9]+),QWORD PTR \[([a-z0-9]+)\+0x([0-9a-f]+)\]$')
+          store_re=re.compile(r'^mov\s+QWORD PTR \[([a-z0-9]+)\+0x([0-9a-f]+)\],([a-z0-9]+)$')
+          for start,(sa,sop,sline) in enumerate(ins):
+              m=load_re.match(sop)
+              if not m: continue
+              taint={m.group(1):'carrier'}
+              events=[(sa,sop,'carrier-load')]
+              for a,op,line in ins[start+1:start+90]:
+                  if op.startswith(('ret','jmp ','je ','jne ','ja ','jb ','jg ','jl ','call ')):
+                      if op.startswith('call '):
+                          events.append((a,op,'call/barrier'))
+                      break
+                  dm=deref_re.match(op)
+                  if dm:
+                      dst,base,off=dm.group(1),dm.group(2),int(dm.group(3),16)
+                      if base in taint:
+                          kind=taint[base]
+                          if kind=='carrier' and off==0x20: taint[dst]='P'
+                          elif kind=='carrier' and off==0x28: taint[dst]='outer'
+                          elif kind=='P' and off==0x40: taint[dst]='P+40-value'
+                          elif kind=='outer' and off==0x58: taint[dst]='P+40-value'
+                          else: taint.pop(dst,None)
+                          if dst in taint: events.append((a,op,taint[dst]))
+                          continue
+                  lm=lea_re.match(op)
+                  if lm:
+                      dst,base=lm.group(1),lm.group(2); off=int(lm.group(3),16) if lm.group(3) else 0
+                      if base in taint:
+                          kind=taint[base]
+                          if kind=='outer' and off==0x18: taint[dst]='P'
+                          elif kind=='P' and off==0x40: taint[dst]='P+40-address'
+                          elif kind=='outer' and off==0x58: taint[dst]='P+40-address'
+                          else: taint[dst]=f'{kind}+0x{off:x}'
+                          events.append((a,op,taint[dst]))
+                          continue
+                  mm=mov_re.match(op)
+                  if mm:
+                      dst,src=mm.group(1),mm.group(2)
+                      if src in taint:
+                          taint[dst]=taint[src]; events.append((a,op,taint[dst]))
+                      else: taint.pop(dst,None)
+                      continue
+                  sm=store_re.match(op)
+                  if sm:
+                      base,off,src=sm.group(1),int(sm.group(2),16),sm.group(3)
+                      if (base in taint and ((taint[base]=='P' and off==0x40) or (taint[base]=='outer' and off==0x58))):
+                          events.append((a,op,'TARGET WRITE'))
+                  # crude clobber of explicit destination
+                  md=re.match(r'^[a-z]+\s+([a-z0-9]+),',op)
+                  if md and md.group(1) in taint:
+                      taint.pop(md.group(1),None)
+              print(f'### carrier reload 0x{sa:x}')
+              for a,op,k in events:
+                  print(f'- 0x{a:x} [{k}] {op}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-carrier-stack-alias.md
+          git commit -m "Trace readiness carrier stack alias"
+          git push
