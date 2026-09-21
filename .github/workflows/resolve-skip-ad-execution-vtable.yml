@@ -1,0 +1,261 @@
+name: Resolve Skip Ad execution vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-execution-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipxvt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipxvt
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Rank execution-dependency vtables
+        run: |
+          SO=/tmp/skipxvt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipxvt/all.dis
+          python3 - <<'PY' > analysis/skip-ad-execution-vtable.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipxvt/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skipxvt/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          byfr={}
+          fi=0
+          for x in ins:
+            while fi<len(fdes) and fdes[fi][1]<=x[0]:fi+=1
+            for k in range(max(0,fi-2),min(len(fdes),fi+3)):
+              fr=fdes[k]
+              if fr[0]<=x[0]<fr[1]:
+                byfr.setdefault(fr,[]).append(x); break
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+
+          def qword(va):
+            if va in rel:return rel[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          def iscode(q): return q is not None and 0xa00000<=q<0x1800000 and fde(q) is not None
+
+          def body(addr,n=120):
+            fr=fde(addr)
+            return byfr.get(fr,[])[:n] if fr else []
+
+          def bodytext(addr,n=120):
+            return '\n'.join(x[2] for x in body(addr,n))
+
+          def no_extra_arg_score(addr):
+            xs=body(addr,60)
+            if not xs:return -20,[]
+            # +0x68 is called as this-only at the proven skip-ad site.
+            extras=('rsi','rdx','rcx','r8','r9')
+            aliases={
+              'rsi':('rsi','esi','si','sil'),'rdx':('rdx','edx','dx','dl'),
+              'rcx':('rcx','ecx','cx','cl'),'r8':('r8','r8d','r8w','r8b'),
+              'r9':('r9','r9d','r9w','r9b')
+            }
+            defined=set(); bad=[]
+            def first_dst(op):
+              m=re.match(r'(?:mov|lea|xor|and|or|add|sub|pop|movzx|movsx|movsxd)\s+([a-z0-9]+)',op)
+              return m.group(1) if m else None
+            for a,i,op,l in xs[:35]:
+              dst=first_dst(op)
+              for canon in extras:
+                toks=aliases[canon]
+                used=any(re.search(rf'(?<![a-z0-9]){t}(?![a-z0-9])',op) for t in toks)
+                defines=dst in toks
+                # xor reg,reg counts as defining without requiring incoming value.
+                selfxor=bool(re.match(r'xor\s+([a-z0-9]+),\1$',op))
+                if used and canon not in defined and not (defines and (op.startswith(('mov ','lea ','pop ','movzx ','movsx ','movsxd ')) or selfxor)):
+                  bad.append((canon,a,op))
+                if defines:defined.add(canon)
+            score=15 if not bad else -7*len(set(x[0] for x in bad))
+            return score,bad
+
+          def sret_score(addr):
+            # Observed +0xb8 caller: rdi=out, rsi=this.
+            t=bodytext(addr,90)
+            s=0;why=[]
+            if re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',t):s+=8;why.append('reads-rsi-this')
+            if re.search(r'(?:mov|movups|movdqu|movaps|movdqa)\s+(?:QWORD PTR |XMMWORD PTR )?\[rdi(?:\+0x[0-9a-f]+)?\]',t):
+              s+=10;why.append('writes-rdi-out')
+            if re.search(r'mov\s+r(?:bx|bp|1[2345]),rsi',t):s+=4;why.append('saves-rsi')
+            return s,why
+
+          def boolish_score(addr):
+            t=bodytext(addr,80)
+            s=0;why=[]
+            if re.search(r'(?:mov|movzx)\s+eax,(?:BYTE PTR )?\[rdi',t) or re.search(r'movzx\s+eax,BYTE PTR \[rdi',t):
+              s+=5;why.append('this-byte-return')
+            if re.search(r'test\s+.*\n.*set[a-z]+\s+al',t):s+=4;why.append('boolean-result')
+            if 'ret' in t:s+=1
+            return s,why
+
+          # Candidate AP must implement all slots observed on the SAME execution dependency.
+          slots=(0x68,0x98,0xb8,0xc0)
+          candidate_bases=set()
+          for off in rel:
+            for slot in slots:
+              base=off-slot
+              if base<0:continue
+              vals={s:qword(base+s) for s in slots}
+              if all(iscode(vals[s]) for s in slots):
+                candidate_bases.add(base)
+
+          # Preindex RIP-comment materializations for ranking.
+          mats={}
+          for a,i,op,l in ins:
+            if '#' not in l:continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va in candidate_bases:
+              mats.setdefault(va,[]).append((a,i,op,l,fde(a)))
+
+          ranked=[]
+          for base in candidate_bases:
+            vals={s:qword(base+s) for s in slots}
+            s68,bad=no_extra_arg_score(vals[0x68])
+            sb8,wb8=sret_score(vals[0xb8])
+            s98,w98=boolish_score(vals[0x98])
+            sc0,wc0=boolish_score(vals[0xc0])
+            score=s68+sb8+s98+sc0
+            ms=mats.get(base,[])
+            # Reward a real vptr materialization in player/core construction bands.
+            core=[m for m in ms if 0xd00000<=m[0]<0x1500000]
+            if core:score+=15
+            # Strong reward if materialized near the 0x11e...-0x121... player-construction cluster.
+            player=[m for m in ms if 0x11e0000<=m[0]<0x1220000]
+            if player:score+=25
+            # Itanium APs in this binary generally live here.
+            if 0x1800000<=base<0x19d0000:score+=2
+            ranked.append((score,base,vals,s68,bad,sb8,wb8,s98,w98,sc0,wc0,ms))
+          ranked.sort(reverse=True)
+
+          print('# Skip Ad execution dependency vtable candidates')
+          print()
+          print('Proven dependency ABI used for filtering:')
+          print('- +0x68 is invoked as this-only by the exact native "skip-ad" branch')
+          print('- +0xb8 is observed as an sret-style call with rdi=output and rsi=dependency')
+          print('- the same dependency family is also used through +0x98 and +0xc0 in player/restriction construction')
+          print()
+          print(f'- candidates implementing all four slots: {len(ranked)}')
+          print()
+
+          for score,base,vals,s68,bad,sb8,wb8,s98,w98,sc0,wc0,ms in ranked[:60]:
+            print(f'## score={score} address-point=0x{base:x}')
+            print(f'- +0x68 -> 0x{vals[0x68]:x}; no-extra score={s68}; incoming-extra={sorted(set(x[0] for x in bad))}; FDE={fde(vals[0x68])}')
+            print(f'- +0x98 -> 0x{vals[0x98]:x}; boolish score={s98}; {w98}; FDE={fde(vals[0x98])}')
+            print(f'- +0xb8 -> 0x{vals[0xb8]:x}; sret score={sb8}; {wb8}; FDE={fde(vals[0xb8])}')
+            print(f'- +0xc0 -> 0x{vals[0xc0]:x}; boolish score={sc0}; {wc0}; FDE={fde(vals[0xc0])}')
+            if ms:
+              print('- materializations:')
+              for a,i,op,l,fr in ms[:12]:print(f'  - 0x{a:x}: {op}; FDE={fr}')
+            print('### +0x68 body')
+            for x in body(vals[0x68],120):print('    '+x[3])
+            print('### +0xb8 body head')
+            for x in body(vals[0xb8],60):print('    '+x[3])
+            print()
+
+          # Focused semantic extraction from the best candidates.
+          print('## Semantic/string xrefs inside top +0x68 implementations')
+          for score,base,vals,*rest in ranked[:20]:
+            fr=fde(vals[0x68])
+            print(f'### AP 0x{base:x} +0x68=0x{vals[0x68]:x} score={score} FDE={fr}')
+            if not fr:continue
+            for a,i,op,l in byfr.get(fr,[]):
+              if '#' in l:
+                m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                if m:
+                  va=int(m.group(1),16); o=va2off(va)
+                  if o is not None:
+                    e=data.find(b'\0',o,min(len(data),o+220))
+                    if e>o:
+                      raw=data[o:e]
+                      if len(raw)>=3 and all((32<=b<127) or b in (9,10,13) for b in raw):
+                        print(f'- 0x{a:x}: {op} -> {raw.decode("ascii","replace")!r}')
+            print()
+
+          print('## Materialization contexts for top 12')
+          tops={x[1] for x in ranked[:12]}
+          for base in tops:
+            for a,i,op,l,fr in mats.get(base,[])[:20]:
+              print(f'### AP 0x{base:x} materialized @0x{a:x}; FDE={fr}')
+              for z in lines[max(0,i-14):min(len(lines),i+32)]:print('    '+z)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-execution-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad execution dependency vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
