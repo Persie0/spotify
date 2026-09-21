@@ -1,0 +1,264 @@
+name: Resolve service184 +0x20 subobject
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-subobject20.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184sub20
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184sub20
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode +0x20 subobject and re-rank service184
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184sub20/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184sub20/all.dis
+          python3 - <<'PY' > analysis/service184-subobject20.md
+          from pathlib import Path
+          import re, struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184sub20/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184sub20/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          byfr=defaultdict(list)
+          for x in ins:
+            fr=fde(x[0])
+            if fr: byfr[fr].append(x)
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+
+          def qword(va):
+            if va in rel:return rel[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          def iscode(q):
+            return q is not None and 0xa00000<=q<0x1800000 and fde(q) is not None
+
+          def ctx(i,b=18,a=32):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+x)
+
+          print('# Real service184 +0x20 subobject analysis')
+          print()
+          print('Ground truth:')
+          print('- b8f02e returns registry table[0xb8]')
+          print('- 0x135c7b3 loads the same table[0xb8] object')
+          print('- 0x135c7d0 converts that exact service pointer to service+0x20')
+          print('- 0x135c7e5 passes service+0x20 as rdx into cc060b')
+          print('- real service methods: +0x28 pointer return, +0x30 pointer return, +0x38 sret')
+          print()
+
+          target=0xcc060b
+          fr=fde(target)
+          print(f'## cc060b FDE {fr}')
+          if fr:
+            for x in byfr[fr]: print('    '+x[3])
+          print()
+
+          # Track incoming rdx aliases and report every use until redefinition.
+          print('## Incoming rdx (= service184+0x20) dataflow inside cc060b')
+          aliases={'rdx'}
+          killed=set()
+          if fr:
+            xs=byfr[fr]
+            for k,(a,i,op,l) in enumerate(xs):
+              used=False
+              for reg in list(aliases):
+                if re.search(rf'(?<![a-z0-9]){reg}(?![a-z0-9])',op):
+                  used=True
+              if used:
+                print(f'### 0x{a:x}: {op}')
+                for z in xs[max(0,k-5):min(len(xs),k+9)]: print('    '+z[3])
+                print()
+              # simple alias propagation
+              m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5])),(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5]))$',op)
+              if m and m.group(2) in aliases:
+                aliases.add(m.group(1))
+              m=re.match(r'lea\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5])),\[(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|1[0-5]))(?:\+0x([0-9a-f]+))?\]$',op)
+              if m and m.group(2) in aliases:
+                aliases.add(m.group(1))
+
+          # Extract the offsets cc060b touches relative to incoming rdx or its simple aliases.
+          print('## Subobject-relative offsets inferred from cc060b')
+          offs=set()
+          if fr:
+            text='\n'.join(x[2] for x in byfr[fr])
+            for reg in aliases:
+              for m in re.finditer(rf'\[{reg}(?:\+0x([0-9a-f]+))?\]',text):
+                offs.add(int(m.group(1),16) if m.group(1) else 0)
+          print('- aliases: '+', '.join(sorted(aliases)))
+          print('- offsets: '+', '.join(hex(x) for x in sorted(offs)))
+          print()
+
+          # Real ABI candidate address points: only +0x28/+0x30/+0x38.
+          def method_abi_onearg(addr):
+            xs=byfr.get(fde(addr),[])[:55]
+            if not xs:return False
+            # Penalize early use of incoming rsi/rdx/rcx/r8/r9 before definition.
+            incoming=('rsi','rdx','rcx','r8','r9')
+            defs=set()
+            for a,i,op,l in xs[:30]:
+              md=re.match(r'(?:mov|lea|xor|pop|movzx|movsx|movsxd)\s+([a-z0-9]+)',op)
+              dst=md.group(1) if md else None
+              for reg in incoming:
+                if re.search(rf'(?<![a-z0-9]){reg}(?![a-z0-9])',op) and reg not in defs:
+                  if not (dst==reg and op.startswith(('mov ','lea ','xor ','pop ','movzx ','movsx ','movsxd '))):
+                    return False
+              if dst in incoming:defs.add(dst)
+            return True
+
+          def method_abi_sret(addr):
+            xs=byfr.get(fde(addr),[])[:80]
+            if not xs:return False
+            t='\n'.join(x[2] for x in xs)
+            reads_rsi=bool(re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',t))
+            writes_rdi=bool(re.search(r'(?:mov|movups|movaps|movdqu|movdqa|and|or|xor)\s+(?:BYTE PTR |WORD PTR |DWORD PTR |QWORD PTR |XMMWORD PTR )?\[rdi(?:\+0x[0-9a-f]+)?\]',t))
+            return reads_rsi and writes_rdi
+
+          bases=set()
+          for slot in rel:
+            b=slot-0x28
+            if b<=0:continue
+            m28=qword(b+0x28); m30=qword(b+0x30); m38=qword(b+0x38)
+            if all(iscode(x) for x in (m28,m30,m38)) and method_abi_onearg(m28) and method_abi_onearg(m30) and method_abi_sret(m38):
+              bases.add(b)
+
+          # Preindex vptr/address-point materializations and constructor/destructor FDEs.
+          mats=defaultdict(list)
+          for a,i,op,l in ins:
+            if '#' not in l:continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va in bases:mats[va].append((a,i,op,l,fde(a)))
+
+          # Score whether a materialization's containing function explicitly initializes/uses object+0x20.
+          ranked=[]
+          for b in bases:
+            score=0; evidence=[]
+            m28,m30,m38=qword(b+0x28),qword(b+0x30),qword(b+0x38)
+            for a,i,op,l,cf in mats.get(b,[]):
+              if not cf:continue
+              xs=byfr[cf]
+              # Find register that receives the address point and then gets stored to [obj].
+              local='\n'.join(x[2] for x in xs)
+              # Any explicit +0x20 initialization/use in the same constructor-like FDE is useful.
+              uses20=[x for x in xs if '+0x20]' in x[2]]
+              if uses20:
+                score+=min(20,4*len(uses20))
+                evidence.append((a,cf,uses20[:8]))
+              # Stronger: same allocated object has size >0x20 and AP store followed by +0x20 address-taking.
+              for k,(aa,ii,oo,ll) in enumerate(xs):
+                if aa!=a:continue
+                window=xs[k:k+80]
+                if any(re.search(r'lea\s+\w+,\[[a-z0-9]+\+0x20\]',z[2]) for z in window):
+                  score+=20
+                  break
+            # Reward realistic service methods that return a subobject/member rather than constants.
+            for addr in (m28,m30):
+              t='\n'.join(x[2] for x in byfr.get(fde(addr),[])[:30])
+              if re.search(r'(?:lea\s+rax,\[rdi\+0x[0-9a-f]+\]|mov\s+rax,QWORD PTR \[rdi\+0x[0-9a-f]+\])',t):
+                score+=8
+            ranked.append((score,b,m28,m30,m38,mats.get(b,[]),evidence))
+          ranked.sort(reverse=True)
+
+          print('## Service184 candidates re-ranked with +0x20 constructor/subobject evidence')
+          print(f'- candidates: {len(ranked)}')
+          for score,b,m28,m30,m38,ms,ev in ranked[:80]:
+            print(f'### score={score} AP=0x{b:x}')
+            print(f'- +0x28=0x{m28:x} FDE={fde(m28)}')
+            print(f'- +0x30=0x{m30:x} FDE={fde(m30)}')
+            print(f'- +0x38=0x{m38:x} FDE={fde(m38)}')
+            if ms:
+              print('- materializations:')
+              for a,i,op,l,cf in ms[:12]:print(f'  - 0x{a:x}: {op}; FDE={cf}')
+            if ev:
+              print('- +0x20 evidence:')
+              for a,cf,uses in ev[:6]:
+                print(f'  - materialization 0x{a:x}; FDE={cf}')
+                for z in uses:print('      '+z[3])
+            print('#### +0x28 body')
+            for z in byfr.get(fde(m28),[])[:60]:print('    '+z[3])
+            print()
+
+          print('## Exact real-service call site')
+          for a,i,op,l in ins:
+            if 0x135c790<=a<0x135c810: print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-subobject20.md
+          test -s analysis/service184-subobject20.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 +0x20 subobject"
+          git pull --rebase origin main
+          git push origin HEAD:main
