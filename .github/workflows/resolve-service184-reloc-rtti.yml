@@ -1,0 +1,209 @@
+name: Resolve service184 via relocations and RTTI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-reloc-rtti.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184rtti
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184rtti
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve relocations and RTTI
+        run: |
+          SO=/tmp/s184rtti/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184rtti/all.dis
+          python3 - <<'PY' > analysis/service184-reloc-rtti.md
+          from pathlib import Path
+          import re, struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184rtti/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184rtti/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'], seg['p_offset']+seg['p_filesz'], seg['p_vaddr']))
+            relocs={}
+            reloc_rows=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              symtab=elf.get_section(sec['sh_link']) if sec['sh_link'] else None
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                sym=None
+                si=rel.entry.get('r_info_sym',0)
+                if symtab is not None and si:
+                  try:sym=symtab.get_symbol(si).name
+                  except:pass
+                row=(rel['r_offset'], add, rel.entry.get('r_info_type'), sym, sec.name)
+                reloc_rows.append(row)
+                if add is not None: relocs[rel['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po): return po+(va-pv)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(va,limit=512):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+limit))
+            if e<0:return None
+            try:return data[o:e].decode('utf-8')
+            except:return None
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def ctx(i,b=12,a=20):
+            return '\n'.join(lines[max(0,i-b):min(len(lines),i+a+1)])
+
+          print('# Service184 relocation + RTTI resolution')
+          print()
+
+          target=0x11ee608
+          print('## Relocations whose addend/symbol value points to 0x11ee608')
+          hits=[r for r in reloc_rows if r[1]==target]
+          print(f'- count={len(hits)}')
+          for off,add,typ,sym,sec in hits:
+            print(f'### relocation slot 0x{off:x} section={sec} type={typ} symbol={sym!r}')
+            print('- neighboring qwords/relocations:')
+            for p in range(off-0x80,off+0x88,8):
+              q=qword(p)
+              mark=' <-- target' if p==off else ''
+              print(f'  - 0x{p:x}: {("0x%x"%q) if q is not None else "None"} FDE={fde(q) if q else None}{mark}')
+            print()
+          if not hits:
+            print('- no relocation-addend hits; searching raw qwords')
+            for po,pe,pv in loads:
+              blob=data[po:pe]
+              needle=struct.pack('<Q',target)
+              start=0
+              while True:
+                k=blob.find(needle,start)
+                if k<0:break
+                va=pv+k
+                print(f'- raw qword 0x{va:x}')
+                start=k+1
+          print()
+
+          # Search code comments/materializations of target and any target-containing relocation slot neighborhood.
+          needles={target}
+          for off,_,_,_,_ in hits:
+            needles.update(range(max(0,off-0x100),off+0x108,8))
+          print('## Code references/materializations of target/table neighborhoods')
+          n=0
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va in needles:
+              print(f'### 0x{a:x}: {op} -> 0x{va:x}; FDE={fde(a)}')
+              print(ctx(i)); print()
+              n+=1
+              if n>=120:break
+          print(f'- refs_shown={n}')
+          print()
+
+          candidates=[
+            0x18228d8,0x1821448,0x1822988,0x181f788,
+            0x1870480,0x187b208,0x188a7f0
+          ]
+          print('## Candidate vtable RTTI')
+          for ap in candidates:
+            print(f'### address point 0x{ap:x}')
+            off_to_top=qword(ap-0x10)
+            ti=qword(ap-0x8)
+            print(f'- [ap-0x10] offset-to-top raw={("0x%x"%off_to_top) if off_to_top is not None else "None"}')
+            print(f'- [ap-0x8] typeinfo={("0x%x"%ti) if ti is not None else "None"}')
+            if ti:
+              tivptr=qword(ti)
+              nameptr=qword(ti+8)
+              print(f'- typeinfo[0] vptr={("0x%x"%tivptr) if tivptr is not None else "None"}')
+              print(f'- typeinfo[+8] nameptr={("0x%x"%nameptr) if nameptr is not None else "None"}')
+              if nameptr:
+                print(f'- raw type name: {cstr(nameptr)!r}')
+              # __si_class_type_info / __vmi_class_type_info often has base ptr at +0x10.
+              bp=qword(ti+0x10)
+              print(f'- typeinfo[+0x10]={("0x%x"%bp) if bp is not None else "None"}')
+              if bp:
+                bn=qword(bp+8)
+                if bn:print(f'- possible base type name: {cstr(bn)!r}')
+            print('- first slots:')
+            for o in range(0,0xd0,8):
+              q=qword(ap+o)
+              print(f'  - +0x{o:x}: {("0x%x"%q) if q is not None else "None"} FDE={fde(q) if q else None}')
+            print()
+
+          print('## Code materializations of candidate address points')
+          for ap in candidates:
+            refs=[]
+            for a,i,op,l in ins:
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m and int(m.group(1),16)==ap:
+                refs.append((a,i,op,l))
+            print(f'### 0x{ap:x}: refs={len(refs)}')
+            for a,i,op,l in refs[:30]:
+              print(f'#### 0x{a:x} FDE={fde(a)}')
+              print(ctx(i));print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-reloc-rtti.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 via relocations and RTTI"
+          git pull --rebase origin main
+          git push origin HEAD:main
