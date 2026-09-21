@@ -1,0 +1,65 @@
+name: Decode shared readiness source constructor
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-shared-readiness-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sharedready
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sharedready
+      - name: Decode
+        run: |
+          SO=/tmp/sharedready/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sharedready/all.dis
+          {
+            echo '# Shared readiness-source candidate 0x13635f7'
+            echo
+            echo 'This constructor was selected because one rbx base has both +0x10 and +0x1b8 accesses.'
+            echo
+            echo '## Exact constructor'
+            objdump -d -M intel --start-address=0x13635f7 --stop-address=0x1364202 "$SO"
+            echo
+            echo '## Capability/readiness fields'
+            objdump -d -M intel --start-address=0x13635f7 --stop-address=0x1364202 "$SO" | grep -E '\[(rbx|rdi|r14|r15)\+0x(10|1b0|1b1|1b2|1b3|1b4|1b5|1b6|1b7|1b8)\]' || true
+            echo
+            echo '## High address constants/vptr candidates'
+            objdump -d -M intel --start-address=0x13635f7 --stop-address=0x1364202 "$SO" | grep -E '# 18[0-9a-f]{5,}|# 19[0-9a-f]{5,}' || true
+            echo
+            echo '## All direct +0x1b5 / +0x1b8 accesses in neighboring family'
+            objdump -d -M intel --start-address=0x1362000 --stop-address=0x1366000 "$SO" | grep -E -B6 -A10 '\+0x1b[258]\]' || true
+            echo
+            echo '## Callers of 0x13635f7'
+            grep -E -B30 -A45 '\bcall[[:space:]]+13635f7\b' /tmp/sharedready/all.dis || true
+          } > analysis/shared-readiness-source-13635f7.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/shared-readiness-source-13635f7.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode shared readiness source constructor"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
