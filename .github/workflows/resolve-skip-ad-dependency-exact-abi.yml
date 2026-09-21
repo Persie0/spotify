@@ -1,0 +1,223 @@
+name: Resolve Skip Ad dependency exact ABI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-dependency-exact-abi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipabi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipabi
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Rank exact ABI
+        run: |
+          set -euo pipefail
+          SO=/tmp/skipabi/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipabi/all.dis
+          python3 - <<'PY' > analysis/skip-ad-dependency-exact-abi.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipabi/liborbit-jni-spotify.so'); data=so.read_bytes()
+          lines=Path('/tmp/skipabi/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[(s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr'])
+                   for s in elf.iter_segments() if s['p_type']=='PT_LOAD']
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort(); rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          byfr={}
+          for x in ins:
+            fr=fde(x[0])
+            if fr:byfr.setdefault(fr,[]).append(x)
+          def va2off(v):
+            for a,b,x in loads:
+              if x<=v<x+b-a:return a+v-x
+          def qword(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def code(v):return v is not None and 0xa00000<=v<0x1800000 and fde(v)
+          def body(v,n=180):return byfr.get(fde(v),[])[:n]
+
+          def reg_used(op, regs):
+            return any(re.search(rf'(?<![a-z0-9]){r}(?![a-z0-9])',op) for r in regs)
+          aliases={
+            'rdi':('rdi','edi','di','dil'),'rsi':('rsi','esi','si','sil'),
+            'rdx':('rdx','edx','dx','dl'),'rcx':('rcx','ecx','cx','cl'),
+            'r8':('r8','r8d','r8w','r8b'),'r9':('r9','r9d','r9w','r9b')
+          }
+          def dst(op):
+            m=re.match(r'(?:mov|lea|xor|and|or|add|sub|pop|movzx|movsx|movsxd)\s+([a-z0-9]+)',op)
+            return m.group(1) if m else None
+
+          def sret_like(v, require_rsi=True):
+            xs=body(v,100); score=0;why=[]
+            early=xs[:45]
+            # Uses incoming rsi as object/source before redefining it.
+            rsi_read=False; rsi_defined=False
+            for a,i,op,l in early:
+              d=dst(op); defines=d in aliases['rsi']
+              if reg_used(op,aliases['rsi']) and not rsi_defined:
+                # mov rsi,... is definition; other destination forms can still read.
+                if not (defines and op.startswith(('mov ','lea ','pop ','movzx ','movsx ','movsxd '))):
+                  rsi_read=True
+              if defines:rsi_defined=True
+            if rsi_read:score+=18;why.append('incoming-rsi-this')
+            elif require_rsi:score-=25;why.append('no-incoming-rsi-this')
+            # Writes through rdi output before replacing rdi with some other value.
+            outwrite=False; rdi_defined=False
+            for a,i,op,l in early:
+              d=dst(op)
+              m=re.match(r'(?:mov|movups|movaps|movdqu|movdqa|and|or|xor|add|sub)\s+(?:BYTE PTR |WORD PTR |DWORD PTR |QWORD PTR |XMMWORD PTR )?\[([^]]+)\]',op)
+              if m and 'rdi' in m.group(1) and not rdi_defined:
+                outwrite=True;break
+              if d in aliases['rdi'] and op.startswith(('mov ','lea ','pop ','movzx ','movsx ','movsxd ')):
+                rdi_defined=True
+            if outwrite:score+=22;why.append('writes-rdi-out')
+            else:score-=18;why.append('no-rdi-out-write')
+            # Common sret returns original rdi saved in rax/rbx/r14.
+            t='\n'.join(x[2] for x in early)
+            if re.search(r'mov\s+r(?:ax|bx|1[2345]),rdi',t):score+=5;why.append('saves-out')
+            return score,why
+
+          def sidefx68(v):
+            xs=body(v,130); score=0;why=[]; bad=set();defined=set()
+            for a,i,op,l in xs[:35]:
+              d=dst(op)
+              for canon in ('rsi','rdx','rcx','r8','r9'):
+                defines=d in aliases[canon]
+                clean=defines and op.startswith(('mov ','lea ','pop ','movzx ','movsx ','movsxd '))
+                if reg_used(op,aliases[canon]) and canon not in defined and not clean:
+                  bad.add(canon)
+                if defines:defined.add(canon)
+            score-=15*len(bad)
+            if bad:why.append('incoming-extra='+','.join(sorted(bad)))
+            calls=0;stores=0;indirect=0
+            for a,i,op,l in xs:
+              if re.search(r'\bcall\b',op):calls+=1
+              m=re.match(r'(?:mov|movups|movaps|movdqu|movdqa|and|or|xor|add|sub|inc|dec|xchg|cmpxchg)\s+(?:BYTE PTR |WORD PTR |DWORD PTR |QWORD PTR |XMMWORD PTR )?\[([^]]+)\]',op)
+              if m and not any(x in m.group(1) for x in ('rsp','rbp')):stores+=1
+              if re.match(r'jmp\s+QWORD PTR \[',op):indirect+=1
+            if calls:score+=min(30,5*calls);why.append(f'calls={calls}')
+            if stores:score+=min(35,8*stores);why.append(f'stores={stores}')
+            if indirect:score+=8*indirect;why.append(f'indirect-jumps={indirect}')
+            nontriv=[x[2] for x in xs if not x[2].startswith(('push ','pop '))]
+            if not calls and not stores and len(nontriv)<=5:
+              score-=45;why.append('pure/no-side-effect')
+            return score,why
+
+          slots=(0x68,0x98,0xa0,0xb8,0xc0)
+          bases=set()
+          for off in rel:
+            for s in slots:
+              b=off-s
+              if b>0 and all(code(qword(b+x)) for x in slots):bases.add(b)
+          mats={}
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m:
+              v=int(m.group(1),16)
+              if v in bases:mats.setdefault(v,[]).append((a,i,op,l,fde(a)))
+
+          ranked=[]
+          for b in bases:
+            vals={s:qword(b+s) for s in slots}
+            s68,w68=sidefx68(vals[0x68])
+            s98,w98=sret_like(vals[0x98])
+            sa0,wa0=sret_like(vals[0xa0])
+            sb8,wb8=sret_like(vals[0xb8])
+            sc0,wc0=sret_like(vals[0xc0])
+            score=s68+s98+sa0+sb8+sc0
+            ms=mats.get(b,[])
+            if ms:score+=5
+            ranked.append((score,b,vals,(s68,w68),(s98,w98),(sa0,wa0),(sb8,wb8),(sc0,wc0),ms))
+          ranked.sort(reverse=True)
+
+          print('# Skip Ad execution dependency exact ABI ranking')
+          print()
+          print('Required same-object slots: +0x68 side effect; +0x98/+0xa0/+0xb8/+0xc0 sret-style with dependency in RSI.')
+          print('The +0x68 return is discarded by the exact skip-ad branch.')
+          print()
+          for row in ranked[:80]:
+            score,b,vals,*rest=row; s68,s98,sa0,sb8,sc0,ms=rest
+            print(f'## score={score} AP=0x{b:x}')
+            for off,sw in zip(slots,(s68,s98,sa0,sb8,sc0)):
+              print(f'- +0x{off:x}=0x{vals[off]:x}; score={sw[0]}; {sw[1]}; FDE={fde(vals[off])}')
+            if ms:
+              print('- materializations:')
+              for a,i,op,l,fr in ms[:16]:print(f'  - 0x{a:x}: {op}; FDE={fr}')
+            print('### +0x68')
+            for x in body(vals[0x68],180):print('    '+x[3])
+            print('### +0x98 head')
+            for x in body(vals[0x98],55):print('    '+x[3])
+            print('### +0xa0 head')
+            for x in body(vals[0xa0],55):print('    '+x[3])
+            print('### +0xb8 head')
+            for x in body(vals[0xb8],55):print('    '+x[3])
+            print('### +0xc0 head')
+            for x in body(vals[0xc0],55):print('    '+x[3])
+            print()
+
+          print('## Top materialization contexts')
+          for row in ranked[:20]:
+            score,b,vals,*rest=row; ms=rest[-1]
+            for a,i,op,l,fr in ms[:12]:
+              print(f'### AP 0x{b:x} @ 0x{a:x}; score={score}; FDE={fr}')
+              for z in lines[max(0,i-20):min(len(lines),i+45)]:print('    '+z)
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-dependency-exact-abi.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad dependency exact ABI"
+          git pull --rebase origin main
+          git push origin HEAD:main
