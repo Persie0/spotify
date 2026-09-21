@@ -1,0 +1,138 @@
+name: Trace service184 node owner member
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-node-owner-member.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184owner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184owner
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace exact owner path
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184owner/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184owner/all.dis
+          python3 - <<'PY' > analysis/service184-node-owner-member.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184owner/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184owner/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def ctx(i,b=25,a=50):
+            for z in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+z)
+          def dumpfr(fr):
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]: print('    '+l)
+
+          target=0x132fc9c
+          fr=fde(target)
+          print('# service184 node owner member trace')
+          print()
+          print(f'Known exact consumer later: node->a0 owner; service184 = owner->+0x10 (moved out at 0x1332fca).')
+          print(f'Paired writer 0x{target:x} FDE={fr}.')
+          print()
+          print('## Full paired-writer FDE')
+          if fr:dumpfr(fr)
+          print()
+          print('## Direct callers of paired-writer FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if re.search(r'\bcall\s+'+format(fr[0],'x')+r'\b',op):
+                print(f'### call 0x{a:x}; callerFDE={fde(a)}')
+                ctx(i,55,90);print()
+          print('## All calls into paired-writer FDE by any interior label')
+          if fr:
+            for a,i,op,l in ins:
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if not m:continue
+              t=int(m.group(1),16)
+              if fr[0]<=t<fr[1]:
+                print(f'### call 0x{a:x} -> 0x{t:x}; callerFDE={fde(a)}')
+                ctx(i,35,70);print()
+
+          print('## Main-constructor instructions touching owner/node path')
+          for a,i,op,l in ins:
+            if 0x1332600<=a<0x1334700 and (
+              '1334d26' in op or
+              '132fc' in op or
+              '+0xa0]' in op or
+              '+0x10]' in op or
+              '[rsp+0x410]' in op or
+              '[r14+0x58]' in op
+            ):
+              print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+              ctx(i,18,28);print()
+
+          print('## Writes of pointer-looking values to +0x10 in 0x1320000..0x1340000')
+          for a,i,op,l in ins:
+            if not (0x1320000<=a<0x1340000):continue
+            if re.match(r'(?:mov|xchg)\s+QWORD PTR \[[a-z0-9]+\+0x10\],(?:r[a-z0-9]+|[a-z0-9]+)',op):
+              print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+              ctx(i,12,18);print()
+
+          print('## Vptr materializations in all direct caller FDEs')
+          callerfr=set()
+          if fr:
+            for a,i,op,l in ins:
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if m and fr[0]<=int(m.group(1),16)<fr[1]:
+                cf=fde(a)
+                if cf:callerfr.add(cf)
+          for cf in sorted(callerfr):
+            print(f'### caller FDE 0x{cf[0]:x}..0x{cf[1]:x}')
+            for a,i,op,l in ins:
+              if cf[0]<=a<cf[1] and '# 18' in l and 'lea' in op:
+                print('    '+l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-node-owner-member.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 node owner member"
+          git pull --rebase origin main
+          git push origin HEAD:main
