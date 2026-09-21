@@ -1,0 +1,138 @@
+name: Trace skip-ad ninth argument source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-arg9-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/arg9
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/arg9
+
+      - name: Trace caller stack slot
+        run: |
+          SO=/tmp/arg9/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x11ee608 --stop-address=0x11ef027 "$SO" > /tmp/arg9/caller.dis
+          python3 - <<'PY' > analysis/skip-ad-arg9-source.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/arg9/caller.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          # Track rsp relative to caller FDE entry. CALLer's return address is already on entry stack.
+          delta=0
+          state=[]
+          target_addr=0x11eee37
+          target_entry_off=None
+          target_delta=None
+
+          def imm(op):
+            m=re.search(r',0x([0-9a-f]+)',op)
+            return int(m.group(1),16) if m else None
+
+          for a,i,op,l in ins:
+            # memory operands are evaluated before push changes rsp
+            if a==target_addr:
+              m=re.search(r'\[rsp\+0x([0-9a-f]+)\]',op)
+              if m:
+                target_delta=delta
+                target_entry_off=delta+int(m.group(1),16)
+            state.append((a,delta,op,l))
+            if re.match(r'push\b',op): delta-=8
+            elif re.match(r'pop\b',op): delta+=8
+            elif re.match(r'sub\s+rsp,',op):
+              v=imm(op)
+              if v is not None: delta-=v
+            elif re.match(r'add\s+rsp,',op):
+              v=imm(op)
+              if v is not None: delta+=v
+            elif re.match(r'lea\s+rsp,',op):
+              m=re.search(r'\[rsp([+-])0x([0-9a-f]+)\]',op)
+              if m:
+                v=int(m.group(2),16); delta += v if m.group(1)=='+' else -v
+
+          print('# Skip Ad ninth-argument source trace')
+          print()
+          print('Callee 0x11ef334 uses current rsp+0x650 after 6 pushes + 0x608 frame allocation.')
+          print('That maps to callee-entry rsp+0x18 = SysV stack argument 9.')
+          print('Caller 0x11eee4c therefore supplies it with the third-from-last push at 0x11eee37.')
+          print()
+          print(f'At 0x{target_addr:x}, caller rsp delta from FDE entry = {target_delta:#x}')
+          print(f'Operand [rsp+0x168] therefore refers to caller-entry stack offset {target_entry_off:#x}.')
+          print()
+
+          print('## Call argument tail with stack deltas')
+          for a,d,op,l in state:
+            if 0x11eedf0 <= a <= 0x11eee51:
+              print(f'entry_delta={d:#x}  {l}')
+          print()
+
+          print('## Earlier accesses to the same caller-entry stack location')
+          hits=[]
+          if target_entry_off is not None:
+            for a,d,op,l in state:
+              if a>=target_addr: break
+              for m in re.finditer(r'\[rsp(?:\+0x([0-9a-f]+))?\]',op):
+                off=int(m.group(1),16) if m.group(1) else 0
+                eff=d+off
+                if eff==target_entry_off:
+                  hits.append((a,d,op,l))
+            for a,d,op,l in hits:
+              print(f'### 0x{a:x}, delta={d:#x}: {op}')
+              idx=next(i for i,x in enumerate(ins) if x[0]==a)
+              for x in ins[max(0,idx-12):min(len(ins),idx+16)]:
+                # Calculate stored state delta at each context line where available
+                dd=next((z[1] for z in state if z[0]==x[0]),None)
+                print(('    '+(f'd={dd:#x} ' if dd is not None else ''))+x[3])
+              print()
+          if not hits: print('- no earlier direct rsp-relative access')
+          print()
+
+          print('## Caller prologue / first 180 instructions')
+          for a,d,op,l in state[:180]:
+            print(f'd={d:#x}  {l}')
+          print()
+
+          # Also identify if the effective entry offset is itself an incoming caller stack arg.
+          if target_entry_off is not None:
+            print('## Caller-entry interpretation')
+            print(f'- effective entry offset: {target_entry_off:#x}')
+            if target_entry_off>=8 and target_entry_off%8==0:
+              n=7+(target_entry_off-8)//8
+              print(f'- if unchanged from its own caller, this is caller stack argument {n} (arg7 starts at entry rsp+8).')
+              print('- any earlier direct write above overrides that interpretation.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-arg9-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace skip-ad ninth argument source"
+          git pull --rebase origin main
+          git push origin HEAD:main
