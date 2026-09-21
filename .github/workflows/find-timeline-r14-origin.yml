@@ -1,0 +1,81 @@
+name: Find TimelineConductor r14 origin
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/find-timeline-r14-origin.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlr14
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlr14
+      - name: Trace r14
+        run: |
+          SO=/tmp/tlr14/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlr14/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-r14-origin.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/tlr14/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          rows=[x for x in ins if 0x135d056<=x[0]<=0x135fd57]
+          defs=[]
+          for k,(a,i,op,l) in enumerate(rows):
+            if re.match(r'(mov|lea|pop|xchg|xor|and|or|add|sub)\s+r14(?:,|\b)',op) or re.match(r'mov\s+r14[dwb](?:,|\b)',op):
+              defs.append((k,a,i,op,l))
+          print('# TimelineConductor r14 origin before c8 install')
+          print('Target: 0x135fd57 stores r14 into TimelineConductor+0xc8.')
+          print()
+          print(f'## r14 definitions in constructor before target: {len(defs)}')
+          for n,(k,a,i,op,l) in enumerate(defs,1):
+            print(f'### {n}. 0x{a:x}: {op}')
+            for x in rows[max(0,k-10):min(len(rows),k+18)]:print('    '+x[3])
+            print()
+          if defs:
+            k,a,i,op,l=defs[-1]
+            print('## LAST r14 definition before target')
+            print(f'- 0x{a:x}: {op}')
+            for x in rows[max(0,k-80):min(len(rows),k+160)]:print('    '+x[3])
+          print()
+          print('## r14-preservation calls after last definition')
+          if defs:
+            k=defs[-1][0]
+            for x in rows[k+1:]:
+              if x[0]>=0x135fd57:break
+              if re.search(r'\bcall\b',x[2]) or 'r14' in x[2]:
+                print(x[3])
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-r14-origin.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find TimelineConductor c8 r14 origin"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
