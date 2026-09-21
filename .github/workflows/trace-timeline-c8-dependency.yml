@@ -1,0 +1,215 @@
+name: Trace TimelineConductor c8 dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timeline-c8-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlc8
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlc8
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace c8 dependency
+        run: |
+          SO=/tmp/tlc8/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlc8/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-c8-dependency.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/tlc8/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/tlc8/all.dis').read_text(errors='replace').splitlines()
+
+          ins=[]
+          for i,l in enumerate(dl):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              loads=[]
+              for s in elf.iter_segments():
+                  if s['p_type']=='PT_LOAD':
+                      loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+              rel={}
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+                  for rr in sec.iter_relocations():
+                      add=rr.entry.get('r_addend')
+                      if add is not None: rel[rr['r_offset']]=add
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; b=a+e['address_range']
+                      if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def ctx(i,b=14,a=26):
+              for x in dl[max(0,i-b):min(len(dl),i+a+1)]: print('    '+x)
+          def va2off(v):
+              for po,pe,pv in loads:
+                  if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+              if v in rel:return rel[v]
+              o=va2off(v)
+              if o is None or o+8>len(data):return None
+              return struct.unpack_from('<Q',data,o)[0]
+          def cstr(v,limit=240):
+              o=va2off(v)
+              if o is None:return None
+              e=data.find(b'\0',o,min(len(data),o+limit))
+              if e<0:return None
+              try:return data[o:e].decode('utf8')
+              except:return None
+
+          start,end=0x135d056,0x1360c1b
+          rows=[x for x in ins if start<=x[0]<end]
+          row_idx={a:n for n,(a,_,_,_) in enumerate(rows)}
+
+          print('# TimelineConductor this+0xc8 dependency trace')
+          print()
+          print('Proven class:')
+          print('- TimelineConductorSetupImpl provider ID 0xb8, factory 0x135c878')
+          print('- factory allocates 0xf0-byte object and calls constructor 0x135d056')
+          print('- constructor writes vptr 0x1867c98')
+          print('- vtable +0x28 = 0xc2e960 = return [this+0xc8]')
+          print('- Skip Ad later calls returned dependency virtual +0x68')
+          print()
+          print('Constructor alias creation:')
+          print('- 0x135d182: lea rax,[rdi+0xc8]')
+          print('- 0x135d189: mov [rsp+0x60],rax')
+          print()
+
+          # All direct references to the stack alias slot.
+          print('## All references to constructor stack slot rsp+0x60')
+          refs=[]
+          for a,i,op,l in rows:
+              if '[rsp+0x60]' in op:
+                  refs.append((a,i,op,l))
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(i,10,18);print()
+          print(f'- refs: {len(refs)}')
+          print()
+
+          # Alias loads from rsp+0x60 and forward use until that register is overwritten.
+          print('## Forward slices from loads of &this+0xc8')
+          for a,i,op,l in refs:
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if not m: continue
+              reg=m.group(1)
+              idx=row_idx[a]
+              print(f'### alias {reg} loaded @0x{a:x}')
+              for aa,ii,oo,ll in rows[idx:idx+80]:
+                  # stop at overwrite of alias after first row
+                  if aa!=a and re.match(r'(mov|lea|pop|xchg)\s+'+re.escape(reg)+r'\b',oo):
+                      print(f'    STOP overwrite: {ll}')
+                      break
+                  if reg in oo:
+                      print('    '+ll)
+              print()
+
+          # Detect helpers called with an alias loaded from stack slot into rdi/rsi/rdx/etc.
+          print('## Calls immediately downstream of c8 alias loads')
+          for a,i,op,l in refs:
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if not m: continue
+              reg=m.group(1); idx=row_idx[a]
+              for aa,ii,oo,ll in rows[idx+1:idx+35]:
+                  if re.search(r'\bcall\b',oo):
+                      print(f'### alias={reg} source=0x{a:x}, call @0x{aa:x}: {oo}')
+                      ctx(ii,12,22);print()
+
+          # Look for direct writes through registers known to hold &this+0xc8.
+          print('## Writes through c8 aliases')
+          for a,i,op,l in refs:
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if not m:continue
+              reg=m.group(1); idx=row_idx[a]
+              for aa,ii,oo,ll in rows[idx+1:idx+80]:
+                  if re.match(r'(mov|lea|pop|xchg)\s+'+re.escape(reg)+r'\b',oo):break
+                  left=oo.split(',',1)[0]
+                  if '['+reg in left and re.match(r'(mov|movups|movdqu|and|or|xor|xchg)',oo):
+                      print(f'### 0x{aa:x}: {oo}')
+                      ctx(ii,10,16);print()
+
+          # Direct object+0xc8 writes, in case constructor later reloads self.
+          print('## Direct +0xc8 qword writes anywhere in constructor')
+          for a,i,op,l in rows:
+              left=op.split(',',1)[0]
+              if re.search(r'\[[a-z0-9]+\+0xc8\]',left) and re.match(r'(mov|xchg|and|or|xor)',op):
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(i,10,16);print()
+
+          # Any high-address constant near calls that mutate alias.
+          print('## High-address constants around c8 alias call sites')
+          seen=set()
+          for a,i,op,l in refs:
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x60\]',op)
+              if not m:continue
+              idx=row_idx[a]
+              for aa,ii,oo,ll in rows[max(0,idx-15):idx+50]:
+                  mm=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',ll)
+                  if mm:
+                      va=int(mm.group(1),16)
+                      key=(aa,va)
+                      if key in seen:continue
+                      seen.add(key)
+                      print(f'- 0x{aa:x}: {oo} -> 0x{va:x}')
+
+          # Dump known TimelineConductor methods used by Skip Ad.
+          print()
+          print('## TimelineConductor getter methods')
+          for fn in (0xc2e960,0xc7ddb4,0x1364c6e):
+              fr=fde(fn)
+              print(f'### 0x{fn:x} FDE={fr}')
+              if fr:
+                  for aa,ii,oo,ll in ins:
+                      if fr[0]<=aa<fr[1]:print('    '+ll)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineConductor c8 dependency"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
