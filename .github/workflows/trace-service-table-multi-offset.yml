@@ -1,0 +1,147 @@
+name: Trace service table multi-offset writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service-table-multi-offset.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/multitable
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/multitable
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Scan paired table offsets
+        run: |
+          SO=/tmp/multitable/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/multitable/all.dis
+          python3 - <<'PY' > analysis/service-table-multi-offset.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/multitable/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/multitable/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f);dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(a):
+            for x,y in fdes:
+              if x<=a<y:return x,y
+          def ctx(i,b=24,a=36):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Dependency table multi-offset writer trace')
+          print()
+          print('Known reads on the same root table:')
+          print('- service 0x73 -> offset 0x398')
+          print('- service 0xb8 -> offset 0x5c0')
+          print()
+
+          # Group explicit reads/writes by FDE, base register, offset.
+          groups=defaultdict(lambda:defaultdict(lambda:defaultdict(list)))
+          for a,i,op,l in ins:
+            fr=fde(a)
+            if not fr:continue
+            for off in ('398','5c0'):
+              m=re.search(r'\[([a-z0-9]+)\+0x'+off+r'\]',op)
+              if m:
+                base=m.group(1)
+                dest=op.split(',',1)[0]
+                kind='write' if '[' in dest and re.match(r'(mov|and|or|xor|xchg|lea)',op) else 'read'
+                groups[fr][base][off].append((a,i,op,kind))
+          print('## FDE/base pairs touching both offsets')
+          for fr,bases in groups.items():
+            for base,offs in bases.items():
+              if '398' not in offs or '5c0' not in offs:continue
+              print(f'### FDE={fr} base={base}')
+              for off in ('398','5c0'):
+                print(f'- offset 0x{off}:')
+                for a,i,op,kind in offs[off][:30]:print(f'  - {kind} 0x{a:x}: {op}')
+              # dump from first relevant to last relevant
+              allr=offs['398']+offs['5c0'];lo=min(x[0] for x in allr)-0x80;hi=max(x[0] for x in allr)+0x100
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1] and lo<=a<=hi:print('    '+l)
+              print()
+
+          # Cross-function: find functions writing one offset and callers/adjacent helpers writing other,
+          # especially constructor clusters.
+          print('## Direct writes to 0x398')
+          writes398=[]
+          writes5c0=[]
+          for a,i,op,l in ins:
+            left=op.split(',',1)[0]
+            if '+0x398]' in left and '[' in left and re.match(r'(mov|and|or|xor|xchg)',op):
+              writes398.append((a,i,op,fde(a)))
+            if '+0x5c0]' in left and '[' in left and re.match(r'(mov|and|or|xor|xchg)',op):
+              writes5c0.append((a,i,op,fde(a)))
+          for a,i,op,fr in writes398:
+            print(f'- 0x{a:x}: {op}; FDE={fr}')
+          print()
+          print('## Direct writes to 0x5c0')
+          for a,i,op,fr in writes5c0:
+            print(f'- 0x{a:x}: {op}; FDE={fr}')
+          print()
+
+          # Pair FDEs by proximity: generated giant constructors may split cold blocks.
+          print('## Nearby writer-FDE pairs')
+          for a,i,op,fr in writes398:
+            for b,j,op2,fr2 in writes5c0:
+              if abs(a-b)<=0x20000:
+                print(f'### 0x398@0x{a:x} FDE={fr} ; 0x5c0@0x{b:x} FDE={fr2} distance=0x{abs(a-b):x}')
+                print(f'- {op}')
+                print(f'- {op2}')
+          print()
+
+          # Exact writer contexts for each 5c0 store, but only if same FDE also touches several
+          # table-like multiples of 8 in 0x300..0x700.
+          print('## Table-like 0x5c0 writer contexts')
+          for a,i,op,fr in writes5c0:
+            if not fr:continue
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            offsets=set()
+            for aa,ii,oo,ll in rows:
+              for mm in re.finditer(r'\[[a-z0-9]+\+0x([0-9a-f]+)\]',oo):
+                v=int(mm.group(1),16)
+                if 0x300<=v<=0x700 and v%8==0:offsets.add(v)
+            if len(offsets)<8:continue
+            print(f'### writer 0x{a:x}: {op}; FDE={fr}; tableOffsets={len(offsets)}')
+            print('- offsets: '+', '.join(hex(x) for x in sorted(offsets)[:100]))
+            ctx(i,35,45);print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service-table-multi-offset.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service table multi-offset writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
