@@ -1,0 +1,168 @@
+name: Trace service184 tagged source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-tagged-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184tag
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184tag
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace exact tagged result source
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184tag/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184tag/all.dis
+          python3 - <<'PY' > analysis/service184-tagged-source.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184tag/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184tag/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=addr:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def dump(fr):
+            if not fr:return
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]: print('    '+l)
+
+          def ctx(i,b=18,a=30):
+            for z in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+z)
+
+          print('# service184 exact tagged-result source')
+          print()
+          print('Ground truth install chain:')
+          print('- 0x133303c copies rsp+0x10 pair into tagged variant rsp+0x290')
+          print('- tag rsp+0x2a8 = 1')
+          print('- 0x13330b2 takes first qword as service pointer')
+          print('- 0x1333835 installs it into registry table[184]')
+          print('- 0x1333863 immediately calls service virtual +0x20')
+          print()
+          print('The pair at rsp+0x10 is copied directly from rsp+0x3a0 immediately after 0x1334fce;')
+          print('rsp+0x3a0 was populated by 0x1334dea. This report traces that exact path.')
+          print()
+
+          for t,name in [
+            (0x1334dea,'producer 0x1334dea'),
+            (0x1334fce,'post-producer helper 0x1334fce'),
+            (0xb2990a,'returned-object helper b2990a'),
+            (0x1335474,'cleanup/registration helper 0x1335474'),
+            (0x1334d26,'preceding lookup helper 0x1334d26')]:
+            fr=fde(t)
+            print(f'## {name}; FDE={fr}')
+            dump(fr);print()
+
+          print('## Main caller window 0x1332f70..0x1333060')
+          for a,i,op,l in ins:
+            if 0x1332f70<=a<0x1333060:print('    '+l)
+          print()
+
+          # Analyze every write to output object (RDI) in producer.
+          fr=fde(0x1334dea)
+          print('## 0x1334dea writes to output RDI')
+          if fr:
+            xs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for k,(a,i,op,l) in enumerate(xs):
+              if re.search(r'\[rdi(?:\+0x[0-9a-f]+)?\]',op):
+                print(f'### 0x{a:x}: {op}')
+                for x in xs[max(0,k-7):min(len(xs),k+12)]:print('    '+x[3])
+                print()
+
+          # Trace any first-qword source flowing into [rdi].
+          print('## Candidate source loads feeding producer output first qword')
+          if fr:
+            for k,(a,i,op,l) in enumerate(xs):
+              if re.match(r'mov\s+QWORD PTR \[rdi\],',op) or re.match(r'movups\s+XMMWORD PTR \[rdi\],',op) or re.match(r'movdqu\s+XMMWORD PTR \[rdi\],',op):
+                print(f'### store @0x{a:x}: {op}')
+                for x in xs[max(0,k-16):min(len(xs),k+10)]:print('    '+x[3])
+                print()
+
+          # Callers reveal input object family and whether output is shared_ptr-like.
+          print('## Direct callers of 0x1334dea')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+1334dea\b',op):
+              print(f'### caller @0x{a:x}; FDE={fde(a)}')
+              ctx(i,28,45);print()
+
+          # The installed object's +0x20/+0x28/+0x30/+0x38 calls in this constructor.
+          print('## Uses of installed service pointer from rsp+0x28 before table installation')
+          main=fde(0x133303c)
+          if main:
+            xs=[x for x in ins if main[0]<=x[0]<main[1]]
+            for k,(a,i,op,l) in enumerate(xs):
+              if '[rsp+0x28]' in op:
+                print(f'### 0x{a:x}: {op}')
+                for x in xs[max(0,k-12):min(len(xs),k+24)]:print('    '+x[3])
+                print()
+
+          # If producer copies a pointer from a fixed field, search writers of that field in same family.
+          print('## Fixed input-field loads in 0x1334dea')
+          if fr:
+            seen=set()
+            for a,i,op,l in xs:
+              for base in ('rsi','rdx'):
+                for m in re.finditer(rf'\[{base}\+0x([0-9a-f]+)\]',op):
+                  key=(base,int(m.group(1),16))
+                  if key in seen:continue
+                  seen.add(key)
+                  print(f'- {base}+0x{key[1]:x} at 0x{a:x}: {op}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-tagged-source.md
+          test -s analysis/service184-tagged-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 tagged source"
+          git pull --rebase origin main
+          git push origin HEAD:main
