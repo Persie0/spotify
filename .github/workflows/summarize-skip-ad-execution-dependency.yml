@@ -1,0 +1,84 @@
+name: Summarize skip-ad execution dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/summarize-skip-ad-execution-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sasum
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sasum
+
+      - name: Build compact provenance report
+        run: |
+          set -euo pipefail
+          SO=/tmp/sasum/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sasum/all.dis
+          readelf -rW "$SO" > /tmp/sasum/relocs.txt
+          {
+            echo '# Compact Skip Ad execution dependency provenance'
+            echo
+            echo '## Constructor window around 0x11f4142'
+            objdump -d -M intel --start-address=0x11f3d00 --stop-address=0x11f4230 "$SO"
+            echo
+            echo '## Exact references to stack slot rsp+0x650 in 0x11f0000..0x1200000'
+            awk '
+              /^[[:space:]]*[0-9a-f]+:/ {
+                addr=$1; gsub(":","",addr);
+                if (addr >= "11f0000" && addr < "1200000") {
+                  buf[NR]=$0
+                  if ($0 ~ /\[rsp\+0x650\]/) hit[NR]=1
+                }
+              }
+              END {
+                for (h in hit) {
+                  print "### hit line " h
+                  for (i=h-45;i<=h+60;i++) if (i in buf) print buf[i]
+                }
+              }' /tmp/sasum/all.dis
+            echo
+            echo '## Writes to object/subobject +0x20 near constructor family'
+            objdump -d -M intel --start-address=0x11f3000 --stop-address=0x11f5000 "$SO" |               grep -E -B24 -A36 'mov[[:space:]]+QWORD PTR \[[^]]+\+0x20\],' || true
+            echo
+            echo '## Secondary Skip Ad branch'
+            objdump -d -M intel --start-address=0x12044d0 --stop-address=0x1204538 "$SO"
+            echo
+            echo '## Relocation neighborhood of secondary dispatcher address point 0x185bf88'
+            awk '
+              {
+                if ($1 ~ /^[0-9a-f]+$/) {
+                  v=("0x"$1)+0
+                  if (v>=0x185bf60 && v<=0x185c080) print
+                }
+              }' /tmp/sasum/relocs.txt
+          } > analysis/skip-ad-execution-dependency-compact.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-execution-dependency-compact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Summarize skip-ad execution dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
