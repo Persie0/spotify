@@ -1,0 +1,189 @@
+name: Trace ef91cc owner publication
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-ef91cc-owner-publish.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/e91pub
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/e91pub
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace publication
+        run: |
+          SO=/tmp/e91pub/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/e91pub/all.dis
+          python3 - <<'PY' > analysis/ef91cc-owner-publication.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/e91pub/liborbit-jni-spotify.so')
+          lines=Path('/tmp/e91pub/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]: break
+                  out.append(x)
+              return out
+          def ctx(a,b=16,n=30):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          anchor=0xe9ccb0
+          fr=fde(anchor)
+          print('# ef91cc owner publication trace')
+          print()
+          print('Known:')
+          print('- 0xe9ccb0 allocates 0x3d0-byte object')
+          print('- 0xe9cceb stores AP 0x18365e0 into object[0]')
+          print('- AP 0x18365e0 +0x30 = 0xef91cc')
+          print('- 0xe9d0bd stores completed object pointer r12 into [rsp+0x660]')
+          print('- ef91cc readiness source is incoming second argument rsi, not this+0x10')
+          print()
+          print(f'## Enclosing FDE for e9ccb0: {fr}')
+          rows=body(fr) if fr else []
+          if fr:
+              print(f'- size: 0x{fr[1]-fr[0]:x}')
+          print()
+
+          print('## Every rsp+0x660 reference in enclosing FDE')
+          refs=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if 'rsp+0x660' in op:
+                  refs.append((k,a,op))
+                  side='WRITE' if 'rsp+0x660' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  for x in rows[max(0,k-15):min(len(rows),k+28)]: print('    '+x[3])
+                  print()
+          print(f'- reference count: {len(refs)}')
+          print()
+
+          print('## r12 uses after publication until first obvious clobber')
+          if fr:
+              pi=next((k for k,x in enumerate(rows) if x[0]==0xe9d0bd),None)
+              if pi is not None:
+                  for a,i,op,l in rows[pi:min(len(rows),pi+450)]:
+                      if re.search(r'\br12\b',op) or 'rsp+0x660' in op:
+                          print('    '+l)
+          print()
+
+          print('## Final 0x1000 bytes of enclosing FDE')
+          if fr:
+              for a,i,op,l in rows:
+                  if a>=max(fr[0],fr[1]-0x1000): print('    '+l)
+          print()
+
+          print('## Candidate output stores sourced from rsp+0x660 / r12')
+          if fr:
+              # Look around each read for writes to incoming argument-like bases or return register.
+              for k,a,op in refs:
+                  if a<0xe9d0bd: continue
+                  print(f'### around ref 0x{a:x}')
+                  for aa,ii,oo,ll in rows[max(0,k-20):min(len(rows),k+55)]:
+                      if (re.match(r'(mov|movups|movdqu|lea)',oo) and
+                          (re.search(r'\[(rdi|rsi|rdx|rcx|r8|r9)(?:\+0x[0-9a-f]+)?\]',oo) or
+                           re.match(r'mov\s+rax,',oo) or re.match(r'mov\s+rdi,',oo) or
+                           re.match(r'mov\s+rsi,',oo))):
+                          print('    '+ll)
+                  print()
+
+          print('## Direct callers of enclosing FDE entry')
+          if fr:
+              entry=fr[0]
+              for a,i,op,l in ins:
+                  if re.search(r'\b(?:call|jmp)\s+'+format(entry,'x')+r'\b',op):
+                      print(f'### 0x{a:x}; caller FDE={fde(a)}')
+                      print(ctx(a,30,55)); print()
+
+          print('## Direct callers of likely interior entry points near e9ccb0')
+          for target in [0xe998b3,0xe99aae,0xe9ccb0]:
+              found=0
+              for a,i,op,l in ins:
+                  if re.search(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b',op):
+                      found+=1
+                      print(f'### target 0x{target:x}, caller 0x{a:x}, FDE={fde(a)}')
+                      print(ctx(a,20,35)); print()
+              print(f'- target 0x{target:x}: {found} direct refs')
+          print()
+
+          # Find functions that materialize AP 0x18365e0 and where their resulting object is stored.
+          print('## All code materializations of AP 0x18365e0')
+          for a,i,op,l in ins:
+              if '# 18365e0' in l:
+                  print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+                  print(ctx(a,14,32)); print()
+
+          # Direct calls in consumers where object from a local/field is immediately vcall +0x30.
+          print('## +0x30 virtual calls near direct callers of owner-producing FDE')
+          caller_fdes=set()
+          if fr:
+              for a,i,op,l in ins:
+                  if re.search(r'\b(?:call|jmp)\s+'+format(fr[0],'x')+r'\b',op):
+                      cf=fde(a)
+                      if cf: caller_fdes.add(cf)
+          for cf in sorted(caller_fdes):
+              print(f'### caller FDE 0x{cf[0]:x}..0x{cf[1]:x}')
+              crow=body(cf)
+              for k,(a,i,op,l) in enumerate(crow):
+                  if re.search(r'call\s+QWORD PTR \[[^]]+\+0x30\]',op):
+                      print(f'#### vcall +0x30 @0x{a:x}')
+                      for x in crow[max(0,k-28):min(len(crow),k+30)]: print('    '+x[3])
+                      print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ef91cc-owner-publication.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ef91cc owner publication"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
