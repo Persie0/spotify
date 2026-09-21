@@ -1,0 +1,68 @@
+name: Classify d8a5c2 receiver compact
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-d8a5c2-receiver-compact.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/d8r
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/d8r
+          unzip -j /tmp/d8r/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/d8r
+      - name: Decode compact
+        run: |
+          SO=/tmp/d8r/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/d8r/all.dis
+          {
+            echo '# d8a5c2 receiver compact proof'
+            echo
+            echo '## Clone/capture constructor exact body'
+            objdump -d -M intel --start-address=0xd8a488 --stop-address=0xd8a514 "$SO"
+            echo
+            echo '## Dispatcher exact body'
+            objdump -d -M intel --start-address=0xd8a598 --stop-address=0xd8a5ea "$SO"
+            echo
+            echo '## Primary Skip-Ad state table fact'
+            echo '- primary AP 0x1841fc0'
+            echo '- AP+0x1d8 slot VA 0x1842198'
+            readelf -rW "$SO" | grep -E '^0000000001842198|^0000000001841fc0' || true
+            echo
+            echo '## All code refs to primary AP 0x1841fc0'
+            grep -n -B8 -A14 '# 1841fc0' /tmp/d8r/all.dis || true
+            echo
+            echo '## All code refs to d8a488/d8a5c2'
+            grep -n -E -B20 -A35 '# d8a(488|5c2)\b|call[[:space:]]+d8a488\b|call[[:space:]]+d8a5c2\b' /tmp/d8r/all.dis || true
+            echo
+            echo '## Layout-like builders using string copy plus +0x20 byte'
+            grep -n -E -B12 -A30 'call[[:space:]]+17edf40' /tmp/d8r/all.dis | grep -E -B18 -A24 '\+0x20\]|d8a4b5|1841fc0' || true
+          } > analysis/d8a5c2-receiver-class-compact.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/d8a5c2-receiver-class-compact.md
+          git status --short
+          git commit -m "Classify d8a5c2 receiver compact"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
