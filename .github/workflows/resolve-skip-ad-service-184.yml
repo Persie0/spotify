@@ -1,0 +1,72 @@
+name: Resolve Orbit service 184 for Skip Ad
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-service-184.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sa184
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sa184
+
+      - name: Trace service slot
+        run: |
+          set -euo pipefail
+          SO=/tmp/sa184/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sa184/all.dis
+          {
+            echo '# Orbit service 0xb8 / registry slot 0x5c0 trace'
+            echo
+            echo 'b8f02e calls registry lookup with id 0xb8 then returns [root-table+0x5c0].'
+            echo '0xb8 * 8 = 0x5c0.'
+            echo
+
+            echo '## All code accesses to +0x5c0'
+            grep -E -B18 -A30 '\[[^]]+\+0x5c0\]' /tmp/sa184/all.dis | head -n 30000 || true
+            echo
+
+            echo '## All immediate id 0xb8 setup near registry helper calls'
+            grep -E -B25 -A45 '(mov|push)[[:space:]].*(0xb8|0xb8\b)' /tmp/sa184/all.dis |               grep -E -B25 -A45 'b622de|service_registry|0xb8' | head -n 40000 || true
+            echo
+
+            echo '## Exact b8f02e accessor'
+            objdump -d -M intel --start-address=0xb8f02e --stop-address=0xb8f06e "$SO"
+            echo
+
+            echo '## Nearby service-family code after accessor'
+            objdump -d -M intel --start-address=0xb8f06e --stop-address=0xb90020 "$SO"
+            echo
+
+            echo '## Direct callers of the accessor with immediate +0x28 use'
+            grep -E -B18 -A35 '\bcall[[:space:]]+b8f02e\b' /tmp/sa184/all.dis | head -n 20000 || true
+          } > analysis/skip-ad-service-184.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-service-184.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Orbit service 184 for Skip Ad"
+          git pull --rebase origin main
+          git push origin HEAD:main
