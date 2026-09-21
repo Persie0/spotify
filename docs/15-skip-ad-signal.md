@@ -313,6 +313,9 @@ The **execution-side readiness propagation is now proven farther downstream**, h
 
 The execution edge is concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek -> "smart-skip-embedded-podcast-ad" action/report`. The interval source provenance is also resolved at the registry layer: ID `0x2f` / `DownloadSetupImpl` feeds the primary source and ID `0x32` / `DspSetupImpl` feeds the fallback.
 
+
+A further ABI check eliminates the three inline readiness-variant tables previously surfaced by the broad final-receiver resolver. The final availability call at `fd384d` / `fd3926` supplies only `rdi = receiver` and immediately tests the scalar value in `eax`. By contrast, `0x183d258:+0x140 -> 0xf7835e` consumes additional `rsi/rdx/rcx` arguments and builds complex state, `0x183d3b0:+0x140 -> 0xf7431e` is a deleting-destructor path, and `0x183d470:+0x140 -> 0xa50370` is effectively an `operator delete` tail. None is ABI-compatible with the final Skip-Ad readiness discriminator. These remain useful neighboring type-family evidence only and must not be used as the receiver identity.
+
 ## 6. Relationship to ordinary next-track restrictions
 
 Orbit still inserts `ad_disallow` into `disallowSkippingNextReasons` based on the presence of the nested ad-state optionals.
