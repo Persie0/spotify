@@ -1,0 +1,118 @@
+name: Decode Skip Ad provider metadata
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skipad-provider-metadata.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipmeta
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipmeta
+      - name: Decode metadata
+        run: |
+          set -euo pipefail
+          SO=/tmp/skipmeta/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipmeta/all.dis
+          {
+            echo '# Skip Ad provider metadata'
+            echo
+            echo '## Exact returned metadata strings'
+            python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/skipmeta/liborbit-jni-spotify.so').read_bytes()
+          # ELF PT_LOAD conversion via readelf program headers parsed in a tiny manual helper below
+          import subprocess,re
+          txt=subprocess.check_output(['readelf','-W','-l','/tmp/skipmeta/liborbit-jni-spotify.so'],text=True)
+          loads=[]
+          for line in txt.splitlines():
+              if line.strip().startswith('LOAD'):
+                  p=line.split()
+                  off=int(p[1],16); va=int(p[2],16); filesz=int(p[4],16)
+                  loads.append((va,va+filesz,off))
+          def vo(v):
+              for a,z,o in loads:
+                  if a<=v<z:return o+(v-a)
+          for va,n in [(0x353204,0x13),(0x3dafb0,0x1a)]:
+              o=vo(va)
+              raw=b[o:o+n] if o is not None else b''
+              print(f'- 0x{va:x} len=0x{n:x}: {raw!r} -> {raw.decode("utf-8","replace")}')
+          PY
+            echo
+            echo '## Skip Ad descriptor tiny methods'
+            objdump -d -M intel --start-address=0x11ee5ec --stop-address=0x11ee608 "$SO"
+            echo
+            echo '## Neighbor provider descriptor tiny methods'
+            python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess,struct
+          dis=Path('/tmp/skipmeta/all.dis').read_text(errors='replace').splitlines()
+          # Providers immediately surrounding b6162f.
+          aps=[0x1871f30,0x185b8d0,0x181b748,0x182b5e0,0x1851990]
+          # Parse reloc qwords using readelf -rW.
+          rel={}
+          rt=subprocess.check_output(['readelf','-rW','/tmp/skipmeta/liborbit-jni-spotify.so'],text=True,errors='replace')
+          for l in rt.splitlines():
+              m=re.match(r'([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)',l.strip())
+              if m: rel[int(m.group(1),16)]=int(m.group(2),16)
+          # PT loads for raw qwords.
+          ph=subprocess.check_output(['readelf','-W','-l','/tmp/skipmeta/liborbit-jni-spotify.so'],text=True)
+          loads=[]
+          for l in ph.splitlines():
+              if l.strip().startswith('LOAD'):
+                  p=l.split();loads.append((int(p[2],16),int(p[2],16)+int(p[4],16),int(p[1],16)))
+          b=Path('/tmp/skipmeta/liborbit-jni-spotify.so').read_bytes()
+          def q(v):
+              if v in rel:return rel[v]
+              for a,z,o in loads:
+                  if a<=v<z:
+                      x=o+(v-a)
+                      return struct.unpack_from('<Q',b,x)[0]
+          # index disassembly by exact address
+          ops={}
+          for l in dis:
+              m=re.match(r'\s*([0-9a-f]+):.*?\s{2,}([^\n]+)$',l)
+              if m:ops[int(m.group(1),16)]=m.group(2)
+          for ap in aps:
+              print(f'### AP 0x{ap:x}')
+              for off in (0x10,0x18,0x20,0x28):
+                  t=q(ap+off)
+                  print(f'- +0x{off:x} -> {hex(t) if t else None}')
+                  if t:
+                      # print up to 8 sequential disasm lines from target
+                      shown=0
+                      for l in dis:
+                          m=re.match(r'\s*([0-9a-f]+):',l)
+                          if m and int(m.group(1),16)>=t and shown<8:
+                              if int(m.group(1),16)>t+0x40:break
+                              print('    '+l);shown+=1
+              print()
+          PY
+          } > analysis/skipad-provider-metadata.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-provider-metadata.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad provider metadata"
+          git pull --rebase origin main
+          git push origin HEAD:main
