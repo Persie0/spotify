@@ -1,0 +1,63 @@
+name: Trace service 184 table-slot writers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-slot-writers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184w
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184w
+
+      - name: Inspect slot writers
+        run: |
+          SO=/tmp/s184w/liborbit-jni-spotify.so
+          {
+            echo '# Service-184 slot +0x5c0 candidate writers'
+            for A in 0x11a3500 0x1333700 0x1089d80 0x122ac80 0x12cb700; do
+              case "$A" in
+                0x11a3500) B=0x11a3740;;
+                0x1333700) B=0x1333950;;
+                0x1089d80) B=0x1089f00;;
+                0x122ac80) B=0x122ae20;;
+                0x12cb700) B=0x12cb900;;
+              esac
+              echo
+              echo "## $A..$B"
+              objdump -d -M intel --start-address=$A --stop-address=$B "$SO"
+            done
+            echo
+            echo '## Accessor and nearby direct raw table use'
+            objdump -d -M intel --start-address=0xb8f02e --stop-address=0xb8f06e "$SO"
+            objdump -d -M intel --start-address=0x135c760 --stop-address=0x135c830 "$SO"
+          } > analysis/service184-slot-writers.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-slot-writers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service 184 slot writers"
+          git pull --rebase origin main
+          git push origin HEAD:main
