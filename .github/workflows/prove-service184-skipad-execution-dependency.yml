@@ -1,0 +1,163 @@
+name: Prove service184 to Skip Ad execution dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/prove-service184-skipad-execution-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184proof
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184proof
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Prove stack-arg/dataflow chain
+        run: |
+          SO=/tmp/s184proof/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184proof/all.dis
+          python3 - <<'PY' > analysis/service184-skipad-execution-proof.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184proof/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184proof/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def range_dump(a,b):
+            for x,i,op,l in ins:
+              if a<=x<b:print('    '+l)
+
+          print('# service184 +0x28 -> Skip Ad +0x68 execution dependency proof')
+          print()
+          print('Known source:')
+          print('- b8f02e(root) returns service184')
+          print('- 0x11ee8ff calls service184 virtual +0x28')
+          print('- result overwrites caller local rsp+0x60 at 0x11ee902')
+          print()
+
+          print('## Source local and call-site argument build')
+          range_dump(0x11ee8e0,0x11eee55)
+          print()
+
+          # Symbolically follow pushes between 11eed70 and call, treating RSP at 11eed70 as base S0.
+          print('## Symbolic stack-push mapping into 0x11ef334')
+          base_delta=0
+          pushes=[]
+          for a,i,op,l in ins:
+            if not (0x11eed70<=a<=0x11eee4c):continue
+            m=re.match(r'push\s+QWORD PTR \[rsp\+0x([0-9a-f]+)\]',op)
+            if m:
+              off=int(m.group(1),16)
+              origin=base_delta+off
+              pushes.append((a,op,origin))
+              base_delta-=8
+            elif re.match(r'push\s+',op):
+              pushes.append((a,op,None))
+              base_delta-=8
+          for idx,(a,op,origin) in enumerate(pushes,1):
+            print(f'- push#{idx:02d} @0x{a:x}: {op}; source relative to S0={hex(origin) if origin is not None else "register/immediate"}')
+          print(f'- total pushed bytes before call: 0x{-base_delta:x}')
+          print()
+
+          # The service result sits at caller stack slot as of immediately after 11ee902.
+          # Find every subsequent direct load/push of that physical slot, accounting for changing rsp.
+          print('## Uses of the physical service184-result stack cell before constructor call')
+          # Before push sequence RSP is stable from 11ee902 to 11eed70. At S0, determine its offset:
+          # S0 is the same RSP as 11ee902 in this function until first push.
+          service_origin=0x60
+          delta=0
+          for a,i,op,l in ins:
+            if not (0x11ee902<=a<=0x11eee4c):continue
+            if a>=0x11eed70:
+              # Check memory refs against physical S0+0x60 before applying this push.
+              for m in re.finditer(r'\[rsp\+0x([0-9a-f]+)\]',op):
+                off=int(m.group(1),16)
+                if delta+off==service_origin:
+                  print(f'- MATCH @0x{a:x}: {op}; current rsp delta={delta}, physical S0+0x60')
+              if re.match(r'push\s+',op):
+                delta-=8
+            else:
+              if '[rsp+0x60]' in op:
+                print(f'- @0x{a:x}: {op}')
+          print()
+
+          callee=0x11ef334
+          fr=fde(callee)
+          print(f'## 0x11ef334 constructor FDE {fr}')
+          # Prologue and all stack-argument loads early in constructor.
+          if fr:
+            fs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for a,i,op,l in fs[:420]:
+              print('    '+l)
+          print()
+
+          print('## Construction of object with secondary address point 0x185bf88')
+          range_dump(0x11f3f80,0x11f4210)
+          print()
+
+          # Find writes to r15+0x20 / any field from callee stack args, with context.
+          if fr:
+            fs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            print('## Candidate dependency field stores in 0x11ef334')
+            for k,(a,i,op,l) in enumerate(fs):
+              if re.search(r'\[(?:r15|rbx|r14)\+0x(?:8|18|20|28|30|38|40|48|50)\]',op) and op.startswith('mov'):
+                print(f'### 0x{a:x}: {op}')
+                for x in fs[max(0,k-7):min(len(fs),k+10)]:print('    '+x[3])
+                print()
+
+          print('## Secondary object methods that load dependency from this+8 / this+0x20')
+          for a,i,op,l in ins:
+            if not (0x11f4000<=a<0x1210000):continue
+            if re.search(r'mov\s+r(?:di|si|1[2345]|bx|bp),QWORD PTR \[r(?:di|si|bp|bx|1[2345])\+(?:0x8|0x20)\]',op):
+              # only keep functions containing a later +0x68 virtual in same FDE
+              fr2=fde(a)
+              if not fr2:continue
+              has68=any(fr2[0]<=aa<fr2[1] and re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x68\]',oo) for aa,ii,oo,ll in ins)
+              if has68:
+                print(f'### 0x{a:x}: {op}; FDE={fr2}')
+                for x in lines[max(0,i-12):min(len(lines),i+24)]:print('    '+x)
+                print()
+
+          print('## Exact Skip Ad branch')
+          range_dump(0x12044d8,0x1204536)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-skipad-execution-proof.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Prove service184 Skip Ad execution dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
