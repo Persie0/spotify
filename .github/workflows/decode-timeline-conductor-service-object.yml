@@ -162,7 +162,7 @@ jobs:
           for a,i,op,l in rows:
             left=op.split(',',1)[0]
             for reg in aliases:
-              if re.fullmatch(r'(?:mov|xchg)\s+QWORD PTR \['+re.escape(reg)+r'\]',.*',op):
+              if re.fullmatch(r'(?:mov|xchg)\s+QWORD PTR \['+re.escape(reg)+r'\],.*',op):
                 print(f'### 0x{a:x}: {op}')
                 ctx(i,12,16);print()
 
