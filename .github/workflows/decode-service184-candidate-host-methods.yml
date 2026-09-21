@@ -1,0 +1,106 @@
+name: Decode service184 candidate host methods
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-candidate-host-methods.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184cand
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184cand
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode methods and publications
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184cand/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184cand/all.dis
+          python3 - <<'PY' > analysis/service184-candidate-host-methods.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184cand/liborbit-jni-spotify.so')
+          lines=Path('/tmp/s184cand/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def dump_fde(addr):
+            fr=fde(addr)
+            print(f'FDE={fr}')
+            if fr:
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]: print('    '+l)
+          print('# Candidate service184 host vptr 0x1859058 methods')
+          print()
+          print('Candidate address point: 0x1859058')
+          print('- +0x10 = 0x11a318c (known selector-5 refresh)')
+          print('- +0x20 = 0x11a3842')
+          print('- +0x28 = 0x11a3bd0')
+          print('- +0x30 = 0x11a2f1c')
+          print('- +0x38 = 0x11a3c3c')
+          print()
+          for off,addr in [(0x10,0x11a318c),(0x20,0x11a3842),(0x28,0x11a3bd0),(0x30,0x11a2f1c),(0x38,0x11a3c3c),(0x68,0x11a2df8)]:
+            print(f'## slot +0x{off:x}: 0x{addr:x}')
+            dump_fde(addr)
+            print()
+          print('## All textual materializations of exact vptr 0x1859058')
+          for a,i,op,l in ins:
+            if '1859058' in l:
+              print(f'### 0x{a:x}, FDE={fde(a)}')
+              for x in lines[max(0,i-25):min(len(lines),i+55)]:print('    '+x)
+              print()
+          print('## Stores of newly allocated 0x830 candidate to owner/container')
+          # Around known allocation/construction, capture post-construction stores.
+          for a,i,op,l in ins:
+            if 0xddabc0<=a<0xddb000:
+              print('    '+l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-candidate-host-methods.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 candidate host methods"
+          git pull --rebase origin main
+          git push origin HEAD:main
