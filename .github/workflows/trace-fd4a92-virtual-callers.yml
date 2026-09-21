@@ -1,0 +1,112 @@
+name: Trace fd4a92 virtual callers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-fd4a92-virtual-callers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/fd4vc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/fd4vc
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace virtual callers
+        run: |
+          SO=/tmp/fd4vc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/fd4vc/all.dis
+          python3 - <<'PY' > analysis/fd4a92-virtual-callers.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/fd4vc/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/fd4vc/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=28,n=34):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          print('# fd4a92 virtual +0x1d8 callers')
+          print()
+          print('Known: primary state AP 0x1841fc0; AP+0x1d8 = fd4a92.')
+          print('fd4a92 extracts a weak/shared pointer pair from second argument +0x10; final readiness receiver becomes [extracted_object+0x40].')
+          print()
+          hits=[]
+          for a,i,op,l in ins:
+            if re.search(r'call\s+QWORD PTR \[[^]]+\+0x1d8\]',op):
+              hits.append((a,i,op,l))
+          print(f'## Indirect +0x1d8 calls: {len(hits)}')
+          for a,i,op,l in hits:
+            print(f'### call 0x{a:x}; FDE={fde(a)}: {op}')
+            ctx(a,40,45); print()
+          print('## Near-call argument-2 (rsi) reaching definitions')
+          for a,i,op,l in hits:
+            j=idx(a)
+            print(f'### call 0x{a:x}')
+            found=0
+            for aa,ii,oo,ll in reversed(ins[max(0,j-80):j]):
+              if re.match(r'(mov|lea|xchg|pop)\s+rsi\b',oo):
+                print(f'- 0x{aa:x}: {oo}')
+                ctx(aa,10,14)
+                found+=1
+                if found>=5: break
+            print()
+          print('## Near-call receiver-vptr validation')
+          for a,i,op,l in hits:
+            j=idx(a)
+            print(f'### call 0x{a:x}')
+            for aa,ii,oo,ll in ins[max(0,j-25):j+2]:
+              if re.search(r'mov\s+r\w+,QWORD PTR \[r\w+\]',oo) or '# 1841fc0' in ll:
+                print('    '+ll)
+            print()
+          print('## Direct fd4bf2 thunk callers')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+fd4bf2\b',op):
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,30,40); print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/fd4a92-virtual-callers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace fd4a92 virtual callers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
