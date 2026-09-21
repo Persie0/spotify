@@ -128,6 +128,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add analysis/readiness-carrier-stack-alias.md
           git commit -m "Trace readiness carrier stack alias"
           git push
