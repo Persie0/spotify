@@ -1,0 +1,197 @@
+name: Validate service184 embedded dependency vptr
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/validate-service184-embedded-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184dep
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184dep
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Validate candidate
+        run: |
+          SO=/tmp/s184dep/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184dep/all.dis
+          python3 - <<'PY' > analysis/service184-embedded-dependency-validation.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184dep/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184dep/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs.append((rel['r_offset'],add,sec.name))
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=12,a=22):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+x)
+
+          print('# Service184 embedded dependency vptr validation')
+          print()
+          print('Candidate service address point: 0x18228d8')
+          print('Candidate +0x28 method: 0xd17212 -> returns this+0x218')
+          print('Invariant to prove: object at this+0x218 must itself become polymorphic because Skip Ad later executes [dep] then dep-vtable+0x68.')
+          print()
+
+          # 1. Exact getter and surrounding owner methods
+          print('## Candidate owner getter and method family')
+          for target in (0xd1710c,0xd17212,0xd1721a,0xd17262,0xd1734a):
+            fr=fde_for(target)
+            print(f'### 0x{target:x} FDE={fr}')
+            if fr:
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]: print('    '+l)
+            print()
+
+          # 2. Relocation references to owner vtable/address point.
+          print('## Relocations containing candidate owner address point / nearby vtable')
+          for off,add,sec in relocs:
+            if 0x18228b0 <= add <= 0x1822900 or add==0x18228d8:
+              print(f'- {sec} slot 0x{off:x} -> 0x{add:x}')
+          print()
+
+          # 3. Search all code writes to +0x218 where RHS comes from a loaded high address / vtable-looking value.
+          print('## Writes to owner+0x218 with nearby high-address materialization')
+          for a,i,op,l in ins:
+            if '+0x218]' not in op: continue
+            left=op.split(',',1)[0]
+            if '[' not in left: continue
+            if not re.match(r'(mov|movq|movups|movdqu|movaps|movdqa|xchg)\b',op): continue
+            window=lines[max(0,i-12):i+4]
+            high=[]
+            for wl in window:
+              mm=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',wl)
+              if mm: high.append(mm.group(1))
+            if high:
+              print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}; high refs={high}')
+              ctx(i,12,12); print()
+
+          # 4. Search any first-word store through an alias formed as lea reg,[base+0x218].
+          print('## Alias-derived first-word stores after lea alias=[owner+0x218]')
+          for idx,(a,i,op,l) in enumerate(ins):
+            m=re.match(r'lea\s+(r\w+),\[(r\w+)\+0x218\]',op)
+            if not m: continue
+            alias=m.group(1)
+            fr=fde_for(a)
+            print(f'### alias {alias} formed @0x{a:x}; FDE={fr}')
+            if fr:
+              # walk forward up to 120 instructions / function end for stores to [alias]
+              count=0
+              started=False
+              for aa,ii,oo,ll in ins:
+                if aa<a: continue
+                if not(fr[0]<=aa<fr[1]): continue
+                started=True; count+=1
+                if re.search(r'\['+re.escape(alias)+r'\]',oo) and re.match(r'(mov|xchg|movq|movups|movdqu|movaps|movdqa)',oo):
+                  print('    '+ll)
+                  ctx(ii,6,8)
+                if count>120: break
+            print()
+
+          # 5. Find all vtable-looking address materializations in owner-family functions around d16c..d17d.
+          print('## High-address materializations in owner-family code')
+          for a,i,op,l in ins:
+            if not (0xd16000<=a<0xd1a300): continue
+            m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+            if m:
+              print(f'### 0x{a:x}: {op}; FDE={fde_for(a)}')
+              ctx(i,5,8); print()
+
+          # 6. Verify candidate dependency object has a plausible static vtable somewhere by scanning
+          # method implementations that return this+0x218 and callers that immediately dereference result.
+          print('## Direct calls to getter 0xd17212 and immediate result use')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+d17212\b',op):
+              print(f'### call @0x{a:x}; FDE={fde_for(a)}')
+              ctx(i,8,20); print()
+
+          # 7. Identify candidate dependency vtables by looking for constructors in same family that
+          # store relocation/high rodata into [base+0x218] through a temporary register.
+          print('## Candidate dependency-vtable address points by +0x68 callable shape')
+          # Pure structural shortlist: address points in 0x1800000..0x18a0000 with code at +0x68
+          # and at least 8 code slots in first 0x80.
+          relocmap={off:add for off,add,sec in relocs}
+          out=[]
+          for base in sorted(relocmap):
+            if not (0x1800000<=base<0x18a0000): continue
+            vals=[]
+            code=0
+            for off in range(0,0x80,8):
+              q=relocmap.get(base+off)
+              if q is not None and fde_for(q): code+=1
+              vals.append((off,q))
+            q68=relocmap.get(base+0x68)
+            if code>=8 and q68 is not None and fde_for(q68):
+              out.append((base,code,q68))
+          for base,code,q68 in out[:250]:
+            print(f'- address point 0x{base:x}: codeSlots={code}, +0x68=0x{q68:x}, FDE={fde_for(q68)}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-embedded-dependency-validation.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Validate service184 embedded dependency vptr"
+          git pull --rebase origin main
+          git push origin HEAD:main
