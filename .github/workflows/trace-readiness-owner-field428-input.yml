@@ -1,0 +1,177 @@
+name: Trace readiness owner and field428 input
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-readiness-owner-field428-input.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r428in
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r428in
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace
+        run: |
+          SO=/tmp/r428in/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/r428in/all.dis
+          readelf -rW "$SO" > /tmp/r428in/rel.txt
+          python3 - <<'PY' > analysis/readiness-owner-field428-input.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/r428in/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/r428in/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          rel=[]
+          for l in Path('/tmp/r428in/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  j=p.index('R_X86_64_RELATIVE')
+                  if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                      rel.append((int(p[0],16),int(p[j+1],16)))
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(a,b=16,n=30):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          print('# Readiness owner +0x428 input provenance')
+          print()
+          print('Known:')
+          print('- e95a7d loads readiness arg = [rbx+0x428]')
+          print('- ecee52 stores a 0x98-byte erased/shared wrapper into [rbx+0x428]')
+          print('- that wrapper first 16 bytes come from ecee incoming stack argument at current [rsp+0x1c8]')
+          print()
+
+          # e95 owner rbx provenance
+          target=0xe95a7d
+          fr=fde(target); rows=body(fr)
+          ti=next(k for k,x in enumerate(rows) if x[0]==target)
+          print(f'## e95 caller owner provenance FDE={fr}')
+          defs=[]
+          for k in range(ti-1,-1,-1):
+              a,i,op,l=rows[k]
+              if re.match(r'(mov|lea|xchg|pop)\s+rbx\b',op):
+                  defs.append((k,a,op))
+                  if len(defs)>=8:break
+          for k,a,op in defs:
+              print(f'### rbx definition 0x{a:x}: {op}')
+              for x in rows[max(0,k-20):min(len(rows),k+35)]:print('    '+x[3])
+              print()
+          print('### all [rbx+0x428] refs in this FDE')
+          for k,(a,i,op,l) in enumerate(rows):
+              if '[rbx+0x428]' in op:
+                  print(f'- 0x{a:x}: {op}')
+                  for x in rows[max(0,k-10):min(len(rows),k+18)]:print('    '+x[3])
+          print()
+
+          # Determine whether e92f2c is a vtable target and nearby APs.
+          print('## Relocations targeting e92f2c or caller-family methods')
+          for off,add in rel:
+              if add==0xe92f2c or (fr and fr[0]<=add<fr[1]):
+                  print(f'- slot 0x{off:x} -> 0x{add:x}')
+          print()
+
+          print('## Code materializations of owner AP 0x1834498')
+          for a,i,op,l in ins:
+              if '# 1834498' in l:
+                  print(f'### 0x{a:x}; FDE={fde(a)}')
+                  print(ctx(a,18,38));print()
+
+          print('## Relocation neighborhood around 0x1834498')
+          rm={o:a for o,a in rel}
+          for off in range(0x1834440,0x1834580,8):
+              if off in rm:
+                  print(f'- 0x{off:x}: 0x{rm[off]:x}, FDE={fde(rm[off])}')
+          print()
+
+          # ecee direct callers and arg12 mapping.
+          efr=fde(0xece57c)
+          print(f'## ecee constructor FDE={efr}; incoming [rsp+0x1c8] = entry stack +0x30')
+          print('Under SysV with six register args, entry stack +0x30 is argument 12.')
+          callers=[]
+          for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+ece57c\b',op):
+                  callers.append((a,i,op))
+          print(f'- direct callers: {len(callers)}')
+          for a,i,op in callers:
+              cf=fde(a)
+              print(f'### caller 0x{a:x}; FDE={cf}')
+              print(ctx(a,70,35));print()
+
+          # Also relocation slots pointing to ece57c if virtual/callback.
+          print('## Relocation slots targeting ece57c')
+          slots=[]
+          for off,add in rel:
+              if add==0xece57c:
+                  slots.append(off);print(f'- 0x{off:x}')
+          print()
+
+          # Any calls through slots that correspond to table around slot target.
+          for slot in slots:
+              print(f'### Table neighborhood around relocation slot 0x{slot:x}')
+              for off in range(max(0,slot-0x40),slot+0x48,8):
+                  if off in rm:print(f'- 0x{off:x}: 0x{rm[off]:x} FDE={fde(rm[off])}')
+              print()
+
+          # Search writes to +0x428 from r14 globally with nearby allocation/high constants.
+          print('## All QWORD pointer writes to object+0x428')
+          for k,(a,i,op,l) in enumerate(ins):
+              if re.match(r'mov\s+QWORD PTR \[[a-z0-9]+\+0x428\],r\w+',op):
+                  print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+                  print(ctx(a,22,28));print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-owner-field428-input.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace readiness owner field428 input"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
