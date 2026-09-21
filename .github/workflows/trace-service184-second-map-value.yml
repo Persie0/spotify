@@ -1,0 +1,188 @@
+name: Trace second service184 map value writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-second-map-value.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184map2
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184map2
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace exact map value
+        run: |
+          SO=/tmp/s184map2/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184map2/all.dis
+          python3 - <<'PY' > analysis/service184-second-map-value.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184map2/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184map2/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=20,a=35):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Service184 second-map value writer')
+          print()
+          print('Proven read path:')
+          print('- second map base = r14+0x58')
+          print('- lookup 0x1334d26 returns node')
+          print('- node+0xa0 -> intermediate object')
+          print('- intermediate+0x10 -> service184 pointer, then intermediate+0x10 is cleared')
+          print()
+
+          # Full owning FDE around both lookups, compacted to map/value-relevant instructions.
+          fr=fde(0x1332fb2)
+          print(f'## Owning FDE {fr}')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if (
+                '1334d26' in op or '1334fce' in op or
+                '+0xa0]' in op or '+0xa8]' in op or
+                '+0x30]' in op or '+0x58]' in op or
+                '[rsp+0x2e0]' in op or '[rsp+0x3a0]' in op or
+                '1334dea' in op
+              ):
+                print('    '+l)
+          print()
+
+          # Enumerate every caller of map insert/find helper and exactly what happens to returned rax.
+          print('## All callers of 0x1334fce and immediate return dataflow')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+1334fce\b',op):continue
+            print(f'### call@0x{a:x}, FDE={fde(a)}')
+            ctx(i,18,55)
+            print()
+
+          # Calls to lookup helper 1334d26, distinguishing base passed in rdi.
+          print('## All callers of lookup 0x1334d26')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+1334d26\b',op):continue
+            print(f'### call@0x{a:x}, FDE={fde(a)}')
+            ctx(i,14,28)
+            print()
+
+          # Every direct memory store/read at +a0/+a8 in the constructor FDE.
+          print('## +0xa0/+0xa8 accesses in 0x1332e00 constructor FDE')
+          fr=fde(0x1332e00)
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and ('+0xa0]' in op or '+0xa8]' in op):
+                print(f'### 0x{a:x}: {op}')
+                ctx(i,8,12)
+                print()
+
+          # Globally find helper call returns followed by stores through rax or [rax+offset].
+          print('## Candidate writers through returned map-value pointer')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+1334fce\b',op):continue
+            frx=fde(a)
+            after=[]
+            for aa,ii,oo,ll in ins[idx+1:idx+45]:
+              if frx and not(frx[0]<=aa<frx[1]):break
+              after.append((aa,ii,oo,ll))
+            # stop once rax is clearly overwritten; print writes through rax first
+            for aa,ii,oo,ll in after:
+              if re.search(r'(?:mov|movups|movdqu|movaps|and|xchg)\s+(?:QWORD PTR |XMMWORD PTR )?\[rax(?:\+0x[0-9a-f]+)?\]',oo):
+                print(f'### writer after call 0x{a:x}: 0x{aa:x} {oo}')
+                ctx(ii,10,18)
+                print()
+              first=oo.split(',',1)[0]
+              if re.match(r'(?:mov|lea|call|xor|pop)\s+rax\b',first):
+                break
+
+          # Search all writes to +0xa0/+0xa8 where the base was just allocated as 0xb0-byte node.
+          print('## New-node +0xa0/+0xa8 initialization/writes')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+17edf00\b',op):continue
+            prior='\n'.join(x[2] for x in ins[max(0,idx-4):idx])
+            if '0xb0' not in prior:continue
+            frx=fde(a)
+            print(f'### node allocation call@0x{a:x}, FDE={frx}')
+            for aa,ii,oo,ll in ins[idx-4:idx+90]:
+              if frx and not(frx[0]<=aa<frx[1]):break
+              if '+0xa0]' in oo or '+0xa8]' in oo or aa<=a+0x35:
+                print('    '+ll)
+            print()
+
+          # Find all code globally that writes +0xa0/+0xa8 AND is in same 0x133xxxx family.
+          print('## All writes to +0xa0/+0xa8 in 0x1330000..0x1340000')
+          for a,i,op,l in ins:
+            if not (0x1330000<=a<0x1340000):continue
+            dst=op.split(',',1)[0]
+            if '+0xa0]' in dst or '+0xa8]' in dst:
+              print(f'### 0x{a:x}, FDE={fde(a)}: {op}')
+              ctx(i,9,15)
+              print()
+
+          # Crucial intermediate pattern: any object field +0x10 is moved into another slot then nulled.
+          print('## Move-out patterns from object+0x10 in 0x133xxxx')
+          for a,i,op,l in ins:
+            if not (0x1330000<=a<0x1340000):continue
+            if re.search(r'mov\s+[a-z0-9]+,QWORD PTR \[[a-z0-9]+\+0x10\]',op):
+              # only emit if nearby same +0x10 is zeroed, matching service extraction semantics
+              local='\n'.join(x[2] for x in ins if a<=x[0]<=a+0x30)
+              base=(re.search(r'\[([a-z0-9]+)\+0x10\]',op) or [None,None])[1]
+              if base and f'[{base}+0x10]' in local and ('0x0' in local or 'and' in local):
+                print(f'### 0x{a:x}, FDE={fde(a)}')
+                ctx(i,10,18)
+                print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-second-map-value.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 second map value writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
