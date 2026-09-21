@@ -1,0 +1,120 @@
+name: Trace ec5116 P callback
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-ec5116-p-callback.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/ec5116
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/ec5116
+
+      - name: Decode callback and callees
+        run: |
+          SO=/tmp/ec5116/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/ec5116/all.dis
+          readelf -wf "$SO" > /tmp/ec5116/frames.txt
+          python3 - <<'PY' > analysis/ec5116-p-callback.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/ec5116/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in lines:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16),m.group(2).strip(),line))
+
+          frames=Path('/tmp/ec5116/frames.txt').read_text(errors='replace').splitlines()
+          fdes=[]
+          for line in frames:
+              m=re.search(r'pc=([0-9a-f]+)\.\.([0-9a-f]+)',line)
+              if m:
+                  fdes.append((int(m.group(1),16),int(m.group(2),16)))
+          fdes.sort()
+
+          def frame(addr):
+              for lo,hi in fdes:
+                  if lo<=addr<hi:
+                      return lo,hi
+              return None
+
+          def rows(lo,hi):
+              return [x for x in ins if lo<=x[0]<hi]
+
+          target=0xec5116
+          fr=frame(target)
+          print('# P-captured callback ec5116')
+          print()
+          print('- e94863 stores P into the callback capture.')
+          print('- e9486d selects callback body 0xec5116.')
+          print('- This report decodes that body and its direct callees.')
+          print()
+          if not fr:
+              print('NO_FDE_FOR_EC5116')
+              raise SystemExit
+          print(f'## ec5116 FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+          callback_rows=rows(*fr)
+          for _,_,line in callback_rows:
+              print('    '+line)
+
+          callees=[]
+          for a,op,line in callback_rows:
+              m=re.match(r'call\s+([0-9a-f]+)\b',op)
+              if m:
+                  t=int(m.group(1),16)
+                  if t not in callees:
+                      callees.append(t)
+          print()
+          print('## Direct callees')
+          for t in callees:
+              cfr=frame(t)
+              print(f'- 0x{t:x}' + (f' FDE=0x{cfr[0]:x}..0x{cfr[1]:x}' if cfr else ''))
+          for t in callees:
+              cfr=frame(t)
+              if not cfr:
+                  continue
+              cr=rows(*cfr)
+              if len(cr)>260:
+                  continue
+              print()
+              print(f'## Callee 0x{t:x}')
+              for _,_,line in cr:
+                  print('    '+line)
+
+          print()
+          print('## Callback/callee target-offset accesses')
+          targets=set([fr]+[frame(t) for t in callees if frame(t)])
+          for xfr in sorted(targets):
+              for a,op,line in rows(*xfr):
+                  if any(tok in op for tok in ('+0x38]', '+0x40]', '+0x48]', '+0x50]', '+0x58]', '+0x60]')):
+                      print(f'- 0x{a:x}: {op}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ec5116-p-callback.md
+          git commit -m "Trace ec5116 P callback"
+          git push
