@@ -1,0 +1,225 @@
+name: Trace readiness source178 head
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-readiness-source178-head.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r178
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r178
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace source178 heads
+        run: |
+          set -euo pipefail
+          SO=/tmp/r178/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/r178/all.dis
+          readelf -rW "$SO" > /tmp/r178/rel.txt
+          readelf -W -l "$SO" > /tmp/r178/ph.txt
+
+          python3 - <<'PY' > analysis/readiness-source178-head.md
+          from pathlib import Path
+          import re, bisect, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/r178/liborbit-jni-spotify.so')
+          lines=Path('/tmp/r178/all.dis').read_text(errors='replace').splitlines()
+          data=so.read_bytes()
+
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a: fdes.append((a,z))
+              fdes.sort(); starts=[a for a,z in fdes]
+              loads=[]
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+
+          rel={}
+          for l in Path('/tmp/r178/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  k=p.index('R_X86_64_RELATIVE')
+                  if k+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[k+1]):
+                      rel[int(p[0],16)]=int(p[k+1],16)
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=30):
+              j=ix(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          def body(fr):
+              j=ix(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]: break
+                  out.append(x)
+              return out
+          def q(va):
+              if va in rel:return rel[va]
+              for lo,hi,off in loads:
+                  if lo<=va<hi:
+                      o=off+(va-lo)
+                      if o+8<=len(data): return struct.unpack_from('<Q',data,o)[0]
+              return None
+
+          fr=fde(0xea0013)
+          rows=body(fr)
+          print('# readiness source+0x178 head provenance')
+          print()
+          print('Goal: resolve the concrete first qword copied into source+0x178, then into owner+0x428, which fd381a later treats as the dispatch table for readiness virtual +0x140.')
+          print()
+          print('Known copies:')
+          print('- inner AP 0x1834418: [rsp+0x8d8..0x8e7] -> source+0x178 @0xea0013')
+          print('- outer AP 0x1834728: object/pair at [rsp+0x1270] -> rsp+0x11c8.. -> source+0x178 @0xea02ce')
+          print()
+
+          slots=[0x8d8,0x8e0,0x1270,0x11c8,0x11d0]
+          print(f'## Containing FDE {fr}')
+          print()
+
+          for off in slots:
+              pat=f'rsp+0x{off:x}]'
+              refs=[x for x in rows if pat in x[2]]
+              print(f'## Exact references to rsp+0x{off:x} ({len(refs)})')
+              for a,i,op,l in refs:
+                  side='WRITE' if pat in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  print(ctx(a,14,24)); print()
+
+          print('## Last direct writes before inner copy 0xea0013')
+          for off in (0x8d8,0x8e0):
+              pat=f'rsp+0x{off:x}]'; hits=[]
+              for x in rows:
+                  if x[0]>=0xea0013: break
+                  if pat in x[2].split(',',1)[0]: hits.append(x)
+              print(f'### slot 0x{off:x}')
+              for a,i,op,l in hits[-12:]:
+                  print(f'- 0x{a:x}: {op}')
+                  print(ctx(a,10,16))
+              print()
+
+          print('## Last direct writes before outer pointer read 0xea014f')
+          for off in (0x1270,):
+              pat=f'rsp+0x{off:x}]'; hits=[]
+              for x in rows:
+                  if x[0]>=0xea014f: break
+                  if pat in x[2].split(',',1)[0]: hits.append(x)
+              print(f'### slot 0x{off:x}')
+              for a,i,op,l in hits[-16:]:
+                  print(f'- 0x{a:x}: {op}')
+                  print(ctx(a,12,20))
+              print()
+
+          # Find aliases formed with LEA to the interesting stack pairs and all calls/stores through them.
+          print('## Aliases to interesting stack pairs')
+          for off in (0x8d8,0x1270,0x11c8):
+              pat=re.compile(r'lea\s+(r\w+),\[rsp\+0x'+format(off,'x')+r'\]')
+              for k,(a,i,op,l) in enumerate(rows):
+                  m=pat.search(op)
+                  if not m: continue
+                  reg=m.group(1)
+                  print(f'### rsp+0x{off:x} alias {reg} @0x{a:x}')
+                  for aa,ii,oo,ll in rows[k:min(len(rows),k+100)]:
+                      if aa>a+0x500: break
+                      if re.search(r'\b'+re.escape(reg)+r'\b',oo):
+                          print('    '+ll)
+                  print()
+
+          # Report all high-address constants near last writers, useful if the pair is built from static AP.
+          targets=[0xea0013,0xea014f,0xea02ce]
+          print('## High-address constants within 0x500 before target copies')
+          for t in targets:
+              print(f'### target 0x{t:x}')
+              for a,i,op,l in rows:
+                  if t-0x500<=a<t:
+                      m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+                      if m:
+                          print(f'- 0x{a:x}: {op} -> 0x{m.group(1)}')
+              print()
+
+          # Direct memory sources whose first 16 bytes are copied into the interesting stack slots.
+          print('## Candidate pair-copy producers')
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xea02ce: break
+              if not re.match(r'(movups|movdqu|movaps|movdqa)\s+xmm\w+,',op): continue
+              if '[rsp+0x8d8]' in op or '[rsp+0x11c8]' in op: continue
+              # print contexts only when next few instructions store xmm to interesting destination
+              m=re.match(r'(?:movups|movdqu|movaps|movdqa)\s+(xmm\w+),(.+)',op)
+              if not m: continue
+              xr=m.group(1)
+              nxt=rows[k+1:k+7]
+              if any(re.search(r'(?:movups|movdqu|movaps|movdqa)\s+(?:XMMWORD PTR )?\[rsp\+0x(?:8d8|11c8)\],'+xr+r'\b',x[2],re.I) for x in nxt):
+                  print(f'### producer @0x{a:x}: {op}')
+                  print(ctx(a,16,24)); print()
+
+          # If any static high address seen in relevant windows is a plausible AP, dump +0x140.
+          highs=set()
+          for t in targets:
+              for a,i,op,l in rows:
+                  if t-0x500<=a<t:
+                      m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+                      if m: highs.add(int(m.group(1),16))
+          print('## Plausible APs around relevant high constants and +0x140')
+          seen=set()
+          for h in sorted(highs):
+              for ap in range(max(0,h-0x20),h+0x21,8):
+                  if ap in seen: continue
+                  vals={o:q(ap+o) for o in range(0,0x148,8)}
+                  code=sum(1 for v in vals.values() if v is not None and fde(v))
+                  q140=vals.get(0x140)
+                  if code>=8 and q140 is not None and fde(q140):
+                      seen.add(ap)
+                      print(f'### AP 0x{ap:x}: codeSlots={code}, +0x140=0x{q140:x}, FDE={fde(q140)}')
+                      print(ctx(q140,8,28)); print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-source178-head.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace readiness source178 head"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
