@@ -1,0 +1,59 @@
+name: Resolve smart skip accessor IDs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-smart-skip-accessor-ids.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/accessids
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/accessids
+      - name: Decode accessors
+        run: |
+          set -euo pipefail
+          SO=/tmp/accessids/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/accessids/all.dis
+          {
+            echo '# Smart Skip accessor IDs'
+            echo
+            echo '## primary b632ca'
+            objdump -d -M intel --start-address=0xb632ca --stop-address=0xb63344 "$SO"
+            echo
+            echo '## fallback b9150c'
+            objdump -d -M intel --start-address=0xb9150c --stop-address=0xb91590 "$SO"
+            echo
+            echo '## exact direct callers / nearby ID checks'
+            grep -n -E -B18 -A28 'call[[:space:]]+(b632ca|b9150c)\b' /tmp/accessids/all.dis || true
+          } > analysis/smart-skip-accessor-ids.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-skip-accessor-ids.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve smart skip accessor IDs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
