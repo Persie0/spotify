@@ -1,0 +1,96 @@
+name: Trace TimelineAds owner 28 40
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timelineads-owner-28-40.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/ta2840
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/ta2840
+
+      - name: Trace
+        run: |
+          SO=/tmp/ta2840/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x13524a4 --stop-address=0x1353454 "$SO" > /tmp/ta2840/factory.dis
+          {
+            echo '# TimelineAds owner +0x28 / +0x40 producers'
+            echo
+            echo 'Saved handles:'
+            echo '- rsp+0x20 = &owner+0x28 at 0x1352626'
+            echo '- rsp+0x40 = &owner+0x40 at 0x1352641'
+            echo
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/ta2840/factory.dis').read_text(errors='replace').splitlines()
+          rows=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: rows.append((int(m.group(1),16),i,m.group(2),l))
+          raw=lines
+          def ctx(i,b=24,a=45):
+            for x in raw[max(0,i-b):min(len(raw),i+a+1)]: print('    '+x)
+          for slot,name in (('0x20','owner+0x28'),('0x40','owner+0x40')):
+            print(f'## All uses of saved handle {slot} = {name}')
+            hits=0
+            for a,i,op,l in rows:
+              if f'rsp+{slot}]' in op:
+                print(f'### 0x{a:x}: {op}')
+                ctx(i); print()
+                hits+=1
+            print(f'- hits: {hits}')
+            print()
+          print('## Direct writes to owner fields while owner base is still rbx')
+          for a,i,op,l in rows:
+            left=op.split(',',1)[0]
+            if any(x in left for x in ('[rbx+0x28]','[rbx+0x40]')):
+              print(f'### 0x{a:x}: {op}')
+              ctx(i,18,28); print()
+          print('## All vptr/high-address materializations near installs through saved handles')
+          for a,i,op,l in rows:
+            if re.search(r'#\s*18[0-9a-f]{5,}',l):
+              # Only emit if within +/- 80 lines of a handle use
+              if any(abs(i-j)<=80 for _,j,oo,ll in rows if 'rsp+0x20]' in oo or 'rsp+0x40]' in oo):
+                print(f'### 0x{a:x}: {op}')
+                ctx(i,10,16); print()
+          PY
+            echo
+            echo '## Helper bodies used immediately around installs'
+            for A in 1353454 13534ca 13534d2 13534f2 13534fa 1439114; do
+              START=$(printf '%x' $((0x$A-0x20)))
+              END=$(printf '%x' $((0x$A+0x120)))
+              echo "### 0x$A"
+              objdump -d -M intel --start-address=0x$START --stop-address=0x$END "$SO"
+            done
+          } > analysis/timelineads-owner-28-40.md
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timelineads-owner-28-40.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineAds owner 28 40"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
