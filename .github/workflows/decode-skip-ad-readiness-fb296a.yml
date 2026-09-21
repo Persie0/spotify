@@ -1,0 +1,148 @@
+name: Decode Skip Ad readiness method fb296a
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skip-ad-readiness-fb296a.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/fb296a
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/fb296a
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode method
+        run: |
+          SO=/tmp/fb296a/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/fb296a/all.dis
+          python3 - <<'PY' > analysis/skip-ad-readiness-fb296a.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/fb296a/liborbit-jni-spotify.so')
+          lines=Path('/tmp/fb296a/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0])
+            out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+            return out
+
+          target=0xfb296a
+          fr=fde(target)
+          print('# Skip Ad readiness discriminator method 0xfb296a')
+          print()
+          print('Proven receiver:')
+          print('- object allocated 0x90 bytes at 0xefb746')
+          print('- object first word set to vptr/address point 0x183be98 at 0xefb757')
+          print('- object is later stored as signal-owner outer+0x58')
+          print('- fd381a/fd38d6 call receiver virtual +0x140')
+          print('- 0x183be98 + 0x140 = 0xfb296a')
+          print()
+          print(f'## Method FDE {fr}')
+          if fr:
+            for a,i,op,l in body(fr):print('    '+l)
+          print()
+
+          print('## Object-field accesses in 0xfb296a')
+          if fr:
+            for a,i,op,l in body(fr):
+              if re.search(r'\[(?:rdi|rbx|r12|r13|r14|r15|rax|rcx|rdx)(?:\+0x[0-9a-f]+)?\]',op):
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## Calls and nearby context')
+          if fr:
+            for a,i,op,l in body(fr):
+              if re.search(r'\bcall\b',op):
+                print(f'### call 0x{a:x}: {op}')
+                ctx(a,10,22);print()
+
+          print('## String/high-address references in method')
+          if fr:
+            for a,i,op,l in body(fr):
+              if '#' in l:
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## Constructor window for receiver 0x90-byte object')
+          for a,i,op,l in ins:
+            if 0xefb73a<=a<0xefb900:
+              print('    '+l)
+          print()
+
+          print('## Writes into receiver object before publication')
+          # r14 is receiver object from efb74b until publication path; r15 aliases receiver+0x20.
+          for a,i,op,l in ins:
+            if not (0xefb74b<=a<0xefc701):continue
+            if re.search(r'\[(?:r14|r15)(?:\+0x[0-9a-f]+)?\]',op):
+              left=op.split(',',1)[0]
+              if '[' in left:
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## Direct callers / vtable slot refs to method')
+          for a,i,op,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+fb296a\b',op):
+              print(f'### direct caller 0x{a:x}; FDE={fde(a)}')
+              ctx(a,12,18);print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-fb296a.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad readiness method fb296a"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
