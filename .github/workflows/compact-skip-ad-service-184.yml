@@ -1,0 +1,125 @@
+name: Compact Orbit service 184 trace
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/compact-skip-ad-service-184.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sa184c
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sa184c
+
+      - name: Compact service trace
+        run: |
+          set -euo pipefail
+          SO=/tmp/sa184c/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sa184c/all.dis
+          readelf -rW "$SO" > /tmp/sa184c/relocs.txt
+
+          python3 - <<'PY' > analysis/skip-ad-service-184-compact.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/sa184c/all.dis').read_text(errors='replace').splitlines()
+          rel=Path('/tmp/sa184c/relocs.txt').read_text(errors='replace').splitlines()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          print('# Compact Orbit service 184 trace')
+          print()
+          print('b8f02e: registry lookup id 0xb8 then return table slot +0x5c0.')
+          print()
+
+          print('## Exact +0x5c0 memory accesses')
+          hits=[]
+          for a,i,op,l in ins:
+            if '+0x5c0]' in op:
+              hits.append((a,i,op,l))
+              kind='WRITE' if '[' in op.split(',',1)[0] else 'READ'
+              print(f'- 0x{a:x} [{kind}] {op}')
+          print()
+
+          print('## Context for +0x5c0 writes')
+          for a,i,op,l in hits:
+            if '[' not in op.split(',',1)[0]: continue
+            print(f'### 0x{a:x}: {op}')
+            for x in lines[max(0,i-12):min(len(lines),i+18)]: print('    '+x)
+            print()
+
+          print('## Exact registry lookup sites with id 0xb8')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'\bmov\s+edx,0xb8\b',op): continue
+            # only retain if b622de call follows within next ~12 parsed instructions
+            nxt=ins[idx:min(len(ins),idx+13)]
+            if not any('call   b622de' in x[2] or re.search(r'call\s+b622de\b',x[2]) for x in nxt):
+              continue
+            print(f'### 0x{a:x}')
+            for x in lines[max(0,i-8):min(len(lines),i+22)]: print('    '+x)
+            print()
+
+          print('## b8f02e family relocation hits')
+          # readelf addends are printed as hex numbers; surface any relocation that targets nearby code.
+          targets=range(0xb8f000,0xb90100)
+          for l in rel:
+            nums=re.findall(r'\b[0-9a-fA-F]{6,16}\b',l)
+            vals=[]
+            for n in nums:
+              try: vals.append(int(n,16))
+              except: pass
+            if any(0xb8f000<=v<0xb90100 for v in vals):
+              print(l)
+          print()
+
+          print('## Vptr-looking LEAs in b8f000..b90100')
+          for a,i,op,l in ins:
+            if not (0xb8f000<=a<0xb90100): continue
+            m=re.search(r'#\s*(18[0-9a-f]{5,})\b',l)
+            if not m: continue
+            print(f'### 0x{a:x}: {op}')
+            for x in lines[max(0,i-6):min(len(lines),i+12)]: print('    '+x)
+            print()
+
+          print('## Calls to b8f02e immediately followed by virtual getters')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+b8f02e\b',op): continue
+            print(f'### caller 0x{a:x}')
+            for x in ins[idx:min(len(ins),idx+10)]:
+              print('    '+x[3])
+            print()
+
+          print('## Service-184 accessor')
+          for a,i,op,l in ins:
+            if 0xb8f02e<=a<0xb8f06e: print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-service-184-compact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Compact Orbit service 184 trace"
+          git pull --rebase origin main
+          git push origin HEAD:main
