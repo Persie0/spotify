@@ -1,0 +1,62 @@
+name: Trace skip-ad state capability source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-state-capability.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipcap
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipcap
+      - name: Dump
+        run: |
+          SO=/tmp/skipcap/liborbit-jni-spotify.so
+          {
+            echo '# Skip Ad state capability source'
+            echo
+            echo '## Function containing 0x12d3087'
+            objdump -d -M intel --start-address=0x12d2e80 --stop-address=0x12d3340 "$SO"
+            echo
+            echo '## Direct callers of local neighborhood'
+            objdump -d -M intel "$SO" | grep -E -B28 -A45 '\bcall[[:space:]]+12d2[e-f0-3][0-9a-f]{2}\b' | head -n 8000 || true
+            echo
+            echo '## State-class constructor/materializer around e9cc'
+            objdump -d -M intel --start-address=0xe9cc60 --stop-address=0xe9d180 "$SO"
+            echo
+            echo '## State fields in e9cc constructor'
+            objdump -d -M intel --start-address=0xe9cc60 --stop-address=0xe9e000 "$SO" | grep -E -B8 -A16 '\[(r12|r14|r15|rbx)\+0x(10|1b2|1b5|1b7|348|350)\]' | head -n 10000 || true
+            echo
+            echo '## rsp+0x770 producer in enclosing e9 function'
+            objdump -d -M intel --start-address=0xe98000 --stop-address=0xe9d200 "$SO" | grep -E -B35 -A55 '\[rsp\+0x770\]' | head -n 10000 || true
+          } > analysis/skip-ad-state-capability-source.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-state-capability-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad state capability source"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
