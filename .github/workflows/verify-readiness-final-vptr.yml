@@ -1,0 +1,47 @@
+name: Verify readiness receiver final vptr
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/verify-readiness-final-vptr.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/finalvptr
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/finalvptr
+      - name: Verify
+        run: |
+          {
+            echo '# Verify readiness receiver final vptr'
+            echo
+            echo 'r15 = allocation base+0x20 before f419b4; published at efc701.'
+            echo
+            objdump -d -M intel --start-address=0xefb780 --stop-address=0xefc720 /tmp/finalvptr/liborbit-jni-spotify.so
+          } > analysis/skip-ad-readiness-final-vptr.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-final-vptr.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Verify readiness receiver final vptr"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
