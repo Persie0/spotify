@@ -178,6 +178,99 @@ jobs:
               print()
           PY
 
+          python3 - <<'PY' > analysis/p-plus40-concrete-writer-compact.md
+          from pathlib import Path
+          import bisect, collections, re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/p40/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in lines:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/p-plus40-concrete-writer.md analysis/p-plus40-concrete-writer-compact.md
+          if git diff --cached --quiet; then
+            echo "No report changes"
+            exit 0
+          fi
+          git commit -m "Trace concrete P plus40 writer"
+          git push
+,line)
+              if m: ins.append((int(m.group(1),16),m.group(2).strip()))
+          with open('/tmp/p40/liborbit-jni-spotify.so','rb') as fh:
+              dwarf=ELFFile(fh).get_dwarf_info()
+              fdes=sorted((e['initial_location'],e['initial_location']+e['address_range'])
+                          for e in dwarf.EH_CFI_entries() if isinstance(e,FDE))
+          starts=[x[0] for x in fdes]
+          def fde(a):
+              i=bisect.bisect_right(starts,a)-1
+              return fdes[i] if i>=0 and fdes[i][0]<=a<fdes[i][1] else None
+          mem=re.compile(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]')
+          by=collections.defaultdict(list)
+          for a,op in ins:
+              fr=fde(a)
+              if fr: by[fr].append((a,op))
+          obs={}
+          for fr,rows in by.items():
+              d=collections.defaultdict(set)
+              for a,op in rows:
+                  for m in mem.finditer(op):
+                      d[m.group(1)].add(int(m.group(2),16) if m.group(2) else 0)
+              obs[fr]=d
+
+          p={0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88}
+          outer={x+0x18 for x in p}
+          direct=[]
+          takes=[]
+          for fr,rows in by.items():
+              for i,(a,op) in enumerate(rows):
+                  lhs=op.split(',',1)[0]
+                  mm=mem.search(lhs)
+                  if mm and re.match(r'^(mov|movq|movabs|xchg|cmpxchg|and|or)\b',op):
+                      reg=mm.group(1); off=int(mm.group(2),16) if mm.group(2) else 0
+                      if off in (0x40,0x58):
+                          mode='P' if off==0x40 else 'outer'
+                          exp=p if mode=='P' else outer
+                          score=len(obs[fr].get(reg,set()) & exp)
+                          direct.append((score,a,fr,reg,mode,op,sorted(obs[fr].get(reg,set()))))
+                  if op.startswith('lea '):
+                      mm=mem.search(op)
+                      if not mm: continue
+                      reg=mm.group(1); off=int(mm.group(2),16) if mm.group(2) else 0
+                      if off not in (0x38,0x40,0x50,0x58): continue
+                      call=next(((a2,o2) for a2,o2 in rows[i+1:i+9] if o2.startswith('call ')),None)
+                      if not call: continue
+                      mode='P' if off in (0x38,0x40) else 'outer'
+                      exp=p if mode=='P' else outer
+                      score=len(obs[fr].get(reg,set()) & exp)
+                      takes.append((score,a,fr,reg,mode,off,op,call,sorted(obs[fr].get(reg,set()))))
+          direct.sort(reverse=True,key=lambda x:(x[0],-x[1]))
+          takes.sort(reverse=True,key=lambda x:(x[0],-x[1]))
+
+          print('# Compact P+0x40 / outer+0x58 writer candidates')
+          print()
+          print('## Direct writes — top 120')
+          for score,a,fr,reg,mode,op,offs in direct[:120]:
+              print(f'- 0x{a:x} | {mode} | score {score} | FDE 0x{fr[0]:x}..0x{fr[1]:x} | {reg} offsets {",".join(hex(x) for x in offs)} | {op}')
+          print()
+          print('## Pair/target address-takes followed by call — top 120')
+          for score,a,fr,reg,mode,off,op,call,offs in takes[:120]:
+              print(f'- 0x{a:x} | {mode}+0x{off:x} | score {score} | FDE 0x{fr[0]:x}..0x{fr[1]:x} | next 0x{call[0]:x} {call[1]} | {op}')
+          print()
+          print('## Concrete creator FDE e92f2c..e98f3b target-neighborhood refs')
+          for a,op in ins:
+              if 0xe94700 <= a < 0xe98f3b and any(x in op for x in ('+0x38]','+0x40]','+0x48]','+0x50]','+0x58]','+0x60]')):
+                  print(f'- 0x{a:x}: {op}')
+          print()
+          print('## EC-family exact neighborhood refs')
+          for a,op in ins:
+              if 0xec0000 <= a < 0xec8000 and any(x in op for x in ('+0x38]','+0x40]','+0x48]','+0x50]','+0x58]','+0x60]')):
+                  print(f'- 0x{a:x}: {op}')
+          PY
+
       - name: Commit report
         run: |
           git config user.name "github-actions[bot]"
