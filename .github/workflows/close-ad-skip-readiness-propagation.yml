@@ -1,0 +1,180 @@
+name: Close ad_skip readiness propagation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/close-ad-skip-readiness-propagation.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readclose
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readclose
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace exact byte and accessor
+        run: |
+          SO=/tmp/readclose/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readclose/all.dis
+          python3 - <<'PY' > analysis/ad-skip-readiness-propagation.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readclose/liborbit-jni-spotify.so')
+          lines=Path('/tmp/readclose/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=16,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0]); out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+
+          print('# ad_skip readiness propagation: +0x1b8 -> player readiness state')
+          print()
+          print('Known anchor:')
+          print('- subtype 6 writes adObject+0x1b8 = 1 at 0x10a968c')
+          print('- 0x1352544 calls a service +0x28 and 0x1352547 reads [returned+0x1b8]')
+          print('- that byte is saved to [rsp+0xe]')
+          print()
+
+          # Decode b85f7e.
+          target=0xb85f7e
+          fr=fde(target)
+          print(f'## b85f7e accessor FDE={fr}')
+          if fr:
+            for a,i,op,l in body(fr): print('    '+l)
+          print()
+
+          print('## Direct callers of b85f7e')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+b85f7e\b',op):
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,18,26); print()
+
+          # Exact factory containing 1352547.
+          anchor=0x1352547
+          ff=fde(anchor)
+          print(f'## Factory containing +0x1b8 read; FDE={ff}')
+          if ff:
+            rows=body(ff)
+            for a,i,op,l in rows:
+              if 0x13524a0<=a<0x1352900: print('    '+l)
+          print()
+
+          print('## All reads/writes of stack byte [rsp+0xe] in containing FDE')
+          if ff:
+            rows=body(ff)
+            for k,(a,i,op,l) in enumerate(rows):
+              if '[rsp+0xe]' in op:
+                side='WRITE' if '[rsp+0xe]' in op.split(',',1)[0] else 'READ'
+                print(f'### {side} 0x{a:x}: {op}')
+                for x in rows[max(0,k-20):min(len(rows),k+35)]: print('    '+x[3])
+                print()
+
+          print('## Forward dataflow from reads of [rsp+0xe]')
+          # Lightweight register tracking from each read. Track AL/byte regs through a short window,
+          # reporting stores, arg setup and branches.
+          if ff:
+            rows=body(ff)
+            read_idxs=[k for k,x in enumerate(rows) if '[rsp+0xe]' in x[2] and '[rsp+0xe]' not in x[2].split(',',1)[0]]
+            for k in read_idxs:
+              a,i,op,l=rows[k]
+              print(f'### source read 0x{a:x}: {op}')
+              # identify destination register before comma
+              m=re.match(r'(?:movzx|movsx|mov)\s+([a-z0-9]+),',op)
+              reg=m.group(1) if m else None
+              print(f'- initial register: {reg}')
+              for x in rows[k:min(len(rows),k+90)]:
+                aa,ii,oo,ll=x
+                if reg and (re.search(r'\b'+re.escape(reg)+r'\b',oo) or aa==a):
+                  print('    '+ll)
+                elif re.search(r'\b(call|cmp|test|jne|je|mov|and|or|xor)\b',oo) and aa<a+0x180:
+                  print('    '+ll)
+              print()
+
+          print('## Heap object constructions after +0x1b8 capture')
+          if ff:
+            rows=body(ff)
+            for k,(a,i,op,l) in enumerate(rows):
+              if a<0x1352547: continue
+              if re.search(r'call\s+17edf00\b',op):
+                print(f'### allocation 0x{a:x}')
+                for x in rows[max(0,k-18):min(len(rows),k+55)]: print('    '+x[3])
+                print()
+
+          # b85f7e likely accessor: find ID push/mov and table offset if obvious.
+          print('## b85f7e semantic constants')
+          if fr:
+            for a,i,op,l in body(fr):
+              if re.search(r'0x[0-9a-f]+',op) or '# ' in l:
+                print('    '+l)
+          print()
+
+          # Search all reads of [object+0x1b8] where object comes from a +0x28 virtual,
+          # to identify sibling builders and copied fields.
+          print('## Other +0x1b8 reads following virtual +0x28')
+          for k,(a,i,op,l) in enumerate(ins):
+            if '+0x1b8]' not in op: continue
+            if op.split(',',1)[0].find('+0x1b8]')>=0: continue
+            prev=ins[max(0,k-12):k]
+            if any(re.search(r'call\s+QWORD PTR \[[^]]+\+0x28\]',x[2]) for x in prev):
+              print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+              ctx(a,14,22); print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ad-skip-readiness-propagation.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ad_skip readiness propagation"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
