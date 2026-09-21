@@ -1,0 +1,77 @@
+name: Trace TimelineConductor wrapper lifetime
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timelineconductor-wrapper-lifetime.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlwraplife
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlwraplife
+      - name: Trace slot
+        run: |
+          SO=/tmp/tlwraplife/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x135ec70 --stop-address=0x13601c0 "$SO" > /tmp/tlwraplife/part.dis
+          python3 - <<'PY' > analysis/timelineconductor-wrapper-lifetime.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/tlwraplife/part.dis').read_text(errors='replace').splitlines()
+          rows=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: rows.append((int(m.group(1),16),i,m.group(2),l))
+          print('# TimelineConductor 0x1871660 wrapper lifetime')
+          print()
+          print('Creation: 0x135ec84, saved at rsp+0x1b0 at 0x135ecc6.')
+          print()
+          for a,i,op,l in rows:
+            if 'rsp+0x1b0]' in op or 'rsp+0x1b0,' in op:
+              print(f'## 0x{a:x}: {op}')
+              for x in lines[max(0,i-28):min(len(lines),i+55)]:print('    '+x)
+              print()
+          print('## Address-taking of rsp+0x1b0')
+          for a,i,op,l in rows:
+            if re.search(r'lea\s+r\w+,\[rsp\+0x1b0\]',op):
+              print(f'### 0x{a:x}: {op}')
+              for x in lines[max(0,i-28):min(len(lines),i+70)]:print('    '+x)
+              print()
+          print('## Direct stores from register values loaded from rsp+0x1b0')
+          # light local dataflow: detect mov reg,[rsp+1b0], then next 20 ins stores reg.
+          for k,(a,i,op,l) in enumerate(rows):
+            m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x1b0\]',op)
+            if not m:continue
+            reg=m.group(1)
+            print(f'### load {reg} @0x{a:x}')
+            for aa,ii,oo,ll in rows[k+1:k+25]:
+              if re.search(r'\b'+re.escape(reg)+r'\b',oo):
+                print('    '+ll)
+            print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timelineconductor-wrapper-lifetime.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineConductor wrapper lifetime"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
