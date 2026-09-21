@@ -1,0 +1,90 @@
+name: Decode Skip Ad wrapper source helpers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skipad-wrapper-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/wrapsrc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/wrapsrc
+      - name: Decode
+        run: |
+          SO=/tmp/wrapsrc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/wrapsrc/all.dis
+          python3 - <<'PY' > analysis/skipad-wrapper-source.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/wrapsrc/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          import bisect
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def block(a,b):
+            for x in ins[idx(a):]:
+              if x[0]>=b:break
+              print('    '+x[3])
+          def ctx(a,n=35):
+            j=idx(a)
+            for x in ins[max(0,j-n):min(len(ins),j+n+1)]:print('    '+x[3])
+
+          print('# Skip Ad wrapper source helpers')
+          print()
+          print('Goal: identify exactly how c8be5a -> f2505a produces the 0x18-byte wrapper consumed by fd4c04, especially wrapper+0x10.')
+          print()
+          print('## c8be5a')
+          block(0xc8be5a,0xc8bf40)
+          print()
+          print('## f2505a')
+          block(0xf2505a,0xf25204)
+          print()
+          print('## f25204 sibling')
+          block(0xf25204,0xf25312)
+          print()
+
+          print('## Direct callers of f2505a with surrounding setup')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+f2505a\b',op):
+              print(f'### 0x{a:x}')
+              ctx(a,34);print()
+
+          print('## Direct callers of c8be5a with surrounding setup')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+c8be5a\b',op) and 0xf00000<a<0x1010000:
+              print(f'### 0x{a:x}')
+              ctx(a,28);print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-wrapper-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad wrapper source"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
