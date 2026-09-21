@@ -1,0 +1,81 @@
+name: Trace native skip-ad execution target
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-execution-target.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/saexec
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/saexec
+
+      - name: Decode concrete execution dependency
+        run: |
+          set -euo pipefail
+          SO=/tmp/saexec/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/saexec/all.dis
+          readelf -rW "$SO" > /tmp/saexec/relocs.txt
+          {
+            echo '# Native Skip Ad execution target trace'
+            echo
+            echo 'Known: 0x1204218 is vtable slot +0xc0 from address point 0x185bf88.'
+            echo 'On "skip-ad" match, it invokes [this+0x8] vfunc +0x68.'
+            echo 'The constructor writes vptr at object+0x18 and dependency at object+0x20, so'
+            echo '[method-this+0x8] corresponds to object+0x20.'
+            echo
+
+            echo '## Secondary dispatcher construction region'
+            objdump -d -M intel --start-address=0x11f3d00 --stop-address=0x11f4280 "$SO"
+            echo
+
+            echo '## Exact stack slot 0x650 provenance near constructor'
+            grep -n -E -B40 -A70 '\[rsp\+0x650\]|650\]' /tmp/saexec/all.dis |               grep -E -B40 -A70 '11f[0-9a-f]{4}' | head -n 12000 || true
+            echo
+
+            echo '## Address-point 0x185bf88 refs'
+            grep -F -B35 -A70 '# 185bf88 ' /tmp/saexec/all.dis | head -n 10000 || true
+            echo
+
+            echo '## Skip-ad execution branch'
+            objdump -d -M intel --start-address=0x12044c0 --stop-address=0x1204540 "$SO"
+            echo
+
+            echo '## Candidate +0x68 concrete vtable entries around dependency constructors'
+            # Dump relocations whose slot offset modulo common vtable address point could be +0x68,
+            # then code refs around nearby address points are resolved in the next section.
+            awk '/R_X86_64_RELATIVE/ {print}' /tmp/saexec/relocs.txt | head -n 200000
+            echo
+
+            echo '## Nearby object allocations/copies feeding dispatcher dependency'
+            grep -E -B28 -A55 'mov[[:space:]]+QWORD PTR \[[^]]+\+0x20\],' /tmp/saexec/all.dis |               grep -E -B28 -A55 '11f3|11f4' | head -n 18000 || true
+          } > analysis/skip-ad-execution-target.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-execution-target.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace native skip-ad execution target"
+          git pull --rebase origin main
+          git push origin HEAD:main
