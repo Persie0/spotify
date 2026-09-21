@@ -1,0 +1,59 @@
+name: Decode readiness carrier forwarding methods
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-readiness-carrier-forwarding.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/carrierfw
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/carrierfw
+      - name: Decode carrier methods
+        run: |
+          SO=/tmp/carrierfw/liborbit-jni-spotify.so
+          {
+            echo '# Readiness carrier forwarding methods'
+            echo
+            echo 'Known small carrier: base e948ff, secondary this=base+0x18 AP 0x1843bf8, [base+0x20]=P, [base+0x28]=outer.'
+            for t in c7e83e c7e84e c7e860 fec818 feca6c feca78 fecbc4 fecc22 fecc82 fecc96; do
+              echo
+              echo "## 0x$t"
+              start=$((16#$t - 32))
+              stop=$((16#$t + 320))
+              objdump -d -M intel --start-address=$start --stop-address=$stop "$SO"
+            done
+            echo
+            echo '## Direct references/callers'
+            objdump -d -M intel "$SO" | grep -E -B14 -A24 'call[[:space:]]+(c7e83e|c7e84e|c7e860|fec818|feca6c|feca78|fecbc4|fecc22|fecc82|fecc96)\b' || true
+          } > analysis/readiness-carrier-forwarding.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-carrier-forwarding.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode readiness carrier forwarding"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
