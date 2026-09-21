@@ -1,0 +1,179 @@
+name: Rank true service184 vtables compact
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-service184-vtables-compact.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184compact
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184compact
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Rank
+        run: |
+          SO=/tmp/s184compact/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184compact/all.dis
+          python3 - <<'PY' > analysis/service184-true-vtables-compact.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184compact/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/s184compact/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for r in sec.iter_relocations():
+                add=r.entry.get('r_addend')
+                if add is not None: rel[r['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),m.group(2),l))
+
+          def fde(a):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=a:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              x,y=fdes[k]
+              if x<=a<y:return x,y
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def sq(v):
+            x=q(v)
+            if x is None:return None
+            return x-(1<<64) if x&(1<<63) else x
+          def code(v): return v is not None and fde(v) is not None
+          def body(v,cap=120):
+            fr=fde(v)
+            if not fr:return []
+            out=[]
+            for a,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                out.append((a,op,l))
+                if len(out)>=cap:break
+            return out
+
+          def score28(fn):
+            b=body(fn,80); ops=[x[1] for x in b]; s=0; why=[]
+            if not b:return -999,["no-body"]
+            if len(b)<=12:s+=12;why.append("compact")
+            if any(re.search(r'lea\s+rax,\[rdi\+0x[0-9a-f]+\]',o) for o in ops):s+=20;why.append("this-relative-pointer")
+            if any(re.search(r'mov\s+rax,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops):s+=20;why.append("pointer-field")
+            if any(re.search(r'mov\s+rdi,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops):s+=12;why.append("delegates-member")
+            if any(re.search(r'jmp\s+QWORD PTR \[rax\+0x[0-9a-f]+\]',o) for o in ops):s+=8;why.append("tail-delegates")
+            if any(re.search(r'(movzx\s+eax|set\w+\s+al|movss\s+xmm0|movsd\s+xmm0)',o) for o in ops):s-=25;why.append("scalar-return")
+            return s,why
+          def score30(fn):
+            b=body(fn,80); ops=[x[1] for x in b];s=0;why=[]
+            if not b:return -999,["no-body"]
+            if len(b)<=12:s+=10;why.append("compact")
+            if any(re.search(r'(lea|mov)\s+rax,.*\[rdi',o) for o in ops):s+=12;why.append("pointer-like")
+            if any(re.search(r'mov\s+rdi,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops):s+=8;why.append("delegates-member")
+            if any(re.search(r'jmp\s+QWORD PTR \[rax\+0x[0-9a-f]+\]',o) for o in ops):s+=6;why.append("tail-delegates")
+            if any(re.search(r'(movzx\s+eax|set\w+\s+al|movss\s+xmm0|movsd\s+xmm0)',o) for o in ops):s-=20;why.append("scalar-return")
+            return s,why
+          def score38(fn):
+            b=body(fn,140);ops=[x[1] for x in b];s=0;why=[]
+            if not b:return -999,["no-body"]
+            if any(re.match(r'(mov|movups|movdqu|movaps|movdqa|and|xor|or).*\[rdi(?:\+0x[0-9a-f]+)?\]',o) for o in ops):s+=16;why.append("writes-sret-rdi")
+            if any(re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',o) for o in ops):s+=10;why.append("reads-this-rsi")
+            return s,why
+          def valid_header(ap):
+            ott=sq(ap-16);ti=q(ap-8)
+            if ott is None or not(-0x10000<=ott<=0x10000):return None
+            if ti is None or code(ti):return None
+            if ti and va2off(ti) is None:return None
+            return ott,ti
+
+          seeds=set()
+          for off,val in rel.items():
+            if code(val):
+              for d in range(0,0x90,8):seeds.add(off-d)
+
+          cand=[]
+          for ap in seeds:
+            h=valid_header(ap)
+            if not h:continue
+            slots={o:q(ap+o) for o in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68)}
+            if not all(code(slots[o]) for o in (0,8,0x28,0x30,0x38)):continue
+            a,w28=score28(slots[0x28]);b,w30=score30(slots[0x30]);c,w38=score38(slots[0x38])
+            sc=a+b+c+(8 if h[0]==0 else 0)+(2 if code(slots[0x68]) else 0)
+            cand.append((sc,ap,h,slots,w28,w30,w38))
+          cand.sort(reverse=True)
+
+          print("# True service184 vtable shortlist")
+          print()
+          print("Only Itanium-header-validated address points are considered.")
+          print("Observed ABI: +0x28 pointer return, +0x30 pointer return, +0x38 sret(rdi=out,rsi=this).")
+          print(f"Total structural candidates: {len(cand)}")
+          print()
+          for rank,(sc,ap,h,sl,w28,w30,w38) in enumerate(cand[:35],1):
+            print(f"## {rank}. AP 0x{ap:x} score={sc} offset_to_top={h[0]} typeinfo=0x{h[1]:x}")
+            print(f"- +0x28=0x{sl[0x28]:x} {w28}")
+            print(f"- +0x30=0x{sl[0x30]:x} {w30}")
+            print(f"- +0x38=0x{sl[0x38]:x} {w38}")
+            print(f"- +0x68={('0x%x'%sl[0x68]) if sl[0x68] else 'None'}")
+            for off in (0x28,0x30,0x38):
+              print(f"### slot +0x{off:x} body")
+              for a,op,l in body(sl[off],36): print("    "+l)
+            print()
+          print("## Old shifted windows")
+          for ap in (0x18228d8,0x1821448,0x1822988,0x181f788):
+            print(f"- 0x{ap:x}: header={valid_header(ap)}; AP-0x10={sq(ap-16)} AP-0x8={q(ap-8)}")
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-true-vtables-compact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank true service184 vtables compact"
+          git pull --rebase origin main
+          git push origin HEAD:main
