@@ -1,0 +1,180 @@
+name: Resolve service184 input owner
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-input-owner.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184owner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184owner
+
+      - name: Install helpers
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Rank owner constructors
+        run: |
+          SO=/tmp/s184owner/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184owner/all.dis
+          python3 - <<'PY' > analysis/service184-input-owner.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184owner/liborbit-jni-spotify.so')
+          lines=Path('/tmp/s184owner/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=12,a=20):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Service184 input-owner identity')
+          print()
+          print('Ground-truth consumer at 0x1332e00:')
+          print('- r15 = *second_arg')
+          print('- [r15+0x60] is a polymorphic provider; virtual +0x40 is called')
+          print('- r14 = [r15+0xd0]')
+          print('- r14+0x30 and r14+0x58 are the two map bases used to recover service184')
+          print()
+
+          # Group writes by FDE, base register, offset.
+          writes=defaultdict(lambda: defaultdict(list))
+          for a,i,op,l in ins:
+            if not re.match(r'(mov|movups|movaps|movdqu|movdqa|lea|and|xor|or|xchg)\b',op):
+              continue
+            # Destination is first operand.
+            dst=op.split(',',1)[0]
+            m=re.search(r'\[(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))(?:\+0x([0-9a-f]+))?\]',dst)
+            if not m:continue
+            reg=m.group(1); off=int(m.group(2) or '0',16)
+            if off not in (0x0,0x8,0x10,0x18,0x20,0x30,0x40,0x50,0x58,0x60,0x68,0x70,0x80,0xc0,0xc8,0xd0,0xd8,0xe0):
+              continue
+            fr=fde_for(a)
+            if fr:writes[fr][(reg,off)].append((a,i,op,l))
+
+          candidates=[]
+          for fr,mp in writes.items():
+            regs={reg for reg,off in mp}
+            for reg in regs:
+              offs={off for rr,off in mp if rr==reg}
+              if 0x60 in offs and 0xd0 in offs:
+                score=20
+                if 0 in offs:score+=4
+                if 0x30 in offs:score+=2
+                if 0x58 in offs:score+=2
+                # high-address RIP materialization near this FDE often means vptr construction
+                high=[]
+                for a,i,op,l in ins:
+                  if not(fr[0]<=a<fr[1]):continue
+                  mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+                  if mm and int(mm.group(1),16)>=0x1800000: high.append((a,i,op,l))
+                score+=min(8,len(high))
+                candidates.append((score,fr,reg,offs,high))
+
+          candidates.sort(key=lambda x:(-x[0],x[1][0]))
+          print(f'## Candidate FDE/base pairs writing both +0x60 and +0xd0: {len(candidates)}')
+          for n,(score,fr,reg,offs,high) in enumerate(candidates[:80],1):
+            print(f'### {n}. score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x} base={reg} offs={[hex(x) for x in sorted(offs)]}')
+            for off in (0,0x30,0x58,0x60,0xd0):
+              for a,i,op,l in writes[fr].get((reg,off),[])[:8]:
+                print(f'- write +0x{off:x} @0x{a:x}: {op}')
+            if high:
+              print('- high constants:')
+              for a,i,op,l in high[:8]:print(f'  - 0x{a:x}: {op}')
+            print()
+
+          print('## Full context for top candidates')
+          for n,(score,fr,reg,offs,high) in enumerate(candidates[:20],1):
+            print(f'### Candidate {n}: FDE=0x{fr[0]:x}..0x{fr[1]:x}, base={reg}, score={score}')
+            emitted=set()
+            for off in (0x60,0xd0):
+              for a,i,op,l in writes[fr].get((reg,off),[])[:6]:
+                if a in emitted:continue
+                emitted.add(a)
+                print(f'#### +0x{off:x} write @0x{a:x}: {op}')
+                ctx(i,18,28)
+                print()
+            print('#### calls in FDE')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'\bcall\b',op):
+                print(l)
+            print()
+
+          # Also locate reads with the exact consumer pattern: same base -> +0x60 and +0xd0.
+          reads=defaultdict(lambda:defaultdict(list))
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if not fr:continue
+            for reg in ('rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15'):
+              if f'[{reg}+0x60]' in op: reads[fr][(reg,0x60)].append((a,i,op,l))
+              if f'[{reg}+0xd0]' in op: reads[fr][(reg,0xd0)].append((a,i,op,l))
+
+          print('## Other FDEs reading both +0x60 and +0xd0 on same base')
+          count=0
+          for fr,mp in reads.items():
+            regs={r for r,o in mp}
+            for reg in regs:
+              if (reg,0x60) in mp and (reg,0xd0) in mp:
+                count+=1
+                print(f'### FDE=0x{fr[0]:x}..0x{fr[1]:x} base={reg}')
+                for a,i,op,l in (mp[(reg,0x60)]+mp[(reg,0xd0)])[:12]:
+                  print(f'- 0x{a:x}: {op}')
+          print(f'- total={count}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-input-owner.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 input owner"
+          git pull --rebase origin main
+          git push origin HEAD:main
