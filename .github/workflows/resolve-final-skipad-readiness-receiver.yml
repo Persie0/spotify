@@ -1,0 +1,234 @@
+name: Resolve final Skip Ad readiness receiver
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-final-skipad-readiness-receiver.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/finalready
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/finalready
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode candidate receiver chain
+        run: |
+          set -euo pipefail
+          SO=/tmp/finalready/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/finalready/all.dis
+          readelf -rW "$SO" > /tmp/finalready/rel.txt
+          python3 - <<'PY' > analysis/final-skipad-readiness-receiver.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/finalready/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/finalready/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def fde(a):
+            if a is None:return None
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=10,n=24):
+            j=idx(a)
+            return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          def vaoff(v):
+            for a,z,o in loads:
+              if a<=v<z:return o+(v-a)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vaoff(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def iscode(v): return v is not None and fde(v) is not None
+          def body(addr):
+            fr=fde(addr)
+            if not fr:return []
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+            return out
+
+          variants=[0x183d258,0x183d3b0,0x183d470]
+          owner_ap=0x18365e0
+
+          print('# Final Skip Ad readiness receiver resolver')
+          print()
+          print('Known final test: fd384d invokes receiver virtual +0x140; fd3853 tests eax and exports "skip-ad" only when eax == 0.')
+          print('Known fd4c04 fallback: final receiver = [[sourceWrapper+0x10]+0x40].')
+          print('Known field428 provenance: source+0x178 -> ece57c wrapper -> owner+0x428 -> e99d07 aggregate/state pipeline.')
+          print()
+
+          print('## Inline readiness-variant vtables')
+          for ap in variants:
+            print(f'### AP 0x{ap:x}')
+            vals=[]
+            for off in range(0,0x181,8):
+              v=q(ap+off); vals.append((off,v))
+              if v is not None:
+                print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+            v140=q(ap+0x140)
+            print(f'#### +0x140 target: {("0x%x"%v140) if v140 is not None else None}')
+            if v140 and fde(v140):
+              print(ctx(v140,8,35))
+            print()
+
+          print('## Compare variant virtual slots')
+          for off in range(0,0x181,8):
+            vs=[q(ap+off) for ap in variants]
+            if len(set(vs))>1:
+              print(f'- +0x{off:x}: '+', '.join(f'0x{v:x}' if v is not None else 'None' for v in vs))
+          print()
+
+          print('## Materialization refs for variants')
+          for ap in variants:
+            print(f'### AP 0x{ap:x}')
+            needle=f'# {ap:x}'
+            for a,i,op,l in ins:
+              if needle in l:
+                print(f'#### ref 0x{a:x} FDE={fde(a)}')
+                print(ctx(a,12,28))
+            print()
+
+          print('## ef8ea4 aggregate copier')
+          for x in body(0xef8ea4):
+            print('    '+x[3])
+          print()
+
+          print('## AP 0x18365e0 owner vtable')
+          for off in range(0,0x181,8):
+            v=q(owner_ap+off)
+            if v is not None:
+              print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+          print()
+
+          print('## AP 0x18365e0 methods touching readiness aggregate region +0x70..+0xc0')
+          methods=[]
+          seen=set()
+          for off in range(0,0x180,8):
+            v=q(owner_ap+off)
+            if not iscode(v) or v in seen:continue
+            seen.add(v)
+            rows=body(v)
+            hits=[]
+            for a,i,op,l in rows:
+              if re.search(r'\[(?:rdi|rbx|r12|r13|r14|r15|rbp)\+0x(?:70|78|80|88|90|98|a0|a8|b0|b8|c0)\]',op):
+                hits.append((a,op,l))
+            if hits:
+              methods.append((off,v,hits))
+          for off,v,hits in methods:
+            print(f'### slot +0x{off:x} -> 0x{v:x}')
+            for a,op,l in hits[:30]:
+              print(f'- 0x{a:x}: {op}')
+            print(ctx(v,4,80))
+            print()
+
+          print('## ef91cc exact source/readiness-relevant accesses')
+          rows=body(0xef91cc)
+          for a,i,op,l in rows:
+            if a<0xef91cc or a>=0xefa200:continue
+            if (
+              re.search(r'\[(?:rsi|rdi|rbx|r12|r13|r14|r15|rbp)\+0x(?:10|18|20|28|30|38|40|48|50|58|60|68|70|78|80|88|90|98|a0|a8|b0|b8|c0|178|428)\]',op)
+              or re.search(r'call\s+QWORD PTR \[[^]]+\+0x(?:10|20|28|30|38|40|68|70|140|148)\]',op)
+            ):
+              print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## sourceWrapper inner +0x40 writer candidates near fd4a92/fd4c04 family')
+          # Scan functions directly calling fd4c04/f2505a/c8be5a/efe804 and report
+          # stores to +0x40 on heap/object registers plus high-address vptr context.
+          seed_targets=[0xfd4c04,0xf2505a,0xc8be5a,0xefe804,0xfd4a92]
+          fam=set()
+          for a,i,op,l in ins:
+            for t in seed_targets:
+              if re.search(r'\b(?:call|jmp)\s+'+format(t,'x')+r'\b',op):
+                fr=fde(a)
+                if fr:fam.add(fr)
+          for fr in sorted(fam):
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            rows=[]
+            j=idx(fr[0])
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              rows.append(x)
+            for k,(a,i,op,l) in enumerate(rows):
+              if re.match(r'(?:mov|lea|xchg)\s+(?:QWORD PTR )?\[[a-z0-9]+\+0x40\],',op):
+                print(f'#### store 0x{a:x}: {op}')
+                for y in rows[max(0,k-14):min(len(rows),k+22)]: print('    '+y[3])
+            print()
+
+          print('## Exact nested +0x10 then +0x40 loads in Orbit')
+          for k,(a,i,op,l) in enumerate(ins):
+            m=re.match(r'mov\s+(r\w+),QWORD PTR \[(r\w+)\+0x10\]',op)
+            if not m:continue
+            dst=m.group(1)
+            for aa,ii,oo,ll in ins[k+1:min(len(ins),k+10)]:
+              if re.match(r'mov\s+(r\w+),QWORD PTR \['+re.escape(dst)+r'\+0x40\]',oo):
+                print(f'### 0x{a:x} -> 0x{aa:x}; FDE={fde(a)}')
+                print(ctx(a,8,18));print()
+                break
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/final-skipad-readiness-receiver.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve final Skip Ad readiness receiver"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
