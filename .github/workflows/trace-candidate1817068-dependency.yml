@@ -1,0 +1,63 @@
+name: Trace candidate1817068 dependency field
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-candidate1817068-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/c1817068
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/c1817068
+      - name: Trace field writer
+        run: |
+          SO=/tmp/c1817068/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/c1817068/all.dis
+          {
+            echo '# Candidate 0x1817068 dependency field trace'
+            echo
+            echo 'Candidate class allocation/materialization: 0xc2c5f6 / vptr 0x1817068.'
+            echo '+0x28 method 0xa7a004 returns [this+0x10].'
+            echo
+            echo '## Constructor region c2c5e0..c2cdf0'
+            objdump -d -M intel --start-address=0xc2c5e0 --stop-address=0xc2cdf0 "$SO"
+            echo
+            echo '## Exact writes/addresses involving candidate +0x10/+0x18 in constructor region'
+            objdump -d -M intel --start-address=0xc2c5e0 --stop-address=0xc2cdf0 "$SO" | grep -E -B10 -A18 '\+0x10\]|\+0x18\]|\+0x10,|\+0x18,' || true
+            echo
+            echo '## Candidate methods around +0x28/+0x30/+0x38'
+            objdump -d -M intel --start-address=0xa79fc0 --stop-address=0xa7a040 "$SO"
+            objdump -d -M intel --start-address=0xb41170 --stop-address=0xb411e0 "$SO"
+            objdump -d -M intel --start-address=0xc2e900 --stop-address=0xc2e990 "$SO"
+          } > analysis/candidate1817068-dependency.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/candidate1817068-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace candidate1817068 dependency field"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
