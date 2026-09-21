@@ -1,0 +1,236 @@
+name: Trace registry facade table provenance
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-registry-facade-table.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regtable
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regtable
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace facade table base
+        run: |
+          SO=/tmp/regtable/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/regtable/all.dis
+          python3 - <<'PY' > analysis/registry-facade-table-provenance.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict, Counter
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/regtable/liborbit-jni-spotify.so')
+          lines=Path('/tmp/regtable/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=16,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+x)
+
+          accessors={
+            0xb8f02e:0xb8,
+            0xb63274:0xb2,
+            0xb632a0:0x51,
+            0xb632ca:0x2f,
+          }
+
+          print('# Registry facade table-base provenance')
+          print()
+          print('Validated facade ABI from accessor family:')
+          print('- facade+0x0 = service table pointer')
+          print('- facade+0x8 = service-ID byte buffer')
+          print('- facade+0x10 = ID-buffer length/count')
+          print('- b8f02e validates ID 0xb8 then returns [facade[0] + 0x5c0] = table[184]')
+          print()
+
+          # 1) Constructor/copy candidates writing 0,8,10 to one base register in one FDE.
+          write_map=defaultdict(lambda: defaultdict(list))
+          for a,i,op,l in ins:
+            if not re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|lea|xchg)\b',op): continue
+            dst=op.split(',',1)[0]
+            m=re.search(r'\[(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))(?:\+0x([0-9a-f]+))?\]',dst)
+            if not m: continue
+            reg=m.group(1); off=int(m.group(2) or '0',16)
+            if off not in (0,8,0x10): continue
+            fr=fde_for(a)
+            if fr: write_map[fr][(reg,off)].append((a,i,op,l))
+
+          candidates=[]
+          for fr,mp in write_map.items():
+            regs={r for r,o in mp}
+            for reg in regs:
+              offs={o for rr,o in mp if rr==reg}
+              if not {0,8,0x10}.issubset(offs): continue
+              # Score facade-like shapes: qword writes, small FDE, first-arg alias, known accessor nearby/caller.
+              score=30
+              size=fr[1]-fr[0]
+              if size<0x100: score+=12
+              elif size<0x300: score+=8
+              elif size<0x800: score+=3
+              if reg in ('rdi','rbx'): score+=4
+              ops=[x for k,v in mp.items() if k[0]==reg for x in v]
+              qstores=sum(1 for _,_,op,_ in ops if 'QWORD PTR' in op)
+              score+=min(qstores,6)
+              # Direct calls from this FDE to known accessors strongly imply facade use.
+              acc=[]
+              for a,i,op,l in ins:
+                if not(fr[0]<=a<fr[1]):continue
+                mm=re.search(r'call\s+([0-9a-f]+)\b',op)
+                if mm and int(mm.group(1),16) in accessors:
+                  acc.append((a,int(mm.group(1),16)))
+              score+=20*len(acc)
+              candidates.append((score,fr,reg,size,acc,mp))
+
+          candidates.sort(key=lambda x:(-x[0],x[1][0]))
+          print(f'## Facade-shaped writer candidates: {len(candidates)}')
+          for n,(score,fr,reg,size,acc,mp) in enumerate(candidates[:120],1):
+            print(f'### {n}. score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x} size=0x{size:x} base={reg}')
+            for off in (0,8,0x10):
+              for a,i,op,l in mp[(reg,off)][:8]:
+                print(f'- +0x{off:x} @0x{a:x}: {op}')
+            if acc:
+              print('- accessor calls: '+', '.join(f'0x{a:x}->0x{t:x}/id0x{accessors[t]:x}' for a,t in acc))
+            print()
+
+          print('## Full context for top 25 facade-shaped writers')
+          for n,(score,fr,reg,size,acc,mp) in enumerate(candidates[:25],1):
+            print(f'### Candidate {n}: 0x{fr[0]:x}..0x{fr[1]:x}, base={reg}, score={score}')
+            seen=set()
+            for off in (0,8,0x10):
+              for a,i,op,l in mp[(reg,off)][:5]:
+                if a in seen:continue
+                seen.add(a)
+                print(f'#### write +0x{off:x} @0x{a:x}: {op}')
+                ctx(i,14,24); print()
+
+          # 2) Call-site provenance into accessor family. Identify how rdi is sourced.
+          print('## Direct accessor callsites and rdi provenance')
+          for target,sid in accessors.items():
+            print(f'### accessor 0x{target:x}, service id 0x{sid:x}')
+            count=0
+            for idx,(a,i,op,l) in enumerate(ins):
+              if not re.search(r'call\s+'+format(target,'x')+r'\b',op):continue
+              count+=1
+              print(f'#### call@0x{a:x}; FDE={fde_for(a)}')
+              # last 16 parsed instructions is enough to see mov rdi,REG / lea rdi,[...]
+              for aa,ii,oo,ll in ins[max(0,idx-16):idx+8]:
+                print('    '+ll)
+              print()
+            print(f'- callers={count}')
+            print()
+
+          # 3) Search exact facade-field reads. Functions that load [X], [X+8], [X+10]
+          # on the same register are additional identity anchors.
+          read_shapes=defaultdict(lambda:defaultdict(list))
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if not fr:continue
+            for reg in ('rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15'):
+              for off,pat in ((0,f'[{reg}]'),(8,f'[{reg}+0x8]'),(0x10,f'[{reg}+0x10]')):
+                if pat in op:
+                  read_shapes[fr][(reg,off)].append((a,i,op,l))
+
+          shaped=[]
+          for fr,mp in read_shapes.items():
+            regs={r for r,o in mp}
+            for reg in regs:
+              if all((reg,o) in mp for o in (0,8,0x10)):
+                shaped.append((fr,reg,mp))
+          print(f'## Other facade-shaped readers: {len(shaped)}')
+          for fr,reg,mp in shaped[:120]:
+            print(f'### FDE=0x{fr[0]:x}..0x{fr[1]:x} base={reg}')
+            for off in (0,8,0x10):
+              for a,i,op,l in mp[(reg,off)][:5]:print(f'- +0x{off:x} @0x{a:x}: {op}')
+            print()
+
+          # 4) Within top constructor candidates, identify source register/value used for [base].
+          # Then enumerate same-FDE writes through that source at +0x5c0.
+          print('## Candidate-local table-pointer propagation to +0x5c0')
+          for n,(score,fr,reg,size,acc,mp) in enumerate(candidates[:60],1):
+            zero=mp[(reg,0)]
+            for a,i,op,l in zero[:8]:
+              # Parse mov [base],SRC
+              mm=re.match(r'mov\s+QWORD PTR \['+re.escape(reg)+r'\],(r\w+)\b',op)
+              if not mm:continue
+              src=mm.group(1)
+              hits=[]
+              for aa,ii,oo,ll in ins:
+                if fr[0]<=aa<fr[1] and f'[{src}+0x5c0]' in oo:
+                  hits.append((aa,ii,oo,ll))
+              if hits:
+                print(f'### candidate {n} 0x{fr[0]:x}, table source={src} from 0x{a:x}')
+                print(f'- facade store: {op}')
+                for aa,ii,oo,ll in hits:
+                  print(f'- table+0x5c0 @0x{aa:x}: {oo}')
+                  ctx(ii,12,20)
+                print()
+
+          # 5) Detect simple facade copy constructors: [dst] <- [src], dst+8 <- src+8, dst+10 <- src+10
+          print('## Likely facade copy/move constructors')
+          for score,fr,reg,size,acc,mp in candidates:
+            if size>0x500:continue
+            txt='\n'.join(l for a,i,op,l in ins if fr[0]<=a<fr[1])
+            # report only functions with reads from another base at all three offsets
+            for sreg in ('rsi','rdx','rcx','rbx','r12','r13','r14','r15'):
+              if all(f'[{sreg}{s}]' in txt for s in ('', '+0x8', '+0x10')):
+                print(f'- FDE 0x{fr[0]:x}..0x{fr[1]:x}: dstbase={reg}, sourcebase={sreg}')
+                break
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-table-provenance.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace registry facade table provenance"
+          git pull --rebase origin main
+          git push origin HEAD:main
