@@ -1,0 +1,51 @@
+name: Dump exact registry facade candidate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/dump-registry-facade-candidate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download and dump
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regfac3
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regfac3
+          objdump -d -M intel /tmp/regfac3/liborbit-jni-spotify.so > /tmp/regfac3/all.dis
+          {
+            echo '# Exact registry facade candidate'
+            echo
+            echo '## 0xb0fa2f..0xb0fb4f'
+            objdump -d -M intel --start-address=0xb0fa2f --stop-address=0xb0fb4f /tmp/regfac3/liborbit-jni-spotify.so
+            echo
+            echo '## callers'
+            grep -n -E -B35 -A55 'call[[:space:]]+b0fa2f\b' /tmp/regfac3/all.dis | head -n 20000 || true
+            echo
+            echo '## xrefs to b0fb1a neighborhood / jumps into FDE'
+            grep -n -E '(j[a-z]+|call)[[:space:]]+b0f[a-b][0-9a-f]{2}\b' /tmp/regfac3/all.dis | head -n 10000 || true
+          } > analysis/registry-facade-candidate-b0fa2f.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-candidate-b0fa2f.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Dump exact registry facade candidate"
+          git pull --rebase origin main
+          git push origin HEAD:main
