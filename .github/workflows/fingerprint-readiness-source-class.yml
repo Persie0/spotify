@@ -1,0 +1,153 @@
+name: Fingerprint Skip Ad readiness source class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fingerprint-readiness-source-class.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readfp
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readfp
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Fingerprint class
+        run: |
+          SO=/tmp/readfp/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readfp/all.dis
+          python3 - <<'PY' > analysis/skip-ad-readiness-source-fingerprint.md
+          from pathlib import Path
+          import re,bisect,collections
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readfp/liborbit-jni-spotify.so')
+          lines=Path('/tmp/readfp/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f);dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def ctx(i,b=14,a=24):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          offs=[0x10,0x1b0,0x1b1,0x1b2,0x1b3,0x1b4,0x1b5,0x1b6,0x1b7,0x1b8]
+          hits=collections.defaultdict(lambda:collections.defaultdict(list))
+          for a,i,op,l in ins:
+            fr=fde(a)
+            if not fr:continue
+            left=op.split(',',1)[0]
+            for off in offs:
+              pat=f'+0x{off:x}]'
+              if pat not in op:continue
+              rw='w' if pat in left else 'r'
+              hits[fr][(off,rw)].append((a,i,op))
+
+          print('# Skip Ad readiness source-class fingerprint')
+          print()
+          print('Target source object has:')
+          print('- pointer/runtime dep at +0x10')
+          print('- capability bytes around +0x1b0..+0x1b7; +0x1b5 gates Skip Ad adapter')
+          print()
+
+          ranked=[]
+          for fr,d in hits.items():
+            byteoffs={off for (off,rw) in d if 0x1b0<=off<=0x1b8}
+            writes={off for (off,rw) in d if rw=='w' and 0x1b0<=off<=0x1b8}
+            has10=any(off==0x10 for off,rw in d)
+            score=len(byteoffs)*10+len(writes)*4+(8 if has10 else 0)
+            if len(byteoffs)>=3 or len(writes)>=2:
+              ranked.append((score,fr,d))
+          ranked.sort(reverse=True,key=lambda x:x[0])
+
+          print('## Functions touching the capability-byte family')
+          for score,fr,d in ranked[:100]:
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x} score={score}')
+            for (off,rw),xs in sorted(d.items()):
+              print(f'- {rw} +0x{off:x}: ' + ', '.join(f'0x{a:x}:{op}' for a,_,op in xs[:10]))
+            print()
+
+          print('## Writes to +0x1b5 with context')
+          for fr,d in ranked:
+            for a,i,op in d.get((0x1b5,'w'),[]):
+              print(f'### 0x{a:x} FDE={fr}: {op}')
+              ctx(i,30,45);print()
+
+          print('## Functions writing +0x1b5 and +0x10')
+          for score,fr,d in ranked:
+            if (0x1b5,'w') not in d:continue
+            ten=[x for k,x in d.items() if k[0]==0x10]
+            if not ten:continue
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            for (off,rw),xs in sorted(d.items()):
+              if off in (0x10,0x1b0,0x1b1,0x1b2,0x1b3,0x1b4,0x1b5,0x1b6,0x1b7,0x1b8):
+                for a,i,op in xs:
+                  print(f'- {rw} +0x{off:x} @0x{a:x}: {op}')
+            print()
+
+          print('## All +0x1b5 writes across binary, even isolated')
+          n=0
+          for a,i,op,l in ins:
+            left=op.split(',',1)[0]
+            if '+0x1b5]' in left and re.match(r'(mov|and|or|xor|xchg)',op):
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              ctx(i,15,25);print()
+              n+=1
+              if n>=120:break
+
+          print('## All +0x10 writes in same FDEs as any +0x1b5 access')
+          targetf={fr for fr,d in hits.items() if any(off==0x1b5 for off,rw in d)}
+          for fr in targetf:
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              left=op.split(',',1)[0]
+              if '+0x10]' in left and re.match(r'(mov|lea|and|or|xor|xchg)',op):
+                print(f'- 0x{a:x}: {op}')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-source-fingerprint.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fingerprint readiness source class"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
