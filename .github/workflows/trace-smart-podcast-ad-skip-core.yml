@@ -1,0 +1,141 @@
+name: Trace smart podcast ad skip core
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-smart-podcast-ad-skip-core.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/smartskip
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/smartskip
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace helpers
+        run: |
+          SO=/tmp/smartskip/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/smartskip/all.dis
+          python3 - <<'PY' > analysis/smart-podcast-ad-skip-core.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/smartskip/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/smartskip/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              loads=[]
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location'];b=a+e['address_range']
+                      if b>a:fdes.append((a,b))
+          fdes.sort();starts=[a for a,b in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def body(a):
+              fr=fde(a)
+              if not fr:return []
+              return [x for x in ins if fr[0]<=x[0]<fr[1]]
+          def vaoff(v):
+              for a,b,o in loads:
+                  if a<=v<b:return o+(v-a)
+          def cstr(v,cap=300):
+              o=vaoff(v)
+              if o is None:return None
+              e=data.find(b'\0',o,min(len(data),o+cap))
+              if e<0:e=min(len(data),o+cap)
+              b=data[o:e]
+              try:return b.decode('utf-8')
+              except:return repr(b)
+
+          roots=[
+              (0x1371d90,'dependency +0x68 / smartSkipEmbeddedPodcastAd'),
+              (0x137cb68,'central post-target action'),
+              (0x1367944,'state/segment lookup'),
+              (0x1393c2a,'optional/state decode'),
+              (0x13933de,'time/rational extraction'),
+              (0x13a1a4a,'target lookup A'),
+              (0x13a392c,'target lookup B'),
+              (0x1382662,'post-action state builder'),
+              (0x13825fa,'smart-skip event/action sink'),
+          ]
+          print('# Smart embedded podcast ad skip core trace')
+          print()
+          print('Known chain: skip-ad branch -> TimelineConductor dependency AP 0x1868200 +0x68 -> 0x1371d90.')
+          print('0x1371d90 contains smartSkipEmbeddedPodcastAd and smart-skip-embedded-podcast-ad.')
+          print()
+          for fn,name in roots:
+              fr=fde(fn)
+              print(f'## {name}: 0x{fn:x} FDE={fr}')
+              rows=body(fn)
+              for a,i,op,l in rows[:700]: print('    '+l)
+              print()
+              print('### direct calls')
+              for a,i,op,l in rows:
+                  m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+                  if m: print(f'- 0x{a:x} -> 0x{int(m.group(1),16):x}: {op}')
+              print()
+              print('### referenced printable literals')
+              seen=set()
+              for a,i,op,l in rows:
+                  m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                  if not m:continue
+                  v=int(m.group(1),16)
+                  if v in seen:continue
+                  seen.add(v)
+                  s=cstr(v)
+                  if s and all((ord(ch)>=32 or ch in '\r\n\t') for ch in s[:80]):
+                      print(f'- 0x{a:x} -> 0x{v:x}: {s!r}')
+              print()
+
+          # Focus around central action call in 0x1371d90, including register setup.
+          rows=body(0x1371d90)
+          print('## 0x137cb68 callsite argument window')
+          for idx,(a,i,op,l) in enumerate(rows):
+              if re.search(r'call\s+137cb68\b',op):
+                  for x in rows[max(0,idx-25):min(len(rows),idx+25)]: print('    '+x[3])
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-podcast-ad-skip-core.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace smart podcast ad skip core"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
