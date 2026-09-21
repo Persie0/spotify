@@ -1,0 +1,204 @@
+name: Decode Skip Ad 0x6b0 source builder
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skip-ad-6b0-source-builder.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s6src
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s6src
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode source builder
+        run: |
+          set -euo pipefail
+          SO=/tmp/s6src/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s6src/all.dis
+          readelf -rW "$SO" > /tmp/s6src/rel.txt
+          readelf -W -l "$SO" > /tmp/s6src/ph.txt
+          python3 - <<'PY' > analysis/skip-ad-6b0-source-builder.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s6src/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s6src/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]; loads=[]; rel={}
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+                  for rr in sec.iter_relocations():
+                      add=rr.entry.get('r_addend')
+                      if add is not None:rel[rr['r_offset']]=add
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(a,b=12,n=24):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          def vo(v):
+              for po,pe,pv in loads:
+                  if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+              if v in rel:return rel[v]
+              o=vo(v)
+              if o is None or o+8>len(data):return None
+              return struct.unpack_from('<Q',data,o)[0]
+
+          target=0x124ae36
+          fr=fde(target)
+          print('# Skip Ad 0x6b0 source builder / mutator')
+          print()
+          print('Call-site contract at 0x122185d:')
+          print('- rdi = rsp+0x120 temporary that later becomes the 0x6b0 element')
+          print('- rsi = current 0x550-stride source record')
+          print('- rdx = result of 0x124a491 lookup')
+          print('- after this call, 0x108d88c fills another payload and 0x12240cc moves rsp+0x120 into the 0x6b0 array')
+          print()
+          print(f'## 0x124ae36 FDE={fr}')
+          if fr:
+              for x in body(fr):print('    '+x[3])
+          print()
+
+          rows=body(fr) if fr else []
+          # discover destination aliases seeded from entry rdi before clobbers
+          aliases={'rdi'}
+          changed=True
+          while changed:
+              changed=False
+              for a,i,op,l in rows[:120]:
+                  m=re.match(r'mov\s+(r\w+),(r\w+)\b',op)
+                  if m and m.group(2) in aliases and m.group(1) not in aliases:
+                      aliases.add(m.group(1)); changed=True
+                  m=re.match(r'lea\s+(r\w+),\[(r\w+)(?:\+0x0)?\]',op)
+                  if m and m.group(2) in aliases and m.group(1) not in aliases:
+                      aliases.add(m.group(1)); changed=True
+          print('## Destination aliases')
+          print(', '.join(sorted(aliases)))
+          print()
+
+          print('## Writes to destination head [0..0x40]')
+          for k,(a,i,op,l) in enumerate(rows):
+              left=op.split(',',1)[0]
+              if not re.match(r'(mov|movups|movdqu|movaps|movdqa|and|or|xor|lea)',op):continue
+              hit=False
+              for reg in aliases:
+                  if re.search(r'\['+re.escape(reg)+r'(?:\+0x(?:8|10|18|20|28|30|38|40))?\]',left):
+                      hit=True;break
+              if hit:
+                  print(f'### 0x{a:x}: {op}')
+                  for x in rows[max(0,k-8):min(len(rows),k+15)]:print('    '+x[3])
+                  print()
+
+          print('## High-address materializations in builder')
+          highs=[]
+          for a,i,op,l in rows:
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:
+                  va=int(m.group(1),16); highs.append(va)
+                  print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## High-address value stores into destination / nearby object')
+          for k,(a,i,op,l) in enumerate(rows):
+              m=re.match(r'lea\s+(r\w+),\[rip[^#]*#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})',op)
+              if not m:continue
+              reg,va=m.group(1),int(m.group(2),16)
+              for aa,ii,oo,ll in rows[k+1:k+12]:
+                  if re.match(r'mov\s+QWORD PTR \[[^]]+\],'+re.escape(reg)+r'\b',oo):
+                      print(f'### 0x{va:x} loaded @0x{a:x}, stored @0x{aa:x}: {oo}')
+                      print(ctx(aa,8,10));print()
+
+          print('## Candidate dispatch/vtable neighborhoods')
+          seen=set()
+          for va in sorted(set(highs)):
+              for ap in range(max(0,va-0x20),va+0x21,8):
+                  if ap in seen:continue
+                  vals={off:q(ap+off) for off in range(0,0x160,8)}
+                  code=sum(1 for v in vals.values() if v and fde(v))
+                  if code<6:continue
+                  seen.add(ap)
+                  v140=vals.get(0x140)
+                  print(f'### AP/table 0x{ap:x}: codeSlots={code}, +0x140={(hex(v140) if v140 else None)}, FDE={fde(v140) if v140 else None}')
+                  for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x138,0x140,0x148):
+                      v=vals.get(off); print(f'- +0x{off:x}: {(hex(v) if v is not None else None)}')
+                  if v140 and fde(v140):
+                      print('#### +0x140 body')
+                      for x in body(fde(v140)):print('    '+x[3])
+                  print()
+
+          print('## Calls in builder with destination passed as argument')
+          for k,(a,i,op,l) in enumerate(rows):
+              if not re.search(r'\bcall\b',op):continue
+              prev=rows[max(0,k-12):k+2]
+              if any(any(re.search(r'\b'+re.escape(reg)+r'\b',x[2]) for reg in aliases) for x in prev):
+                  print(f'### call 0x{a:x}: {op}')
+                  for x in prev:print('    '+x[3])
+                  print()
+
+          print('## All writes to offset 0 / first qword in builder family')
+          for a,i,op,l in rows:
+              left=op.split(',',1)[0]
+              if any(re.fullmatch(r'(?:mov|movups|movdqu|movaps|movdqa)\s+(?:QWORD PTR |XMMWORD PTR )?\['+re.escape(reg)+r'\]',op.split(',',1)[0].strip()) for reg in aliases):
+                  print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-6b0-source-builder.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad 0x6b0 source builder"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
