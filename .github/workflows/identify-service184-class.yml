@@ -1,0 +1,208 @@
+name: Identify true service184 class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/identify-service184-class.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184id
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184id
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Identify class
+        run: |
+          SO=/tmp/s184id/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184id/all.dis
+          python3 - <<'PY' > analysis/service184-true-class.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184id/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/s184id/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for r in sec.iter_relocations():
+                add=r.entry.get('r_addend')
+                if add is not None: rel[r['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          starts=[a for a,b in fdes]
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]: return fdes[i]
+          def code(v): return v is not None and fde(v) is not None
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po): return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def signed(v):
+            return v-(1<<64) if v is not None and v&(1<<63) else v
+          def cstr(v,limit=400):
+            o=va2off(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+limit))
+            if e<0:return None
+            try:return data[o:e].decode('utf-8')
+            except:return None
+
+          ins=[]
+          bodies={}
+          refs={}
+          for l in dis:
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if not m:continue
+            a=int(m.group(1),16); op=m.group(2)
+            ins.append((a,op,l))
+            cm=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if cm:refs.setdefault(int(cm.group(1),16),[]).append((a,op,l))
+
+          def body(fn,cap=100):
+            fr=fde(fn)
+            if not fr:return []
+            out=[]
+            for a,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                out.append((a,op,l))
+                if len(out)>=cap:break
+            return out
+
+          def header(ap):
+            ott=signed(q(ap-0x10)); ti=q(ap-0x8)
+            if ott is None or not(-0x10000<=ott<=0x10000):return None
+            if ti is None or code(ti):return None
+            if ti and va2off(ti) is None:return None
+            return ott,ti
+
+          def typename(ti):
+            if not ti:return None
+            np=q(ti+8)
+            return cstr(np) if np else None
+
+          def score_getter(fn):
+            b=body(fn,50); ops=[o for _,o,_ in b]
+            if not b:return -999,[]
+            s=0;why=[]
+            if len(b)<=12:s+=12;why.append('compact')
+            if any(re.search(r'lea\s+rax,\[rdi\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=18;why.append('this-relative')
+            if any(re.search(r'mov\s+rax,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=20;why.append('pointer-field')
+            if any(re.search(r'mov\s+rdi,QWORD PTR \[rdi\+0x[0-9a-f]+\]',o) for o in ops) and any(re.search(r'jmp\s+QWORD PTR \[rax\+0x[0-9a-f]+\]',o) for o in ops):
+              s+=18;why.append('delegated-getter')
+            if any(re.search(r'(movzx\s+eax|set\w+\s+al|movss\s+xmm0|movsd\s+xmm0)',o) for o in ops):
+              s-=30;why.append('scalar')
+            return s,why
+
+          def score_sret(fn):
+            b=body(fn,80);ops=[o for _,o,_ in b]
+            if not b:return -999,[]
+            s=0;why=[]
+            if any(re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|or).*\[rdi(?:\+0x[0-9a-f]+)?\]',o) for o in ops):
+              s+=16;why.append('writes-out')
+            if any(re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',o) for o in ops):
+              s+=12;why.append('reads-this')
+            return s,why
+
+          seeds=set()
+          for off,val in rel.items():
+            if code(val):
+              for d in range(0,0xa0,8): seeds.add(off-d)
+
+          cand=[]
+          for ap in seeds:
+            h=header(ap)
+            if not h:continue
+            slots={o:q(ap+o) for o in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x98,0xb8,0xc0)}
+            if not all(code(slots[o]) for o in (0,8,0x28,0x30,0x38)):continue
+            a,w28=score_getter(slots[0x28]); b,w30=score_getter(slots[0x30]); c,w38=score_sret(slots[0x38])
+            if min(a,b,c)<0:continue
+            name=typename(h[1])
+            sc=a+b+c+(10 if h[0]==0 else 0)+(8 if name else 0)+(4 if code(slots[0x68]) else 0)
+            cand.append((sc,ap,h,name,slots,w28,w30,w38))
+
+          cand.sort(reverse=True)
+
+          print('# Header-validated service184 class candidates')
+          print()
+          print('Observed service184 ABI: +0x28 -> pointer, +0x30 -> pointer, +0x38 -> sret-like output.')
+          print('Returned +0x28 dependency is later dereferenced and invoked at +0x68.')
+          print(f'candidate_count={len(cand)}')
+          print()
+          for rank,(sc,ap,h,name,sl,w28,w30,w38) in enumerate(cand[:30],1):
+            print(f'## rank {rank}: AP=0x{ap:x} score={sc}')
+            print(f'- offset_to_top={h[0]} typeinfo=0x{h[1]:x} type_name={name!r}')
+            print(f'- +0x28=0x{sl[0x28]:x} {w28}')
+            print(f'- +0x30=0x{sl[0x30]:x} {w30}')
+            print(f'- +0x38=0x{sl[0x38]:x} {w38}')
+            print(f'- +0x68={("0x%x"%sl[0x68]) if sl[0x68] else None}')
+            print(f'- +0x98={("0x%x"%sl[0x98]) if sl[0x98] else None} +0xb8={("0x%x"%sl[0xb8]) if sl[0xb8] else None} +0xc0={("0x%x"%sl[0xc0]) if sl[0xc0] else None}')
+            print(f'- AP refs={len(refs.get(ap,[]))}')
+            print('### +0x28 body')
+            for _,_,l in body(sl[0x28],40):print('    '+l)
+            print('### +0x30 body')
+            for _,_,l in body(sl[0x30],40):print('    '+l)
+            print('### +0x38 body')
+            for _,_,l in body(sl[0x38],70):print('    '+l)
+            if refs.get(ap):
+              print('### AP materializations')
+              for _,_,l in refs[ap][:20]: print('    '+l)
+            print()
+
+          print('## Known shifted false windows')
+          for ap in (0x18228d8,0x1821448,0x1822988,0x181f788):
+            print(f'- 0x{ap:x}: header={header(ap)}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-true-class.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Identify true service184 class"
+          git pull --rebase origin main
+          git push origin HEAD:main
