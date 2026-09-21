@@ -1,0 +1,161 @@
+name: Trace service184 return consumers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-return-consumers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184ret
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184ret
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace return values
+        run: |
+          SO=/tmp/s184ret/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184ret/all.dis
+          python3 - <<'PY' > analysis/service184-return-consumers.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184ret/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184ret/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def flist(fr):
+            return [x for x in ins if fr and fr[0]<=x[0]<fr[1]]
+          def dump_range(start,end):
+            for a,i,op,l in ins:
+              if start<=a<end: print('    '+l)
+          def trace_reg(fr,start,reg,maxn=350):
+            fs=flist(fr); started=False;n=0
+            print(f'    tracking {reg} after 0x{start:x}')
+            for a,i,op,l in fs:
+              if a<start:continue
+              if n>=maxn:break
+              # output all uses of reg and nearby calls/stores; stop on clear overwrite.
+              if re.search(rf'\b{reg}\b',op):
+                print('    '+l); n+=1
+                dst=op.split(',',1)[0].strip()
+                if a>start and re.fullmatch(rf'(mov|lea|xor|and|pop)\s+{reg}',dst):
+                  print('    [register redefined; stop]')
+                  break
+          def trace_slot(fr,start,slot,maxn=450):
+            fs=flist(fr); n=0
+            print(f'    tracking [rsp+{slot}] after 0x{start:x}')
+            # Find direct loads of slot; then show a compact local window after each.
+            for j,(a,i,op,l) in enumerate(fs):
+              if a<start:continue
+              if f'[rsp+{slot}]' in op:
+                print('    '+l);n+=1
+                for x in fs[j+1:min(len(fs),j+8)]:
+                  print('      '+x[3]);n+=1
+                if n>=maxn:break
+
+          print('# Service184 return-consumer dataflow')
+          print()
+          print('Goal: identify what service184 virtual +0x28/+0x30/+0x38 returns and whether +0x28 feeds the secondary skip-ad +0x68 receiver.')
+          print()
+
+          cases=[
+            ('10885 +0x28',0x10885ee,'reg','r14',0x10885f1),
+            ('14420 +0x28',0x1442061,'slot','0x18',0x1442064),
+            ('b8ec +0x28',0xb8ec50,'slot','0x38',0xb8ec53),
+            ('c7d4 +0x30',0xc7d49b,'reg','r12',0xc7d49e),
+          ]
+          for name,call,kind,val,start in cases:
+            fr=fde(call)
+            print(f'## {name}: call 0x{call:x}, FDE={fr}')
+            # exact local context
+            dump_range(max(fr[0] if fr else 0,call-0x50), min(fr[1] if fr else call+0x200,call+0x260))
+            print()
+            if kind=='reg': trace_reg(fr,start,val)
+            else: trace_slot(fr,start,val)
+            print()
+
+          # Critical chain in 11ee constructor: service184 +0x28 overwrites rsp+0x60.
+          call=0x11ee8ff; fr=fde(call)
+          print(f'## 11ee service184 +0x28 critical chain: FDE={fr}')
+          dump_range(call-0x90, call+0x700)
+          print()
+          trace_slot(fr,0x11ee902,'0x60')
+          print()
+
+          # Show all later references to rsp+0x60 until FDE end and calls around them.
+          if fr:
+            fs=flist(fr)
+            print('### All later rsp+0x60 references')
+            for j,(a,i,op,l) in enumerate(fs):
+              if a<0x11ee902:continue
+              if '[rsp+0x60]' in op:
+                print(f'#### 0x{a:x}')
+                for x in fs[max(0,j-6):min(len(fs),j+14)]:print('    '+x[3])
+                print()
+
+          # Constructor call site and stack-arg mapping around 11f4142.
+          print('## Secondary dispatcher constructor window')
+          dump_range(0x11f3fc0,0x11f4190)
+          print()
+
+          # Exact skip-ad execution branch for endpoint comparison.
+          print('## Downstream +0x68 execution branch')
+          dump_range(0x12044d8,0x1204536)
+          print()
+
+          # Find every virtual +0x68 call in same broad native subsystem and its receiver provenance.
+          print('## Other +0x68 virtual calls in 0x11e0000..0x1210000')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not (0x11e0000<=a<0x1210000):continue
+            if not re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x68\]',op):continue
+            print(f'### 0x{a:x}, FDE={fde(a)}')
+            for x in lines[max(0,i-14):min(len(lines),i+20)]:print('    '+x)
+            print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-return-consumers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 return consumers"
+          git pull --rebase origin main
+          git push origin HEAD:main
