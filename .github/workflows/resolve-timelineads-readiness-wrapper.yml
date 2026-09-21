@@ -1,0 +1,183 @@
+name: Resolve TimelineAds readiness wrapper
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-timelineads-readiness-wrapper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tadswrap
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tadswrap
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve owner and wrappers
+        run: |
+          SO=/tmp/tadswrap/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tadswrap/all.dis
+          python3 - <<'PY' > analysis/timelineads-readiness-wrapper.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/tadswrap/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/tadswrap/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f);loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+          fdes.sort();starts=[a for a,z in fdes]
+
+          def fde(a):
+            if a is None:return None
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=12,n=24):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def dump_method(t,cap=160):
+            fr=fde(t)
+            print(f'FDE={fr}')
+            if not fr:return
+            n=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l);n+=1
+                if n>=cap:
+                  print('    ...truncated...');break
+
+          aps=[0x1867340,0x18678f8,0x1867870,0x1871558,0x1867440]
+          print('# TimelineAds readiness owner / wrapper interfaces')
+          print()
+          print('Known true-branch object graph:')
+          print('- TimelineAdsSetupImpl factory 0x13524a4 allocates owner size 0x60, AP 0x1867340')
+          print('- when AdsRuntime+0x1b8 != 0, allocates readiness state size 0x90 and installs it at owner+0x20')
+          print('- then allocates wrapper size 0x10, AP 0x18678f8, wrapper+8 = readiness-state pointer, installs wrapper at owner+0x10')
+          print('- exact Skip Ad export ABI later needs a pointer whose vtable +0x140 is this-only and scalar-return')
+          print()
+
+          for ap in aps:
+            print(f'## Address point candidate 0x{ap:x}')
+            print(f'- header[-0x10]={q(ap-0x10)} header[-0x8]={q(ap-8)}')
+            vals={off:q(ap+off) for off in range(0,0x180,8)}
+            for off,v in vals.items():
+              if v is not None:
+                print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+            for off in (0x0,0x8,0x10,0x18,0x20,0x28,0x70,0x98,0x128,0x140):
+              t=vals.get(off)
+              if t and fde(t):
+                print(f'### slot +0x{off:x} target 0x{t:x}')
+                dump_method(t,90)
+            print()
+
+          print('## All materializations of TimelineAds owner/wrapper APs')
+          aset=set(aps)
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16) in aset:
+              print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+              ctx(a,10,20);print()
+
+          print('## TimelineAds factory tail / return behavior')
+          ff=fde(0x13524a4)
+          print(f'- FDE={ff}')
+          if ff:
+            lo=max(ff[0],ff[1]-0x700)
+            for a,i,op,l in ins:
+              if lo<=a<ff[1]:print('    '+l)
+          print()
+
+          print('## Direct callers / relocation references to TimelineAds factory 0x13524a4')
+          for a,i,op,l in ins:
+            if re.search(r'\b(?:call|jmp)\s+13524a4\b',op):
+              print(f'### code caller 0x{a:x}; FDE={fde(a)}')
+              ctx(a,24,40);print()
+          slots=[off for off,add in rel.items() if add==0x13524a4]
+          print('- relocation slots: '+', '.join(hex(x) for x in slots))
+          print()
+
+          print('## Methods returning owner+0x10 / owner+0x20')
+          # Search methods in vtable 0x1867340 family for trivial pointer getter shapes.
+          owner_targets=[]
+          for off in range(0,0x180,8):
+            t=q(0x1867340+off)
+            if t and fde(t): owner_targets.append((off,t))
+          for off,t in owner_targets:
+            fr=fde(t)
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            body='\n'.join(x[2] for x in rows)
+            if '+0x10]' in body or '+0x20]' in body or 'rdi+0x10' in body or 'rdi+0x20' in body:
+              print(f'### owner slot +0x{off:x} -> 0x{t:x}')
+              for x in rows[:120]:print('    '+x[3])
+              print()
+
+          print('## Signal-state constructor callers with second-arg setup')
+          rf=fde(0xef91cc)
+          print(f'- readiness constructor FDE={rf}')
+          if rf:
+            entry=rf[0]
+            for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(entry,'x')+r'\b',op):
+                print(f'### caller 0x{a:x}; FDE={fde(a)}')
+                ctx(a,35,45);print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timelineads-readiness-wrapper.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve TimelineAds readiness wrapper"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
