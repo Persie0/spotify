@@ -1,0 +1,145 @@
+name: Classify TimelineConductor action sink
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-timeline-action-sink.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/actionsink
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/actionsink
+      - name: Install
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode
+        run: |
+          SO=/tmp/actionsink/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/actionsink/all.dis
+          python3 - <<'PY' > analysis/timeline-action-sink-classification.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/actionsink/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/actionsink/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f); loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def body(a,cap=3000):
+            fr=fde(a)
+            if not fr:return []
+            j=bisect.bisect_left(addrs,fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+              if len(out)>=cap:break
+            return out
+          def vaoff(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def cstr(v,cap=600):
+            o=vaoff(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+          def ctx(a,b=18,n=35):
+            j=bisect.bisect_left(addrs,a)
+            for x in ins[max(0,j-b):min(len(ins),j+n)]:print('    '+x[3])
+
+          print('# TimelineConductor common action sink classification')
+          print()
+          print('0x13825fa is shared by play/pause/stop/seek/resume/video-subscribe-after-play/smart-skip-embedded-podcast-ad and forwards to 0x1382113.')
+          print('0x1382113 finally calls 0x1624e22 on its first argument after building a structured action/state payload.')
+          print()
+
+          for fn,label in [(0x1624e22,'final sink helper'),(0x176575c,'field serializer A'),(0x1765792,'field serializer B'),(0x17657e6,'field serializer C'),(0x1652f72,'payload cleanup')]:
+            print(f'## {label}: 0x{fn:x} FDE={fde(fn)}')
+            ss=[]
+            for a,i,op,l in body(fn):
+              print('    '+l)
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                s=cstr(int(m.group(1),16))
+                if s and 2<=len(s)<=350 and s not in ss:ss.append(s)
+            if ss:
+              print('### strings')
+              for s in ss:print(f'- {s!r}')
+            print()
+
+          print('## Direct callers of final sink 0x1624e22')
+          count=0
+          for a,i,op,l in ins:
+            if re.search(r'call\s+1624e22\b',op):
+              print(f'### caller 0x{a:x} FDE={fde(a)}')
+              ctx(a,15,25);print()
+              count+=1
+              if count>=100:break
+
+          print('## Strings in one-hop callees of 0x1624e22')
+          seen=set()
+          for a,i,op,l in body(0x1624e22):
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+            if not m:continue
+            t=int(m.group(1),16)
+            if t in seen:continue
+            seen.add(t)
+            ss=[]
+            for aa,ii,oo,ll in body(t,1800):
+              mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+              if mm:
+                s=cstr(int(mm.group(1),16))
+                if s and 2<=len(s)<=350 and s not in ss:ss.append(s)
+            if ss:
+              print(f'### callee 0x{t:x} FDE={fde(t)}')
+              for s in ss[:80]:print(f'- {s!r}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-action-sink-classification.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify TimelineConductor action sink"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
