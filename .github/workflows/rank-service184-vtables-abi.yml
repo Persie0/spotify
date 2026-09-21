@@ -1,0 +1,207 @@
+name: Rank service184 vtables by ABI shape
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-service184-vtables-abi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184abi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184abi
+
+      - name: Install helpers
+        run: python3 -m pip install --quiet pyelftools capstone
+
+      - name: Rank vtables
+        run: |
+          python3 - <<'PY' > analysis/service184-vtable-abi-rank.md
+          from pathlib import Path
+          import struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+          from capstone.x86 import X86_OP_MEM, X86_OP_REG, X86_REG_RDI, X86_REG_RSI, X86_REG_RAX, X86_REG_AL
+
+          so=Path('/tmp/s184abi/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr'],seg['p_flags']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs[rel['r_offset']]=add
+
+          def va2off(va):
+            for a,b,v,fl in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          md=Cs(CS_ARCH_X86,CS_MODE_64); md.detail=True
+          def dis(addr,maxbytes=96):
+            o=va2off(addr)
+            if o is None:return []
+            return list(md.disasm(data[o:o+maxbytes],addr))[:24]
+          def is_ret(ins):
+            return any(x.mnemonic=='ret' for x in ins[:12])
+          def score_bool_getter(addr):
+            ins=dis(addr,64)
+            score=0; ev=[]
+            if is_ret(ins): score+=2
+            for x in ins[:12]:
+              if x.mnemonic in ('movzx','mov','cmp','test','setne','sete','seta','setb'):
+                txt=x.op_str
+                if 'byte ptr [rdi' in txt or 'byte ptr [rsi' in txt:
+                  score+=4; ev.append(f'{x.mnemonic} {txt}')
+                if x.mnemonic.startswith('set') and ('al' in txt):
+                  score+=3; ev.append(f'{x.mnemonic} {txt}')
+              if x.mnemonic=='xor' and x.op_str in ('eax, eax','al, al'):
+                score+=1
+            if len(ins)<=10:score+=1
+            return score,ev,ins
+          def score_ptr_getter(addr):
+            ins=dis(addr,64)
+            score=0;ev=[]
+            if is_ret(ins):score+=2
+            for x in ins[:10]:
+              txt=f'{x.mnemonic} {x.op_str}'
+              # common this-field getter or address-of-subobject
+              if x.mnemonic=='mov' and x.op_str.startswith('rax, qword ptr [rdi'):
+                score+=7;ev.append(txt)
+              if x.mnemonic=='lea' and x.op_str.startswith('rax, [rdi'):
+                score+=7;ev.append(txt)
+              if x.mnemonic=='mov' and x.op_str=='rax, rdi':
+                score+=4;ev.append(txt)
+            if len(ins)<=8:score+=2
+            return score,ev,ins
+          def score_sret(addr):
+            ins=dis(addr,128)
+            score=0;ev=[]
+            # System V nontrivial return: rdi destination, rsi this. Look for stores via rdi and loads via rsi.
+            saw_dst=False;saw_this=False
+            for x in ins[:20]:
+              txt=f'{x.mnemonic} {x.op_str}'
+              if '[rdi' in x.op_str and x.mnemonic.startswith('mov'):
+                saw_dst=True;score+=3;ev.append(txt)
+              if '[rsi' in x.op_str and x.mnemonic.startswith('mov'):
+                saw_this=True;score+=3;ev.append(txt)
+              if x.mnemonic=='lea' and '[rdi' in x.op_str:
+                saw_dst=True;score+=1
+              if x.mnemonic=='lea' and '[rsi' in x.op_str:
+                saw_this=True;score+=1
+            if saw_dst and saw_this:score+=6
+            if is_ret(ins):score+=1
+            return score,ev,ins
+
+          # Candidate address points are any qword-aligned rodata locations with code-looking funcs at all 4 ABI slots.
+          code_lo=0xa00000; code_hi=0x1800000
+          candidates=[]
+          # Use relocation locations as likely table slots; derive base from +0x20 slot.
+          for slot20,t20 in relocs.items():
+            if not(code_lo<=t20<code_hi):continue
+            base=slot20-0x20
+            vals={off:qword(base+off) for off in (0x20,0x28,0x30,0x38,0x68)}
+            if not all(vals[o] is not None and code_lo<=vals[o]<code_hi and fde_for(vals[o]) for o in (0x20,0x28,0x30,0x38)):
+              continue
+            sb,eb,ib=score_bool_getter(vals[0x20])
+            sp28,e28,i28=score_ptr_getter(vals[0x28])
+            sp30,e30,i30=score_ptr_getter(vals[0x30])
+            ss,es,isr=score_sret(vals[0x38])
+            score=sb+sp28+sp30+ss
+            # Prefer vtable-ish address space
+            if 0x1800000<=base<0x18a0000: score+=3
+            candidates.append((score,base,vals,(sb,eb,ib),(sp28,e28,i28),(sp30,e30,i30),(ss,es,isr)))
+
+          # dedupe bases
+          best={}
+          for c in candidates:
+            if c[1] not in best or c[0]>best[c[1]][0]:best[c[1]]=c
+          ranked=sorted(best.values(),reverse=True)[:120]
+
+          print('# Service184 vtable ABI-shape ranking')
+          print()
+          print('Expected service184 ABI:')
+          print('- +0x20: no-arg bool-return virtual')
+          print('- +0x28: no-arg pointer/interface getter')
+          print('- +0x30: no-arg pointer/interface getter')
+          print('- +0x38: nontrivial/sret getter (dest in rdi, this in rsi)')
+          print()
+          print(f'Candidates ranked: {len(best)}; showing {len(ranked)}')
+          print()
+          for score,base,vals,b,p28,p30,sret in ranked:
+            print(f'## score={score} address-point=0x{base:x}')
+            for off in (0x20,0x28,0x30,0x38,0x68):
+              q=vals.get(off)
+              print(f'- +0x{off:x}: {("0x%x"%q) if q else "none"} FDE={fde_for(q) if q else None}')
+            print(f'- bool score={b[0]} evidence={b[1]}')
+            print(f'- ptr28 score={p28[0]} evidence={p28[1]}')
+            print(f'- ptr30 score={p30[0]} evidence={p30[1]}')
+            print(f'- sret38 score={sret[0]} evidence={sret[1]}')
+            print('  +0x20 disasm:')
+            for x in b[2][:14]:print(f'    {x.address:x}: {x.mnemonic} {x.op_str}')
+            print('  +0x28 disasm:')
+            for x in p28[2][:14]:print(f'    {x.address:x}: {x.mnemonic} {x.op_str}')
+            print('  +0x30 disasm:')
+            for x in p30[2][:14]:print(f'    {x.address:x}: {x.mnemonic} {x.op_str}')
+            print('  +0x38 disasm:')
+            for x in sret[2][:22]:print(f'    {x.address:x}: {x.mnemonic} {x.op_str}')
+            if vals.get(0x68):
+              print('  +0x68 disasm:')
+              for x in dis(vals[0x68],160)[:28]:print(f'    {x.address:x}: {x.mnemonic} {x.op_str}')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-vtable-abi-rank.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank service184 vtables by ABI shape"
+          git pull --rebase origin main
+          git push origin HEAD:main
