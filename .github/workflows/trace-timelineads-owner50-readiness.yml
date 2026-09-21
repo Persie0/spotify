@@ -1,0 +1,113 @@
+name: Trace TimelineAds owner50 readiness bridge
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timelineads-owner50-readiness.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tads50
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tads50
+
+      - name: Trace bridge
+        run: |
+          set -euo pipefail
+          SO=/tmp/tads50/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tads50/all.dis
+          readelf -rW "$SO" > /tmp/tads50/rel.txt
+
+          {
+            echo '# TimelineAds owner+0x50 readiness bridge'
+            echo
+            echo '## Established inputs'
+            echo '- TimelineAdsSetupImpl factory: 0x13524a4.'
+            echo '- AdsSetup/AdsRuntime +0x1b8 is sampled at 0x1352547.'
+            echo '- On the true branch, a readiness state is installed at TimelineAds owner+0x20 and AP 0x18678f8 wrapper is installed at owner+0x10.'
+            echo '- TimelineAds virtual +0x28 (0xaa712a) returns owner+0x50; TimelineConductor consumes that value.'
+            echo
+            echo '## Owner field aliases and readiness installation'
+            objdump -d -M intel --start-address=0x13525f0 --stop-address=0x13528a0 "$SO"
+            echo
+            echo '## owner+0x10 enters the intermediate collection'
+            objdump -d -M intel --start-address=0x1352d40 --stop-address=0x1352f60 "$SO"
+            echo
+            echo '## 0x8e8 owner+0x50 object construction'
+            objdump -d -M intel --start-address=0x1352f40 --stop-address=0x1353190 "$SO"
+            echo
+            echo '## TimelineAds +0x28 getter used by TimelineConductor'
+            objdump -d -M intel --start-address=0xaa7110 --stop-address=0xaa7140 "$SO"
+            echo
+            echo '## TimelineConductor factory b7 consumer'
+            objdump -d -M intel --start-address=0x135c920 --stop-address=0x135cc60 "$SO"
+            echo
+            echo '## Vtable slices for owner+0x50 object'
+            for ap in 18674c8 1867550 1867980; do
+              echo "### AP 0x$ap"
+              grep -i -E "^000000000$ap|^000000000$(printf '%x' $((0x$ap+8)))|^000000000$(printf '%x' $((0x$ap+0x10)))|^000000000$(printf '%x' $((0x$ap+0x18)))|^000000000$(printf '%x' $((0x$ap+0x20)))|^000000000$(printf '%x' $((0x$ap+0x28)))|^000000000$(printf '%x' $((0x$ap+0x30)))|^000000000$(printf '%x' $((0x$ap+0x38)))|^000000000$(printf '%x' $((0x$ap+0x40)))|^000000000$(printf '%x' $((0x$ap+0x48)))|^000000000$(printf '%x' $((0x$ap+0x50)))|^000000000$(printf '%x' $((0x$ap+0x58)))|^000000000$(printf '%x' $((0x$ap+0x60)))|^000000000$(printf '%x' $((0x$ap+0x68)))|^000000000$(printf '%x' $((0x$ap+0x70)))" /tmp/tads50/rel.txt || true
+            done
+            echo
+            echo '## Mechanical bridge summary'
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/tads50/all.dis').read_text(errors='replace').splitlines()
+          def line(addr):
+              pat=re.compile(r'^\s*'+format(addr,'x')+r':')
+              return next((x for x in lines if pat.match(x)),None)
+          addrs=[
+            0x1352547,0x1352607,0x1352619,0x1352656,
+            0x1352813,0x1352820,0x1352827,0x1352833,0x1352836,0x1352842,
+            0x1352de2,0x1352de7,0x1352df2,
+            0x1352ecf,0x1352ed7,0x1352edf,0x1352ee6,
+            0x1352fe0,0x1353019,0x1353023,0x1353032,0x1353039,
+            0x13530c4,0x13530ca,0x13530d0,
+            0x1353121,0x1353129,
+            0xaa712a,0x135c936,0x135c943,0x135cbe5,0x135cbf0
+          ]
+          for a in addrs:
+              print(f'- {line(a) or ("missing 0x%x"%a)}')
+          print()
+          print('### Proven pointer flow')
+          print('1. owner+0x10 address is saved at [rsp+0x30] (0x1352607..0x135260b).')
+          print('2. true readiness branch installs AP 0x18678f8 wrapper into owner+0x10 (0x1352827..0x1352842).')
+          print('3. 0x1352de2 reloads owner+0x10 through [rsp+0x30]; 0x1352de7 reads the wrapper pointer; 0x1352df2 stores it at stack+0x170.')
+          print('4. The 0x1352ecf loop runs twice (r13 = 0, 0x20) over stack+0x150 and stack+0x170, so the owner+0x10 wrapper is the head pointer of the second 0x20-byte intermediate element.')
+          print('5. That two-element intermediate is normalized into stack+0xa0 before the 0x8e8 allocation; stack+0xa0 is copied to stack+0x10 at 0x1352fe8.. and then to largeObject+0x58 at 0x13530c4..0x13530ca, with associated word to +0x68.')
+          print('6. largeObject is installed into TimelineAds owner+0x50 at 0x1353121..0x1353129.')
+          print('7. TimelineAds virtual +0x28 (0xaa712a) returns owner+0x50, and TimelineConductor factory invokes it at 0x135cbe5..0x135cbf0.')
+          PY
+          } > analysis/timelineads-owner50-readiness-bridge.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timelineads-owner50-readiness-bridge.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineAds owner50 readiness bridge"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
