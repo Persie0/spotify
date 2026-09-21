@@ -1,0 +1,171 @@
+name: Decode Skip Ad provider registrar
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-skipad-provider-registrar.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipreg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipreg
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode registrar
+        run: |
+          SO=/tmp/skipreg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipreg/all.dis
+          python3 - <<'PY' > analysis/skipad-provider-registrar.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipreg/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skipreg/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD': loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(a):
+            for x,y in fdes:
+              if x<=a<y:return x,y
+          def ctx(i,b=18,a=32):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          print('# Skip Ad provider registrar')
+          print()
+          print('Provider object:')
+          print('- allocation size 8 bytes at 0xb6162a')
+          print('- vptr address point 0x185b8d0')
+          print('- virtual +0x28 = 0x11ee608 (Skip Ad/ListPlayer setup factory)')
+          print('- immediately registered through addb16')
+          print()
+
+          ap=0x185b8d0
+          print('## Provider vtable 0x185b8d0')
+          for off in range(0,0x80,8):
+            v=q(ap+off)
+            print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else "None"} FDE={fde(v) if v else None}')
+          print()
+
+          print('## Provider virtual method bodies')
+          for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38):
+            v=q(ap+off)
+            if not v:continue
+            fr=fde(v)
+            print(f'### +0x{off:x} -> 0x{v:x}; FDE={fr}')
+            if fr:
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          target=0xaddb16
+          fr=fde(target)
+          print(f'## addb16 registrar FDE {fr}')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print(l)
+          print()
+
+          print('## Direct callers of addb16')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+addb16\b',op):
+              print(f'### call 0x{a:x}; FDE={fde(a)}')
+              ctx(i,20,22);print()
+
+          print('## Registrar callees and literals')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if 'call' in op:
+                print(f'- call @0x{a:x}: {op}')
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm:
+                va=int(mm.group(1),16);o=va2off(va)
+                if o is not None:
+                  e=data.find(b'\0',o,min(len(data),o+160))
+                  if e>o:
+                    raw=data[o:e]
+                    if raw and all(c==9 or c==10 or 32<=c<127 for c in raw):
+                      print(f'- literal @0x{a:x} -> 0x{va:x}: {raw.decode("ascii","replace")!r}')
+
+          print()
+          print('## Provider construction block around 0xb6162f')
+          for a,i,op,l in ins:
+            if 0xb61580<=a<0xb616b0:print(l)
+
+          print()
+          print('## Neighbor provider APs and +0x28 targets')
+          # Every 8-byte provider materialized around the same constructor block.
+          aps=[]
+          for a,i,op,l in ins:
+            if not(0xb60000<=a<0xb62000):continue
+            mm=re.search(r'lea\s+r(?:ax|cx|dx|si|di|8|9|10|11|12|13|14|15),\[rip[^#]*#\s*([0-9a-f]+)',op)
+            if mm:
+              va=int(mm.group(1),16)
+              if 0x1800000<=va<0x1900000 and fde(q(va) or 0):
+                aps.append((a,va))
+          seen=set()
+          for a,va in aps:
+            if va in seen:continue
+            seen.add(va)
+            v28=q(va+0x28)
+            print(f'- construct-ref 0x{a:x}: AP=0x{va:x}, +0x28={("0x%x"%v28) if v28 else None}, FDE={fde(v28) if v28 else None}')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-provider-registrar.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Skip Ad provider registrar"
+          git pull --rebase origin main
+          git push origin HEAD:main
