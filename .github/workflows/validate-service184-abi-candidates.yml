@@ -1,0 +1,224 @@
+name: Validate service184 ABI candidates
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/validate-service184-abi-candidates.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184abi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184abi
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Validate candidate dependency shapes
+        run: |
+          SO=/tmp/s184abi/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184abi/all.dis
+          python3 - <<'PY' > analysis/service184-abi-candidate-validation.md
+          from pathlib import Path
+          import re,struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184abi/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184abi/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs[rel['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          def ctx(i,b=16,a=30):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          candidates=[
+            # base, +28 function, return-kind, return-offset if statically known
+            (0x18228d8,0xd17212,'embedded',0x218),
+            (0x1821448,0xb7d2ca,'delegated',None),
+            (0x1822988,0xd1a440,'conditional',None),
+            (0x181f788,0xcc4eea,'field',0x5e0),
+            (0x1867b28,0xb00302,'embedded',0x50),
+            (0x1870480,0x1425caa,'delegated',None),
+            (0x187b208,0xbd80cc,'delegated',None),
+          ]
+
+          print('# Service184 ABI candidate validation')
+          print()
+          print('Required downstream dependency surface:')
+          print('- service184 +0x28() returns a persistent pointer')
+          print('- returned pointer is later invoked at virtual +0x68')
+          print('- same dependency family is also reused through +0x98, +0xb8, +0xc0 during player construction')
+          print()
+
+          # Build reverse index of code refs to high VA constants.
+          comments=defaultdict(list)
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m:comments[int(m.group(1),16)].append((a,i,op,l))
+
+          for base,f28,kind,roff in candidates:
+            print(f'## Candidate address point 0x{base:x}')
+            print(f'- +0x28 = 0x{f28:x}')
+            print(f'- return shape = {kind}' + (f' this+0x{roff:x}' if roff is not None else ''))
+            print()
+
+            print('### Candidate vtable slots')
+            for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88,0x90,0x98,0xa0,0xa8,0xb0,0xb8,0xc0):
+              q=qword(base+off)
+              if q is not None:
+                print(f'- +0x{off:x}: 0x{q:x} FDE={fde(q)}')
+            print()
+
+            refs=comments.get(base,[])
+            print(f'### Materializations of candidate vptr ({len(refs)} direct comment refs)')
+            for a,i,op,l in refs[:40]:
+              print(f'#### 0x{a:x} FDE={fde(a)}')
+              ctx(i,12,24)
+              print()
+
+            if roff is not None:
+              print(f'### Writes/initialization around returned dependency offset +0x{roff:x}')
+              # Search constructors/materialization FDEs for writes to same offset off any common base reg.
+              seen=set()
+              pat=re.compile(r'\[(rax|rbx|rcx|rdx|rsi|rdi|rbp|r8|r9|r10|r11|r12|r13|r14|r15)\+0x'+format(roff,'x')+r'\]')
+              for a,i,op,l in ins:
+                if not pat.search(op): continue
+                # Keep destination writes or direct address creation, both useful.
+                if not (re.match(r'(mov|movups|movaps|movdqu|movdqa|lea|and|xor|or)',op)):continue
+                fr=fde(a)
+                if not fr or fr in seen:continue
+                # Prefer FDEs that also materialize candidate vptr.
+                score=0
+                if any(fr[0]<=ra<fr[1] for ra,_,_,_ in refs):score+=10
+                if re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|or)',op):score+=2
+                if score<2:continue
+                seen.add(fr)
+                print(f'#### FDE 0x{fr[0]:x}..0x{fr[1]:x}; hit 0x{a:x}: {op}; score={score}')
+                ctx(i,14,28)
+                print()
+                if len(seen)>=30:break
+
+              # Look for a concrete vptr store exactly at this+offset in FDEs that materialize candidate.
+              print('### Candidate constructor FDEs: stores into dependency first word')
+              for ra,ri,rop,rl in refs[:30]:
+                fr=fde(ra)
+                if not fr:continue
+                fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+                for j,(a,i,op,l) in enumerate(fl):
+                  # common ctor pattern: lea dep,[obj+off]; lea vptr,[rip...]; mov [dep],vptr
+                  if f'+0x{roff:x}]' in op or f'+0x{roff:x},' in op:
+                    print(f'- FDE 0x{fr[0]:x} hit 0x{a:x}: {op}')
+                    for aa,ii,oo,ll in fl[max(0,j-10):min(len(fl),j+18)]:print('    '+ll)
+                    print()
+            print()
+
+          # Search for functions that take output of known +28 methods and immediately
+          # invoke high dependency slots. Direct call-sites of concrete +28 functions
+          # are particularly discriminating.
+          print('## Direct call sites of candidate +0x28 functions and immediate use')
+          funcs={f28:base for base,f28,_,_ in candidates}
+          for a,i,op,l in ins:
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+            if not m:continue
+            t=int(m.group(1),16)
+            if t not in funcs:continue
+            print(f'### candidate 0x{funcs[t]:x} +0x28 direct call @0x{a:x}')
+            ctx(i,10,26)
+            print()
+
+          # Vptr candidates for return objects: find high address constants stored near
+          # known embedded offsets in candidate ctor FDEs.
+          print('## High-address constants near candidate constructor materializations')
+          for base,f28,kind,roff in candidates:
+            if roff is None:continue
+            refs=comments.get(base,[])
+            for ra,ri,rop,rl in refs[:20]:
+              fr=fde(ra)
+              if not fr:continue
+              vals=[]
+              for a,i,op,l in ins:
+                if not(fr[0]<=a<fr[1]):continue
+                m=re.search(r'#\s*(18[0-9a-f]{5,})\b',l)
+                if m:
+                  va=int(m.group(1),16)
+                  vals.append((a,va,op))
+              if vals:
+                print(f'### candidate 0x{base:x}; ctor FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+                for a,va,op in vals[:80]:
+                  print(f'- 0x{a:x}: 0x{va:x} :: {op}')
+                print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-abi-candidate-validation.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Validate service184 ABI candidates"
+          git pull --rebase origin main
+          git push origin HEAD:main
