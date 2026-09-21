@@ -1,0 +1,162 @@
+name: Find real service table population
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/find-real-service-table-population.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/svctable
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/svctable
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Find multi-slot writers
+        run: |
+          SO=/tmp/svctable/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/svctable/all.dis
+          python3 - <<'PY' > analysis/real-service-table-population.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/svctable/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/svctable/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          slots={0x178:47,0x288:81,0x590:178,0x5c0:184}
+          regs=r'(?:rax|rbx|rcx|rdx|rsi|rdi|rbp|r8|r9|r10|r11|r12|r13|r14|r15)'
+          # destination-only stores. Exclude cmp/test/call/lea/read ops.
+          pat=re.compile(r'^(mov(?:q|l|w|b)?|movups|movaps|movdqu|movdqa|xchg|and|or|xor)\s+[^,]*\[('+regs+r')\+0x(178|288|590|5c0)\]\s*,')
+
+          groups=defaultdict(lambda:defaultdict(list))
+          for a,i,op,l in ins:
+            m=pat.search(op)
+            if not m:continue
+            base=m.group(2); off=int(m.group(3),16)
+            fr=fde(a)
+            if fr:groups[(fr,base)][off].append((a,i,op,l))
+
+          ranked=[]
+          for (fr,base),d in groups.items():
+            touched=set(d)
+            if len(touched)>=2:
+              ranked.append((len(touched),sum(len(v) for v in d.values()),fr,base,d))
+          ranked.sort(key=lambda x:(-x[0],-x[1],x[2][0]))
+
+          print('# Real service-table population scan')
+          print()
+          print('Generated accessor fingerprints:')
+          for off,sid in slots.items():
+            print(f'- service ID {sid} -> table offset +0x{off:x}')
+          print()
+          print('A strong population candidate should store to multiple offsets above using the same table-base register in one FDE.')
+          print()
+
+          print('## Multi-slot writer candidates')
+          if not ranked: print('- none')
+          for n,cnt,fr,base,d in ranked[:100]:
+            print(f'### touches={n}/4 stores={cnt} FDE=0x{fr[0]:x}..0x{fr[1]:x} base={base}')
+            for off in sorted(d):
+              print(f'- service {slots[off]} +0x{off:x}:')
+              for x in d[off][:12]: print('    '+x[3])
+            # full local FDE only for 3+/4 matches
+            if n>=3:
+              print('#### Full FDE')
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:print('    '+l)
+            print()
+
+          print('## All concrete stores to service184 offset +0x5c0')
+          for (fr,base),d in groups.items():
+            if 0x5c0 not in d:continue
+            for a,i,op,l in d[0x5c0]:
+              print(f'### 0x{a:x} FDE=0x{fr[0]:x}..0x{fr[1]:x} base={base}')
+              for x in lines[max(0,i-18):min(len(lines),i+28)]:print('    '+x)
+              print()
+
+          # Also detect constructors that use different aliases for the same base by
+          # looking for all four literal offsets in a single FDE regardless of register.
+          byfr=defaultdict(lambda:defaultdict(list))
+          for (fr,base),d in groups.items():
+            for off,xs in d.items():byfr[fr][off].extend((base,x) for x in xs)
+          print('## FDE-level multi-slot writers regardless of base alias')
+          cand=[]
+          for fr,d in byfr.items():
+            if len(d)>=2:cand.append((len(d),fr,d))
+          cand.sort(key=lambda x:(-x[0],x[1][0]))
+          for n,fr,d in cand[:100]:
+            print(f'### touches={n}/4 FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+            for off in sorted(d):
+              for base,x in d[off][:12]:
+                print(f'- +0x{off:x} service={slots[off]} base={base}: {x[3]}')
+            print()
+
+          # Search for copy loops / indexed table population using 0xb8 or byte-ID
+          # index scaled by 8, which may avoid literal +0x5c0 stores.
+          print('## Indexed pointer stores near immediate service ID 0xb8')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.match(r'(mov|xchg)\s+[^,]*\[[^]]+\*8[^]]*\]\s*,',op):continue
+            fr=fde(a)
+            if not fr:continue
+            nearby=ins[max(0,idx-25):min(len(ins),idx+12)]
+            if any(re.search(r'\b(?:mov|cmp|push)\s+[^\n]*0xb8\b',oo) for aa,ii,oo,ll in nearby):
+              print(f'### store 0x{a:x} FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+              for aa,ii,oo,ll in nearby: print('    '+ll)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/real-service-table-population.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find real service table population"
+          git pull --rebase origin main
+          git push origin HEAD:main
