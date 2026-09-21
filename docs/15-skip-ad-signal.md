@@ -186,6 +186,14 @@ The target-selection logic is also recovered. `0x1371d90` obtains the active ite
 
 This also narrows the scope of the branch: the native implementation selected by this `"skip-ad"` action is specifically `smartSkipEmbeddedPodcastAd`. It should not be generalized to every advertising format without separate evidence.
 
+The two interval sources now have concrete upstream registry provenance. `TimelineConductorSetupImpl::factory` obtains the primary source through accessor `b632ca`; that accessor validates service ID **`0x2f`**, reads table slot `0x178`, and the registered provider descriptor for ID `0x2f` is **`DownloadSetupImpl`**. The factory stores this result at `rsp+0x1b8`, passes it as constructor `rcx`, and the conductor builds the primary 0x110-byte helper at `TimelineConductor+0xb0` with address point `0x1869ea8`. That helper family exposes the string `timeline_conductor_video`.
+
+The fallback source is symmetrical but distinct. Factory accessor `b9150c` validates service ID **`0x32`**, reads table slot `0x190`, and provider ID `0x32` resolves to **`DspSetupImpl`**. Its result is stored at factory `rsp+0x190`, passed through the constructor's stack argument path, and feeds the second 0x110-byte helper at `TimelineConductor+0xb8` with address point `0x186a0b8`. That helper family exposes the string `list_player`.
+
+These names describe the upstream playback/service sources, **not two advertising categories**. The recovered smart-skip logic still treats them simply as ordered interval providers: probe the Download-derived primary source first, then the DSP-derived fallback source if no containing interval is found.
+
+The successful seek also has a recovered post-action path. After `0x137cb68` seeks to the selected `end_ms`, the conductor builds transition state at `0x1382662` and calls `0x13825fa` with the literal **`smart-skip-embedded-podcast-ad`**. That wrapper is shared with ordinary TimelineConductor actions such as seek/play/pause/resume and forwards through `0x1382113 -> 0x1624e22`. The evidence therefore supports a structured TimelineConductor action/report with that exact label. It does **not** support reusing the unrelated `ad_skipped` app-open metric as the playback Skip Ad event name.
+
 A second correction applies to the first ABI-based service184 vtable shortlist. The initial addresses `0x18228d8`, `0x1821448`, `0x1822988`, and `0x181f788` were selected by method-shape scanning before enforcing the Itanium vtable header. Inspection of their surrounding qwords shows that several are shifted into the middle of larger vtable groups rather than true address points. For example, `0x1821440` is preceded by the characteristic `offset-to-top = 0` / null-typeinfo header, while `0x1821448` is already the second method slot. Therefore slot labels such as “candidate +0x28” from the original shortlist are not class-identity evidence and must not be used to name service184.
 
 The follow-up scan now requires a valid Itanium-style header first and only then evaluates the observed ABI (`+0x28` pointer return, `+0x30` pointer return, `+0x38` sret-style output). The embedded `0x18228d8` hypothesis is additionally weakened by direct state inspection: the region its apparent getter returned (`this+0x218`) behaves as container/state storage with moves, zeroing, and copies, and no stable first-word vptr has been established there. The corrected header-validated scan is authoritative for the next class-identification step.
@@ -295,7 +303,7 @@ TimelineConductor seek/clip transition
 "smart-skip-embedded-podcast-ad" transition/reporting path
 ```
 
-The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek`. The remaining execution-side question is which playback/ad-reporting event is emitted after the successful `smartSkipEmbeddedPodcastAd` transition and what semantic roles distinguish the two interval stores at dependency `+0xb08` and `+0xb10`.
+The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek -> "smart-skip-embedded-podcast-ad" action/report`. The interval source provenance is also resolved at the registry layer: ID `0x2f` / `DownloadSetupImpl` feeds the primary source and ID `0x32` / `DspSetupImpl` feeds the fallback.
 
 ## 6. Relationship to ordinary next-track restrictions
 
@@ -320,8 +328,8 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
 2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
-3. identify the semantic roles and producers of the two interval sources at dependency `+0xb08` and `+0xb10` that feed the recovered `start_ms <= current_ms < end_ms` boundary lookup,
-4. identify the playback-ad reporting event emitted after a successful `smartSkipEmbeddedPodcastAd` transition (the recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
+3. determine the exact semantic payload carried from `DownloadSetupImpl` and `DspSetupImpl` into their TimelineConductor interval-helper subobjects, beyond the now-proven registry identities,
+4. classify the final common TimelineConductor action sink `0x1624e22` more precisely (transport/logging/state bus), without conflating it with the unrelated `ad_skipped` app-open metric,
 5. map the equivalent path during Connect/remote playback and verify whether it reuses the same TimelineConductor operation.
 
 Evidence reports:
@@ -349,3 +357,8 @@ Evidence reports:
 - `analysis/timeline-conductor-skip-action-literals.md`
 - `analysis/timeline-conductor-skipad-semantics.md`
 - `analysis/timeline-smart-skip-target.md`
+- `analysis/timeline-action-sink-classification.md`
+- `analysis/smart-skip-post-seek-report.md`
+- `analysis/smart-skip-provider-classes.md`
+- `analysis/smart-skip-accessor-ids.md`
+- `analysis/smart-skip-provider-names.md`
