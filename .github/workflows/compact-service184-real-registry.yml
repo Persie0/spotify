@@ -1,0 +1,200 @@
+name: Compact real service184 registry trace
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/compact-service184-real-registry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184compact
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184compact
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Compact provenance
+        run: |
+          SO=/tmp/s184compact/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184compact/all.dis
+          python3 - <<'PY' > analysis/service184-real-registry-compact.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184compact/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184compact/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctxt(i,b=10,a=16):
+            return '\n'.join(lines[max(0,i-b):min(len(lines),i+a+1)])
+
+          print('# Compact real service184 registry trace')
+          print()
+          print('Facade ABI: +0 service table, +8 ID buffer, +0x10 ID count.')
+          print('Accessor b8f02e validates ID 0xb8 then returns [facade[0] + 0x5c0].')
+          print()
+
+          # 1. all direct b8f02e caller receiver setup, but concise.
+          print('## b8f02e caller receiver provenance')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+b8f02e\b',op):continue
+            print(f'### call 0x{a:x}, FDE={fde(a)}')
+            for aa,ii,o,ll in ins[max(0,idx-8):idx+3]:
+              print('    '+ll)
+            print()
+
+          # 2. identify FDE of 11ee6b0 and only register-definition chain for rbx.
+          target=0x11ee6b0
+          fr=fde(target)
+          print('## 0x11ee6b0 receiver rbx provenance')
+          print('FDE='+str(fr))
+          if fr:
+            fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for j,(a,i,op,l) in enumerate(fl):
+              if a>target:break
+              if re.search(r'\brbx\b',op):
+                if re.match(r'(mov|lea|xchg)',op) or 'call' in op:
+                  print('    '+l)
+          print()
+
+          # 3. exact facade-shaped constructors: writes same base +0,+8,+10 in one FDE.
+          print('## Exact facade-shaped write clusters')
+          grp=defaultdict(lambda:defaultdict(list))
+          mem=re.compile(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]')
+          for a,i,op,l in ins:
+            frx=fde(a)
+            if not frx:continue
+            dst=op.split(',',1)[0]
+            m=mem.search(dst)
+            if not m:continue
+            off=int(m.group(2),16) if m.group(2) else 0
+            if off not in (0,8,0x10):continue
+            if not re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|lea)',op):continue
+            grp[(frx,m.group(1))][off].append((a,i,op,l))
+          cands=[]
+          for (frx,base),d in grp.items():
+            if all(o in d for o in (0,8,0x10)):
+              score=0
+              # reward registry-area code and writes close together
+              addrs=[x[0] for o in (0,8,0x10) for x in d[o]]
+              span=max(addrs)-min(addrs)
+              if span<0x100:score+=10
+              elif span<0x400:score+=5
+              if 0xb00000<=frx[0]<0xc00000:score+=5
+              cands.append((score,span,frx,base,d))
+          cands.sort(key=lambda x:(-x[0],x[1]))
+          for score,span,frx,base,d in cands[:40]:
+            print(f'### score={score} span=0x{span:x} FDE=0x{frx[0]:x}..0x{frx[1]:x} base={base}')
+            for off in (0,8,0x10):
+              for x in d[off][:4]:print('    '+x[3])
+            print()
+
+          # 4. stores into arrays via scale 8; rank if same function also writes/uses byte IDs.
+          print('## Pointer-table indexed stores')
+          found=0
+          for a,i,op,l in ins:
+            if not re.match(r'(mov|xchg)',op):continue
+            if not re.search(r'\[[a-z0-9]+\+[a-z0-9]+\*8(?:\+0x[0-9a-f]+)?\]',op):continue
+            frx=fde(a)
+            if not frx:continue
+            # keep only plausible registry/constructor regions and concise context
+            if not (0xa00000<=frx[0]<0xd00000 or 0x1000000<=frx[0]<0x1220000):continue
+            print(f'### 0x{a:x} FDE=0x{frx[0]:x}..0x{frx[1]:x}')
+            print('    '+l)
+            for x in lines[max(0,i-5):min(len(lines),i+7)]:print('    '+x)
+            print()
+            found+=1
+            if found>=120:break
+
+          # 5. all exact +0x5c0 ops, but classify by whether nearby code accesses +8/+10 on same base.
+          print('## +0x5c0 operations with facade-likeness')
+          for a,i,op,l in ins:
+            m=re.search(r'\[([a-z0-9]+)\+0x5c0\]',op)
+            if not m:continue
+            base=m.group(1)
+            nearby='\n'.join(x[2] for x in ins if max(0,a-0x100)<=x[0]<=a+0x100)
+            facade_like=(f'[{base}+0x8]' in nearby and f'[{base}+0x10]' in nearby)
+            print(f'### 0x{a:x} FDE={fde(a)} base={base} facade_like={facade_like}')
+            print('    '+l)
+            if facade_like:
+              for x in lines[max(0,i-12):min(len(lines),i+18)]:print('    '+x)
+            print()
+
+          # 6. search for construction of an ID buffer containing neighboring IDs 0xb2,b8,ba.
+          print('## Byte-buffer writes near IDs b2/b8/ba')
+          for a,i,op,l in ins:
+            m=re.search(r'mov\s+BYTE PTR \[([^]]+)\],0x(b2|b8|ba)\b',op)
+            if not m:continue
+            print(f'### 0x{a:x} id=0x{m.group(2)} FDE={fde(a)}')
+            for x in lines[max(0,i-8):min(len(lines),i+12)]:print('    '+x)
+            print()
+
+          # 7. reads of table slot 184 where table base is directly loaded from facade first.
+          print('## Proven direct service184 table reads')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if '+0x5c0]' not in op:continue
+            prior=ins[max(0,idx-8):idx]
+            # look for table-base load "mov REG,[FAC]" and same REG at +5c0
+            mm=re.search(r'\[([a-z0-9]+)\+0x5c0\]',op)
+            if not mm:continue
+            reg=mm.group(1)
+            proven=[]
+            for aa,ii,o,ll in prior:
+              if re.search(rf'mov\s+{reg},QWORD PTR \[[a-z0-9]+\]$',o):
+                proven.append(ll)
+            if proven:
+              print(f'### 0x{a:x} FDE={fde(a)}')
+              for q in proven:print('    '+q)
+              print('    '+l)
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-real-registry-compact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Compact real service184 registry trace"
+          git pull --rebase origin main
+          git push origin HEAD:main
