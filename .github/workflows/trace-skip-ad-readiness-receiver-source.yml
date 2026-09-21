@@ -1,0 +1,173 @@
+name: Trace Skip Ad readiness receiver source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-skip-ad-readiness-receiver-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readsrc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readsrc
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace source
+        run: |
+          SO=/tmp/readsrc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readsrc/all.dis
+          python3 - <<'PY' > analysis/skip-ad-readiness-receiver-source.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readsrc/liborbit-jni-spotify.so')
+          lines=Path('/tmp/readsrc/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=16,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0])
+            out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+
+          anchor=0xefc701
+          fr=fde(anchor)
+          print('# Skip Ad readiness receiver source')
+          print()
+          print('Known chain:')
+          print('- fd381a/fd38d6 use adapter this+0x40')
+          print('- adapter this = outer+0x18, so receiver = outer+0x58')
+          print('- constructor 0xefc701 stores outer+0x58 = r15')
+          print('- immediately earlier: r15 = [rbx+0x10], rbx = [rsp+0x60]')
+          print()
+          print(f'## Constructor FDE containing 0xefc701: {fr}')
+          if fr:
+            for a,i,op,l in body(fr):
+              if max(fr[0],0xefb800)<=a<min(fr[1],0xefc780):
+                print('    '+l)
+          print()
+
+          print('## All rsp+0x60 references in constructor FDE')
+          if fr:
+            for a,i,op,l in body(fr):
+              if 'rsp+0x60]' in op or 'rsp+0x60,' in op:
+                print(f'### 0x{a:x}: {op}')
+                ctx(a,18,28); print()
+
+          print('## Writes to rsp+0x60 only')
+          if fr:
+            for a,i,op,l in body(fr):
+              first=op.split(',',1)[0]
+              if '[rsp+0x60]' in first:
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## rbx provenance before 0xefc61e')
+          if fr:
+            rows=body(fr)
+            ti=next((k for k,x in enumerate(rows) if x[0]==0xefc61e),None)
+            if ti is not None:
+              for k in range(ti-1,max(-1,ti-260),-1):
+                a,i,op,l=rows[k]
+                if re.match(r'(mov|lea|xchg|pop)\s+rbx\b',op):
+                  print(f'### nearest rbx definition 0x{a:x}: {op}')
+                  ctx(a,24,36); break
+          print()
+
+          print('## Callers of constructor FDE')
+          if fr:
+            entry=fr[0]
+            for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(entry,'x')+r'\b',op):
+                print(f'### caller 0x{a:x}; FDE={fde(a)}')
+                ctx(a,30,45); print()
+
+          print('## Direct callers to interior constructor anchors')
+          for target in (0xefc300,0xefc480,0xefc61e,0xefc630,0xefc701):
+            print(f'### target 0x{target:x}')
+            for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b',op):
+                print(f'- caller 0x{a:x}; FDE={fde(a)}')
+                ctx(a,20,30)
+            print()
+
+          # Find likely object constructors elsewhere that write a polymorphic pointer at +0x10.
+          print('## Candidate writes to object+0x10 from vptr-bearing allocations near caller family')
+          # Restrict to caller FDEs of the constructor and nearby construction region.
+          caller_fdes=set()
+          if fr:
+            entry=fr[0]
+            for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(entry,'x')+r'\b',op):
+                cf=fde(a)
+                if cf: caller_fdes.add(cf)
+          for cf in sorted(caller_fdes):
+            print(f'### caller FDE 0x{cf[0]:x}..0x{cf[1]:x}')
+            rows=body(cf)
+            for k,(a,i,op,l) in enumerate(rows):
+              first=op.split(',',1)[0]
+              if re.search(r'\[[a-z0-9]+\+0x10\]',first) and re.match(r'(mov|lea|xchg)',op):
+                print(f'- write 0x{a:x}: {op}')
+                for x in rows[max(0,k-10):min(len(rows),k+18)]: print('    '+x[3])
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-receiver-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Skip Ad readiness receiver source"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
