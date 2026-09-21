@@ -106,3 +106,5 @@ jobs:
           git commit -m "Trace service184 selector-5 provider"
           git pull --rebase origin main
           git push origin HEAD:main
+
+# retrigger provider-selector5 focused trace
