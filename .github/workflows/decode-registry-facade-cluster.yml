@@ -1,0 +1,57 @@
+name: Decode registry facade helper cluster
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-registry-facade-cluster.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regfac
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regfac
+      - name: Dump cluster and xrefs
+        run: |
+          set -euo pipefail
+          SO=/tmp/regfac/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/regfac/all.dis
+          {
+            echo '# Registry facade helper cluster'
+            echo
+            echo '## b63180..b634c0'
+            objdump -d -M intel --start-address=0xb63180 --stop-address=0xb634c0 "$SO"
+            echo
+            for T in b63274 b632a0 b632ca; do
+              echo "## Direct callers of $T"
+              grep -n -E -B18 -A30 "call[[:space:]]+$T\\b" /tmp/regfac/all.dis | head -n 18000 || true
+              echo
+            done
+            echo '## Callers that invoke two or more facade helpers in one local window'
+            grep -n -E -B35 -A55 'call[[:space:]]+b632(74|a0|ca)\\b' /tmp/regfac/all.dis | head -n 26000 || true
+          } > analysis/registry-facade-cluster.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-cluster.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode registry facade helper cluster"
+          git pull --rebase origin main
+          git push origin HEAD:main
