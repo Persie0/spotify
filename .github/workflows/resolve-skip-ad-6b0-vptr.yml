@@ -1,0 +1,216 @@
+name: Resolve Skip Ad 0x6b0 receiver vptr
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-6b0-vptr.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/recv6b0
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/recv6b0
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode receiver
+        run: |
+          set -euo pipefail
+          SO=/tmp/recv6b0/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/recv6b0/all.dis
+          readelf -rW "$SO" > /tmp/recv6b0/rel.txt
+          readelf -W -l "$SO" > /tmp/recv6b0/ph.txt
+          python3 - <<'PY' > analysis/skip-ad-6b0-vptr.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/recv6b0/liborbit-jni-spotify.so')
+          b=so.read_bytes()
+          raw=Path('/tmp/recv6b0/all.dis').read_text(errors='replace').splitlines()
+
+          ins=[]
+          for i,l in enumerate(raw):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+
+          rel={}
+          for l in Path('/tmp/recv6b0/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              i=p.index('R_X86_64_RELATIVE')
+              if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                rel[int(p[0],16)]=int(p[i+1],16)
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+            j=idx(fr[0]); out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+          def ctx(a,bef=12,aft=24):
+            j=idx(a)
+            for x in ins[max(0,j-bef):min(len(ins),j+aft+1)]: print('    '+x[3])
+          def vo(v):
+            for a,z,o in loads:
+              if a<=v<z:return o+(v-a)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(b):return None
+            return struct.unpack_from('<Q',b,o)[0]
+          def code(v):
+            return v is not None and fde(v) is not None
+
+          print('# Skip Ad 0x6b0 receiver vptr')
+          print()
+          print('Proven chain:')
+          print('- current/new element selected at 0x122190f from a 0x6b0-stride array')
+          print('- element copied by 0x12240cc')
+          print('- 0x12240cc calls 0x12240f8 for head [0..0x160), then 0x108dcd4 for tail')
+          print('- e9ccf3 stores this element pointer into state+0x10')
+          print('- efc630 publishes state+0x10 as Skip Ad readiness receiver')
+          print('- fd384d invokes receiver vtable +0x140 and requires EAX==0')
+          print()
+
+          for target in (0x12240cc,0x12240f8,0x108dcd4):
+            fr=fde(target)
+            print(f'## Function 0x{target:x} FDE={fr}')
+            if fr:
+              for x in body(fr): print('    '+x[3])
+            print()
+
+          fr=fde(0x12240f8)
+          print('## First-word / head writes in 0x12240f8')
+          highs=[]
+          if fr:
+            rows=body(fr)
+            for k,(a,i,op,l) in enumerate(rows):
+              # destination stores to rdi-derived object or aliases
+              if re.match(r'(mov|movq|movups|movdqu|movaps|movdqa|lea)\b',op):
+                if re.search(r'\[(?:rdi|rbx|r14|r15)(?:\+0x[0-9a-f]+)?\]',op.split(',',1)[0]):
+                  print(f'- 0x{a:x}: {op}')
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:
+                va=int(m.group(1),16); highs.append((a,va,op))
+            print()
+            print('### High-address materializations')
+            for a,va,op in highs:
+              print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## Source/destination first-qword movement in 0x12240f8')
+          if fr:
+            for a,i,op,l in body(fr):
+              if re.search(r'\[(?:rdi|rsi|rbx|r14|r15)\](?:,|$)',op) or re.search(r'\[(?:rdi|rsi|rbx|r14|r15)\+0x(?:8|10|18|20)\]',op):
+                print('    '+l)
+          print()
+
+          # Candidate APs from high constants and exact qword stores.
+          cands=set()
+          for _,va,_ in highs:
+            for ap in range(max(0,va-0x20),va+0x21,8):
+              slots=[q(ap+off) for off in range(0,0x160,8)]
+              n=sum(1 for v in slots if code(v))
+              if n>=12 and code(q(ap+0x140)):
+                cands.add(ap)
+
+          print('## Candidate address points with callable +0x140')
+          for ap in sorted(cands):
+            print(f'### AP 0x{ap:x}')
+            for off in range(0,0x160,8):
+              v=q(ap+off)
+              if v is not None:
+                print(f'- +0x{off:x}: 0x{v:x}' + (' code' if code(v) else ''))
+            t=q(ap+0x140)
+            if code(t):
+              print(f'#### +0x140 body @0x{t:x}')
+              ctx(t,8,45)
+            print()
+
+          print('## All static AP-like stores in 0x12240f8 FDE')
+          if fr:
+            rows=body(fr)
+            for k,(a,i,op,l) in enumerate(rows):
+              m=re.match(r'lea\s+(r\w+),\[rip[^#]*#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})',op)
+              if not m: continue
+              reg=m.group(1); va=int(m.group(2),16)
+              for aa,ii,oo,ll in rows[k+1:k+8]:
+                if re.match(r'mov\s+QWORD PTR \[[^]]+\],'+re.escape(reg)+r'\b',oo):
+                  print(f'- materialize 0x{va:x} @0x{a:x}, store @0x{aa:x}: {oo}')
+                  break
+          print()
+
+          # If first qword is copied from source rather than statically set, trace constructors that feed 12240cc source.
+          print('## Callers of 0x12240cc and source-register provenance')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+12240cc\b',op):
+              print(f'### call @0x{a:x}; FDE={fde(a)}')
+              ctx(a,18,24); print()
+
+          # Search constructors/materializers around source array that write a static AP into element head.
+          print('## Static high-address stores near 0x12218xx source-element creation')
+          for a,i,op,l in ins:
+            if not (0x1220000<=a<0x124c000): continue
+            m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+            if m:
+              # print only if nearby store targets a dereferenced register
+              j=idx(a)
+              window=ins[j:min(len(ins),j+7)]
+              if any(re.match(r'mov\s+QWORD PTR \[[^]]+\],r\w+',x[2]) for x in window):
+                print(f'### 0x{a:x}: {op}; FDE={fde(a)}')
+                for x in window: print('    '+x[3])
+                print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-6b0-vptr.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad 0x6b0 receiver vptr"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
