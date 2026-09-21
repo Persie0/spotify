@@ -1,0 +1,230 @@
+name: Resolve real service184 table population
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-table-population.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184pop
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184pop
+      - name: Install helpers
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace callback owner and table stores
+        run: |
+          SO=/tmp/s184pop/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184pop/all.dis
+          python3 - <<'PY' > analysis/service184-table-population.md
+          from pathlib import Path
+          import re,struct
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184pop/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184pop/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[(s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']) for s in elf.iter_segments() if s['p_type']=='PT_LOAD']
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                ad=rr.entry.get('r_addend')
+                if ad is not None:rel[rr['r_offset']]=ad
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def va2off(v):
+            for a,b,x in loads:
+              if x<=v<x+b-a:return a+v-x
+          def qword(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def ctx(i,b=16,a=26):
+            for z in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+z)
+
+          print('# Real service184 table population trace')
+          print()
+          print('Ground truth: b8f02e receives facade F; F+0 is serviceTable*, F+8 ID buffer, F+0x10 ID count; returns serviceTable[0xb8].')
+          print()
+
+          # 1. Locate relocation-backed tables containing 11ee608 exactly.
+          TARGET=0x11ee608
+          refs=[slot for slot,val in rel.items() if val==TARGET]
+          print('## Relocations pointing exactly to 0x11ee608')
+          for slot in refs:
+            print(f'- slot 0x{slot:x}')
+            # Walk backward/forward to infer table/address point.
+            for base in range(max(0,slot-0x80),slot+8,8):
+              vals=[qword(base+x) for x in range(0,0x100,8)]
+              code=sum(1 for v in vals if v is not None and 0xa00000<=v<0x1800000 and fde(v))
+              if code>=5 and base<=slot<base+0x100:
+                print(f'  candidate table base 0x{base:x}, target offset +0x{slot-base:x}, codeSlots={code}')
+          print()
+
+          # 2. All RIP-relative materializations of relocation/table neighborhoods containing target.
+          neighborhoods=set()
+          for slot in refs:
+            for base in range(max(0,slot-0x80),slot+1,8):
+              vals=[qword(base+x) for x in range(0,0x100,8)]
+              if sum(1 for v in vals if v is not None and 0xa00000<=v<0x1800000 and fde(v))>=5:
+                neighborhoods.add(base)
+          print('## Materializations of candidate callback tables')
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va in neighborhoods or any(abs(va-b)<=0x80 for b in neighborhoods):
+              print(f'### 0x{a:x} -> 0x{va:x}; FDE={fde(a)}')
+              ctx(i)
+              print()
+
+          # 3. Find exact root-table slot writes where base register was recently loaded from [facade].
+          # Pattern:
+          #   mov TABLE,[FAC]
+          #   ...
+          #   mov [TABLE+0x5c0],VALUE
+          print('## Proven-looking writes to facade serviceTable[184]')
+          for idx,(a,i,op,l) in enumerate(ins):
+            m=re.search(r'(?:mov|xchg)\s+QWORD PTR \[([a-z0-9]+)\+0x5c0\],([a-z0-9]+)',op)
+            if not m:continue
+            table=m.group(1)
+            prior=ins[max(0,idx-30):idx]
+            origins=[]
+            for aa,ii,oo,ll in prior:
+              # exact table load from another object's first field
+              if re.match(rf'mov\s+{table},QWORD PTR \[([a-z0-9]+)\]$',oo):
+                mm=re.match(rf'mov\s+{table},QWORD PTR \[([a-z0-9]+)\]$',oo)
+                fac=mm.group(1)
+                # Check same facade register nearby also touches +8 and +10 or passes those to b622de.
+                neighborhood='\n'.join(x[2] for x in ins[max(0,idx-50):min(len(ins),idx+12)])
+                score=0
+                if f'[{fac}+0x8]' in neighborhood:score+=1
+                if f'[{fac}+0x10]' in neighborhood:score+=1
+                if 'b622de' in neighborhood:score+=2
+                origins.append((score,aa,fac,ll))
+            if origins:
+              origins.sort(reverse=True)
+              score,aa,fac,ll=origins[0]
+              print(f'### store 0x{a:x}; FDE={fde(a)}; tableReg={table}; facadeReg={fac}; score={score}')
+              print('    '+ll)
+              print('    '+l)
+              ctx(i,24,24)
+              print()
+
+          # 4. Broader dataflow: table loaded from [FAC], copied through aliases, then +5c0 store.
+          print('## Alias-aware table[184] stores')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if '+0x5c0]' not in op:continue
+            dstm=re.search(r'\[([a-z0-9]+)\+0x5c0\]',op)
+            if not dstm:continue
+            targetreg=dstm.group(1)
+            aliases={targetreg}
+            origin=None
+            # walk backward within same FDE up to 80 instructions
+            fr=fde(a)
+            for j in range(idx-1,max(-1,idx-81),-1):
+              aa,ii,oo,ll=ins[j]
+              if fr and not(fr[0]<=aa<fr[1]):break
+              # mov dst,src alias backwards: if dst in aliases, src becomes alias
+              mm=re.match(r'mov\s+([a-z0-9]+),([a-z0-9]+)$',oo)
+              if mm and mm.group(1) in aliases:aliases.add(mm.group(2))
+              mm=re.match(r'mov\s+([a-z0-9]+),QWORD PTR \[([a-z0-9]+)\]$',oo)
+              if mm and mm.group(1) in aliases:
+                origin=(aa,mm.group(2),ll);break
+            if origin:
+              aa,fac,ll=origin
+              print(f'### 0x{a:x} FDE={fr}; origin facadeCandidate={fac} @0x{aa:x}; aliases={sorted(aliases)}')
+              print('    '+ll)
+              print('    '+l)
+              ctx(i,15,20)
+              print()
+
+          # 5. Find writes to service table via indexed base+index*8 with index known 0xb8.
+          print('## Constant/index-derived service 184 stores')
+          for idx,(a,i,op,l) in enumerate(ins):
+            # any store through scaled index
+            m=re.search(r'\[([a-z0-9]+)\+([a-z0-9]+)\*8(?:\+0x([0-9a-f]+))?\]',op)
+            if not m:continue
+            base,ix=m.group(1),m.group(2)
+            prior=ins[max(0,idx-20):idx]
+            has184=False
+            evidence=[]
+            for aa,ii,oo,ll in prior:
+              if re.match(rf'(?:mov|lea)\s+(?:e?{ix}|{ix}d?),0xb8\b',oo):
+                has184=True;evidence.append(ll)
+              # register name forms are messy; also accept literal 0xb8 anywhere if it defines index.
+              if '0xb8' in oo and ix in oo:
+                has184=True;evidence.append(ll)
+            if has184:
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              for e in evidence:print('    '+e)
+              ctx(i,12,18)
+              print()
+
+          # 6. All functions with both b622de ID b8 validation and a +5c0 write.
+          print('## FDEs containing both b8 validation and +5c0 write')
+          byfr=defaultdict(list)
+          for x in ins:
+            fr=fde(x[0])
+            if fr:byfr[fr].append(x)
+          for fr,xs in byfr.items():
+            text='\n'.join(x[2] for x in xs)
+            if '0xb8' in text and '+0x5c0]' in text and 'b622de' in text:
+              print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              for x in xs:
+                if '0xb8' in x[2] or '+0x5c0]' in x[2] or 'b622de' in x[2]:
+                  print('    '+x[3])
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-table-population.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve real service184 table population"
+          git pull --rebase origin main
+          git push origin HEAD:main
