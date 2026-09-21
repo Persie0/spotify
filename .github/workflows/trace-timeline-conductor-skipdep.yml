@@ -1,0 +1,184 @@
+name: Trace TimelineConductor skip-ad dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-timeline-conductor-skipdep.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlskip
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlskip
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace dependency
+        run: |
+          set -euo pipefail
+          SO=/tmp/tlskip/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlskip/all.dis
+          readelf -rW "$SO" > /tmp/tlskip/rel.txt
+          readelf -W -l "$SO" > /tmp/tlskip/ph.txt
+          python3 - <<'PY' > analysis/timeline-conductor-skipdep.md
+          from pathlib import Path
+          import re,struct,bisect
+
+          dl=Path('/tmp/tlskip/all.dis').read_text(errors='replace').splitlines()
+          b=Path('/tmp/tlskip/liborbit-jni-spotify.so').read_bytes()
+
+          loads=[]
+          for l in Path('/tmp/tlskip/ph.txt').read_text().splitlines():
+            if l.strip().startswith('LOAD'):
+              p=l.split()
+              loads.append((int(p[2],16),int(p[2],16)+int(p[4],16),int(p[1],16)))
+          rel={}
+          for l in Path('/tmp/tlskip/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              i=p.index('R_X86_64_RELATIVE')
+              if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                rel[int(p[0],16)]=int(p[i+1],16)
+
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,bef=16,aft=28):
+            j=idx(a)
+            return '\n'.join('    '+x[3] for x in ins[max(0,j-bef):min(len(ins),j+aft+1)])
+          def vo(v):
+            for a,z,o in loads:
+              if a<=v<z:return o+(v-a)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(b):return None
+            return struct.unpack_from('<Q',b,o)[0]
+
+          print('# TimelineConductor Skip Ad dependency')
+          print()
+          print('Proven owner:')
+          print('- service ID 0xb8 provider = TimelineConductorSetupImpl')
+          print('- factory allocates 0xf0 bytes')
+          print('- constructor 0x135d056 stores vptr 0x1867c98')
+          print('- vtable +0x28 = 0xc2e960 = return [this+0xc8]')
+          print('- Skip Ad execution later calls returned dependency vtable +0x68 with "skip-ad"')
+          print()
+
+          start,end=0x135d056,0x1360c1b
+
+          print('## All direct +0xc8 references in TimelineConductor constructor')
+          for a,i,op,l in ins:
+            if start<=a<end and ('+0xc8]' in op or '+0xc8,' in op):
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(a,18,30)); print()
+
+          print('## All stores to candidate this aliases around constructor')
+          # Entry this saved at [rsp+0x78] very early. Find every reload and nearby +0xc8 store.
+          for a,i,op,l in ins:
+            if not(start<=a<end):continue
+            if re.search(r'mov\s+r\w+,QWORD PTR \[rsp\+0x78\]',op):
+              reg=re.match(r'mov\s+(r\w+),',op).group(1)
+              print(f'### this reload {reg} @0x{a:x}')
+              print(ctx(a,8,40))
+              print()
+
+          print('## Getter 0xc2e960')
+          print(ctx(0xc2e960,8,12)); print()
+
+          print('## All direct callers of getter 0xc2e960')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+c2e960\b',op):
+              print(f'### 0x{a:x}')
+              print(ctx(a,12,22)); print()
+
+          print('## Vtable 0x1867c98')
+          for off in range(0,0x90,8):
+            v=q(0x1867c98+off)
+            print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None}')
+          print()
+
+          # Any constructor calls immediately before stores to +0xc8 are likely producer of dependency.
+          print('## Calls followed within 12 instructions by a +0xc8 store')
+          rows=[x for x in ins if start<=x[0]<end]
+          for k,(a,i,op,l) in enumerate(rows):
+            if not re.search(r'\bcall\b',op):continue
+            nxt=rows[k+1:k+13]
+            if any('+0xc8]' in x[2] and re.match(r'(mov|xchg)',x[2]) for x in nxt):
+              print(f'### call 0x{a:x}: {op}')
+              print(ctx(a,10,26)); print()
+
+          # Generic high-address/vptr materializations in a wider function family near constructor.
+          print('## High-address constants near +0xc8 stores')
+          c8stores=[x for x in rows if '+0xc8]' in x[2] and re.match(r'(mov|xchg)',x[2])]
+          candidates=set()
+          for a,i,op,l in c8stores:
+            j=idx(a)
+            for aa,ii,oo,ll in ins[max(0,j-28):min(len(ins),j+12)]:
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',ll)
+              if m:
+                va=int(m.group(1),16); candidates.add(va)
+                print(f'- store 0x{a:x}; nearby high 0x{va:x}: {oo}')
+          print()
+
+          print('## Candidate dependency vtable neighborhoods')
+          seen=set()
+          for va in sorted(candidates):
+            for ap in range(max(0,va-0x20),va+0x21,8):
+              if ap in seen:continue
+              vals={off:q(ap+off) for off in range(0,0x80,8)}
+              code=sum(1 for v in vals.values() if v is not None and 0x900000<=v<0x1800000)
+              if code<6:continue
+              seen.add(ap)
+              print(f'### AP 0x{ap:x}; codeSlots={code}; +0x68={("0x%x"%vals[0x68]) if vals[0x68] else None}')
+              for off,v in vals.items():print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None}')
+              if vals[0x68]:
+                print('#### +0x68 body')
+                print(ctx(vals[0x68],8,35))
+              print()
+
+          # Search writes of static vtable pointers into allocated objects around constructor calls.
+          print('## Allocation/vptr pairs in constructor')
+          for k,(a,i,op,l) in enumerate(rows):
+            if 'call   17edf00' not in l and not re.search(r'call\s+17edf00\b',op):continue
+            print(f'### allocation @0x{a:x}')
+            print(ctx(a,8,35));print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-skipdep.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace TimelineConductor skip-ad dependency"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
