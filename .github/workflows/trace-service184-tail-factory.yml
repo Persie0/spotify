@@ -1,0 +1,120 @@
+name: Trace service184 tail factory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-tail-factory.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184tail
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184tail
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace tail factory
+        run: |
+          SO=/tmp/s184tail/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184tail/all.dis
+          python3 - <<'PY' > analysis/service184-tail-factory.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184tail/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184tail/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def cstr(va):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+300))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return data[o:e].decode('latin1','replace')
+          def ctx(i,b=14,a=24):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          target=0x17dbc9a
+          fr=fde(target)
+          print('# Service184 tail factory 0x17dbc9a')
+          print()
+          print('Caller 0x15da3b7 tail-jumps here with rdi=24-byte output, rsi=0x32f434, rdx/rcx=unwrapped strings, eax=0.')
+          print(f'- constant 0x32f434 cstring: {cstr(0x32f434)!r}')
+          for d in range(-0x80,0x100,0x10):
+            s=cstr(0x32f434+d)
+            if s: print(f'- nearby 0x{0x32f434+d:x}: {s!r}')
+          print()
+          print(f'## FDE {fr}')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print(l)
+          print()
+          print('## Destination writes and object-producing operations')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if ('[rdi' in op or '[rbx' in op or '[r12' in op or '[r13' in op or '[r14' in op or '[r15' in op) and re.match(r'(mov|lea|and|xor|movups|movdqu|movaps|movdqa)',op):
+                print(f'### 0x{a:x}: {op}');ctx(i,8,14);print()
+          print('## Calls / tail jumps')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'\b(call|jmp)\b',op):
+                print(l)
+          print()
+          print('## Heap allocations and vptr constants in FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if '17edf00' in op or re.search(r'#\s*18[0-9a-f]{5,}\b',l):
+                print(f'### 0x{a:x}: {op}');ctx(i,10,18);print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-tail-factory.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 tail factory"
+          git pull --rebase origin main
+          git push origin HEAD:main
