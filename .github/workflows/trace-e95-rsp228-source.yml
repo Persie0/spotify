@@ -1,0 +1,147 @@
+name: Trace e95 rsp228 source object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-e95-rsp228-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/e95src
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/e95src
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace source
+        run: |
+          SO=/tmp/e95src/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/e95src/all.dis
+          python3 - <<'PY' > analysis/e95-rsp228-source.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/e95src/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/e95src/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location'];z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]);out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(rows,k,b=22,n=38):
+              for x in rows[max(0,k-b):min(len(rows),k+n+1)]:print('    '+x[3])
+
+          call=0xe95d35
+          fr=fde(call); rows=body(fr); ck=next(k for k,x in enumerate(rows) if x[0]==call)
+          print('# e95 caller rsp+0x228 source trace')
+          print()
+          print(f'- caller FDE={fr}')
+          print('- e99d07 rsp+0x1338 maps to caller stable-frame rsp+0x228 before outgoing args')
+          print()
+
+          print('## Caller prologue')
+          for x in rows[:70]:print('    '+x[3])
+          print()
+
+          print('## Exact rsp+0x228 references before outgoing-arg setup e95bce')
+          refs=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe95bce:break
+              if '[rsp+0x228]' in op:
+                  refs.append((k,a,op))
+                  side='WRITE' if '[rsp+0x228]' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  ctx(rows,k,18,28);print()
+          print()
+
+          print('## LEA aliases of rsp+0x228 and writes through aliases')
+          aliases=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe95bce:break
+              m=re.match(r'lea\s+(r\w+),\[rsp\+0x228\]',op)
+              if not m:continue
+              reg=m.group(1);aliases.append((k,a,reg))
+              print(f'### {reg}=rsp+0x228 @0x{a:x}')
+              for x in rows[k:min(len(rows),k+100)]:
+                  if x[0]>=0xe95bce:break
+                  if re.search(r'\['+re.escape(reg)+r'(?:\+0x[0-9a-f]+)?\]',x[2]) or re.search(r'\bcall\b',x[2]):
+                      print('    '+x[3])
+              print()
+
+          print('## Nearest reaching definition before e95bce')
+          candidates=[]
+          for k,a,op in refs:
+              if '[rsp+0x228]' in op.split(',',1)[0]:
+                  candidates.append((k,a,op,'direct'))
+          for k,a,reg in aliases:
+              # Scan from alias formation to clobber for a store to [reg].
+              for j in range(k+1,min(len(rows),k+160)):
+                  aa,ii,oo,ll=rows[j]
+                  if aa>=0xe95bce:break
+                  if re.match(r'(mov|lea|xor|pop|xchg)\s+'+re.escape(reg)+r'\b',oo):
+                      break
+                  if re.match(r'(mov|xchg|movups|movdqu|movaps|movdqa)\s+(?:QWORD PTR |XMMWORD PTR )?\['+re.escape(reg)+r'\]',oo):
+                      candidates.append((j,aa,oo,'alias'))
+          for k,a,op,kind in sorted(candidates,key=lambda x:x[1],reverse=True)[:12]:
+              print(f'### {kind} candidate 0x{a:x}: {op}')
+              ctx(rows,k,28,42);print()
+
+          print('## Reads of rsp+0x228 after call / cleanup')
+          for k,(a,i,op,l) in enumerate(rows):
+              if a<=call:continue
+              if '[rsp+0x228]' in op:
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(rows,k,14,20);print()
+
+          print('## All high-address/vptr-looking constants near final reaching definition')
+          if candidates:
+              k,a,op,kind=max(candidates,key=lambda x:x[1])
+              for x in rows[max(0,k-50):min(len(rows),k+50)]:
+                  if re.search(r'#\s*18[0-9a-f]{5,}',x[3]):
+                      print('    '+x[3])
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/e95-rsp228-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace e95 rsp228 source object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
