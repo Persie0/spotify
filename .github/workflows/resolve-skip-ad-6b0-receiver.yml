@@ -1,0 +1,156 @@
+name: Resolve 0x6b0 Skip Ad receiver class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-6b0-receiver.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skip6b0
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skip6b0
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode receiver
+        run: |
+          SO=/tmp/skip6b0/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skip6b0/all.dis
+          python3 - <<'PY' > analysis/skip-ad-6b0-receiver.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skip6b0/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skip6b0/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]; loads=[]; rel={}
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD': loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location'];z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+                  for rr in sec.iter_relocations():
+                      add=rr.entry.get('r_addend')
+                      if add is not None: rel[rr['r_offset']]=add
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]);out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def vo(v):
+              for po,pe,pv in loads:
+                  if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+              if v in rel:return rel[v]
+              o=vo(v)
+              if o is None or o+8>len(data):return None
+              return struct.unpack_from('<Q',data,o)[0]
+
+          target=0x12240cc
+          fr=fde(target)
+          print('# Skip Ad 0x6b0 receiver class')
+          print()
+          print('Proven dataflow:')
+          print('- rsp+0x1338 is set to a current/new 0x6b0-stride element at 0x122190f')
+          print('- e9c8ec copies rsp+0x1338 into rsp+0x770')
+          print('- e9ccf3 copies rsp+0x770 into state+0x10')
+          print('- efc630 publishes [state+0x10] as Skip Ad adapter receiver')
+          print('- fd384d calls receiver vtable +0x140 and requires EAX==0')
+          print()
+          print(f'## Constructor/copy 0x12240cc FDE={fr}')
+          rows=body(fr) if fr else []
+          for x in rows:print('    '+x[3])
+          print()
+
+          highs=[]
+          print('## High-address constants / vptr stores')
+          for a,i,op,l in rows:
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:
+                  va=int(m.group(1),16);highs.append(va)
+                  print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## Writes near receiver head')
+          for a,i,op,l in rows:
+              if re.search(r'\[(?:rdi|rbx|r12|r13|r14|r15)(?:\+0x(?:[0-9a-f]|[1-9][0-9a-f]))?\]',op):
+                  left=op.split(',',1)[0]
+                  if '[' in left: print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## Candidate address points and +0x140')
+          seen=set()
+          for va in sorted(set(highs)):
+              for ap in range(max(0,va-0x30),va+0x31,8):
+                  if ap in seen:continue
+                  vals={off:q(ap+off) for off in range(0,0x170,8)}
+                  code=sum(1 for v in vals.values() if v and 0x900000<=v<0x1800000 and fde(v))
+                  if code<8:continue
+                  seen.add(ap)
+                  v140=vals.get(0x140)
+                  print(f'### AP 0x{ap:x}; codeSlots={code}; +0x140={(hex(v140) if v140 else None)}; FDE={fde(v140) if v140 else None}')
+                  for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x70,0x98,0x100,0x120,0x138,0x140,0x148,0x150,0x158,0x160):
+                      v=vals.get(off)
+                      print(f'- +0x{off:x}: {(hex(v) if v is not None else None)}')
+                  if v140 and fde(v140):
+                      print('#### +0x140 body')
+                      for x in body(fde(v140)):print('    '+x[3])
+                  print()
+
+          print('## Exact direct stores of candidate APs elsewhere')
+          for ap in sorted(seen):
+              s=f'# {ap:x}'
+              print(f'### AP 0x{ap:x}')
+              n=0
+              for a,i,op,l in ins:
+                  if s in l:
+                      for x in ins[max(0,idx(a)-12):min(len(ins),idx(a)+25)]:print('    '+x[3])
+                      print();n+=1
+                      if n>=12:break
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-6b0-receiver.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad 0x6b0 receiver"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
