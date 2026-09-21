@@ -1,0 +1,157 @@
+name: Decode candidate1817068 dependency vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-candidate1817068-dependency-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/c181dep
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/c181dep
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode dependency table
+        run: |
+          SO=/tmp/c181dep/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/c181dep/all.dis
+          python3 - <<'PY' > analysis/candidate1817068-dependency-vtable.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/c181dep/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/c181dep/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs[rel['r_offset']]=add
+          starts=[a for a,b in fdes]
+          def fde(addr):
+            i=bisect.bisect_right(starts,addr)-1
+            if i>=0 and fdes[i][0]<=addr<fdes[i][1]:return fdes[i]
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def sq(v): return v-(1<<64) if v is not None and v&(1<<63) else v
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def dump(addr,limit=500):
+            fr=fde(addr)
+            print(f'FDE={fr}')
+            if not fr:return
+            n=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l);n+=1
+                if n>=limit:break
+          def cstr(va):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+300))
+            if e<0:return None
+            raw=data[o:e]
+            try:s=raw.decode('utf8')
+            except:return None
+            if len(s)<3 or any(ord(ch)<32 and ch not in '\t\n\r' for ch in s):return None
+            return s
+
+          ap=0x1884978
+          print('# Candidate 0x1817068 dependency vtable 0x1884978')
+          print()
+          print('Proven candidate-specific dataflow:')
+          print('- 0xc2c5f6 allocates service candidate (0xf0 bytes), installs vptr 0x1817068.')
+          print('- candidate +0x28 method 0xa7a004 returns [this+0x10].')
+          print('- 0xc2c7dc allocates 0x10-byte dependency object.')
+          print('- 0xc2c7e1 installs vptr 0x1884978 into dependency.')
+          print('- 0xc2c7f4..0xc2c7fc moves that dependency pointer into candidate+0x10.')
+          print()
+          print('## Itanium header')
+          print(f'- AP-0x10 offset-to-top = {sq(qword(ap-16))}')
+          print(f'- AP-0x08 typeinfo = {qword(ap-8)}')
+          print()
+          print('## Vtable slots')
+          slots={}
+          for off in range(0,0x101,8):
+            q=qword(ap+off);slots[off]=q
+            print(f'- +0x{off:x}: {("0x%x"%q) if q is not None else "None"} FDE={fde(q) if q else None}')
+          print()
+          for off in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88,0x90,0x98,0xa0,0xa8,0xb0,0xb8,0xc0):
+            q=slots.get(off)
+            if q is None or fde(q) is None:continue
+            print(f'## Method +0x{off:x} -> 0x{q:x}')
+            dump(q,700)
+            # strings referenced within method
+            fr=fde(q)
+            ss=[]
+            if fr:
+              for a,i,op,l in ins:
+                if not(fr[0]<=a<fr[1]):continue
+                m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                if not m:continue
+                va=int(m.group(1),16);s=cstr(va)
+                if s and s not in ss:ss.append(s)
+            if ss:
+              print('### strings')
+              for s in ss[:50]:print(f'- {s!r}')
+            print()
+          print('## Direct materializations of dependency vptr')
+          for a,i,op,l in ins:
+            if '# 1884978' in l:
+              print(l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/candidate1817068-dependency-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode candidate1817068 dependency vtable"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
