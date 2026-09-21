@@ -1,0 +1,152 @@
+name: Resolve TimelineConductor dependency vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-timeline-conductor-dep-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tldepvt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tldepvt
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve vtable
+        run: |
+          SO=/tmp/tldepvt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tldepvt/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-dependency-vtable.md
+          from pathlib import Path
+          import struct,re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/tldepvt/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/tldepvt/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po): return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]:return fdes[i]
+          parsed=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: parsed.append((int(m.group(1),16),i,m.group(2),l))
+          def body(fn,limit=260):
+            fr=fde(fn)
+            if not fr:return []
+            out=[]
+            for x in parsed:
+              if fr[0]<=x[0]<fr[1]:
+                out.append(x)
+                if len(out)>=limit:break
+            return out
+
+          ap=0x1868200
+          print('# TimelineConductor dependency vtable')
+          print()
+          print('Proven chain:')
+          print('- TimelineConductor service AP = 0x1867c98')
+          print('- TimelineConductor +0x28 = 0xc2e960 = return [this+0xc8]')
+          print('- constructor allocates 0xbd0-byte dependency at 0x135f2b8')
+          print('- dependency pointer captured in r14 at 0x135f2bd')
+          print('- primary dependency vptr 0x1868200 stored at 0x135f494')
+          print('- dependency pointer installed into TimelineConductor+0xc8 at 0x135fd57')
+          print()
+
+          print('## Primary vtable 0x1868200')
+          for off in range(0,0x110,8):
+            fn=q(ap+off)
+            print(f'- +0x{off:x}: {("0x%x"%fn) if fn is not None else None} FDE={fde(fn) if fn else None}')
+          print()
+
+          fn=q(ap+0x68)
+          print(f'## Exact +0x68 target: {("0x%x"%fn) if fn else None}')
+          if fn:
+            for a,i,op,l in body(fn,420): print('    '+l)
+          print()
+
+          print('## Strings/high-address constants referenced by +0x68 body')
+          if fn:
+            seen=set()
+            for a,i,op,l in body(fn,420):
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                v=int(m.group(1),16)
+                if v not in seen:
+                  seen.add(v)
+                  print(f'- insn 0x{a:x} -> 0x{v:x}: {l.strip()}')
+          print()
+
+          print('## Nearby secondary interface vptrs from construction')
+          for sap in [0x18683c8,0x18683f8,0x18684c0]:
+            print(f'### AP 0x{sap:x}')
+            for off in range(0,0x90,8):
+              val=q(sap+off)
+              print(f'- +0x{off:x}: {("0x%x"%val) if val is not None else None} FDE={fde(val) if val else None}')
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-dependency-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve TimelineConductor dependency vtable"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
