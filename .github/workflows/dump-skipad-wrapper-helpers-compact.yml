@@ -1,0 +1,64 @@
+name: Dump Skip Ad wrapper helpers compact
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/dump-skipad-wrapper-helpers-compact.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/wc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/wc
+      - name: Dump aligned helper bodies
+        run: |
+          objdump -d -M intel /tmp/wc/liborbit-jni-spotify.so > /tmp/wc/all.dis
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/wc/all.dis').read_text(errors='replace').splitlines()
+          out=['# Skip Ad wrapper helpers compact','']
+          ranges=[
+            ('c8be5a',0xc8be5a,0xc8bf80),
+            ('f2505a',0xf2505a,0xf25204),
+            ('f25204',0xf25204,0xf25312),
+          ]
+          for name,a,b in ranges:
+            out += [f'## {name}', '~~~asm']
+            for l in lines:
+              m=re.match(r'^\s*([0-9a-f]+):',l)
+              if not m: continue
+              x=int(m.group(1),16)
+              if a<=x<b: out.append(l)
+            out += ['~~~','']
+          Path('analysis/skipad-wrapper-helpers-compact.md').write_text('\n'.join(out))
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-wrapper-helpers-compact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Dump Skip Ad wrapper helpers compact"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
