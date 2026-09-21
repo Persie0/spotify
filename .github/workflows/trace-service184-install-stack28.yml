@@ -1,0 +1,106 @@
+name: Trace service184 install stack28 producer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-install-stack28.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184stk
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184stk
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace stack producer
+        run: |
+          SO=/tmp/s184stk/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184stk/all.dis
+          python3 - <<'PY' > analysis/service184-install-stack28.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184stk/liborbit-jni-spotify.so')
+          lines=Path('/tmp/s184stk/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a: fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde_for(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def ctx(i,b=18,a=35):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]: print('    '+x)
+
+          target=0x1333835
+          fr=fde_for(target)
+          print('# Service184 install [rsp+0x28] producer trace')
+          print()
+          print(f'Install site: 0x{target:x}; FDE={fr}')
+          print()
+          if fr:
+            print('## All references to rsp+0x28 inside containing FDE')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and ('rsp+0x28]' in op or 'rsp+0x28,' in op):
+                print(f'### 0x{a:x}: {op}')
+                ctx(i,12,24); print()
+            print('## All stack-slot writes rsp+0x20..0x78 before install')
+            for a,i,op,l in ins:
+              if not (fr[0]<=a<target): continue
+              if re.search(r'\[rsp\+0x(?:20|28|30|38|40|48|50|58|60|68|70|78)\]',op) and re.match(r'(mov|lea|and|xor|or|xchg)',op):
+                print(l)
+            print()
+            print('## Calls in last 0x1200 bytes before install')
+            for a,i,op,l in ins:
+              if max(fr[0],target-0x1200)<=a<target and re.search(r'\bcall\b',op):
+                print(l)
+            print()
+            print('## Full final 0x900 bytes before install')
+            for a,i,op,l in ins:
+              if max(fr[0],target-0x900)<=a<target+0x80:
+                print(l)
+          print()
+          print('## Exact install neighborhood')
+          hit=min(ins,key=lambda x:abs(x[0]-target))
+          ctx(hit[1],70,55)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-install-stack28.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 install stack28 producer"
+          git pull --rebase origin main
+          git push origin HEAD:main
