@@ -1,0 +1,174 @@
+name: Trace fd4a92 event carrier producer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-fd4a92-event-carrier.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/fdcarrier
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/fdcarrier
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace carrier
+        run: |
+          SO=/tmp/fdcarrier/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/fdcarrier/all.dis
+          readelf -rW "$SO" > /tmp/fdcarrier/rel.txt
+          python3 - <<'PY' > analysis/fd4a92-event-carrier-producer.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/fdcarrier/liborbit-jni-spotify.so')
+          dis=Path('/tmp/fdcarrier/all.dis').read_text(errors='replace').splitlines()
+          reltxt=Path('/tmp/fdcarrier/rel.txt').read_text(errors='replace').splitlines()
+
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=35):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0]); out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+
+          target=0xd8a5c2
+          print('# fd4a92 event carrier producer')
+          print()
+          print('Known dispatcher contract:')
+          print('- d8a5c2: carrier = [rdi]')
+          print('- state receiver = [carrier+0]')
+          print('- fd4a92 arg2 = carrier+8')
+          print('- fd4a92 therefore locks weak pointer at carrier+0x18')
+          print('- byte carrier+0x20 becomes fd4a92 edx')
+          print('- carrier+0x50 is consumed after dispatch')
+          print()
+
+          print('## Relocations whose addend is exactly d8a5c2')
+          for l in reltxt:
+            p=l.split()
+            if 'R_X86_64_RELATIVE' in l:
+              try:
+                k=p.index('R_X86_64_RELATIVE')
+                if int(p[k+1],16)==target: print(l)
+              except: pass
+          print()
+
+          print('## Any disassembly line referencing d8a5c2')
+          refs=[]
+          for a,i,op,l in ins:
+            if 'd8a5c2' in l and a!=target:
+              refs.append((a,i,op,l))
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,20,42); print()
+          print(f'- ref count={len(refs)}')
+          print()
+
+          # Also find raw RIP-relative targets numerically from comments.
+          print('## Numeric code refs resolving to 0xd8a5c2')
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16)==target:
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,20,42); print()
+
+          # Inspect nearby function-pointer siblings d8a58a..d8a5c2 and refs to them.
+          print('## Refs to sibling callback functions d8a58a/d8a598/d8a5c2')
+          for tgt in (0xd8a58a,0xd8a598,0xd8a5c2):
+            print(f'### target 0x{tgt:x}')
+            for a,i,op,l in ins:
+              if a==tgt: continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if (m and int(m.group(1),16)==tgt) or re.search(r'\b(?:call|jmp)\s+'+format(tgt,'x')+r'\b',op):
+                print(f'- ref 0x{a:x}; FDE={fde(a)}: {op}')
+                ctx(a,14,28)
+            print()
+
+          # Decode the compact neighborhood around callback-related constructors.
+          print('## d8a4d0..d8a650 full local family')
+          for a,i,op,l in ins:
+            if 0xd8a4d0<=a<0xd8a650: print(l)
+          print()
+
+          # Search for candidate carrier construction patterns in functions that reference
+          # any sibling callback: stores to +0,+8,+10,+18,+20,+50 and allocations >= 0x58.
+          fam=set()
+          targets={0xd8a58a,0xd8a598,0xd8a5c2}
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            t=int(m.group(1),16) if m else None
+            if t in targets or any(re.search(r'\b(?:call|jmp)\s+'+format(x,'x')+r'\b',op) for x in targets):
+              fr=fde(a)
+              if fr:fam.add(fr)
+          print('## Candidate constructor families')
+          for fr in sorted(fam):
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            rows=body(fr)
+            for k,(a,i,op,l) in enumerate(rows):
+              if re.search(r'\+0x(?:8|10|18|20|50)\]',op) or re.search(r'call\s+17edf00\b',op):
+                print('    '+l)
+            print()
+
+          # Search relocations containing target in non-relative forms too.
+          print('## Any relocation line containing d8a5c2 hex text')
+          needle=format(target,'x')
+          for l in reltxt:
+            if needle in l.lower(): print(l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/fd4a92-event-carrier-producer.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace fd4a92 event carrier producer"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
