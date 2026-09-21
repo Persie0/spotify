@@ -1,0 +1,67 @@
+name: Resolve service184 embedded execution dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-embedded-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184dep
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184dep
+      - name: Decode dependency assignment
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184dep/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184dep/all.dis
+          {
+            echo '# Service184 embedded execution dependency assignment'
+            echo
+            echo 'Known: candidate service +0x28 returns this+0x50; constructor assigns that member at 0x135bd71.'
+            echo
+            echo '## b88146 temporary builder'
+            objdump -d -M intel --start-address=0xb880c0 --stop-address=0xb8818c "$SO"
+            echo
+            echo '## b8818c destination assignment'
+            objdump -d -M intel --start-address=0xb8818c --stop-address=0xb88240 "$SO"
+            echo
+            echo '## b8826e cleanup'
+            objdump -d -M intel --start-address=0xb88240 --stop-address=0xb882c0 "$SO"
+            echo
+            echo '## exact constructor callsite'
+            objdump -d -M intel --start-address=0x135bd00 --stop-address=0x135bdb0 "$SO"
+            echo
+            echo '## all vptr/table constants in b88100..b882c0'
+            objdump -d -M intel --start-address=0xb88100 --stop-address=0xb882c0 "$SO" | grep -E -B8 -A20 '# 18[0-9a-f]{5,}|# 19[0-9a-f]{5,}' || true
+            echo
+            echo '## direct callers of b88146/b8818c'
+            grep -n -E -B20 -A35 'call[[:space:]]+b881(46|8c)\\b' /tmp/s184dep/all.dis || true
+          } > analysis/service184-embedded-dependency.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-embedded-dependency.md
+          test -s analysis/service184-embedded-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 embedded execution dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
