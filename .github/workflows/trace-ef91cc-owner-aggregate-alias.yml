@@ -1,0 +1,196 @@
+name: Trace ef91cc owner aggregate alias
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-ef91cc-owner-aggregate-alias.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/efowner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/efowner
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace owner publication aliases
+        run: |
+          SO=/tmp/efowner/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/efowner/all.dis
+          python3 - <<'PY' > analysis/ef91cc-owner-aggregate-alias.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/efowner/liborbit-jni-spotify.so')
+          lines=Path('/tmp/efowner/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+            j=idx(fr[0]); out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+          def ctx(rows,k,b=16,n=30):
+            for x in rows[max(0,k-b):min(len(rows),k+n+1)]: print('    '+x[3])
+
+          fr=fde(0xe9ccb0)
+          rows=body(fr)
+          print('# ef91cc owner aggregate / publication alias trace')
+          print()
+          print('Known:')
+          print('- owner object allocated at e9ccb0, AP 0x18365e0')
+          print('- owner pointer r12 stored at [rsp+0x660] at e9d0bd')
+          print('- direct reads of [rsp+0x660] were not found in the same FDE')
+          print('- goal: identify aggregate aliases / helper calls that carry this slot out')
+          print()
+          print(f'## Enclosing FDE {fr}')
+          print()
+
+          print('## Function prologue and frame setup')
+          for x in rows[:140]: print('    '+x[3])
+          print()
+
+          print('## Every stack reference in 0x5c0..0x700')
+          pat=re.compile(r'\[rsp\+0x([0-9a-f]+)\]')
+          refs=[]
+          for k,(a,i,op,l) in enumerate(rows):
+            offs=[int(m.group(1),16) for m in pat.finditer(op)]
+            if any(0x5c0<=o<=0x700 for o in offs):
+              refs.append((k,a,op,offs))
+              print(f'- 0x{a:x}: {op} ; offs={["0x%x"%o for o in offs]}')
+          print()
+
+          print('## Context for every rsp+0x660 reference')
+          for k,a,op,offs in refs:
+            if 0x660 in offs:
+              print(f'### 0x{a:x}: {op}')
+              ctx(rows,k,24,45); print()
+
+          print('## LEA aliases into 0x5c0..0x700 and first subsequent call')
+          for k,(a,i,op,l) in enumerate(rows):
+            m=re.match(r'lea\s+(r\w+),\[rsp\+0x([0-9a-f]+)\]',op)
+            if not m: continue
+            off=int(m.group(2),16)
+            if not (0x5c0<=off<=0x700): continue
+            reg=m.group(1)
+            print(f'### alias {reg}=rsp+0x{off:x} at 0x{a:x}')
+            for x in rows[k:min(len(rows),k+36)]:
+              print('    '+x[3])
+              if re.search(r'\bcall\b',x[2]): break
+            print()
+
+          print('## Calls whose preceding 16 instructions mention stack range 0x5c0..0x700')
+          for k,(a,i,op,l) in enumerate(rows):
+            if not re.search(r'\bcall\b',op): continue
+            prev=rows[max(0,k-16):k]
+            touched=[]
+            for aa,ii,oo,ll in prev:
+              for m in pat.finditer(oo):
+                off=int(m.group(1),16)
+                if 0x5c0<=off<=0x700: touched.append((aa,off,oo))
+            if touched:
+              print(f'### call 0x{a:x}: {op}')
+              print('- prior range refs: '+', '.join(f'0x{aa:x}->0x{off:x}' for aa,off,_ in touched))
+              ctx(rows,k,18,18); print()
+
+          print('## Exact r12 lifetime from allocation to first clobber after publication')
+          started=False
+          for k,(a,i,op,l) in enumerate(rows):
+            if a==0xe9ccb5: started=True
+            if not started: continue
+            if re.search(r'\br12\b',op):
+              print('    '+l)
+            if a>0xe9d0bd and re.match(r'(mov|lea|pop|xchg)\s+r12\b',op):
+              print(f'- first post-publication clobber/definition: 0x{a:x} {op}')
+              break
+          print()
+
+          print('## Stores into caller/output-looking pointer registers near owner completion')
+          # Show memory stores not based on rsp/r12 in the completion interval; these are candidates
+          # for publishing through an output pointer.
+          for k,(a,i,op,l) in enumerate(rows):
+            if not (0xe9cc80<=a<=0xe9d180): continue
+            if not re.match(r'(mov|movups|movdqu|movaps|movdqa|xchg)\s+(?:BYTE PTR |WORD PTR |DWORD PTR |QWORD PTR |XMMWORD PTR )?\[',op):
+              continue
+            dest=op.split(',',1)[0]
+            if '[rsp' in dest or '[r12' in dest:
+              continue
+            print(f'### 0x{a:x}: {op}')
+            ctx(rows,k,8,12); print()
+
+          print('## Direct caller setup for FDE entry')
+          entry=fr[0]
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+'+format(entry,'x')+r'\b',op):
+              cf=fde(a); cr=body(cf) if cf else []
+              ck=next((j for j,x in enumerate(cr) if x[0]==a),None)
+              print(f'### caller 0x{a:x}; FDE={cf}')
+              if ck is not None: ctx(cr,ck,90,35)
+              print()
+
+          print('## Calls to owner AP +0x30 candidate pattern in nearby owner consumers')
+          # Search indirect +0x30 calls in direct caller FDE and this FDE.
+          candidate_fdes={fr}
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+'+format(fr[0],'x')+r'\b',op):
+              cf=fde(a)
+              if cf:candidate_fdes.add(cf)
+          for cf in sorted(candidate_fdes):
+            cr=body(cf)
+            for k,(a,i,op,l) in enumerate(cr):
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x30\]',op):
+                print(f'### +0x30 vcall 0x{a:x}; FDE={cf}')
+                ctx(cr,k,20,30); print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ef91cc-owner-aggregate-alias.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace ef91cc owner aggregate alias"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
