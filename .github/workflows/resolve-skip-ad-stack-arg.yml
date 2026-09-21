@@ -1,0 +1,147 @@
+name: Resolve skip-ad dependency stack argument
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-stack-arg.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/sastack
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/sastack
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve frame and caller source
+        run: |
+          SO=/tmp/sastack/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/sastack/all.dis
+          python3 - <<'PY' > analysis/skip-ad-stack-arg.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/sastack/liborbit-jni-spotify.so')
+          lines=Path('/tmp/sastack/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+
+          target=0x11f4142
+          fr=fde_for(target)
+          print('# Skip Ad execution dependency stack-argument provenance')
+          print()
+          print(f'Target constructor instruction: 0x{target:x}')
+          print('Containing FDE: '+(f'0x{fr[0]:x}..0x{fr[1]:x} size=0x{fr[1]-fr[0]:x}' if fr else 'none'))
+          print()
+          if not fr: raise SystemExit
+
+          fin=[x for x in ins if fr[0]<=x[0]<fr[1]]
+          print('## Function prologue / first 420 instructions')
+          for a,i,op,l in fin[:420]: print('    '+l)
+          print()
+
+          print('## All accesses to rsp+0x650 in containing FDE')
+          for a,i,op,l in fin:
+            if '[rsp+0x650]' in op:
+              print(f'### 0x{a:x}: {op}')
+              # show local function context
+              pos=next(j for j,x in enumerate(fin) if x[0]==a)
+              for x in fin[max(0,pos-18):min(len(fin),pos+20)]:print('    '+x[3])
+              print()
+
+          print('## Stack-pointer adjustments in function')
+          for a,i,op,l in fin:
+            if re.search(r'\b(?:sub|add)\s+rsp,',op) or re.search(r'\blea\s+rsp,',op):
+              print('    '+l)
+          print()
+
+          # Find direct callers to FDE start and to nearby entrypoints inside same FDE.
+          print('## Direct callers to containing FDE start')
+          for a,i,op,l in ins:
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+            if m and int(m.group(1),16)==fr[0]:
+              print(f'### caller @0x{a:x}, caller FDE={fde_for(a)}')
+              for x in lines[max(0,i-45):min(len(lines),i+35)]:print('    '+x)
+              print()
+
+          # Sometimes stripped code calls an internal landing point rather than exact FDE start.
+          print('## Calls into first 0x200 bytes of containing FDE')
+          for a,i,op,l in ins:
+            m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+            if not m: continue
+            t=int(m.group(1),16)
+            if fr[0]<=t<min(fr[1],fr[0]+0x200):
+              print(f'### 0x{a:x} -> 0x{t:x}; caller FDE={fde_for(a)}')
+              for x in lines[max(0,i-50):min(len(lines),i+38)]:print('    '+x)
+              print()
+
+          # Derive likely original stack argument offset from frame allocation.
+          print('## ABI stack-argument heuristic')
+          frame_sub=None
+          for a,i,op,l in fin[:80]:
+            m=re.search(r'\bsub\s+rsp,0x([0-9a-f]+)',op)
+            if m:
+              frame_sub=int(m.group(1),16)
+              print(f'- frame allocation at 0x{a:x}: 0x{frame_sub:x}')
+              break
+          if frame_sub is not None:
+            # after return-address push, a current [rsp+K] maps approximately to entry [rsp+(K-frame)]
+            k=0x650
+            print(f'- current rsp+0x650 minus frame allocation = 0x{k-frame_sub:x}')
+            print('- add 8 bytes when reasoning relative to caller RSP because CALL pushed the return address.')
+            print('- SysV AMD64 integer/pointer args 1..6 arrive in rdi,rsi,rdx,rcx,r8,r9; later args are on the caller stack.')
+          print()
+
+          # Look for stores of incoming argument registers to stack in first instructions.
+          print('## Prologue spills of incoming argument registers')
+          for a,i,op,l in fin[:260]:
+            if re.search(r'mov\s+(?:QWORD PTR )?\[rsp\+0x[0-9a-f]+\],(?:rdi|rsi|rdx|rcx|r8|r9)\b',op):
+              print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-stack-arg.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve skip-ad dependency stack argument"
+          git pull --rebase origin main
+          git push origin HEAD:main
