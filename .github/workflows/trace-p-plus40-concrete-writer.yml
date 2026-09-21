@@ -1,0 +1,191 @@
+name: Trace concrete P+0x40 writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-p-plus40-concrete-writer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/p40
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/p40
+
+      - name: Install ELF helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace concrete writer
+        run: |
+          SO=/tmp/p40/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/p40/all.dis
+
+          python3 - <<'PY' > analysis/p-plus40-concrete-writer.md
+          from pathlib import Path
+          import bisect, collections, re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          dis = Path('/tmp/p40/all.dis').read_text(errors='replace').splitlines()
+          ins = []
+          for line_no, line in enumerate(dis):
+              m = re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1), 16), line_no, m.group(2).strip(), line))
+          addrs = [x[0] for x in ins]
+
+          with open('/tmp/p40/liborbit-jni-spotify.so', 'rb') as f:
+              elf = ELFFile(f)
+              dwarf = elf.get_dwarf_info()
+              fdes = []
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e, FDE):
+                      lo = e['initial_location']
+                      hi = lo + e['address_range']
+                      if hi > lo:
+                          fdes.append((lo, hi))
+          fdes.sort()
+          fde_starts = [x[0] for x in fdes]
+
+          def fde_for(addr):
+              i = bisect.bisect_right(fde_starts, addr) - 1
+              if i >= 0 and fdes[i][0] <= addr < fdes[i][1]:
+                  return fdes[i]
+              return None
+
+          by_fde = collections.defaultdict(list)
+          for row in ins:
+              fr = fde_for(row[0])
+              if fr:
+                  by_fde[fr].append(row)
+
+          def context(addr, before=28, after=42):
+              j = bisect.bisect_left(addrs, addr)
+              return [x[3] for x in ins[max(0, j-before):min(len(ins), j+after+1)]]
+
+          p_offsets = {0x0,0x8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88}
+          outer_offsets = {x+0x18 for x in p_offsets}
+          target_forms = {(0x40,'P'), (0x58,'outer')}
+
+          mem_re = re.compile(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]')
+          def offsets_for(rows):
+              out = collections.defaultdict(set)
+              for a, _, op, _line in rows:
+                  for m in mem_re.finditer(op):
+                      reg = m.group(1)
+                      off = int(m.group(2),16) if m.group(2) else 0
+                      out[reg].add(off)
+              return out
+
+          direct = []
+          addr_takes = []
+          for fr, rows in by_fde.items():
+              obs = offsets_for(rows)
+              for idx, (a, _, op, line) in enumerate(rows):
+                  parts = op.split(',',1)
+                  lhs = parts[0] if parts else ''
+                  if re.match(r'^(mov|movq|movabs|xchg|cmpxchg|and|or)\b', op):
+                      lm = mem_re.search(lhs)
+                      if lm:
+                          reg = lm.group(1)
+                          off = int(lm.group(2),16) if lm.group(2) else 0
+                          for target_off, mode in target_forms:
+                              if off == target_off:
+                                  expected = p_offsets if mode == 'P' else outer_offsets
+                                  score = len(obs.get(reg,set()) & expected)
+                                  direct.append((score,a,fr,reg,mode,op,sorted(obs.get(reg,set()))))
+                  if op.startswith('lea '):
+                      mm = mem_re.search(op)
+                      if mm:
+                          reg = mm.group(1)
+                          off = int(mm.group(2),16) if mm.group(2) else 0
+                          mode = None
+                          if off in (0x38,0x40): mode='P'
+                          elif off in (0x50,0x58): mode='outer'
+                          if mode:
+                              call = None
+                              for a2,_,op2,_ in rows[idx+1:idx+9]:
+                                  if op2.startswith('call '):
+                                      call=(a2,op2); break
+                              if call:
+                                  expected = p_offsets if mode=='P' else outer_offsets
+                                  score = len(obs.get(reg,set()) & expected)
+                                  addr_takes.append((score,a,fr,reg,mode,off,op,call,sorted(obs.get(reg,set()))))
+
+          direct.sort(key=lambda x:(x[0], -x[1]), reverse=True)
+          addr_takes.sort(key=lambda x:(x[0], -x[1]), reverse=True)
+
+          print('# Concrete P+0x40 / outer+0x58 writer trace')
+          print()
+          print('Known coordinate:')
+          print('- P = concrete interface AP 0x1832be8 at outer+0x18')
+          print('- fd381a receiver field = P+0x40 = outer+0x58')
+          print('- constructor e947fd/e94802 initially zeros outer+0x40..0x5f')
+          print('- candidates below are ranked by exact target plus same-base P/outer layout overlap')
+          print()
+
+          print(f'## Direct target writes ({len(direct)} total; top 60)')
+          for rank, (score,a,fr,reg,mode,op,offs) in enumerate(direct[:60],1):
+              print(f'### {rank}. 0x{a:x} — {mode} base via {reg}; overlap={score}; FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+              print(f'- op: {op}')
+              print('- observed same-register offsets: ' + ', '.join(hex(x) for x in offs))
+              print('    ' + '\n    '.join(context(a)))
+              print()
+
+          print(f'## Target/pair address-takes followed by a call ({len(addr_takes)} total; top 60)')
+          for rank, (score,a,fr,reg,mode,off,op,call,offs) in enumerate(addr_takes[:60],1):
+              print(f'### {rank}. 0x{a:x} — {mode} base {reg}+0x{off:x}; overlap={score}; FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+              print(f'- lea: {op}')
+              print(f'- next call: 0x{call[0]:x} {call[1]}')
+              print('- observed same-register offsets: ' + ', '.join(hex(x) for x in offs))
+              print('    ' + '\n    '.join(context(a)))
+              print()
+
+          print('## Narrow EC-family references to +0x38/+0x40/+0x50/+0x58')
+          for a,_,op,line in ins:
+              if not (0xec0000 <= a < 0xec8000):
+                  continue
+              if any(tok in op for tok in ('+0x38]','+0x40]','+0x50]','+0x58]')):
+                  print(f'### 0x{a:x}: {op}')
+                  print('    ' + '\n    '.join(context(a,16,24)))
+                  print()
+
+          print('## References to concrete P AP 0x1832be8')
+          hits = [x for x in ins if '1832be8' in x[2]]
+          if not hits:
+              print('- no disassembly text references found')
+          for a,_,op,line in hits:
+              print(f'### 0x{a:x}')
+              print('    ' + '\n    '.join(context(a,18,28)))
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/p-plus40-concrete-writer.md
+          if git diff --cached --quiet; then
+            echo "No report changes"
+            exit 0
+          fi
+          git commit -m "Trace concrete P plus40 writer"
+          git push
