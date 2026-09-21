@@ -145,8 +145,10 @@ The large constructor at `0x11ef334` receives this dependency as **SysV argument
 
 ```text
 b8f02e(root)
-    -> provider object
-    -> provider virtual +0x28()
+    -> verify registry ID 0xb8 is present
+    -> rootTable[0xb8] / rootTable+0x5c0
+    -> service-184 object
+    -> service-184 virtual +0x28()
     -> execution dependency
     -> constructor argument 9
     -> secondary dispatcher object+0x20
@@ -154,7 +156,9 @@ b8f02e(root)
     -> virtual +0x68() on "skip-ad"
 ```
 
-At the caller, the intermediate provider is first stored at a local stack slot and then replaced by the return of its `+0x28` method before being pushed as argument 9. The same resulting dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control interface rather than an ad-only helper.
+The accessor `b8f02e` is now structurally decoded further. It passes ID `0xb8` to `b622de`; that helper is a byte-search/validation routine over the registry's ID buffer, **not** the service factory. After the ID check, `b8f02e` reads the instance from `rootTable+0x5c0`, exactly `0xb8 * 8`. Thus this dependency originates from registry service **184**.
+
+At the caller, the service-184 object is first stored at a local stack slot and then replaced by the return of its `+0x28` method before being pushed as argument 9. The same resulting dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control interface rather than an ad-only helper.
 
 The `+0x68` virtual call remains the strongest current candidate for the actual lower-level Skip Ad playback action. The concrete provider/dependency vtable and side effect of `+0x68` are the next target.
 
@@ -273,7 +277,7 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
 2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
-3. resolve the concrete vtable behind the recovered `b8f02e(root) -> provider +0x28() -> execution dependency` chain,
+3. resolve the concrete vtable behind registry service 184 (`rootTable+0x5c0`) and its `+0x28() -> execution dependency` chain,
 4. identify that dependency's virtual `+0x68` implementation and decode the exact playback state transition it causes,
 5. identify the playback-ad reporting event emitted after a successful native skip (the currently recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
 6. map the equivalent path during Connect/remote playback.
@@ -292,3 +296,6 @@ Evidence reports:
 - `analysis/skip-ad-stack-arg.md`
 - `analysis/skip-ad-arg9-source.md`
 - `analysis/skip-ad-execution-dependency-compact.md`
+- `analysis/skip-ad-execution-provider-fast.md`
+- `analysis/skip-ad-service-184-compact.md`
+- `analysis/orbit-registry-helper-b622de.md`
