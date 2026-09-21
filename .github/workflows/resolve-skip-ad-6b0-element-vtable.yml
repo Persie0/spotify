@@ -1,0 +1,178 @@
+name: Resolve Skip Ad 0x6b0 element vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-6b0-element-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s6b0
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s6b0
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve element vtable
+        run: |
+          SO=/tmp/s6b0/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s6b0/all.dis
+          readelf -rW "$SO" > /tmp/s6b0/rel.txt
+          python3 - <<'PY' > analysis/skip-ad-6b0-element-vtable.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s6b0/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with open('/tmp/s6b0/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          rel={}
+          for l in Path('/tmp/s6b0/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              j=p.index('R_X86_64_RELATIVE')
+              if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                rel[int(p[0],16)]=int(p[j+1],16)
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=14,n=24):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+            return out
+
+          print('# Skip Ad 0x6b0 element vtable resolution')
+          print()
+          print('Proven dataflow:')
+          print('- current/new 0x6b0-stride element -> rsp+0x1338 @ 0x122190f')
+          print('- e9c8ec -> rsp+0x770')
+          print('- e9ccf3 -> state+0x10')
+          print('- efc630 publishes state+0x10 as Skip Ad receiver')
+          print('- fd384d calls receiver vtable +0x140 and requires eax==0')
+          print()
+
+          for target,name in [(0x12240f8,'real element constructor/copy'),(0x108dcd4,'tail subobject copy')]:
+            fr=fde(target)
+            print(f'## {name} 0x{target:x} FDE={fr}')
+            if fr:
+              for x in body(fr):print('    '+x[3])
+            print()
+
+          print('## High-address constants in 0x12240f8')
+          fr=fde(0x12240f8)
+          highs=[]
+          if fr:
+            for a,i,op,l in body(fr):
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:
+                va=int(m.group(1),16);highs.append((a,va,op))
+                print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## First-word / subobject pointer stores in 0x12240f8')
+          if fr:
+            for a,i,op,l in body(fr):
+              if re.match(r'(mov|movups|movdqu|movaps|movdqa)\s+[^,]*\[(?:rdi|rbx|r14|r15)(?:\+0x[0-9a-f]+)?\]',op):
+                print(f'- 0x{a:x}: {op}')
+          print()
+
+          print('## Candidate vtables from constructor constants')
+          seen=set()
+          for _,va,_ in highs:
+            for ap in range(max(0,va-0x20),va+0x21,8):
+              if ap in seen:continue
+              vals={off:rel.get(ap+off) for off in range(0,0x181,8)}
+              code=sum(1 for v in vals.values() if v is not None and 0x900000<=v<0x1800000)
+              v140=vals.get(0x140)
+              if code>=8 and v140 is not None:
+                seen.add(ap)
+                print(f'### AP 0x{ap:x}: codeSlots={code}, +0x140=0x{v140:x}, FDE={fde(v140)}')
+                for off in range(0,0x181,8):
+                  v=vals[off]
+                  if v is not None:print(f'- +0x{off:x}: 0x{v:x}')
+                print('#### +0x140 body')
+                ctx(v140,8,40)
+                print()
+
+          print('## Insertion/current-element path around 0x122190f')
+          for a,i,op,l in ins:
+            if 0x1221700<=a<0x1221b20:print('    '+l)
+          print()
+
+          print('## Definitions of register stored to rsp+0x1338')
+          rows=[x for x in ins if 0x1221700<=x[0]<0x1221b20]
+          for k,(a,i,op,l) in enumerate(rows):
+            if 'rsp+0x1338]' in op.split(',',1)[0]:
+              print(f'### store 0x{a:x}: {op}')
+              for x in rows[max(0,k-30):min(len(rows),k+20)]:print('    '+x[3])
+              print()
+
+          print('## Calls to constructor/copy 0x12240cc / 0x12240f8')
+          for target in (0x12240cc,0x12240f8):
+            for a,i,op,l in ins:
+              if re.search(r'\bcall\s+'+format(target,'x')+r'\b',op):
+                print(f'### call target=0x{target:x} @0x{a:x}; FDE={fde(a)}')
+                ctx(a,18,30);print()
+
+          print('## Direct +0x140 calls near element consumers')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+QWORD PTR \[[^]]+\+0x140\]',op):
+              if 0xe00000<=a<0x1300000:
+                print(f'### 0x{a:x}; FDE={fde(a)}')
+                ctx(a,10,18);print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-6b0-element-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad 0x6b0 element vtable"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
