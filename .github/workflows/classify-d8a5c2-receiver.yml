@@ -1,0 +1,158 @@
+name: Classify d8a5c2 receiver
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-d8a5c2-receiver.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/d8recv
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/d8recv
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace
+        run: |
+          SO=/tmp/d8recv/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/d8recv/all.dis
+          readelf -rW "$SO" > /tmp/d8recv/rel.txt
+          python3 - <<'PY' > analysis/d8a5c2-receiver-class.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/d8recv/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/d8recv/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          rel={}
+          for l in Path('/tmp/d8recv/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              j=p.index('R_X86_64_RELATIVE')
+              if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                rel[int(p[0],16)]=int(p[j+1],16)
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def body(fr):
+            if not fr:return []
+            j=idx(fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+            return out
+
+          print('# d8a5c2 receiver class proof')
+          print()
+          print('Question: does carrier[0] really have primary AP 0x1841fc0, making +0x1d8 == fd4a92?')
+          print('Reason for skepticism: carrier+8 is a real libc++ std::string, so treating carrier+0x18 as a weak pair is structurally impossible.')
+          print()
+
+          fr=fde(0xd8a488)
+          print(f'## Clone/capture constructor FDE {fr}')
+          for x in body(fr): print('    '+x[3])
+          print()
+
+          print('## d8a5c2 exact dispatcher')
+          ctx(0xd8a5c2,8,24); print()
+
+          # Find all code references to constructor/clone and callback addresses.
+          for target in (0xd8a488,0xd8a598,0xd8a5c2):
+            print(f'## References/callers to 0x{target:x}')
+            for a,i,op,l in ins:
+              if re.search(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b',op) or ('# '+format(target,'x')) in l:
+                print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+                ctx(a,24,36);print()
+
+          # Track source r15 in clone constructor.
+          print('## r15 provenance in clone constructor')
+          rows=body(fr)
+          for k,(a,i,op,l) in enumerate(rows):
+            if re.match(r'(mov|lea|xchg|pop)\s+r15\b',op):
+              print(f'### 0x{a:x}: {op}')
+              for x in rows[max(0,k-12):min(len(rows),k+20)]:print('    '+x[3])
+              print()
+
+          # Find constructors/writers of structures matching source layout:
+          # [0]=object, +8 std::string, +20 byte, +30 copied object.
+          print('## Exact source-layout builders outside d8a488')
+          candidates=[]
+          for k,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'lea\s+rdi,\[[a-z0-9]+\+0x8\]',op):continue
+            win=ins[k:k+30]
+            if not any('17edf40' in x[3] for x in win):continue
+            if not any('+0x20]' in x[2] for x in win):continue
+            if not any('+0x30' in x[2] for x in win):continue
+            candidates.append((a,fde(a)))
+          for a,cf in candidates[:100]:
+            print(f'### candidate 0x{a:x}; FDE={cf}')
+            ctx(a,14,40);print()
+
+          # All materializations of primary AP 0x1841fc0 and direct stores to objects.
+          print('## Primary AP 0x1841fc0 materializations')
+          for a,i,op,l in ins:
+            if '# 1841fc0' in l:
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,12,22);print()
+
+          # Identify other table APs whose +0x1d8 is fd4a92 or another target.
+          print('## Relocation slots at +0x1d8 that resolve to fd4a92')
+          target=0xfd4a92
+          for slot,val in sorted(rel.items()):
+            if val==target:
+              ap=slot-0x1d8
+              print(f'- slot 0x{slot:x} -> fd4a92, implied AP 0x{ap:x}')
+          print()
+
+          print('## All +0x1d8 indirect calls and nearby receiver provenance in d8-family')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+QWORD PTR \[[^]]+\+0x1d8\]',op) and 0xd00000<=a<0xe00000:
+              print(f'### 0x{a:x}; FDE={fde(a)}')
+              ctx(a,14,22);print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/d8a5c2-receiver-class.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify d8a5c2 receiver"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
