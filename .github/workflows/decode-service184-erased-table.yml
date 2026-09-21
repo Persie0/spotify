@@ -1,0 +1,63 @@
+name: Decode service184 erased table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-erased-table.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184erase
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184erase
+      - name: Decode type-erased service table
+        run: |
+          SO=/tmp/s184erase/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184erase/all.dis
+          {
+            echo '# Service184 type-erased table trace'
+            echo
+            echo '## e261e6 (+0x578 member copy/assignment)'
+            objdump -d -M intel --start-address=0xe260f0 --stop-address=0xe26380 "$SO"
+            echo
+            echo '## Source builder 133999a'
+            objdump -d -M intel --start-address=0x13398d0 --stop-address=0x1339a20 "$SO"
+            echo
+            echo '## Neighbor helpers 13399d8 / 13399e4'
+            objdump -d -M intel --start-address=0x13399b0 --stop-address=0x1339a80 "$SO"
+            echo
+            echo '## Calls to e261e6'
+            grep -n -E -B20 -A30 'call[[:space:]]+e261e6\\b' /tmp/s184erase/all.dis || true
+            echo
+            echo '## Calls to 133999a'
+            grep -n -E -B24 -A40 'call[[:space:]]+133999a\\b' /tmp/s184erase/all.dis || true
+            echo
+            echo '## Vptr/table materializations near source builder'
+            objdump -d -M intel --start-address=0x1339800 --stop-address=0x1339b80 "$SO" | grep -E -B10 -A18 '# 18[0-9a-f]{5,}' || true
+          } > analysis/service184-erased-table.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-erased-table.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 type-erased table"
+          git pull --rebase origin main
+          git push origin HEAD:main
