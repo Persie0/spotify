@@ -1,0 +1,172 @@
+name: Rank service184 vtables by exact ABI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-service184-exact-abi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184abi2
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184abi2
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Rank
+        run: |
+          SO=/tmp/s184abi2/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184abi2/all.dis
+          python3 - <<'PY' > analysis/service184-exact-abi-rank.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184abi2/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/s184abi2/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                ad=rr.entry.get('r_addend')
+                if ad is not None:rel[rr['r_offset']]=ad
+          fdes.sort()
+          ins=[]
+          byaddr={}
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:
+              x=(int(m.group(1),16),i,m.group(2),l);ins.append(x);byaddr[x[0]]=x
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          fmap={}
+          for fr in fdes:fmap[fr]=[]
+          fi=0
+          for x in ins:
+            while fi<len(fdes) and fdes[fi][1]<=x[0]:fi+=1
+            for k in range(max(0,fi-2),min(len(fdes),fi+3)):
+              if fdes[k][0]<=x[0]<fdes[k][1]:
+                fmap[fdes[k]].append(x);break
+          def body(addr,limit=80):
+            fr=fde(addr)
+            if not fr:return []
+            xs=fmap.get(fr,[])
+            out=[]
+            started=False
+            for x in xs:
+              if x[0]>=addr:started=True
+              if started:
+                out.append(x)
+                if len(out)>=limit:break
+            return out
+          def txt(addr,n=55):
+            return '\n'.join(x[2] for x in body(addr,n))
+          def score_method(off,addr):
+            t=txt(addr)
+            if not t:return -99,[]
+            s=0;why=[]
+            calls=len(re.findall(r'\bcall\b',t))
+            rets=len(re.findall(r'\bret\b',t))
+            if off==0x20:
+              # Scalar-ish method: likely returns eax/al and relatively compact.
+              if re.search(r'\b(movzx|mov|xor|set[a-z]+)\s+e?ax\b',t):s+=2;why.append('scalar-return')
+              if calls<=2:s+=1
+            elif off in (0x28,0x30):
+              # Pointer getter: reward direct this-field / this-relative return.
+              if re.search(r'\bmov\s+rax,QWORD PTR \[rdi(?:\+0x[0-9a-f]+)?\]',t):s+=7;why.append('direct-this-pointer')
+              if re.search(r'\blea\s+rax,\[rdi(?:\+0x[0-9a-f]+)?\]',t):s+=7;why.append('this-relative-pointer')
+              if calls==0:s+=2;why.append('no-call')
+              if rets:s+=1
+            elif off==0x38:
+              # Observed call ABI: rdi is destination, rsi is service-this.
+              if re.search(r'\[rdi(?:\+0x[0-9a-f]+)?\]',t) and re.search(r'\[rsi(?:\+0x[0-9a-f]+)?\]',t):
+                s+=8;why.append('sret-rdi-rsi')
+              if re.search(r'\bmov\s+QWORD PTR \[rdi',t):s+=3
+            return s,why
+
+          code=lambda q: q is not None and 0xa00000<=q<0x1800000 and fde(q)
+          bases=set()
+          for slot in rel:
+            # Address point candidate: require +20/28/30/38 relocations all be code.
+            base=slot-0x20
+            vals={o:rel.get(base+o) for o in (0x20,0x28,0x30,0x38)}
+            if all(code(q) for q in vals.values()):bases.add(base)
+
+          ranked=[]
+          for base in bases:
+            vals={o:rel.get(base+o) for o in (0x20,0x28,0x30,0x38)}
+            total=0;whys={}
+            for o,q in vals.items():
+              s,w=score_method(o,q);total+=s;whys[o]=(s,w)
+            # Existing service has enough slots for +0x38 and likely a normal vtable address.
+            if 0x1800000<=base<0x19d0000:total+=2
+            ranked.append((total,base,vals,whys))
+          ranked.sort(reverse=True)
+
+          print('# Service184 exact-ABI vtable ranking')
+          print()
+          print('Observed ABI constraints:')
+          print('- +0x20: scalar/bool-like return at service initialization')
+          print('- +0x28: pointer return; this is the proven Skip Ad execution dependency')
+          print('- +0x30: pointer return')
+          print('- +0x38: called with hidden/sret destination in rdi and service-this in rsi')
+          print()
+          print(f'Candidates={len(ranked)}')
+          for total,base,vals,whys in ranked[:80]:
+            print(f'## score={total} address-point=0x{base:x}')
+            for o in (0x20,0x28,0x30,0x38):
+              q=vals[o];s,w=whys[o]
+              print(f'- +0x{o:x} -> 0x{q:x}; score={s}; {",".join(w)}; FDE={fde(q)}')
+              for x in body(q,18):print('    '+x[3])
+            print()
+
+          print('## Top candidates: vptr materialization sites')
+          tops={base for _,base,_,_ in ranked[:20]}
+          for a,i,op,l in ins:
+            m=re.search(r'#\s*([0-9a-f]+)',op)
+            if not m:continue
+            va=int(m.group(1),16)
+            if va not in tops:continue
+            print(f'### candidate 0x{va:x} materialized @0x{a:x}, FDE={fde(a)}')
+            for x in lines[max(0,i-14):min(len(lines),i+30)]:print('    '+x)
+            print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-exact-abi-rank.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank service184 vtables by exact ABI"
+          git pull --rebase origin main
+          git push origin HEAD:main
