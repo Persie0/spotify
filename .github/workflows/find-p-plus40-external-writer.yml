@@ -1,0 +1,138 @@
+name: Find P plus40 external writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/find-p-plus40-external-writer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/p40w
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/p40w
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Find writer
+        run: |
+          SO=/tmp/p40w/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/p40w/all.dis
+          python3 - <<'PY' > analysis/p-plus40-external-writer.md
+          from pathlib import Path
+          import re,bisect,collections
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/p40w/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/p40w/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort();starts=[x[0] for x in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=30):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          byfde=collections.defaultdict(list)
+          for x in ins:
+            fr=fde(x[0])
+            if fr:byfde[fr].append(x)
+
+          sigoffs=[0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88]
+          print('# P+0x40 external writer search')
+          print()
+          print('P is the 0x1832be8 object at outer+0x18. Constructor layout includes offsets +0x18..+0x88, and final readiness receiver is qword P+0x40.')
+          print('The six real P virtuals do not assign P+0x40, so rank external functions by same-base layout overlap + qword write at +0x40.')
+          print()
+          cands=[]
+          for fr,rows in byfde.items():
+            # Per base register, collect offsets observed.
+            obs=collections.defaultdict(set)
+            writes40=[]
+            for a,i,op,l in rows:
+              for m in re.finditer(r'\[([a-z0-9]+)\+0x([0-9a-f]+)\]',op):
+                reg=m.group(1);off=int(m.group(2),16)
+                if off in sigoffs:obs[reg].add(off)
+              lhs=op.split(',',1)[0]
+              m=re.search(r'\[([a-z0-9]+)\+0x40\]',lhs)
+              if m and re.match(r'(mov|xchg|cmpxchg)',op):
+                writes40.append((a,m.group(1),op,l))
+            for a,reg,op,l in writes40:
+              offs=obs.get(reg,set())
+              score=len(offs & set(sigoffs))
+              # strong class signature: vector trio +70/+78/+80 and config +50/+58/+60
+              bonus=sum(3 for grp in [({0x70,0x78,0x80}),({0x50,0x58,0x60}),({0x18,0x20,0x28,0x30,0x38})] if len(offs&grp)>=2)
+              if score+bonus>=5:
+                cands.append((score+bonus,score,a,reg,op,fr,sorted(offs)))
+          cands.sort(reverse=True)
+          print(f'## Ranked candidate writes ({len(cands)})')
+          for rank,(tot,score,a,reg,op,fr,offs) in enumerate(cands[:120],1):
+            print(f'### rank {rank}: total={tot} overlap={score} write=0x{a:x} reg={reg} FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+            print(f'- op: {op}')
+            print('- offsets: '+', '.join(hex(x) for x in offs))
+            ctx(a,22,38);print()
+
+          print('## Functions with exact vector trio +70/+78/+80 and any +0x40 access')
+          for fr,rows in byfde.items():
+            obs=collections.defaultdict(set)
+            hits40=[]
+            for a,i,op,l in rows:
+              for m in re.finditer(r'\[([a-z0-9]+)\+0x([0-9a-f]+)\]',op):
+                reg=m.group(1);off=int(m.group(2),16)
+                obs[reg].add(off)
+              if '+0x40]' in op:hits40.append((a,op))
+            for reg,offs in obs.items():
+              if {0x70,0x78,0x80}.issubset(offs) and 0x40 in offs:
+                print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x} reg={reg}')
+                print('- offsets: '+', '.join(hex(x) for x in sorted(offs)))
+                for a,op in hits40[:20]:
+                  print(f'- 0x{a:x}: {op}')
+                  ctx(a,10,18)
+                print()
+
+          print('## All qword-like +0x40 stores in e9/ec class neighborhoods')
+          for a,i,op,l in ins:
+            if not (0xe00000<=a<0x1000000):continue
+            lhs=op.split(',',1)[0]
+            if re.search(r'\[[a-z0-9]+\+0x40\]',lhs) and re.match(r'(mov|xchg|cmpxchg)',op):
+              print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+              ctx(a,10,16);print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+users.noreply.github.com"
+          git add analysis/p-plus40-external-writer.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find P plus40 external writer"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
