@@ -1,0 +1,62 @@
+name: Identify service184 code family
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/identify-service184-code-family.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184fam
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184fam
+
+      - name: Inspect family
+        run: |
+          SO=/tmp/s184fam/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184fam/all.dis
+          readelf -rW "$SO" > /tmp/s184fam/relocs
+          {
+            echo '# Service184 accessor code-family identity'
+            echo
+            echo '## Relocations targeting b8f000..b90000'
+            awk '{
+              for(i=1;i<=NF;i++){
+                if($i ~ /^[0-9a-fA-F]+$/){
+                  v=("0x"$i)+0
+                  if(v>=0xb8f000 && v<0xb90000){print; next}
+                }
+              }
+            }' /tmp/s184fam/relocs
+            echo
+            echo '## Code 0xb8f080..0xb90000'
+            objdump -d -M intel --start-address=0xb8f080 --stop-address=0xb90000 "$SO"
+          } > analysis/service184-code-family.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-code-family.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Identify service184 code family"
+          git pull --rebase origin main
+          git push origin HEAD:main
