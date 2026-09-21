@@ -1,0 +1,192 @@
+name: Resolve final readiness arg13 pair origin
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-final-readiness-arg13-pair.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/arg13pair
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/arg13pair
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace pair origin
+        run: |
+          set -euo pipefail
+          SO=/tmp/arg13pair/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/arg13pair/all.dis
+          readelf -rW "$SO" > /tmp/arg13pair/rel.txt
+          python3 - <<'PY' > analysis/final-readiness-arg13-pair-origin.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/arg13pair/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with open('/tmp/arg13pair/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=14,n=28):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          def body(fr):
+            j=idx(fr[0]); out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]: break
+              out.append(x)
+            return out
+
+          anchor=0xe94b93
+          fr=fde(anchor)
+          print('# Final readiness arg13 pair origin')
+          print()
+          print('Known:')
+          print('- e94b93 loads base = [rsp+0x48]')
+          print('- e94b98 computes head = base+0x18')
+          print('- e94b9c saves head to [rsp+0x20]')
+          print('- e94f60/f68 copy {head, base} to r12+0x138/+0x140')
+          print('- e95570 passes &r12+0x138 as e99d07 arg13')
+          print('- e99d07 eventually copies that pair into source+0x178, then owner+0x428')
+          print()
+          print(f'## Containing FDE {fr}')
+          print()
+
+          rows=body(fr) if fr else []
+          target_i=next((k for k,x in enumerate(rows) if x[0]==anchor),None)
+
+          print('## All writes to stable [rsp+0x48] before e94b93')
+          if target_i is not None:
+            for k,(a,i,op,l) in enumerate(rows[:target_i+1]):
+              lhs=op.split(',',1)[0]
+              if '[rsp+0x48]' in lhs:
+                print(f'### 0x{a:x}: {op}')
+                for x in rows[max(0,k-18):min(len(rows),k+28)]: print('    '+x[3])
+                print()
+
+          print('## Last reaching definition of [rsp+0x48]')
+          if target_i is not None:
+            hit=None
+            for k in range(target_i,-1,-1):
+              a,i,op,l=rows[k]
+              if '[rsp+0x48]' in op.split(',',1)[0]:
+                hit=(k,a,op); break
+            print(hit)
+            if hit:
+              k,a,op=hit
+              for x in rows[max(0,k-40):min(len(rows),k+50)]: print('    '+x[3])
+          print()
+
+          print('## Reads of stable [rsp+0x48] before/after pair publication')
+          if fr:
+            for k,(a,i,op,l) in enumerate(rows):
+              if '[rsp+0x48]' in op and '[rsp+0x48]' not in op.split(',',1)[0]:
+                if 0xe93000<=a<=0xe95600:
+                  print(f'### 0x{a:x}: {op}')
+                  for x in rows[max(0,k-8):min(len(rows),k+18)]: print('    '+x[3])
+                  print()
+
+          # Infer register source from final stack write, then find where that register came from.
+          print('## Register backslice from final [rsp+0x48] write')
+          if target_i is not None:
+            hit=None
+            for k in range(target_i,-1,-1):
+              a,i,op,l=rows[k]
+              m=re.match(r'mov\s+QWORD PTR \[rsp\+0x48\],(r\w+)\b',op)
+              if m:
+                hit=(k,a,m.group(1),op); break
+            print(hit)
+            if hit:
+              k,a,reg,op=hit
+              # walk backward for definitions of same full register
+              count=0
+              for kk in range(k-1,-1,-1):
+                aa,ii,oo,ll=rows[kk]
+                if re.match(r'(mov|lea|pop|xchg)\s+'+re.escape(reg)+r'\b',oo):
+                  print(f'### def 0x{aa:x}: {oo}')
+                  for x in rows[max(0,kk-15):min(len(rows),kk+24)]: print('    '+x[3])
+                  print()
+                  count+=1
+                  if count>=8: break
+
+          print('## Stores to +0x18 subobjects near candidate source construction')
+          # Restrict to this big factory function. We want static AP stores into [base+0x18].
+          if fr:
+            for k,(a,i,op,l) in enumerate(rows):
+              if not re.match(r'mov\s+QWORD PTR \[[^]]+\+0x18\],r\w+\b',op): continue
+              # only print if nearby high-address materialization exists
+              win=rows[max(0,k-10):k+4]
+              highs=[]
+              for aa,ii,oo,ll in win:
+                m=re.search(r'#\s*(18[0-9a-f]{5,}|17[0-9a-f]{5,})\b',ll)
+                if m: highs.append((aa,m.group(1),oo))
+              if highs:
+                print(f'### store 0x{a:x}: {op}; nearby={highs}')
+                for x in rows[max(0,k-12):min(len(rows),k+16)]: print('    '+x[3])
+                print()
+
+          print('## Candidate final inline AP materializations in same FDE')
+          for ap in (0x183d258,0x183d3b0,0x183d470):
+            print(f'### AP 0x{ap:x}')
+            for a,i,op,l in rows:
+              if f'# {ap:x}' in l:
+                print(f'- ref 0x{a:x}: {op}')
+                ctx(a,12,24)
+                print()
+
+          print('## Writes/copies involving the three APs or +0x18 around them')
+          for a,i,op,l in rows:
+            if any(f'# {ap:x}' in l for ap in (0x183d258,0x183d3b0,0x183d470)):
+              print(f'### 0x{a:x}: {op}')
+              ctx(a,12,28); print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/final-readiness-arg13-pair-origin.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve final readiness arg13 pair origin"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
