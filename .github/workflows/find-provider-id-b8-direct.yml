@@ -1,0 +1,190 @@
+name: Find provider ID b8 directly
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/find-provider-id-b8-direct.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/pb8
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pb8
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Find ID b8 provider
+        run: |
+          SO=/tmp/pb8/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/pb8/all.dis
+          python3 - <<'PY' > analysis/provider-id-b8-direct.md
+          from pathlib import Path
+          import re,struct,bisect
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/pb8/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/pb8/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            rel=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel.append((rr['r_offset'],add,sec.name))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(a):
+            i=bisect.bisect_right(starts,a)-1
+            if i>=0 and fdes[i][0]<=a<fdes[i][1]:return fdes[i]
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            for off,add,sec in rel:
+              if off==v:return add
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def body(fn):
+            fr=fde(fn)
+            if not fr:return []
+            return [x for x in ins if fr[0]<=x[0]<fr[1]]
+          def cbytes(v,n):
+            o=va2off(v)
+            if o is None:return b''
+            return data[o:o+n]
+          def ptrlen(fn):
+            rows=body(fn)
+            if not rows or len(rows)>20:return None
+            ptr=ln=None
+            for a,i,op,l in rows:
+              m=re.search(r'lea\s+rax,\[rip[^#]*#\s*([0-9a-f]+)',l)
+              if m:ptr=int(m.group(1),16)
+              m=re.match(r'(?:push\s+0x|mov\s+edx,0x)([0-9a-f]+)',op)
+              if m:ln=int(m.group(1),16)
+            if ptr is not None and ln is not None:
+              raw=cbytes(ptr,ln)
+              try:s=raw.decode('utf8','replace')
+              except:s=repr(raw)
+              return ptr,ln,s
+          def ctx(i,b=14,a=24):
+            for x in dl[max(0,i-b):min(len(dl),i+a+1)]:print('    '+x)
+
+          print('# Direct provider descriptor ID 0xb8 resolution')
+          print()
+
+          # Tiny methods exactly returning AL=0xb8.
+          methods=[]
+          for fr in fdes:
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            if not rows or len(rows)>8:continue
+            has=False
+            for a,i,op,l in rows:
+              if re.match(r'mov\s+al,0xb8\b',op):
+                has=True
+            if has and any(re.match(r'ret\b',x[2]) for x in rows):
+              methods.append(fr[0])
+          print(f'## Tiny ID methods: {len(methods)}')
+          for m in methods:print(f'- 0x{m:x} FDE={fde(m)}')
+          print()
+
+          # Relocation slots pointing to these ID methods. A provider AP should have ID method at AP+0x10.
+          candidates=[]
+          relmap=defaultdict(list)
+          for off,add,sec in rel:
+            relmap[add].append((off,sec))
+          for m in methods:
+            for slot,sec in relmap.get(m,[]):
+              ap=slot-0x10
+              # validate likely provider: code at AP+0,+8,+10,+18,+20,+28
+              vals={o:q(ap+o) for o in (0,8,0x10,0x18,0x20,0x28,0x40,0x48)}
+              if vals[0x10]!=m:continue
+              if all(v is not None and fde(v) for o,v in vals.items() if o in (0,8,0x10,0x18,0x20,0x28)):
+                candidates.append((ap,m,slot,sec,vals))
+          print(f'## Provider-vtable candidates: {len(candidates)}')
+          for ap,m,slot,sec,vals in candidates:
+            print(f'### AP 0x{ap:x}; ID method 0x{m:x}; relocation slot 0x{slot:x} {sec}')
+            for o in sorted(vals):print(f'- +0x{o:x}: 0x{vals[o]:x} FDE={fde(vals[o])}')
+            print(f'- metadata +0x18: {ptrlen(vals[0x18])!r}')
+            print(f'- metadata +0x20: {ptrlen(vals[0x20])!r}')
+            print('#### factory +0x28')
+            for a,i,op,l in body(vals[0x28])[:900]:print('    '+l)
+            print()
+
+            print('#### AP materializations / registration proximity')
+            for a,i,op,l in ins:
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm and int(mm.group(1),16)==ap:
+                print(f'- materialization 0x{a:x}; FDE={fde(a)}')
+                ctx(i,10,22)
+                print()
+            print()
+
+          # Search addb16 neighborhoods for AP candidate and show exact provider allocation/registration.
+          print('## addb16 registration sites for candidates')
+          aps={x[0] for x in candidates}
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+addb16\b',l):continue
+            win=ins[max(0,idx-40):idx+8]
+            refs=[]
+            for aa,ii,oo,ll in win:
+              mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+              if mm and int(mm.group(1),16) in aps:
+                refs.append((aa,int(mm.group(1),16),oo))
+            if refs:
+              print(f'### addb16 @0x{a:x}; FDE={fde(a)} refs={refs}')
+              ctx(i,35,14);print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/provider-id-b8-direct.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve provider descriptor ID b8"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
