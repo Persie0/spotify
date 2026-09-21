@@ -1,0 +1,69 @@
+name: Trace P writer candidate contexts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-p-writer-candidates.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/pwriters
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pwriters
+
+      - name: Extract candidate contexts
+        run: |
+          objdump -d -M intel /tmp/pwriters/liborbit-jni-spotify.so > /tmp/pwriters/all.dis
+          python3 - <<'PY' > analysis/p-plus40-writer-candidate-contexts.md
+          from pathlib import Path
+          import bisect,re
+          raw=Path('/tmp/pwriters/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in raw:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',line)
+              if m: ins.append((int(m.group(1),16),m.group(2).strip(),line))
+          addrs=[x[0] for x in ins]
+          targets=[
+              0xe94cba,0xe94cbf,0xe94d26,0xe94d32,0xe94d36,
+              0xe9525c,0xe95260,0xe958eb,0xe95948,
+              0xe96461,0xe96482,0xe96493,
+              0xe96ea5,0xe96ec8,0xe96ed0,0xe96f02,0xe96f14,0xe96f1e,0xe96f4a,
+              0xe97442,0xe97446,0xe98458,0xe98cea
+          ]
+          print('# Candidate writes/reads near the concrete P creator')
+          print()
+          print('Known P = outer+0x18 (AP 0x1832be8), final dependency field P+0x40 = outer+0x58.')
+          print('Contexts are intentionally wide so base-register provenance can be checked, not inferred from the numeric offset.')
+          for t in targets:
+              i=bisect.bisect_left(addrs,t)
+              print()
+              print(f'## 0x{t:x}')
+              for _,_,line in ins[max(0,i-55):min(len(ins),i+46)]:
+                  print('    '+line)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/p-plus40-writer-candidate-contexts.md
+          git commit -m "Trace P plus40 writer candidate contexts"
+          git push
