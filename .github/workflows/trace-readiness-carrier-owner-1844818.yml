@@ -1,0 +1,116 @@
+name: Trace readiness carrier owner 1844818
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-readiness-carrier-owner-1844818.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/cowner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/cowner
+          objdump -d -M intel /tmp/cowner/liborbit-jni-spotify.so > /tmp/cowner/all.dis
+          readelf -rW /tmp/cowner/liborbit-jni-spotify.so > /tmp/cowner/rel.txt
+      - name: Trace owner
+        run: |
+          python3 - <<'PY' > analysis/readiness-carrier-owner-1844818.md
+          from pathlib import Path
+          import re
+          dis=Path('/tmp/cowner/all.dis').read_text(errors='replace').splitlines()
+          rel=Path('/tmp/cowner/rel.txt').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dis):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          byaddr={a:(i,op,l) for a,i,op,l in ins}
+          def ctx_idx(i,b=14,a=28):
+              return dis[max(0,i-b):min(len(dis),i+a+1)]
+          def ctx_addr(addr,b=14,a=28):
+              best=min(ins,key=lambda x:abs(x[0]-addr))
+              return ctx_idx(best[1],b,a)
+          print('# Readiness carrier owner AP 0x1844818')
+          print()
+          print('Proven construction: 0xe94e4c allocates 0x150 bytes; AP 0x1844818 stored at [object]; e94f6d stores the small readiness carrier base at object+0x140.')
+          print()
+          print('## Vtable relocation slice')
+          slots=[]
+          for line in rel:
+              p=line.split()
+              if not p or not re.fullmatch(r'[0-9a-fA-F]+',p[0]): continue
+              va=int(p[0],16)
+              if 0x1844818 <= va < 0x1844998 and 'R_X86_64_RELATIVE' in line:
+                  try:
+                      k=p.index('R_X86_64_RELATIVE'); target=int(p[k+1],16)
+                  except: continue
+                  off=va-0x1844818
+                  slots.append((off,target))
+                  print(f'- +0x{off:x}: 0x{target:x}')
+          print()
+          print('## Method bodies that reference +0x140')
+          seen=set()
+          for off,target in slots:
+              if target in seen: continue
+              seen.add(target)
+              # locate next ~180 instructions / until ret-ish; scan nearby 0x500 bytes for +0x140 refs
+              rows=[x for x in ins if target<=x[0]<target+0x700]
+              hits=[x for x in rows if '+0x140]' in x[2] or '+0x140,' in x[2]]
+              if not hits: continue
+              print(f'### slot +0x{off:x} target 0x{target:x}')
+              for a,i,op,l in hits[:12]:
+                  print(f'#### hit 0x{a:x}: {op}')
+                  for z in ctx_idx(i,18,35): print('    '+z)
+              print()
+          print('## All direct code refs/materializations of AP 0x1844818')
+          for a,i,op,l in ins:
+              if '# 1844818 ' in l or '# 1844818<' in l:
+                  print(f'### 0x{a:x}: {op}')
+                  for z in ctx_idx(i,16,36): print('    '+z)
+                  print()
+          print('## ec7c18 full compact body')
+          for a,i,op,l in ins:
+              if 0xec7c18 <= a < 0xec7d32:
+                  print('    '+l)
+          print()
+          print('## ec7c18 input-pair field transfers')
+          for a,i,op,l in ins:
+              if 0xec7c18 <= a < 0xec7d32 and re.search(r'\[(?:r15|rsi|rdx|rcx)(?:\+0x(?:8|10|18|20|28|30|38|40))?\]',op):
+                  print(f'### 0x{a:x}: {op}')
+                  for z in ctx_idx(i,8,16): print('    '+z)
+                  print()
+          print('## Reads/writes of object+0x140 around creator')
+          for a,i,op,l in ins:
+              if 0xe94000<=a<0xe99000 and '+0x140]' in op:
+                  print(f'### 0x{a:x}: {op}')
+                  for z in ctx_idx(i,12,24): print('    '+z)
+                  print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-carrier-owner-1844818.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace readiness carrier owner 1844818"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
