@@ -1,0 +1,165 @@
+name: Trace service184 first insertion provider
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-first-insertion-provider.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184first
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184first
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace provider
+        run: |
+          SO=/tmp/s184first/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184first/all.dis
+          python3 - <<'PY' > analysis/service184-first-insertion-provider.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184first/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184first/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs[rel['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=16,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          target=0x15da3b7
+          fr=fde_for(target)
+          print('# Service184 first-insertion provider 0x15da3b7')
+          print()
+          print('Proven caller contract at 0x1334484:')
+          print('- rdi = rsp+0x2e0 destination')
+          print('- rsi = pointer to 0x32f434 string/data')
+          print('- rdx = rsp+0x4f0 source object')
+          print('- rcx = rsp+0x3a0 source/config')
+          print('- after return, destination +0x10 is moved into tagged payload and later becomes service184')
+          print()
+          print(f'## Target FDE: {fr}')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]: print(l)
+          print()
+
+          print('## Writes to destination-shaped first arg within target FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if re.search(r'\[(rdi|rbx|r12|r13|r14|r15)(?:\+0x(?:8|10|18|20|28|30))?\]',op) and re.match(r'(mov|movups|movaps|movdqu|movdqa|and|xor|lea)',op):
+                print(f'### 0x{a:x}: {op}')
+                ctx(i,8,14); print()
+
+          print('## Calls in provider FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'\bcall\b',op):
+                print(l)
+          print()
+
+          print('## High-address constants / vptr-like materializations in provider FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                va=int(m.group(1),16)
+                if va>=0x1800000:
+                  print(f'### 0x{a:x}: {op}')
+                  ctx(i,6,10); print()
+
+          print('## Heap allocations in provider FDE')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'call\s+17edf00\b',op):
+                print(f'### allocation @0x{a:x}')
+                ctx(i,18,30); print()
+
+          print('## Direct callers of provider')
+          for a,i,op,l in ins:
+            if re.search(r'call\s+15da3b7\b',op):
+              print(f'### caller 0x{a:x}; FDE={fde_for(a)}')
+              ctx(i,22,34); print()
+
+          print('## Direct callees likely returning object pointers')
+          if fr:
+            seen=set()
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'call\s+([0-9a-f]+)\b',op)
+              if not m:continue
+              t=int(m.group(1),16)
+              if t in seen:continue
+              seen.add(t)
+              tf=fde_for(t)
+              print(f'- call@0x{a:x} -> 0x{t:x}; FDE={tf}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-first-insertion-provider.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 first insertion provider"
+          git pull --rebase origin main
+          git push origin HEAD:main
