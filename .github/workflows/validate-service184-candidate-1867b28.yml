@@ -1,0 +1,186 @@
+name: Validate service184 candidate 1867b28
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/validate-service184-candidate-1867b28.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/c1867
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/c1867
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Validate embedded dependency
+        run: |
+          SO=/tmp/c1867/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/c1867/all.dis
+          python3 - <<'PY' > analysis/service184-candidate-1867b28.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/c1867/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          ls=Path('/tmp/c1867/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':
+                loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(ls):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(a):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              m=(lo+hi)//2
+              if fdes[m][0]<=a:lo=m+1
+              else:hi=m
+            for k in range(max(0,lo-6),min(len(fdes),lo+2)):
+              x,y=fdes[k]
+              if x<=a<y:return x,y
+          def ctx(i,b=18,a=32):
+            for x in ls[max(0,i-b):min(len(ls),i+a+1)]:print('    '+x)
+          def va2off(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=va2off(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          ap=0x1867b28
+          print('# service184 candidate 0x1867b28 validation')
+          print()
+          print('Candidate ABI:')
+          print('- +0x28 = 0xb00302 -> lea rax,[rdi+0x50]; ret')
+          print('- +0x30 = 0x11ca6fe -> lea rax,[rdi+0xd0]; ret')
+          print('- +0x38 = 0x135c758 sret-style')
+          print('- exact service184 callers null-check +0x28 result, so an always-nonnull this+0x50 return is already semantically weak')
+          print()
+
+          print('## Candidate vtable')
+          for off in range(0,0x90,8):
+            t=q(ap+off)
+            print(f'- +0x{off:x}: {hex(t) if t is not None else None} FDE={fde(t) if t else None}')
+          print()
+
+          print('## +0x28 method body')
+          fr=fde(0xb00302)
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print(l)
+          print()
+
+          # Find every direct AP materialization and inspect writes around owner+0x50.
+          refs=[]
+          for a,i,op,l in ins:
+            mm=re.search(r'#\s*1867b28\b',l)
+            if mm:refs.append((a,i,fde(a),op,l))
+          print(f'## AP materializations: {len(refs)}')
+          for a,i,fr,op,l in refs:
+            print(f'### 0x{a:x}; FDE={fr}: {op}')
+            ctx(i,30,70);print()
+
+          # Within materializer FDEs, list any writes exactly to +0x50 on the register
+          # receiving the candidate vptr / allocated object and any high-address constant stored there.
+          seen=set()
+          print('## Writes to +0x50 in candidate materializer FDEs')
+          for ra,ri,fr,op,l in refs:
+            if not fr or fr in seen:continue
+            seen.add(fr)
+            for a,i,oo,ll in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              left=oo.split(',',1)[0]
+              if re.search(r'\[[a-z0-9]+\+0x50\]',left) and re.match(r'(mov|lea|and|xor|or|xchg)',oo):
+                print(f'### 0x{a:x}: {oo}')
+                ctx(i,12,26);print()
+
+          # Also inspect every high-address constant used within 0x40 bytes of an exact +0x50 store.
+          print('## Candidate dependency-vptr hypotheses around +0x50 stores')
+          for a,i,oo,ll in ins:
+            if not any(fr and fr[0]<=a<fr[1] for _,_,fr,_,_ in refs):continue
+            left=oo.split(',',1)[0]
+            if not re.search(r'\[[a-z0-9]+\+0x50\]',left):continue
+            for x in ls[max(0,i-12):min(len(ls),i+13)]:
+              mm=re.search(r'#\s*([0-9a-f]+)\b',x)
+              if not mm:continue
+              v=int(mm.group(1),16)
+              if 0x1800000<=v<0x1900000:
+                print(f'- +0x50 store @0x{a:x}; nearby high constant 0x{v:x}: {x.strip()}')
+                print(f'  candidate +0x68 -> {hex(q(v+0x68)) if q(v+0x68) is not None else None}; FDE={fde(q(v+0x68)) if q(v+0x68) else None}')
+          print()
+
+          # Directly inspect known owner construction regions from prior ranking.
+          print('## Known materializer windows')
+          for lo,hi in ((0x135a740,0x135a860),(0x135c6d0,0x135c820)):
+            print(f'### 0x{lo:x}..0x{hi:x}')
+            for a,i,op,l in ins:
+              if lo<=a<hi:print(l)
+            print()
+
+          # Look for virtual calls via [owner+0x50] or first qword of owner+0x50.
+          print('## Runtime uses of exact embedded address this+0x50 near candidate code family')
+          for a,i,op,l in ins:
+            if not(0x1350000<=a<0x1365000):continue
+            if '+0x50]' in op:
+              print(f'### 0x{a:x}: {op}')
+              ctx(i,8,16);print()
+
+          print('## Decision criteria')
+          print('- Reject if this+0x50 is ordinary state/container data or its first word is not a stable vptr.')
+          print('- Reject if dependency vtable +0x68 is destructor/delete.')
+          print('- Even a live +0x68 operation does not prove identity without table[184] population dataflow.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-candidate-1867b28.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Validate service184 candidate 0x1867b28"
+          git pull --rebase origin main
+          git push origin HEAD:main
