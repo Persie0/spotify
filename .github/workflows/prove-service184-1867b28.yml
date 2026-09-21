@@ -1,0 +1,192 @@
+name: Prove service184 class and embedded execution dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/prove-service184-1867b28.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184prove
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184prove
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace exact class and +0x50 subobject
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184prove/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184prove/all.dis
+          readelf -rW "$SO" > /tmp/s184prove/relocs.txt
+          python3 - <<'PY' > analysis/service184-1867b28-proof.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184prove/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184prove/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                ad=rr.entry.get('r_addend')
+                if ad is not None: rel[rr['r_offset']]=ad
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+          def qword(va):
+            if va in rel:return rel[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def dump(start,end):
+            for a,i,op,l in ins:
+              if start<=a<end: print('    '+l)
+          def ctx(i,b=18,a=28):
+            for z in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+z)
+
+          AP=0x1867b28
+
+          print('# Service184 candidate 0x1867b28 and embedded execution dependency')
+          print()
+          print('Why this candidate matters:')
+          print('- it is one of only two actually materialized vtables matching the proven real service184 +0x28/+0x30/+0x38 ABI')
+          print('- its +0x38 implementation is at 0x135c758, directly adjacent to the independently proven real service184 consumer at 0x135c7b3')
+          print('- its +0x28 method at 0xb00302 returns this+0x50')
+          print()
+
+          print('## Candidate vtable slots')
+          for off in range(0,0x100,8):
+            q=qword(AP+off)
+            print(f'- +0x{off:x}: {("0x%x"%q) if q is not None else "none"} FDE={fde(q) if q else None}')
+          print()
+
+          print('## Candidate methods +0x28/+0x30/+0x38/+0x68')
+          for off in (0x28,0x30,0x38,0x68):
+            q=qword(AP+off)
+            print(f'### +0x{off:x} -> {("0x%x"%q) if q else "none"}')
+            if q:
+              fr=fde(q); print(f'FDE={fr}')
+              if fr:
+                dump(fr[0],fr[1])
+            print()
+
+          print('## Full constructor FDE containing 0x135a7e1')
+          fr=fde(0x135a7e1); print(f'FDE={fr}')
+          if fr:dump(fr[0],fr[1])
+          print()
+
+          print('## Focused construction window 0x135a780..0x135ad80')
+          dump(0x135a780,0x135ad80)
+          print()
+
+          print('## All uses of exact embedded dependency address stored at rsp+0x80')
+          # Constructor stores &obj+0x50 to rsp+0x80 at 135a807. Show every access in the FDE.
+          if fr:
+            fs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for j,(a,i,op,l) in enumerate(fs):
+              if '[rsp+0x80]' in op:
+                print(f'### 0x{a:x}: {op}')
+                for x in fs[max(0,j-12):min(len(fs),j+22)]:print('    '+x[3])
+                print()
+
+          print('## Writes or initialization touching candidate object +0x50..+0x8f')
+          if fr:
+            # Track obvious aliases: allocated object starts in rax, saved to rsp+0x20 at 135a83d.
+            for j,(a,i,op,l) in enumerate(fs):
+              if a<0x135a7d8:continue
+              if re.search(r'\[(?:rax|rbx|rbp|r12|r13|r14|r15)\+0x(?:5[0-9a-f]|6[0-9a-f]|7[0-9a-f]|8[0-9a-f])\]',op):
+                print(f'### 0x{a:x}: {op}')
+                for x in fs[max(0,j-8):min(len(fs),j+12)]:print('    '+x[3])
+                print()
+
+          print('## Calls immediately using rsp+0x80 as argument')
+          if fr:
+            fs=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for j,(a,i,op,l) in enumerate(fs):
+              if '[rsp+0x80]' not in op:continue
+              for x in fs[j:min(len(fs),j+16)]:
+                if 'call' in x[2]:
+                  print(f'### source 0x{a:x} -> call 0x{x[0]:x}: {x[2]}')
+                  for y in fs[max(0,j-5):min(len(fs),j+18)]:print('    '+y[3])
+                  print()
+                  break
+
+          print('## Registration evidence for ID 0xb8 near candidate construction family')
+          # Any explicit b8 validation/registration within +/- ~0x30000 of construction.
+          for a,i,op,l in ins:
+            if not (0x1320000<=a<0x1380000):continue
+            if re.search(r'(?:mov\s+edx,0xb8|push\s+0xb8|mov\s+BYTE PTR \[[^]]+\],0xb8)',op):
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              ctx(i,16,24)
+              print()
+
+          print('## All materializations of candidate vptr')
+          for a,i,op,l in ins:
+            if '# 1867b28 ' in l:
+              print(f'### 0x{a:x} FDE={fde(a)}')
+              ctx(i,14,32)
+              print()
+
+          print('## Destruction/copy methods around 0x135c70c')
+          dump(0x135c650,0x135c790)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-1867b28-proof.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Prove service184 candidate and embedded dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
