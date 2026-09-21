@@ -1,0 +1,168 @@
+name: Fast decode TimelineConductor object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-decode-timeline-conductor.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlfast
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlfast
+
+      - name: Decode
+        run: |
+          set -euo pipefail
+          SO=/tmp/tlfast/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlfast/all.dis
+          readelf -rW "$SO" > /tmp/tlfast/rel.txt
+          readelf -W -l "$SO" > /tmp/tlfast/ph.txt
+          python3 - <<'PY' > analysis/timeline-conductor-object-fast.md
+          from pathlib import Path
+          import re, struct, bisect
+
+          dl=Path('/tmp/tlfast/all.dis').read_text(errors='replace').splitlines()
+          b=Path('/tmp/tlfast/liborbit-jni-spotify.so').read_bytes()
+
+          loads=[]
+          for l in Path('/tmp/tlfast/ph.txt').read_text().splitlines():
+            if l.strip().startswith('LOAD'):
+              p=l.split()
+              loads.append((int(p[2],16),int(p[2],16)+int(p[4],16),int(p[1],16)))
+
+          rel={}
+          for l in Path('/tmp/tlfast/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              i=p.index('R_X86_64_RELATIVE')
+              if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                rel[int(p[0],16)]=int(p[i+1],16)
+
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def vo(v):
+            for a,z,o in loads:
+              if a<=v<z:return o+(v-a)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(b):return None
+            return struct.unpack_from('<Q',b,o)[0]
+          def idx(a):
+            return bisect.bisect_left(addrs,a)
+          def block(start,stop):
+            for a,i,op,l in ins:
+              if start<=a<stop: print('    '+l)
+          def ctx(a,n=18):
+            j=idx(a)
+            for aa,ii,op,l in ins[max(0,j-n):min(len(ins),j+n+1)]: print('    '+l)
+
+          print('# TimelineConductorSetupImpl / service-object fast decode')
+          print()
+          print('## Descriptor identity')
+          print('- provider ID: 0xb8')
+          print('- descriptor AP: 0x1867c58')
+          print('- +0x10 ID method: 0x135c85c -> 0xb8')
+          print('- +0x18 metadata: ptr 0x347239, len 0x1a = TimelineConductorSetupImpl')
+          print('- +0x28 factory: 0x135c878')
+          print()
+
+          print('## Factory allocation / construction window')
+          block(0x135cbd0,0x135cf20)
+          print()
+
+          print('## Constructor 0x135d056')
+          block(0x135d056,0x135d700)
+          print()
+
+          print('## High-address constants in constructor')
+          highs=[]
+          for a,i,op,l in ins:
+            if not (0x135d056<=a<0x135d700): continue
+            m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+            if m:
+              va=int(m.group(1),16)
+              highs.append((a,va,op))
+              print(f'- 0x{a:x}: {op} -> 0x{va:x}')
+          print()
+
+          print('## Candidate vtable neighborhoods from constructor constants')
+          seen=set()
+          for _,va,_ in highs:
+            for ap in range(max(0,va-0x20),va+0x21,8):
+              if ap in seen: continue
+              vals={off:q(ap+off) for off in range(0,0x90,8)}
+              code=sum(1 for x in vals.values() if x is not None and 0x900000<=x<0x1800000)
+              if code<5: continue
+              seen.add(ap)
+              print(f'### AP 0x{ap:x}; code-looking slots={code}')
+              for off,v in vals.items():
+                print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else None}')
+              print()
+
+          print('## Exact stores of high constants into object first word/subobjects')
+          # Identify store patterns in constructor where a register loaded via high-address LEA is then stored.
+          rows=[x for x in ins if 0x135d056<=x[0]<0x135d700]
+          for k,(a,i,op,l) in enumerate(rows):
+            m=re.match(r'lea\s+(r\w+),\[rip[^#]*#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})',op)
+            if not m: continue
+            reg,va=m.group(1),int(m.group(2),16)
+            for aa,ii,oo,ll in rows[k+1:k+8]:
+              if re.match(r'mov\s+QWORD PTR \[[^]]+\],'+re.escape(reg)+r'\b',oo):
+                print(f'### high 0x{va:x} loaded @0x{a:x}, stored @0x{aa:x}: {oo}')
+                ctx(aa,8)
+                print()
+                break
+
+          print('## Factory output stores')
+          for a,i,op,l in ins:
+            if 0x135c878<=a<0x135d056 and re.search(r'\[(?:r15|rbx|rdi|r14)(?:\+0x[0-9a-f]+)?\]',op) and re.match(r'(mov|movups|movdqu)',op):
+              if 'rsp' not in op:
+                print('    '+l)
+          print()
+
+          print('## Descriptor AP materialization')
+          for a,i,op,l in ins:
+            if '# 1867c58' in l:
+              print(f'### 0x{a:x}')
+              ctx(a,18)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-object-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast decode TimelineConductor object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
