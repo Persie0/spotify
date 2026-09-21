@@ -1,0 +1,184 @@
+name: Validate service184 nullable dependency
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/validate-service184-nullable-dependency.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184null
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184null
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace exact returns and candidates
+        run: |
+          SO=/tmp/s184null/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184null/all.dis
+          python3 - <<'PY' > analysis/service184-nullable-dependency.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184null/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184null/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=12,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Service184 +0x28 nullable dependency validation')
+          print()
+          print('Ground truth:')
+          print('- b8f02e returns exact registry table[184]')
+          print('- its virtual +0x28 return is stored as a long-lived pointer')
+          print('- Skip Ad later invokes that returned pointer polymorphically at virtual +0x68')
+          print()
+
+          exact=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'call\s+b8f02e\b',op):continue
+            win=ins[idx+1:idx+12]
+            call28=None
+            for j,(aa,ii,oo,ll) in enumerate(win):
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x28\]',oo):
+                call28=(idx+1+j,aa,ii,oo,ll);break
+            if call28: exact.append((idx,a,call28))
+
+          print(f'## Exact b8f02e -> +0x28 callsites: {len(exact)}')
+          for n,(idx,a,(j,ca,ci,cop,cl)) in enumerate(exact,1):
+            print(f'### {n}. accessor@0x{a:x} -> +0x28@0x{ca:x}; FDE={fde_for(a)}')
+            ctx(ci,12,20)
+            print()
+
+            tracked_regs={'rax'}
+            stack_slots=set()
+            observations=[]
+            fr=fde_for(a)
+            for k in range(j+1,min(len(ins),j+220)):
+              aa,ii,oo,ll=ins[k]
+              if fr and not(fr[0]<=aa<fr[1]):break
+
+              for reg in list(tracked_regs):
+                if re.search(r'\btest\s+'+reg+r','+reg+r'\b',oo) or re.search(r'\bcmp\s+'+reg+r',0x0\b',oo):
+                  observations.append(('null-test',aa,oo))
+                if re.search(r'\bmov\s+r\w+,QWORD PTR \['+reg+r'\]',oo):
+                  observations.append(('vptr-deref',aa,oo))
+
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x68\]',oo):
+                observations.append(('virtual+0x68',aa,oo))
+
+              m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),rax\b',oo)
+              if m: tracked_regs.add(m.group(1))
+              m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))\b',oo)
+              if m and m.group(2) in tracked_regs: tracked_regs.add(m.group(1))
+              m=re.match(r'mov\s+QWORD PTR \[rsp\+0x([0-9a-f]+)\],(r\w+)\b',oo)
+              if m and m.group(2) in tracked_regs: stack_slots.add(int(m.group(1),16))
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x([0-9a-f]+)\]\b',oo)
+              if m and int(m.group(2),16) in stack_slots: tracked_regs.add(m.group(1))
+
+              md=re.match(r'(?:mov|lea|xor|pop)\s+(r\w+),(.+)',oo)
+              if md:
+                d,s=md.group(1),md.group(2)
+                if d in tracked_regs and d!='rax':
+                  same=(s in tracked_regs) or ('[rsp+' in s and any(f'0x{x:x}' in s for x in stack_slots))
+                  if not same: tracked_regs.discard(d)
+
+            if observations:
+              for kind,aa,oo in observations[:40]:
+                print(f'- {kind} @0x{aa:x}: {oo}')
+            else:
+              print('- no null/vptr/+0x68 observation in local 220-insn slice')
+            print(f'- tracked stack slots: {[hex(x) for x in sorted(stack_slots)]}')
+            print()
+
+          print('## Candidate +0x28 return semantics')
+          candidates={
+            0x1817068:('field',0x10,0xa7a004),
+            0x1867b28:('embedded',0x50,0xb00302),
+            0x18228d8:('embedded',0x218,0xd17212),
+            0x181f788:('field',0x5e0,0xcc4eea),
+            0x1821448:('delegated',None,0xb7d2ca),
+            0x1822988:('conditional',None,0xd1a440),
+          }
+          for ap,(kind,off,meth) in candidates.items():
+            print(f'### AP 0x{ap:x}: kind={kind}, returned-offset={hex(off) if off is not None else None}, method=0x{meth:x}')
+            fr=fde_for(meth)
+            if fr:
+              for aa,ii,oo,ll in ins:
+                if fr[0]<=aa<fr[1]: print('    '+ll)
+            if kind=='embedded':
+              print('- nullability: for a valid service object, this+offset is intrinsically non-null')
+            elif kind=='field':
+              print('- nullability: stored pointer can naturally be null')
+            else:
+              print('- nullability: depends on delegated/conditional target')
+            print()
+
+          print('## Interpretation rule')
+          print('- Repeated runtime null checks on the exact +0x28 result are evidence against an always-nonnull this-relative implementation.')
+          print('- This is not by itself proof of a field-return implementation because callers may retain defensive null checks.')
+          print('- The gold-standard identity remains a direct table[184] population -> concrete vptr dataflow.')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-nullable-dependency.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Validate service184 nullable dependency"
+          git pull --rebase origin main
+          git push origin HEAD:main
