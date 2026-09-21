@@ -1,0 +1,205 @@
+name: Resolve field428 source class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-field428-source-class.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/f428class
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/f428class
+
+      - name: Install helpers
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve class
+        run: |
+          set -euo pipefail
+          SO=/tmp/f428class/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/f428class/all.dis
+          python3 - <<'PY' > analysis/field428-source-class.md
+          from pathlib import Path
+          import re, bisect, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/f428class/liborbit-jni-spotify.so')
+          dis=Path('/tmp/f428class/all.dis').read_text(errors='replace').splitlines()
+          data=so.read_bytes()
+
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              loads=[]
+              for seg in elf.iter_segments():
+                  if seg['p_type']=='PT_LOAD':
+                      loads.append((seg['p_vaddr'],seg['p_vaddr']+seg['p_filesz'],seg['p_offset']))
+              rel={}
+              for sec in elf.iter_sections():
+                  if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+                  for rr in sec.iter_relocations():
+                      add=rr.entry.get('r_addend')
+                      if add is not None:
+                          rel[rr['r_offset']]=add
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort()
+          starts=[a for a,z in fdes]
+
+          ins=[]
+          for i,l in enumerate(dis):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=12,n=22):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          def vaoff(v):
+              for a,z,o in loads:
+                  if a<=v<z:return o+(v-a)
+          def q(v):
+              if v in rel:return rel[v]
+              o=vaoff(v)
+              if o is None or o+8>len(data):return None
+              return struct.unpack_from('<Q',data,o)[0]
+          def signed64(x):
+              if x is None:return None
+              return x-(1<<64) if x&(1<<63) else x
+          def code(v):
+              return v is not None and fde(v) is not None
+
+          targets=[0xece084,0xee6db8]
+          known=[0x18674c8,0x1867550,0x1867980]
+          print('# owner+0x428 source-class resolver')
+          print()
+          print('Goal: identify the virtual class/interface owning the two source builders that feed source+0x178 into the owner+0x428 construction, then compare it with TimelineAds owner+0x50 object APs.')
+          print()
+          print('Known TimelineAds owner+0x50 APs: '+', '.join(hex(x) for x in known))
+          print()
+
+          # Exact relocation slots that point to builder functions.
+          allcands=[]
+          for target in targets:
+              slots=sorted(off for off,val in rel.items() if val==target)
+              print(f'## Relocation slots targeting 0x{target:x}')
+              print(f'- slots: {", ".join(hex(x) for x in slots) if slots else "none"}')
+              for slot in slots:
+                  print(f'### slot 0x{slot:x}')
+                  for a in range(slot-0x40,slot+0x88,8):
+                      v=q(a)
+                      print(f'- 0x{a:x}: {("0x%x"%v) if v is not None else "None"} FDE={fde(v) if v else None}')
+                  print()
+
+                  # Candidate AP = slot - virtual offset. Score vtable-like code density
+                  # and Itanium-ish header plausibility. Keep only useful candidates.
+                  rows=[]
+                  for off in range(0,0x201,8):
+                      ap=slot-off
+                      vals=[q(ap+x) for x in range(0,0x180,8)]
+                      density=sum(code(v) for v in vals)
+                      hdr0=signed64(q(ap-0x10))
+                      hdr1=q(ap-0x8)
+                      small_hdr = hdr0 is not None and -0x1000 <= hdr0 <= 0x1000
+                      if density>=8 and small_hdr:
+                          refs=sum(1 for _,_,_,l in ins if f'# {ap:x} ' in l or l.rstrip().endswith(f'# {ap:x}'))
+                          rows.append((density,refs,-off,ap,off,hdr0,hdr1))
+                  rows=sorted(rows,reverse=True)[:12]
+                  print('#### candidate address points')
+                  for density,refs,neg,ap,off,h0,h1 in rows:
+                      print(f'- AP 0x{ap:x}, target slot +0x{off:x}, codeDensity={density}, codeMaterializations={refs}, header[-0x10]={h0}, header[-0x8]={("0x%x"%h1) if h1 is not None else None}')
+                      allcands.append((ap,target,off,density,refs))
+                  print()
+
+          print('## Known TimelineAds AP slices')
+          for ap in known:
+              print(f'### AP 0x{ap:x}')
+              for off in range(0,0x181,8):
+                  v=q(ap+off)
+                  if v is not None:
+                      print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+              for t in targets:
+                  offs=[off for off in range(0,0x400,8) if q(ap+off)==t]
+                  print(f'- target 0x{t:x} occurs at: {", ".join(hex(x) for x in offs) if offs else "none"}')
+              print()
+
+          # Materialization sites for top candidate APs and known APs.
+          aps=sorted(set([x[0] for x in allcands]+known))
+          print('## AP materialization sites')
+          for ap in aps:
+              hits=[]
+              needle=f'# {ap:x}'
+              for a,i,op,l in ins:
+                  if needle in l:
+                      hits.append((a,i,op,l))
+              if not hits: continue
+              print(f'### AP 0x{ap:x}: {len(hits)} refs')
+              for a,i,op,l in hits[:12]:
+                  print(f'#### ref 0x{a:x}; FDE={fde(a)}')
+                  print(ctx(a,10,18)); print()
+
+          print('## Builder bodies / source field fingerprints')
+          for t in targets:
+              fr=fde(t)
+              print(f'### 0x{t:x} FDE={fr}')
+              if fr:
+                  for a,i,op,l in ins:
+                      if fr[0]<=a<fr[1] and (
+                          re.search(r'\+(?:0x)?(?:10|18|20|30|40|50|b0|160|168|178|188|1a0)\]',op)
+                          or a in range(t,t+0x90)
+                      ):
+                          print('    '+l)
+              print()
+
+          # Compare virtual function neighborhoods of candidate APs to TimelineAds APs:
+          # exact shared function pointers are strong family evidence.
+          print('## Shared virtual targets with TimelineAds APs')
+          known_targets={ap:{q(ap+off) for off in range(0,0x300,8) if code(q(ap+off))} for ap in known}
+          for ap,_,_,_,_ in sorted(set(allcands)):
+              vals={q(ap+off) for off in range(0,0x300,8) if code(q(ap+off))}
+              for kap,kvals in known_targets.items():
+                  shared=sorted(vals & kvals)
+                  if shared:
+                      print(f'- candidate AP 0x{ap:x} vs TimelineAds AP 0x{kap:x}: shared={len(shared)} '+', '.join(hex(x) for x in shared[:24]))
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/field428-source-class.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve field428 source class"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
