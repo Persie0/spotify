@@ -1,0 +1,205 @@
+name: Trace real service184 registry table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-real-registry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184real
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184real
+
+      - name: Install helpers
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace facade and table provenance
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184real/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184real/all.dis
+          python3 - <<'PY' > analysis/service184-real-registry.md
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184real/all.dis').read_text(errors='replace').splitlines()
+          so=Path('/tmp/s184real/liborbit-jni-spotify.so')
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def ctx(i,b=20,a=35):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:
+              print('    '+x)
+
+          def dump_fde(fr,maxins=2200):
+            if not fr:return
+            n=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l);n+=1
+                if n>=maxins:
+                  print('    ... truncated ...');break
+
+          print('# Real service184 registry-table provenance')
+          print()
+          print('Ground truth:')
+          print('- registry facade layout: +0 = service-pointer table base, +8 = ID-buffer pointer, +0x10 = ID-buffer length')
+          print('- b8f02e validates ID 0xb8 in the ID buffer and returns table[0xb8] == [table+0x5c0]')
+          print('- raw unrelated +0x5c0 writes are intentionally ignored unless the base is proven to be facade[0].')
+          print()
+
+          print('## Registry facade helper cluster b63200..b63400')
+          for a,i,op,l in ins:
+            if 0xb63180<=a<0xb63480: print('    '+l)
+          print()
+
+          print('## FDE containing downstream registry facade receiver 0x11ee6b0')
+          fr=fde_for(0x11ee6b0)
+          print(f'FDE={fr}')
+          dump_fde(fr)
+          print()
+
+          print('## Direct b8f02e callers and receiver setup')
+          callers=[]
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+b8f02e\b',op):
+              callers.append((a,i,fde_for(a)))
+              print(f'### call 0x{a:x} FDE={fde_for(a)}')
+              ctx(i,35,18)
+              print()
+
+          print('## FDEs containing b8f02e callers: facade-field accesses +0/+8/+0x10')
+          seen=set()
+          for a,i,fr in callers:
+            if not fr or fr in seen:continue
+            seen.add(fr)
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            for aa,ii,op,l in ins:
+              if not(fr[0]<=aa<fr[1]):continue
+              if re.search(r'\[[a-z0-9]+(?:\+0x(?:8|10))?\]',op):
+                if ('+0x8]' in op or '+0x10]' in op or re.search(r'\[[a-z0-9]+\]',op)):
+                  print('    '+l)
+            print()
+
+          print('## Candidate facade constructors: same base written at +0, +8, +0x10')
+          # Group constant-offset writes by FDE + base register.
+          groups=defaultdict(lambda:defaultdict(list))
+          mre=re.compile(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]')
+          for a,i,op,l in ins:
+            fr=fde_for(a)
+            if not fr:continue
+            dst=op.split(',',1)[0]
+            m=mre.search(dst)
+            if not m:continue
+            off=int(m.group(2),16) if m.group(2) else 0
+            if off not in (0,8,0x10):continue
+            if not re.match(r'^(mov|movups|movaps|movdqu|movdqa|and|xor|lea|xchg)',op):continue
+            groups[(fr,m.group(1))][off].append((a,i,op,l))
+          candidates=[]
+          for (fr,base),d in groups.items():
+            if all(x in d for x in (0,8,0x10)):
+              candidates.append((fr,base,d))
+          print(f'count={len(candidates)}')
+          # Prefer functions referenced by caller-FDEs or near known registry code.
+          for fr,base,d in candidates[:400]:
+            score=0
+            if 0xb00000<=fr[0]<0xc00000:score+=4
+            if 0x1000000<=fr[0]<0x1220000:score+=2
+            if score==0:continue
+            print(f'### score={score} FDE 0x{fr[0]:x}..0x{fr[1]:x} base={base}')
+            for off in (0,8,0x10):
+              for x in d[off][:8]: print('    '+x[3])
+            print()
+
+          print('## Stores to indexed pointer tables using scale*8')
+          for a,i,op,l in ins:
+            if not re.match(r'^(mov|xchg)',op):continue
+            # pointer-array stores such as [base+idx*8] or [base+idx*8+disp]
+            if re.search(r'\[[a-z0-9]+\+[a-z0-9]+\*8(?:\+0x[0-9a-f]+)?\]',op):
+              fr=fde_for(a)
+              if fr and (0xb00000<=fr[0]<0xc00000 or 0x1000000<=fr[0]<0x1220000 or 0x1300000<=fr[0]<0x1460000):
+                print(f'### 0x{a:x} FDE={fr}: {op}')
+                ctx(i,10,16)
+                print()
+
+          print('## Direct table-slot +0x5c0 reads/writes with local base provenance')
+          for a,i,op,l in ins:
+            if '+0x5c0]' not in op:continue
+            print(f'### 0x{a:x} FDE={fde_for(a)}: {op}')
+            ctx(i,28,30)
+            print()
+
+          print('## Registry ID-buffer construction candidates containing byte 0xb8')
+          # Look for explicit byte stores 0xb8 and nearby pointer-table construction.
+          for a,i,op,l in ins:
+            if re.search(r'\bmov\s+BYTE PTR \[[^]]+\],0xb8\b',op):
+              print(f'### byte-store 0x{a:x} FDE={fde_for(a)}')
+              ctx(i,30,40)
+              print()
+
+          print('## Accessors for neighboring registry IDs to cross-check table identity')
+          for idx,(a,i,op,l) in enumerate(ins):
+            m=re.search(r'\bmov\s+edx,0x([0-9a-f]+)\b',op)
+            if not m:continue
+            service=int(m.group(1),16)
+            if service not in (0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xc2,0x48,0x23):continue
+            nxt=ins[idx:min(len(ins),idx+14)]
+            if not any(re.search(r'call\s+b622de\b',x[2]) for x in nxt):continue
+            print(f'### ID 0x{service:x} setup @0x{a:x}; FDE={fde_for(a)}')
+            ctx(i,10,28)
+            print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-real-registry.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace real service184 registry table"
+          git pull --rebase origin main
+          git push origin HEAD:main
