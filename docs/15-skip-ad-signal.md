@@ -171,7 +171,18 @@ The concrete service and dependency objects are now resolved. `TimelineConductor
 
 That dependency is the same `0xbd0`-byte object allocated at `0x135f2b8` and retained in `r14` through the install. Its primary vptr/address point is written at `0x135f494` as **`0x1868200`** (with secondary interface address points at `0x18683c8`, `0x18683f8`, and `0x18684c0`). On the primary interface, virtual slot **`+0x68` resolves exactly to `0x1371d90`**. Therefore the lower-level native action reached by the exact `"skip-ad"` branch is no longer an ABI candidate: it is the concrete `0x1371d90` method on the dependency returned by `TimelineConductor+0x28`. That method contains the fixed literals **`smartSkipEmbeddedPodcastAd`** and **`smart-skip-embedded-podcast-ad`**, tying this execution path specifically to Spotify's smart embedded-podcast-ad skip behavior.
 
-The same dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control object rather than an ad-only helper. The remaining semantic work is inside `0x1371d90` and its downstream calls—not the identity of the service, dependency, or `+0x68` slot.
+The same dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control object rather than an ad-only helper.
+
+The semantics of `0x1371d90` are now resolved far enough to name the operation. Its two literal identifiers are:
+
+```text
+smartSkipEmbeddedPodcastAd
+smart-skip-embedded-podcast-ad
+```
+
+The exact native `"skip-ad"` discriminator at `0x12044d8` invokes dependency `+0x68` as a **this-only** call; the command string is consumed by the dispatcher and is not passed to `0x1371d90`. Inside `0x1371d90`, the camelCase identifier is used at the start of the conductor operation and the kebab-case identifier is used later in the transition/reporting path. One direct callee, `0x137cb68`, contains the explicit strings `"Seeking to position: %lldms"`, `"Seeking by playing clip %s with start offset"`, and `"Seeking within current clip"`. Thus this path is concretely a **TimelineConductor smart-seek/clip transition for embedded podcast ads**, not ordinary `SkipNext`.
+
+This also narrows the scope of the branch: the native implementation selected by this `"skip-ad"` action is specifically `smartSkipEmbeddedPodcastAd`. It should not be generalized to every advertising format without separate evidence.
 
 A second correction applies to the first ABI-based service184 vtable shortlist. The initial addresses `0x18228d8`, `0x1821448`, `0x1822988`, and `0x181f788` were selected by method-shape scanning before enforcing the Itanium vtable header. Inspection of their surrounding qwords shows that several are shifted into the middle of larger vtable groups rather than true address points. For example, `0x1821440` is preceded by the characteristic `offset-to-top = 0` / null-typeinfo header, while `0x1821448` is already the second method slot. Therefore slot labels such as “candidate +0x28” from the original shortlist are not class-identity evidence and must not be used to name service184.
 
@@ -267,13 +278,22 @@ native "skip-ad" discriminator
 secondary dispatcher
         |
         v
-dependency virtual +0x68
+dependency AP 0x1868200 / virtual +0x68
         |
         v
-lower playback transition (exact implementation under trace)
+0x1371d90
+        |
+        v
+smartSkipEmbeddedPodcastAd
+        |
+        v
+TimelineConductor seek/clip transition
+        |
+        v
+"smart-skip-embedded-podcast-ad" transition/reporting path
 ```
 
-Two native edges remain open: the exact state propagation from `adObject+0x1b8` into the available-signal producer, and the concrete implementation/side effects of the downstream `+0x68` call. The timer, Android signal export, UI test, command serialization, ContextPlayer endpoint, and native signal-name handling are independently proven.
+The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> smartSkipEmbeddedPodcastAd`. What remains on the execution side is finer-grained reconstruction of how `0x1371d90` chooses the exact seek/clip target and which playback/ad-reporting event is emitted after that transition.
 
 ## 6. Relationship to ordinary next-track restrictions
 
@@ -298,10 +318,9 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
 2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
-3. recover the real registry service-table population, then resolve the concrete vtable behind validated service 184 (`table[184] = table+0x5c0`) and its `+0x28() -> execution dependency` chain,
-4. identify that dependency's virtual `+0x68` implementation and decode the exact playback state transition it causes,
-5. identify the playback-ad reporting event emitted after a successful native skip (the currently recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
-6. map the equivalent path during Connect/remote playback.
+3. reconstruct `0x1371d90`'s exact target-selection logic: which current clip/ad boundary it queries, how the computed milliseconds are derived, and when it chooses in-clip seek versus clip advancement,
+4. identify the playback-ad reporting event emitted after a successful `smartSkipEmbeddedPodcastAd` transition (the recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
+5. map the equivalent path during Connect/remote playback and verify whether it reuses the same TimelineConductor operation.
 
 Evidence reports:
 
@@ -321,3 +340,9 @@ Evidence reports:
 - `analysis/skip-ad-service-184-compact.md`
 - `analysis/orbit-registry-helper-b622de.md`
 - `analysis/service184-skipad-stackarg-proof.md`
+- `analysis/timeline-conductor-service-object.md`
+- `analysis/timeline-conductor-c8-dependency.md`
+- `analysis/timeline-conductor-c8-final-r14.md`
+- `analysis/timeline-conductor-dependency-vtable.md`
+- `analysis/timeline-conductor-skip-action-literals.md`
+- `analysis/timeline-conductor-skipad-semantics.md`
