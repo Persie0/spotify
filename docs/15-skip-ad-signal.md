@@ -316,6 +316,9 @@ The execution edge is concrete through `TimelineConductorSetupImpl -> 0x1867c98:
 
 A further ABI check eliminates the three inline readiness-variant tables previously surfaced by the broad final-receiver resolver. The final availability call at `fd384d` / `fd3926` supplies only `rdi = receiver` and immediately tests the scalar value in `eax`. By contrast, `0x183d258:+0x140 -> 0xf7835e` consumes additional `rsi/rdx/rcx` arguments and builds complex state, `0x183d3b0:+0x140 -> 0xf7431e` is a deleting-destructor path, and `0x183d470:+0x140 -> 0xa50370` is effectively an `operator delete` tail. None is ABI-compatible with the final Skip-Ad readiness discriminator. These remain useful neighboring type-family evidence only and must not be used as the receiver identity.
 
+
+The later `d85524 -> d8a488 -> d8a5c2` carrier hypothesis is now also rejected as the final readiness route. It had a strong superficial layout match: the object passed to `d85524` is tested at `+0x210`, dereferenced at `+0x258`, and its vtable `+0x1d8` is eventually invoked; the `ef91cc` owner family independently initializes/owns those same `+0x210/+0x258` offsets. However the decisive vtable check shows `0x18365e0:+0x1d8 -> 0xf00edc`, which is a teardown/destructor-style method, while the authoritative Skip-Ad state AP is `0x1841fc0:+0x1d8 -> fd4a92`. Therefore the d8 carrier is a parallel state/object family and must not be used as the source of the final `state+0x40` readiness receiver.
+
 ## 6. Relationship to ordinary next-track restrictions
 
 Orbit still inserts `ad_disallow` into `disallowSkippingNextReasons` based on the presence of the nested ad-state optionals.
