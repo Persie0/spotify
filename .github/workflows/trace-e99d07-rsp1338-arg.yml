@@ -1,0 +1,218 @@
+name: Trace e99d07 rsp1338 incoming argument
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-e99d07-rsp1338-arg.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/e99arg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/e99arg
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace argument
+        run: |
+          SO=/tmp/e99arg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/e99arg/all.dis
+          python3 - <<'PY' > analysis/e99d07-rsp1338-arg.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/e99arg/liborbit-jni-spotify.so')
+          lines=Path('/tmp/e99arg/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def body(fr):
+              if not fr:return []
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]: break
+                  out.append(x)
+              return out
+          def ctx(rows,k,b=20,n=35):
+              for x in rows[max(0,k-b):min(len(rows),k+n+1)]: print('    '+x[3])
+
+          target=0xe99d07
+          fr=fde(target)
+          rows=body(fr)
+          print('# e99d07 rsp+0x1338 incoming argument trace')
+          print()
+          print('## Callee frame mapping')
+          print(f'- FDE: {fr}')
+          print('- prologue: push rbp,r15,r14,r13,r12,rbx = 0x30 bytes')
+          print('- local allocation: sub rsp,0x1208')
+          print('- post-prologue rsp = entry_rsp - 0x1238')
+          print('- post [rsp+0x1338] = entry_rsp + 0x100')
+          print('- caller pre-call rsp = entry_rsp + 8')
+          print('- therefore callee [rsp+0x1338] = caller pre-call [rsp+0xf8]')
+          print()
+
+          print('## Exact callee prologue')
+          for x in rows[:45]: print('    '+x[3])
+          print()
+
+          print('## Every exact rsp+0x1338 access inside this FDE')
+          exact=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if '[rsp+0x1338]' in op:
+                  exact.append((k,a,op))
+                  side='WRITE' if '[rsp+0x1338]' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  ctx(rows,k,14,28); print()
+          writes=[x for x in exact if '[rsp+0x1338]' in x[2].split(',',1)[0]]
+          print(f'- direct writes in FDE: {len(writes)}')
+          if not writes:
+              print('- No direct write: treat slot as incoming stack argument unless an alias write is proven.')
+          print()
+
+          print('## Direct callers of e99d07')
+          callers=[]
+          for a,i,op,l in ins:
+              if re.search(r'\bcall\s+e99d07\b',op):
+                  cf=fde(a); callers.append((a,cf))
+                  cr=body(cf); ck=next(k for k,x in enumerate(cr) if x[0]==a)
+                  print(f'### caller 0x{a:x}; FDE={cf}')
+                  ctx(cr,ck,90,25); print()
+          print()
+
+          print('## Outgoing argument stack simulation')
+          for call,cf in callers:
+              cr=body(cf); ck=next(k for k,x in enumerate(cr) if x[0]==call)
+              print(f'### call 0x{call:x}')
+              # Walk backwards from call, accounting for pushes until 0x180 bytes, which caller
+              # explicitly removes immediately after the call.
+              pushes=[]
+              bytes_after=0
+              k=ck-1
+              while k>=0 and bytes_after<0x180:
+                  a,i,op,l=cr[k]
+                  if re.match(r'push\b',op):
+                      # after this push, rsp = final_rsp + bytes_after
+                      # before this push, rsp = final_rsp + bytes_after + 8
+                      m=re.match(r'push\s+(.+)$',op)
+                      operand=m.group(1) if m else ''
+                      slot=bytes_after
+                      src_abs=None
+                      sm=re.search(r'QWORD PTR \[rsp\+0x([0-9a-f]+)\]',operand)
+                      if sm:
+                          disp=int(sm.group(1),16)
+                          src_abs=bytes_after+8+disp
+                      pushes.append((a,slot,operand,src_abs,l))
+                      bytes_after+=8
+                  elif re.match(r'sub\s+rsp,0x([0-9a-f]+)',op):
+                      val=int(re.match(r'sub\s+rsp,0x([0-9a-f]+)',op).group(1),16)
+                      # If this is outgoing arg allocation, account it; usually this block uses pushes.
+                      if bytes_after+val<=0x180:
+                          bytes_after+=val
+                          pushes.append((a,bytes_after-val,f'<sub rsp,0x{val:x}>',None,l))
+                  k-=1
+
+              print(f'- reconstructed outgoing bytes: 0x{bytes_after:x}')
+              print('- table: final caller-pre-call stack slot <- push source')
+              for a,slot,operand,src_abs,l in sorted(pushes,key=lambda x:x[1]):
+                  marker='  <== callee rsp+0x1338' if slot==0xf8 else ''
+                  src=f'; operand source final_rsp+0x{src_abs:x}' if src_abs is not None else ''
+                  print(f'  - +0x{slot:03x}: @0x{a:x} push {operand}{src}{marker}')
+              chosen=[x for x in pushes if x[1]==0xf8]
+              print()
+              if chosen:
+                  a,slot,operand,src_abs,l=chosen[0]
+                  print(f'#### Selected argument: 0x{a:x}: {l.strip()}')
+                  print(f'- operand: {operand}')
+                  print(f'- if rsp-relative, value was read from final pre-call stack +0x{src_abs:x}' if src_abs is not None else '- source is register/immediate')
+                  kk=next(j for j,x in enumerate(cr) if x[0]==a)
+                  ctx(cr,kk,70,20)
+              else:
+                  print('#### No push mapped to +0xf8; investigate non-push stack allocation.')
+              print()
+
+          print('## Backward source trace for selected argument register')
+          # For each selected register operand, show prior definitions in caller FDE.
+          for call,cf in callers:
+              cr=body(cf); ck=next(k for k,x in enumerate(cr) if x[0]==call)
+              pushes=[]; bytes_after=0
+              for k in range(ck-1,-1,-1):
+                  a,i,op,l=cr[k]
+                  if re.match(r'push\b',op):
+                      operand=re.match(r'push\s+(.+)$',op).group(1)
+                      pushes.append((a,bytes_after,operand,k))
+                      bytes_after+=8
+                      if bytes_after>=0x180: break
+              chosen=[x for x in pushes if x[1]==0xf8]
+              if not chosen: continue
+              a,slot,operand,k=chosen[0]
+              regm=re.fullmatch(r'(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))',operand)
+              if regm:
+                  reg=regm.group(1)
+                  print(f'### selected register {reg}, pushed @0x{a:x}')
+                  found=0
+                  for j in range(k-1,max(-1,k-350),-1):
+                      aa,ii,oo,ll=cr[j]
+                      if re.match(r'(mov|lea|pop|xchg|xor|and|or)\s+'+re.escape(reg)+r'\b',oo):
+                          print(f'#### prior definition 0x{aa:x}: {oo}')
+                          ctx(cr,j,20,35); print()
+                          found+=1
+                          if found>=4: break
+              else:
+                  print(f'### selected non-register source: {operand}')
+
+          print('## All stack args from caller with polymorphic-looking immediate follow-up in callee')
+          # List callee high stack args 0x1238..0x1390 for context.
+          for a,i,op,l in rows:
+              for m in re.finditer(r'\[rsp\+0x(12[3-9a-f][0-9a-f]|13[0-9a-f]{2})\]',op):
+                  print(f'- 0x{a:x}: {op}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/e99d07-rsp1338-arg.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace e99d07 rsp1338 incoming argument"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
