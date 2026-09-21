@@ -1,0 +1,60 @@
+name: Decode service184 paired node writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-node-writer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184pair
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184pair
+      - name: Extract paired writer and source
+        run: |
+          SO=/tmp/s184pair/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184pair/all.dis
+          readelf -rW "$SO" > /tmp/s184pair/relocs.txt
+          {
+            echo '# Service184 paired weak-node writer'
+            echo
+            echo '## Exact paired writer 0x132fc9c / 0x132fcbb'
+            objdump -d -M intel --start-address=0x132fb00 --stop-address=0x132fe40 "$SO"
+            echo
+            echo '## Wider containing construction window'
+            objdump -d -M intel --start-address=0x132f600 --stop-address=0x1330200 "$SO"
+            echo
+            echo '## Direct callers of functions in paired writer window'
+            for A in 132f600 132f700 132f800 132f900 132fa00 132fb00 132fc00 132fd00 132fe00 132ff00 1330000 1330100; do
+              grep -n -E -B8 -A16 "call[[:space:]]+$A\\b|jmp[[:space:]]+$A\\b" /tmp/s184pair/all.dis || true
+            done
+            echo
+            echo '## High-address vptr loads in construction window'
+            objdump -d -M intel --start-address=0x132f600 --stop-address=0x1330200 "$SO" | grep -E -B6 -A12 '# 18[0-9a-f]{5,}' || true
+          } > analysis/service184-node-writer-pair.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-node-writer-pair.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 paired node writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
