@@ -175,6 +175,8 @@ A second correction applies to the first ABI-based service184 vtable shortlist. 
 
 The follow-up scan now requires a valid Itanium-style header first and only then evaluates the observed ABI (`+0x28` pointer return, `+0x30` pointer return, `+0x38` sret-style output). The embedded `0x18228d8` hypothesis is additionally weakened by direct state inspection: the region its apparent getter returned (`this+0x218`) behaves as container/state storage with moves, zeroing, and copies, and no stable first-word vptr has been established there. The corrected header-validated scan is authoritative for the next class-identification step.
 
+The first strong header-valid candidate, address point `0x1817068`, has now been rejected by following its actual `+0x28` dependency end to end. Its constructor allocates the service-shaped object at `0xc2c5f6`, initializes `owner+0x10` to null, then allocates a 16-byte polymorphic object at `0xc2c7dc`, installs vptr `0x1884978`, and stores that pointer into `owner+0x10` at `0xc2c7fc`. The candidate's `+0x28` method returns exactly that field. However, the returned object's true vtable has `+0x68 -> 0x15c286a`, and that method is a destructor/delete path: it invokes the destructor helper `0x15c2856` and tail-jumps to `operator delete`. The proven Skip Ad path invokes its dependency's `+0x68` as an operation, so this candidate is incompatible with that call contract and is no longer considered service184.
+
 ## 4. Android execution path
 
 When the user activates Skip Ad, the UI creates:
