@@ -1,0 +1,164 @@
+name: Resolve smart skip provider descriptor IDs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-smart-skip-provider-descriptors.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/provids
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/provids
+
+      - name: Install
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve IDs
+        run: |
+          SO=/tmp/provids/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/provids/all.dis
+          readelf -rW "$SO" > /tmp/provids/rel.txt
+          python3 - <<'PY' > analysis/smart-skip-provider-descriptors.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/provids/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/provids/all.dis').read_text(errors='replace').splitlines()
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(v,cap=300):
+            o=vo(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+          def ctx(a,b=12,n=20):
+            j=bisect.bisect_left(addrs,a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+
+          print('# Smart Skip provider descriptor IDs')
+          print()
+          print('Target registry IDs from exact accessors:')
+          print('- primary interval provider: 0x2f -> table+0x178')
+          print('- fallback interval provider: 0x32 -> table+0x190')
+          print()
+
+          # Identify all tiny methods that return target ID in AL/EAX and nearby vtable references.
+          for target in (0x2f,0x32):
+            print(f'## Methods returning ID 0x{target:x}')
+            hits=[]
+            for k,(a,i,op,l) in enumerate(ins):
+              if op in (f'mov    al,0x{target:x}',f'mov    eax,0x{target:x}') or re.fullmatch(rf'mov\s+(?:al|eax),0x{target:x}',op):
+                fr=fde(a)
+                if fr and fr[1]-fr[0] <= 0x40:
+                  hits.append((fr,a))
+            uniq=[]
+            for fr,a in hits:
+              if fr not in uniq:uniq.append(fr)
+            for fr in uniq:
+              print(f'### ID method FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              for aa,ii,oo,ll in ins:
+                if fr[0]<=aa<fr[1]:print('    '+ll)
+              # relocation slots pointing to method
+              slots=[off for off,add in rel.items() if add==fr[0]]
+              for off in slots:
+                print(f'- relocation slot 0x{off:x} -> method')
+                # Treat method slot as likely +0x10; test AP=slot-0x10 and dump descriptor ABI
+                ap=off-0x10
+                vals={x:q(ap+x) for x in range(0,0x40,8)}
+                print(f'  candidate descriptor AP 0x{ap:x}:')
+                for x,v in vals.items():
+                  print(f'    +0x{x:x}: {("0x%x"%v) if v is not None else None}')
+                # metadata +0x18 body strings
+                meta=vals.get(0x18)
+                if meta and fde(meta):
+                  print(f'  metadata method 0x{meta:x}:')
+                  ss=[]
+                  for aa,ii,oo,ll in ins:
+                    mf=fde(aa)
+                    if mf!=fde(meta):continue
+                    m=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                    if m:
+                      s=cstr(int(m.group(1),16))
+                      if s and 3<=len(s)<=200 and s not in ss:ss.append(s)
+                  for s in ss:print(f'    string={s!r}')
+                fac=vals.get(0x28)
+                if fac:print(f'  factory +0x28 = 0x{fac:x}, FDE={fde(fac)}')
+              print()
+
+          print('## Exact smart-skip accessor evidence')
+          for a in (0xb632ca,0xb9150c):
+            print(f'### 0x{a:x}')
+            ctx(a,2,18);print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-skip-provider-descriptors.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve smart skip provider descriptors"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
