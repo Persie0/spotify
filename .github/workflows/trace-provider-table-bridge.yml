@@ -1,0 +1,176 @@
+name: Trace provider to service table bridge
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-provider-table-bridge.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/bridge
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/bridge
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace bridge
+        run: |
+          set -euo pipefail
+          SO=/tmp/bridge/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/bridge/all.dis
+          python3 - <<'PY' > analysis/provider-to-service-table-bridge.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          dl=Path('/tmp/bridge/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          with open('/tmp/bridge/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f)
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; b=a+e['address_range']
+                      if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def body(fr):
+              a,b=fr
+              lo=bisect.bisect_left([x[0] for x in ins],a)
+              out=[]
+              for x in ins[lo:]:
+                  if x[0]>=b:break
+                  out.append(x)
+              return out
+          def ctx(li,b=16,a=28):
+              return '\n'.join('    '+x for x in dl[max(0,li-b):min(len(dl),li+a+1)])
+
+          # Dump addb16 itself and collect static references it touches.
+          target=0xaddb16
+          fr=fde(target)
+          print('# Provider -> service table bridge')
+          print()
+          print('Known provider descriptor ABI:')
+          print('- +0x10 returns one-byte service ID')
+          print('- +0x18 returns setup name')
+          print('- +0x28 is factory')
+          print('- ID 0xb8 descriptor = TimelineConductorSetupImpl, AP 0x1867c58, factory 0x135c878')
+          print()
+          print(f'## addb16 registration helper FDE={fr}')
+          static=set()
+          if fr:
+              for a,i,op,l in body(fr):
+                  print('    '+l)
+                  m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                  if m:
+                      v=int(m.group(1),16)
+                      if 0x1800000<=v<0x1a50000: static.add(v)
+          print()
+          print('## addb16 high-address refs')
+          for v in sorted(static): print(f'- 0x{v:x}')
+          print()
+
+          # References to globals/static addresses touched by addb16.
+          for v in sorted(static):
+              print(f'## refs to 0x{v:x}')
+              n=0
+              for a,i,op,l in ins:
+                  m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                  if m and int(m.group(1),16)==v:
+                      print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+                      print(ctx(i,10,18)); print()
+                      n+=1
+                      if n>=80:break
+
+          # Group instructions by FDE once, then score provider-consumer fingerprints.
+          groups={}
+          for x in ins:
+              fr=fde(x[0])
+              if fr: groups.setdefault(fr,[]).append(x)
+
+          cand=[]
+          for fr,rows in groups.items():
+              p10=[];p28=[];stores=[];loads=[];b622=[]
+              for a,i,op,l in rows:
+                  if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x10\]',op):p10.append((a,i,op,l))
+                  if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x28\]',op):p28.append((a,i,op,l))
+                  if re.search(r'(?:mov|xchg)\s+QWORD PTR \[[^]]+\*[1248](?:\+[^]]*)?\],',op):stores.append((a,i,op,l))
+                  if re.search(r'mov\s+QWORD PTR \[[^]]+\+[^]]*\*8[^]]*\],',op):stores.append((a,i,op,l))
+                  if re.search(r'mov\s+[^,]+,QWORD PTR \[[^]]+\*8[^]]*\]',op):loads.append((a,i,op,l))
+                  if 'call   b622de' in l or re.search(r'call\s+b622de\b',op):b622.append((a,i,op,l))
+              if p10 and p28:
+                  score=100+10*len(stores)+3*len(loads)+15*len(b622)
+                  cand.append((score,fr,p10,p28,stores,loads,b622,rows))
+
+          cand.sort(reverse=True,key=lambda x:x[0])
+          print('## Functions containing BOTH provider-like virtual +0x10 and +0x28 calls')
+          print(f'- count: {len(cand)}')
+          for rank,(score,fr,p10,p28,stores,loads,b622,rows) in enumerate(cand[:30],1):
+              print(f'### rank {rank} FDE=0x{fr[0]:x}..0x{fr[1]:x} score={score}')
+              print(f'- +0x10 calls: {[hex(x[0]) for x in p10]}')
+              print(f'- +0x28 calls: {[hex(x[0]) for x in p28]}')
+              print(f'- indexed qword stores: {[hex(x[0]) for x in stores]}')
+              print(f'- indexed qword loads: {[hex(x[0]) for x in loads]}')
+              print(f'- b622de calls: {[hex(x[0]) for x in b622]}')
+              # Print only ±100 ins around +0x10/+0x28 calls, merged by address.
+              centers=sorted(set([x[0] for x in p10+p28+stores+b622]))
+              for c in centers[:20]:
+                  hit=next(x for x in rows if x[0]==c)
+                  print(f'#### around 0x{c:x}')
+                  print(ctx(hit[1],18,32)); print()
+
+          # Also find likely provider-ID calls followed shortly by movzx of AL/index math and indexed store,
+          # even when factory +0x28 is in a helper function.
+          print('## +0x10 call local dataflow windows')
+          count=0
+          for a,i,op,l in ins:
+              if not re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x10\]',op): continue
+              win=ins[max(0,bisect.bisect_left([x[0] for x in ins],a)-8):bisect.bisect_left([x[0] for x in ins],a)+45]
+              if any(re.search(r'\*8',x[2]) for x in win):
+                  print(f'### call +0x10 @0x{a:x} FDE={fde(a)}')
+                  print(ctx(i,12,45));print()
+                  count+=1
+                  if count>=80:break
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/provider-to-service-table-bridge.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace provider to service table bridge"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
