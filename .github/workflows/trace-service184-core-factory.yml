@@ -1,0 +1,193 @@
+name: Trace service184 core factory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-core-factory.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184core
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184core
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace core factory
+        run: |
+          SO=/tmp/s184core/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184core/all.dis
+          python3 - <<'PY' > analysis/service184-core-factory.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184core/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184core/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs[rel['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def ctx(i,b=16,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def qword(va):
+            if va in relocs:return relocs[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(va):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+512))
+            if e<0:return None
+            try:return data[o:e].decode()
+            except:return None
+
+          target=0x17db9e4
+          fr=fde(target)
+          print('# Service184 core factory 0x17db9e4')
+          print()
+          print('Call contract from 0x17dbd31: rdi=24-byte output aggregate, rsi=format/key string, rdx=va_list-like state.')
+          print(f'FDE={fr}')
+          print()
+          if fr:
+            print('## Full FDE')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print(l)
+            print()
+
+          print('## Output destination alias tracking')
+          aliases={'rdi'}
+          if fr:
+            changed=True
+            while changed:
+              changed=False
+              for a,i,op,l in ins:
+                if not(fr[0]<=a<fr[1]):continue
+                m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))\b',op)
+                if m and m.group(2) in aliases and m.group(1) not in aliases:
+                  aliases.add(m.group(1));changed=True
+          print('- aliases: '+', '.join(sorted(aliases)))
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if any(re.search(r'\['+re.escape(reg)+r'(?:\+0x(?:8|10|18|20|28|30|38|40))?\]',op) for reg in aliases):
+                if re.match(r'(mov|lea|xchg|and|xor|movups|movaps|movdqu|movdqa)',op):
+                  print(f'### 0x{a:x}: {op}');ctx(i,10,18);print()
+
+          print('## Heap allocations')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and ('17edf00' in op or '_Znwm' in op):
+                print(f'### 0x{a:x}: {op}');ctx(i,24,45);print()
+
+          print('## High-address constants / possible vptrs')
+          cands=[]
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                va=int(m.group(1),16)
+                if va>=0x1800000:
+                  cands.append(va)
+                  print(f'### 0x{a:x}: {op}');ctx(i,8,14);print()
+
+          print('## Vtable-like neighborhoods around constants')
+          for va in sorted(set(cands)):
+            for base in range(max(0,va-0x20),va+0x21,8):
+              vals=[];code=0
+              for off in range(0,0x80,8):
+                q=qword(base+off); vals.append((off,q))
+                if q and fde(q):code+=1
+              if code>=4:
+                print(f'### address-point 0x{base:x}; source const 0x{va:x}; code_slots={code}')
+                for off,q in vals:print(f'- +0x{off:x}: {("0x%x"%q) if q is not None else "None"} FDE={fde(q) if q else None}')
+                print()
+
+          print('## Calls and immediate return-value consumption')
+          if fr:
+            fl=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for j,(a,i,op,l) in enumerate(fl):
+              if re.search(r'\bcall\b',op):
+                print(f'### 0x{a:x}: {op}')
+                for x in fl[max(0,j-7):min(len(fl),j+18)]:print('    '+x[3])
+                print()
+
+          print('## Stores to output +0x10 specifically')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and '+0x10]' in op and re.match(r'(mov|xchg|and)',op):
+                print(f'### 0x{a:x}: {op}');ctx(i,12,24);print()
+
+          print('## Referenced strings in FDE')
+          seen=set()
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              va=int(m.group(1),16)
+              if va in seen:continue
+              s=cstr(va)
+              if s and any(ch.isprintable() for ch in s):
+                seen.add(va);print(f'- 0x{va:x}: {s!r}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-core-factory.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 core factory"
+          git pull --rebase origin main
+          git push origin HEAD:main
