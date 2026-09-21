@@ -1,0 +1,64 @@
+name: Trace service184 embedded candidate 0x578
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-embedded-578.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184e
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184e
+
+      - name: Inspect candidate
+        run: |
+          SO=/tmp/s184e/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184e/all.dis
+          {
+            echo '# Service184 embedded +0x578 candidate'
+            echo
+            echo '## Producer region around 0x13394b7'
+            objdump -d -M intel --start-address=0x1339200 --stop-address=0x1339700 "$SO"
+            echo
+            echo '## All accesses to +0x578 in 0x1320000..0x1350000'
+            awk '
+              /^[[:space:]]*[0-9a-f]+:/ {
+                a=$1; gsub(":","",a);
+                if(a>="1320000" && a<"1350000" && $0 ~ /\+0x578\]/) print NR ":" $0
+              }' /tmp/s184e/all.dis
+            echo
+            echo '## Context around writes to +0x578'
+            grep -n -E -B24 -A40 'mov[^#]*\[[^]]+\+0x578\]|lea[^#]*\[[^]]+\+0x578\]' /tmp/s184e/all.dis |               grep -E -B24 -A40 '132[0-9a-f]{4}|133[0-9a-f]{4}|134[0-9a-f]{4}' | head -n 26000 || true
+            echo
+            echo '## Vptr-looking LEAs around parent construction region'
+            objdump -d -M intel --start-address=0x1338800 --stop-address=0x133a000 "$SO" |               grep -E -B8 -A16 '# 18[0-9a-f]{5,}' | head -n 22000 || true
+          } > analysis/service184-embedded-578.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-embedded-578.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 embedded 0x578 candidate"
+          git pull --rebase origin main
+          git push origin HEAD:main
