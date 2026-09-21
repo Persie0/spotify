@@ -171,6 +171,10 @@ The same resulting dependency is reused elsewhere during player construction thr
 
 The `+0x68` virtual call remains the strongest current candidate for the actual lower-level Skip Ad playback action. The concrete provider/dependency vtable and side effect of `+0x68` are the next target.
 
+A second correction applies to the first ABI-based service184 vtable shortlist. The initial addresses `0x18228d8`, `0x1821448`, `0x1822988`, and `0x181f788` were selected by method-shape scanning before enforcing the Itanium vtable header. Inspection of their surrounding qwords shows that several are shifted into the middle of larger vtable groups rather than true address points. For example, `0x1821440` is preceded by the characteristic `offset-to-top = 0` / null-typeinfo header, while `0x1821448` is already the second method slot. Therefore slot labels such as “candidate +0x28” from the original shortlist are not class-identity evidence and must not be used to name service184.
+
+The follow-up scan now requires a valid Itanium-style header first and only then evaluates the observed ABI (`+0x28` pointer return, `+0x30` pointer return, `+0x38` sret-style output). The embedded `0x18228d8` hypothesis is additionally weakened by direct state inspection: the region its apparent getter returned (`this+0x218`) behaves as container/state storage with moves, zeroing, and copies, and no stable first-word vptr has been established there. The corrected header-validated scan is authoritative for the next class-identification step.
+
 ## 4. Android execution path
 
 When the user activates Skip Ad, the UI creates:
