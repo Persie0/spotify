@@ -63,42 +63,83 @@ at VA `0x34708a`, with three direct executable references.
 
 The function `0xfd381a..0xfd38d6`:
 
-1. accesses a current player/ad state object,
-2. checks a local state byte at `+0x68`,
-3. calls virtual slot `+0x140` on an object held at `+0x40`,
-4. when the tested condition passes, constructs the literal `"skip-ad"`,
-5. passes it to `0xd23a2c`, which is used here as the signal-collection insertion path.
+1. accesses a current signal/player-state object,
+2. calls virtual slot `+0x70` on the dependency at state `+0x20`,
+3. requires the state byte at `+0x68` to be nonzero,
+4. calls virtual slot `+0x140` on the dependency held at state `+0x40`,
+5. exposes `"skip-ad"` only when that `+0x140` call returns zero,
+6. passes the string to `0xd23a2c`, the signal-collection insertion path used here.
 
 This is the first native producer tied directly to the same string Android later sees in `PlayerState.signals()`.
 
-The exact semantic identity of the `+0x140` predicate is still being decoded; it should not yet be renamed as a particular ad flag.
+The adapter/handler that owns this virtual method is now structurally identified. A native constructor installs:
+
+```text
+object+0x18 vptr -> 0x1841fc0
+object+0x20 vptr -> 0x18421b0
+```
+
+and allocates/copies an approximately `0x88`-byte wrapper around that interface family. Relative to the primary address point `0x1841fc0`:
+
+```text
++0x70  -> 0xfd381a   available-signal producer
++0x128 -> 0xfd38d6   incoming Signal discriminator
+```
+
+This wrapper must not be confused with the larger restriction owner or with the separate object stored at signal-state `+0x40`. The semantic identity of the `+0x140` method on that separate dependency is still being decoded.
 
 ### 3.2 Incoming signal discriminator at 0xfd38d6
 
 The immediately following function compares an incoming signal ID against the exact seven-byte string `"skip-ad"`.
 
-On a match it calls the **same virtual slot `+0x140`** on the same state/interface family before selecting the subsequent dispatch path.
+On a match it calls the **same state+0x40 dependency at virtual slot `+0x140`**. A key correction is now proven: a zero return is **not** a rejection. Instead it enters the Skip Ad-specific bookkeeping block at `0xfd397f`, which:
 
-This gives a native symmetry:
+```text
+requires state+0x68 != 0
+requires execution-context+0x60 != 0
+checks execution-context+0x58 inside the state +0x58/+0x60 range
+optionally calls state+0x30 virtual slot +0x20 with state+0x60 + 1
+then rejoins the normal Signal dispatch path
+```
+
+A nonzero `+0x140` result simply bypasses that extra bookkeeping and also continues through the generic Signal dispatch.
+
+The native symmetry is therefore more precise:
 
 ```text
 availability producer
-    -> +0x140 predicate
-    -> expose "skip-ad"
+    -> state+0x40 / +0x140
+    -> zero result exposes "skip-ad"
 
 incoming Signal("skip-ad")
-    -> compare exact signal ID
-    -> +0x140 predicate
-    -> dispatch / reject path
+    -> state+0x40 / +0x140
+    -> zero result performs extra Skip Ad bookkeeping
+    -> both outcomes continue through common Signal dispatch
 ```
 
-The shared predicate is therefore a high-value enforcement point for both advertisement signal availability and execution.
+So `+0x140` is currently best described as a **mode/state discriminator**, not an allow/deny predicate.
 
 ### 3.3 Secondary discriminator at 0x12044d8
 
 A second native subsystem also compares an input string against `"skip-ad"` at `0x12044d8`.
 
-When it matches, it invokes virtual slot `+0x68` on another interface and enters a dedicated processing path. This appears to be downstream signal/command handling, but the concrete owner type and exact transition are still under trace.
+The containing method `0x1204218` is structurally tied to a distinct native vtable:
+
+```text
+address point 0x185bf88
++0xc0 -> 0x1204218
+```
+
+On an exact `"skip-ad"` match the branch is short and direct:
+
+```text
+dependency = [dispatcher-this + 0x8]
+dependency->vtable[+0x68]()
+    -> create async completion state
+    -> submit through the common dispatcher completion path
+```
+
+This `+0x68` virtual call is therefore the strongest current candidate for the actual lower-level Skip Ad playback action. Its concrete dependency type and state mutation are the next native target.
 
 ## 4. Android execution path
 
@@ -122,6 +163,21 @@ jo20
        "Signal",
        request)
 ```
+
+The exact request serialization is recovered from the SignalCommand branch:
+
+```text
+SignalCommand.signalId()
+    -> EsSignalRequest.signal_id
+
+generated LoggingParams
+    -> EsSignalRequest.logging_params
+
+SignalCommand.parameters()
+    -> EsSignalRequest.parameters only when present
+```
+
+For `SignalCommand.create("skip-ad")`, no custom parameter string is supplied, so the request is essentially the `"skip-ad"` signal ID plus generated logging metadata.
 
 The ordinary next-track command goes through a separate `ContextPlayer / SkipNext` path.
 
@@ -163,10 +219,19 @@ SignalCommand("skip-ad")
 ContextPlayer / Signal
         |
         v
-native "skip-ad" discriminator / enforcement
+native "skip-ad" discriminator
+        |
+        v
+secondary dispatcher
+        |
+        v
+dependency virtual +0x68
+        |
+        v
+lower playback transition (exact implementation under trace)
 ```
 
-The only unproven edge in that diagram is the exact native state path from `adObject+0x1b8` into the `+0x140` predicate / available-signal producer. The timer, Android signal export, UI test, command serialization, and native signal-name handling are independently proven.
+Two native edges remain open: the exact state propagation from `adObject+0x1b8` into the available-signal producer, and the concrete implementation/side effects of the downstream `+0x68` call. The timer, Android signal export, UI test, command serialization, ContextPlayer endpoint, and native signal-name handling are independently proven.
 
 ## 6. Relationship to ordinary next-track restrictions
 
@@ -189,10 +254,10 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 ## 7. Remaining targets
 
-1. recover the concrete interface/type behind the shared native `+0x140` call,
-2. prove whether that predicate directly observes `adObject+0x1b8` or a derived copied state,
-3. decode the special branch after the incoming `"skip-ad"` comparison,
-4. decode the secondary `0x12044d8` handler and its `+0x68` virtual call,
+1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
+2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
+3. resolve the concrete dependency stored at the secondary dispatcher's `+0x8` and identify its virtual `+0x68` implementation,
+4. decode the exact playback state transition caused by that `+0x68` call,
 5. identify the playback-ad reporting event emitted after a successful native skip (the currently recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
 6. map the equivalent path during Connect/remote playback.
 
@@ -204,3 +269,6 @@ Evidence reports:
 - `analysis/skip-ad-player-dispatch.md`
 - `analysis/skip-ad-signal-native.md`
 - `analysis/native-disallow-signals.md`
+- `analysis/native-skip-ad-availability-dispatch-v2.md`
+- `analysis/native-skip-ad-vtables.md`
+- `analysis/native-skip-ad-owner-raw.md`
