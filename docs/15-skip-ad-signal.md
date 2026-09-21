@@ -158,6 +158,13 @@ b8f02e(root)
 
 The accessor `b8f02e` is now structurally decoded further. It passes ID `0xb8` to `b622de`; that helper is a byte-search/validation routine over the registry's ID buffer, **not** the service factory. After the ID check, `b8f02e` reads the instance from `rootTable+0x5c0`, exactly `0xb8 * 8`. Thus this dependency originates from registry service **184**.
 
+A provenance correction is important here. Two attractive numeric-offset trails were investigated and disproven:
+
+- the raw store at `0x1333835 -> object+0x5c0` belongs to a different large playback object and is **not** registry-table population merely because its offset equals `0xb8 * 8`;
+- the map/holder path around `0x1334484 -> 0x15da3b7 -> 0x17dbc9a` is a formatted-string/error path. The constant passed at `0x32f434` is `"List could not be created from '%s': %s"`, and the downstream `0x17db9e4` calls `__vsnprintf_chk` and `basic_string::append`. Its observed `+0x10` word is part of a 24-byte string aggregate, not a service pointer.
+
+Therefore the authoritative service184 provenance currently stops at the validated registry facade: `facade[0] -> service table -> table[184]`. Any candidate constructor must be tied back to that table base before its `+0x5c0` field is interpreted as service184. See `analysis/service184-provenance-corrections.md`.
+
 At the caller, the service-184 object is first stored at a local stack slot and then replaced by the return of its `+0x28` method before being pushed as argument 9. The ABI mapping is now exact rather than heuristic: the result occupies physical caller cell `S0+0x60`; among the 36 pushes before `0x11ef334`, push #34 reads it as `[rsp+0x168]` while RSP is `S0-0x108`, so it becomes SysV argument 9. The callee prologue maps argument 9 to `[rsp+0x650]`, which is written to dispatcher outer `+0x20`. Because address point `0x185bf88` begins at outer `+0x18`, its `[this+0x8]` load is the same pointer later invoked at virtual `+0x68` in the `"skip-ad"` branch.
 
 The same resulting dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control interface rather than an ad-only helper.
@@ -279,7 +286,7 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
 2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
-3. resolve the concrete vtable behind registry service 184 (`rootTable+0x5c0`) and its `+0x28() -> execution dependency` chain,
+3. recover the real registry service-table population, then resolve the concrete vtable behind validated service 184 (`table[184] = table+0x5c0`) and its `+0x28() -> execution dependency` chain,
 4. identify that dependency's virtual `+0x68` implementation and decode the exact playback state transition it causes,
 5. identify the playback-ad reporting event emitted after a successful native skip (the currently recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
 6. map the equivalent path during Connect/remote playback.
