@@ -1,0 +1,109 @@
+name: Classify service184 consumers by strings
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-service184-consumer-strings.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184str
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184str
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Extract consumer semantics
+        run: |
+          SO=/tmp/s184str/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184str/all.dis
+          python3 - <<'PY' > analysis/service184-consumer-semantics.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          so=Path('/tmp/s184str/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184str/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+          def cstr(va):
+            o=va2off(va)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+500))
+            if e<0:return None
+            raw=data[o:e]
+            if not raw:return None
+            if any(c<9 or (13<c<32) for c in raw):return None
+            try:s=raw.decode('utf8')
+            except:return None
+            if len(s)<3:return None
+            return s
+          targets=[0xb8ec45,0xc7d490,0xe8c9d1,0x10885e3,0x11ee6b0,0x1442026]
+          print('# Service184 consumer semantic strings')
+          print()
+          for t in targets:
+            fr=fde(t)
+            print(f'## consumer call 0x{t:x}; FDE={fr}')
+            if not fr:continue
+            refs=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              va=int(m.group(1),16)
+              s=cstr(va)
+              if s and s not in [x[2] for x in refs]:
+                refs.append((a,va,s,op))
+            for a,va,s,op in refs:
+              print(f'- 0x{a:x} -> 0x{va:x}: {s!r} :: {op}')
+            print()
+          print('## Known literal 0x337e00')
+          print(repr(cstr(0x337e00)))
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-consumer-semantics.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify service184 consumers by strings"
+          git pull --rebase origin main
+          git push origin HEAD:main
