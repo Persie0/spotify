@@ -1,0 +1,67 @@
+name: Resolve ad runtime readiness delegate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-ad-runtime-readiness-delegate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/addelegate
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/addelegate
+      - name: Dump
+        run: |
+          SO=/tmp/addelegate/liborbit-jni-spotify.so
+          {
+            echo '# Ad runtime readiness delegate'
+            echo
+            echo 'Known: runtime AP 0x1879950 +0x140 -> 0x125bd98 -> [runtime+0x18] virtual +0x40.'
+            echo
+            echo '## Runtime constructor 0x14e15e4'
+            objdump -d -M intel --start-address=0x14e15e4 --stop-address=0x14e16e7 "$SO"
+            echo
+            echo '## Helper 0x13543e8 that builds runtime+0x8 region'
+            objdump -d -M intel --start-address=0x13543c0 --stop-address=0x1354520 "$SO"
+            echo
+            echo '## Producer 0x14e27bc used before helper'
+            objdump -d -M intel --start-address=0x14e2790 --stop-address=0x14e2860 "$SO"
+            echo
+            echo '## Helper b94320'
+            objdump -d -M intel --start-address=0xb942f0 --stop-address=0xb94370 "$SO"
+            echo
+            echo '## All exact runtime +0x18 writes in ad-object family'
+            objdump -d -M intel --start-address=0x1400000 --stop-address=0x1520000 "$SO" | grep -E -B12 -A24 '\[[a-z0-9]+\+0x18\]' | head -n 10000 || true
+            echo
+            echo '## Exact runtime capability-byte offsets 0x1a2/0x1a5/0x1a7/0x1b8 in ad-object family'
+            objdump -d -M intel --start-address=0x1400000 --stop-address=0x1520000 "$SO" | grep -E -B10 -A18 '\+0x(1a2|1a5|1a7|1b8)\]' | head -n 12000 || true
+          } > analysis/ad-runtime-readiness-delegate.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/ad-runtime-readiness-delegate.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve ad runtime readiness delegate"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
