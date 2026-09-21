@@ -1,0 +1,190 @@
+name: Resolve Skip Ad constructor vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skipad-constructor-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipvt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipvt
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve table ownership
+        run: |
+          SO=/tmp/skipvt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipvt/all.dis
+          python3 - <<'PY' > analysis/skipad-constructor-vtable.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipvt/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skipvt/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None:relocs.append((rel['r_offset'],add,sec.name))
+
+          rmap={o:a for o,a,s in relocs}
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-7),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def va2off(va):
+            for po,pe,pv in loads:
+              if pv<=va<pv+(pe-po):return po+(va-pv)
+
+          def qword(va):
+            if va in rmap:return rmap[va],'reloc'
+            o=va2off(va)
+            if o is None or o+8>len(data):return None,None
+            return struct.unpack_from('<Q',data,o)[0],'raw'
+
+          def ctx(i,b=16,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          target=0x11ee608
+          slots=[(o,s) for o,a,s in relocs if a==target]
+          print('# Skip Ad constructor/table ownership')
+          print()
+          print(f'Target function: 0x{target:x}; relocation slots={len(slots)}')
+          print()
+
+          candidate_points=set()
+          for slot,sec in slots:
+            print(f'## Relocation slot 0x{slot:x} ({sec}) -> 0x{target:x}')
+            # Dump wide enough to identify Itanium vtable headers and surrounding methods.
+            for va in range(max(0,slot-0xa0),slot+0xa8,8):
+              q,kind=qword(va)
+              ann=''
+              if q is not None and fde_for(q):ann=f' code FDE={fde_for(q)}'
+              mark=' <== target' if va==slot else ''
+              print(f'- 0x{va:x}: {kind} {("0x%x"%q) if q is not None else "None"}{ann}{mark}')
+            print()
+
+            # Treat every plausible address point before target slot as candidate.
+            for delta in range(0,0xa0,8):
+              base=slot-delta
+              # Need several consecutive code pointers from base.
+              code=0
+              for off in range(0,0x80,8):
+                q,_=qword(base+off)
+                if q is not None and fde_for(q):code+=1
+              if code>=5:
+                candidate_points.add(base)
+
+          print('## Candidate address points containing 0x11ee608')
+          for base in sorted(candidate_points):
+            target_off=None
+            entries=[]
+            for off in range(0,0xa0,8):
+              q,kind=qword(base+off)
+              if q==target:target_off=off
+              entries.append((off,q,kind))
+            print(f'### address point 0x{base:x}; target slot offset={hex(target_off) if target_off is not None else None}')
+            for off,q,kind in entries:
+              print(f'- +0x{off:x}: {kind} {("0x%x"%q) if q is not None else "None"} FDE={fde_for(q) if q else None}')
+            print()
+
+          # Find code materializations/xrefs of each candidate address point.
+          print('## Candidate address-point materializations')
+          for base in sorted(candidate_points):
+            refs=[]
+            for a,i,op,l in ins:
+              mm=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if mm and int(mm.group(1),16)==base:
+                refs.append((a,i,op,l))
+            print(f'### 0x{base:x}: {len(refs)} refs')
+            for a,i,op,l in refs[:60]:
+              print(f'#### ref 0x{a:x}; FDE={fde_for(a)}: {op}')
+              ctx(i,14,28);print()
+
+          # Also find raw pointer relocations to candidate address points, useful for nested tables.
+          print('## Relocations pointing to candidate address points')
+          for base in sorted(candidate_points):
+            rr=[(o,s) for o,a,s in relocs if a==base]
+            if rr:
+              print(f'- 0x{base:x}: '+', '.join(f'0x{o:x}/{s}' for o,s in rr))
+
+          # Enumerate all indirect call sites whose slot offset would equal target offset
+          # for each candidate, helping identify the interface semantic.
+          print('## Matching indirect-call slot usage')
+          for base in sorted(candidate_points):
+            toff=None
+            for off in range(0,0xa0,8):
+              q,_=qword(base+off)
+              if q==target:toff=off;break
+            if toff is None:continue
+            print(f'### candidate 0x{base:x}, virtual slot +0x{toff:x}')
+            pat=re.compile(r'call\s+QWORD PTR \[([a-z0-9]+)\+0x'+format(toff,'x')+r'\]')
+            n=0
+            for a,i,op,l in ins:
+              if pat.search(op):
+                print(f'#### call 0x{a:x}; FDE={fde_for(a)}')
+                ctx(i,10,18);print()
+                n+=1
+                if n>=40:break
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skipad-constructor-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Skip Ad constructor vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
