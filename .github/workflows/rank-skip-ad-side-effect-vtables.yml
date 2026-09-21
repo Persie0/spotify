@@ -1,0 +1,215 @@
+name: Rank Skip Ad side-effect vtables
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rank-skip-ad-side-effect-vtables.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipfx
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipfx
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Rank side-effect implementations
+        run: |
+          set -euo pipefail
+          SO=/tmp/skipfx/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipfx/all.dis
+          python3 - <<'PY' > analysis/skip-ad-side-effect-vtables.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipfx/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skipfx/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          byfr={}
+          for x in ins:
+            fr=fde(x[0])
+            if fr:byfr.setdefault(fr,[]).append(x)
+
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+
+          def qword(va):
+            if va in rel:return rel[va]
+            o=va2off(va)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+
+          def iscode(q):return q is not None and 0xa00000<=q<0x1800000 and fde(q) is not None
+          def body(addr,n=160):
+            fr=fde(addr)
+            return byfr.get(fr,[])[:n] if fr else []
+
+          def incoming_extra(addr):
+            xs=body(addr,60)
+            aliases={
+              'rsi':('rsi','esi','si','sil'),'rdx':('rdx','edx','dx','dl'),
+              'rcx':('rcx','ecx','cx','cl'),'r8':('r8','r8d','r8w','r8b'),
+              'r9':('r9','r9d','r9w','r9b')
+            }
+            defined=set();bad=set()
+            for a,i,op,l in xs[:40]:
+              md=re.match(r'(?:mov|lea|xor|and|or|add|sub|pop|movzx|movsx|movsxd)\s+([a-z0-9]+)',op)
+              dst=md.group(1) if md else None
+              selfxor=bool(re.match(r'xor\s+([a-z0-9]+),\1$',op))
+              for canon,toks in aliases.items():
+                used=any(re.search(rf'(?<![a-z0-9]){t}(?![a-z0-9])',op) for t in toks)
+                defines=dst in toks
+                clean_define=defines and (op.startswith(('mov ','lea ','pop ','movzx ','movsx ','movsxd ')) or selfxor)
+                if used and canon not in defined and not clean_define:bad.add(canon)
+                if defines:defined.add(canon)
+            return bad
+
+          def side_effect(addr):
+            xs=body(addr,160)
+            score=0; why=[]
+            calls=[]; stores=[]; delegates=[]
+            for a,i,op,l in xs:
+              if re.search(r'\bcall\b',op):
+                calls.append((a,op)); score+=5
+              if re.match(r'jmp\s+',op) and not re.search(r'\b[a-f0-9]+\b',op):
+                delegates.append((a,op)); score+=4
+              # Memory destination, excluding stack writes.
+              m=re.match(r'(mov|movups|movaps|movdqu|movdqa|and|or|xor|add|sub|inc|dec|xchg|cmpxchg)\s+(?:BYTE PTR |WORD PTR |DWORD PTR |QWORD PTR |XMMWORD PTR )?\[([^]]+)\]',op)
+              if m and not any(s in m.group(2) for s in ('rsp','rbp')):
+                stores.append((a,op))
+                score+=8
+                if 'rdi' in m.group(2):score+=3
+            text='\n'.join(x[2] for x in xs)
+            pure_return=False
+            nontriv=[x[2] for x in xs if not x[2].startswith(('push ','pop '))]
+            if len(nontriv)<=4 and not calls and not stores:
+              pure_return=True; score-=30;why.append('pure-return/no-side-effect')
+            if calls:why.append(f'calls={len(calls)}')
+            if stores:why.append(f'nonstack-stores={len(stores)}')
+            if delegates:why.append(f'indirect-delegates={len(delegates)}')
+            if re.search(r'lock\s+',text):score+=6;why.append('atomic')
+            return score,why,calls,stores
+
+          slots=(0x68,0x98,0xa0,0xb8,0xc0)
+          bases=set()
+          for off in rel:
+            for slot in slots:
+              b=off-slot
+              if b>0 and all(iscode(qword(b+s)) for s in slots):
+                bases.add(b)
+
+          mats={}
+          for a,i,op,l in ins:
+            if '#' not in l:continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m:
+              va=int(m.group(1),16)
+              if va in bases:mats.setdefault(va,[]).append((a,i,op,l,fde(a)))
+
+          ranked=[]
+          for b in bases:
+            f68=qword(b+0x68)
+            bad=incoming_extra(f68)
+            se,why,calls,stores=side_effect(f68)
+            score=se - 15*len(bad)
+            # Required companion slots being code is already enforced; real materialization bonus only.
+            ms=mats.get(b,[])
+            if ms:score+=8
+            # Don't favor objects merely because they are built inside the receiving constructor;
+            # but retain exact contexts for human inspection.
+            ranked.append((score,b,f68,bad,why,calls,stores,ms))
+          ranked.sort(reverse=True)
+
+          print('# Skip Ad dependency vtables ranked by +0x68 side effects')
+          print()
+          print('The exact Skip Ad branch discards +0x68 return value, so pure getters/constants are penalized.')
+          print('All candidates also implement code at +0x98,+0xa0,+0xb8,+0xc0, observed on the same dependency.')
+          print()
+          for score,b,f68,bad,why,calls,stores,ms in ranked[:80]:
+            print(f'## score={score} AP=0x{b:x} +0x68=0x{f68:x}')
+            print(f'- incoming-extra={sorted(bad)}')
+            print(f'- reasons={why}')
+            for off in slots:
+              print(f'- +0x{off:x}=0x{qword(b+off):x} FDE={fde(qword(b+off))}')
+            if ms:
+              print('- materializations:')
+              for a,i,op,l,fr in ms[:16]:print(f'  - 0x{a:x}: {op}; FDE={fr}')
+            print('### +0x68 full FDE')
+            for x in body(f68,220):print('    '+x[3])
+            print()
+
+          print('## Materialization contexts for top side-effect candidates')
+          for score,b,f68,bad,why,calls,stores,ms in ranked[:20]:
+            for a,i,op,l,fr in ms[:10]:
+              print(f'### AP 0x{b:x} @ 0x{a:x}; score={score}; FDE={fr}')
+              for z in lines[max(0,i-18):min(len(lines),i+42)]:print('    '+z)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-side-effect-vtables.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Rank Skip Ad dependency side effects"
+          git pull --rebase origin main
+          git push origin HEAD:main
