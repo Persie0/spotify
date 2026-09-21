@@ -1,0 +1,53 @@
+name: Decode service184 helper de6c9a
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-de6c9a.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184d
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184d
+
+      - name: Dump helper
+        run: |
+          SO=/tmp/s184d/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184d/all.dis
+          {
+            echo '# Service184 helper de6c9a'
+            echo
+            objdump -d -M intel --start-address=0xde6c20 --stop-address=0xde6e20 "$SO"
+            echo
+            echo '## Callers'
+            grep -E -B14 -A22 '\bcall[[:space:]]+de6c9a\b' /tmp/s184d/all.dis | head -n 14000 || true
+          } > analysis/service184-helper-de6c9a.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-helper-de6c9a.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 helper de6c9a"
+          git pull --rebase origin main
+          git push origin HEAD:main
