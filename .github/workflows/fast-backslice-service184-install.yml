@@ -1,0 +1,54 @@
+name: Fast backslice service184 install source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-backslice-service184-install.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184bs
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184bs
+
+      - name: Backslice
+        run: |
+          SO=/tmp/s184bs/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x1332500 --stop-address=0x1333950 "$SO" > /tmp/s184bs/win.dis
+          {
+            echo '# Fast backslice of candidate service184 install'
+            echo
+            echo '## All rsp+0x28 accesses before 0x1333835'
+            grep -n -B22 -A30 '\[rsp+0x28\]' /tmp/s184bs/win.dis
+            echo
+            echo '## Wider window around the final assignment'
+            sed -n '1,99999p' /tmp/s184bs/win.dis | tail -n 2200
+          } > analysis/service184-install-backslice-fast.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-install-backslice-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast backslice service184 install source"
+          git pull --rebase origin main
+          git push origin HEAD:main
