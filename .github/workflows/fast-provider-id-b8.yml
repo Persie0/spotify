@@ -1,0 +1,159 @@
+name: Fast provider ID b8 resolution
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-provider-id-b8.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/pb8fast
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pb8fast
+      - name: Scan
+        run: |
+          set -euo pipefail
+          SO=/tmp/pb8fast/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/pb8fast/all.dis
+          readelf -rW "$SO" > /tmp/pb8fast/rel.txt
+          readelf -W -l "$SO" > /tmp/pb8fast/ph.txt
+          python3 - <<'PY' > analysis/provider-id-b8-fast.md
+          from pathlib import Path
+          import re,struct,bisect
+
+          dlines=Path('/tmp/pb8fast/all.dis').read_text(errors='replace').splitlines()
+          b=Path('/tmp/pb8fast/liborbit-jni-spotify.so').read_bytes()
+
+          loads=[]
+          for l in Path('/tmp/pb8fast/ph.txt').read_text().splitlines():
+            if l.strip().startswith('LOAD'):
+                p=l.split()
+                loads.append((int(p[2],16), int(p[2],16)+int(p[4],16), int(p[1],16)))
+          def vo(v):
+            for a,z,o in loads:
+                if a<=v<z:return o+(v-a)
+
+          rel={}
+          for l in Path('/tmp/pb8fast/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]):
+                off=int(p[0],16)
+                if 'R_X86_64_RELATIVE' in l:
+                    # last hex-like token after type
+                    idx=p.index('R_X86_64_RELATIVE')
+                    if idx+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[idx+1]):
+                        rel[off]=int(p[idx+1],16)
+
+          ins=[]
+          for i,l in enumerate(dlines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def around_addr(a,n=24):
+            j=bisect.bisect_left(addrs,a)
+            return ins[max(0,j-n):min(len(ins),j+n)]
+          def op_at(a):
+            j=bisect.bisect_left(addrs,a)
+            return ins[j] if j<len(ins) and ins[j][0]==a else None
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(b):return None
+            return struct.unpack_from('<Q',b,o)[0]
+          def string(v,n=160):
+            o=vo(v)
+            if o is None:return None
+            e=b.find(b'\0',o,min(len(b),o+n))
+            if e<0:return None
+            try:return b[o:e].decode('utf8')
+            except:return None
+
+          # tiny ID methods: exact mov al,0xb8 followed shortly by ret
+          ids=[]
+          for j,(a,i,op,l) in enumerate(ins):
+            if re.match(r'mov\s+al,0xb8\b',op):
+                nxt=ins[j+1:j+4]
+                if any(re.match(r'ret\b',x[2]) for x in nxt):
+                    ids.append(a)
+
+          print('# Fast provider descriptor ID 0xb8 resolution')
+          print()
+          print('## Tiny ID methods')
+          for a in ids:print(f'- 0x{a:x}')
+          print()
+
+          rev={}
+          for off,val in rel.items():rev.setdefault(val,[]).append(off)
+          aps=[]
+          for m in ids:
+            for slot in rev.get(m,[]):
+                ap=slot-0x10
+                vals={o:q(ap+o) for o in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50)}
+                if vals[0x10]!=m:continue
+                aps.append((ap,m,slot,vals))
+
+          print(f'## Candidate providers: {len(aps)}')
+          for ap,m,slot,vals in aps:
+            print(f'### AP 0x{ap:x}; ID=0xb8 method=0x{m:x}; relocation slot=0x{slot:x}')
+            for o,v in vals.items():print(f'- +0x{o:x}: {("0x%x"%v) if v is not None else None}')
+            for moff in (0x18,0x20):
+                fn=vals[moff]
+                print(f'#### metadata method +0x{moff:x}')
+                if fn:
+                    rows=around_addr(fn,12)
+                    for aa,ii,oo,ll in rows:
+                        if fn<=aa<fn+0x40:print('    '+ll)
+                    # Decode direct lea string + length.
+                    ptr=ln=None
+                    for aa,ii,oo,ll in rows:
+                        if not(fn<=aa<fn+0x40):continue
+                        mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                        if mm and 'lea' in oo:ptr=int(mm.group(1),16)
+                        mm=re.match(r'(?:push\s+0x|mov\s+edx,0x)([0-9a-f]+)',oo)
+                        if mm:ln=int(mm.group(1),16)
+                    if ptr:
+                        o=vo(ptr);raw=b[o:o+ln] if o is not None and ln else b''
+                        print(f'    decoded ptr=0x{ptr:x} len={ln}: {raw!r}')
+            fn=vals[0x28]
+            print('#### factory +0x28 entry/context')
+            if fn:
+                for aa,ii,oo,ll in around_addr(fn,20):
+                    if fn<=aa<fn+0x220:print('    '+ll)
+            print('#### AP materializations')
+            for aa,ii,oo,ll in ins:
+                mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                if mm and int(mm.group(1),16)==ap:
+                    print(f'- 0x{aa:x}: {oo}')
+                    for aaa,iii,ooo,lll in around_addr(aa,16):print('    '+lll)
+            print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/provider-id-b8-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Fast resolve provider ID b8"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
