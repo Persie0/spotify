@@ -1,0 +1,169 @@
+name: Decode TimelineConductor skip action semantics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-timeline-skip-action-semantics.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlsem
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlsem
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode semantics
+        run: |
+          SO=/tmp/tlsem/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tlsem/all.dis
+          python3 - <<'PY' > analysis/timeline-conductor-skip-action-semantics.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/tlsem/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/tlsem/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+              elf=ELFFile(f)
+              loads=[]
+              for s in elf.iter_segments():
+                  if s['p_type']=='PT_LOAD':
+                      loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+              dwarf=elf.get_dwarf_info()
+              fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; b=a+e['address_range']
+                      if b>a:fdes.append((a,b))
+          fdes.sort(); starts=[a for a,b in fdes]
+
+          def vaoff(v):
+              for po,pe,pv in loads:
+                  if pv<=v<pv+(pe-po): return po+(v-pv)
+          def cstr(v,limit=512):
+              o=vaoff(v)
+              if o is None:return None
+              e=data.find(b'\0',o,min(len(data),o+limit))
+              if e<0:return None
+              try:return data[o:e].decode('utf-8')
+              except:return data[o:e]
+          def raw(v,n):
+              o=vaoff(v)
+              return data[o:o+n] if o is not None else None
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+
+          ins=[]
+          for i,l in enumerate(dl):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def body(a):
+              fr=fde(a)
+              if not fr:return []
+              lo=bisect.bisect_left(addrs,fr[0]); out=[]
+              for x in ins[lo:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(a,b=12,n=28):
+              j=bisect.bisect_left(addrs,a)
+              for x in ins[max(0,j-b):min(len(ins),j+n)]: print('    '+x[3])
+
+          print('# TimelineConductor skip action semantics')
+          print()
+          print('Proven path:')
+          print('- TimelineConductor service AP 0x1867c98')
+          print('- +0x28 returns [this+0xc8]')
+          print('- +0xc8 dependency AP 0x1868200')
+          print('- dependency +0x68 = 0x1371d90')
+          print()
+
+          print('## Static strings in +0x68')
+          fn=0x1371d90
+          for a,i,op,l in body(fn):
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if not m:continue
+              v=int(m.group(1),16)
+              s=cstr(v)
+              if s:
+                  print(f'- 0x{a:x} -> VA 0x{v:x}: {s!r}')
+                  for n in (8,16,24,26,30,32,40,64):
+                      rr=raw(v,n)
+                      if rr is not None: print(f'  raw[{n}]={rr!r}')
+          print()
+
+          for v in (0x371518,0x34d976):
+              print(f'## Explicit decode 0x{v:x}')
+              print(f'- cstr: {cstr(v)!r}')
+              print(f'- raw64: {raw(v,64)!r}')
+              print()
+
+          print('## +0x68 call graph with string-bearing callees')
+          for a,i,op,l in body(fn):
+              m=re.search(r'call\s+([0-9a-f]+)\b',op)
+              if not m:continue
+              t=int(m.group(1),16)
+              print(f'### call 0x{a:x} -> 0x{t:x} FDE={fde(t)}')
+              ctx(a,7,12)
+              strings=[]
+              for aa,ii,oo,ll in body(t)[:1000]:
+                  mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                  if not mm:continue
+                  v=int(mm.group(1),16); s=cstr(v)
+                  if s and 2<=len(s)<=200 and s not in strings: strings.append(s)
+              if strings: print('- callee strings: '+ ' | '.join(repr(x) for x in strings[:40]))
+              print()
+
+          print('## All direct callers of 0x1371d90')
+          for a,i,op,l in ins:
+              if re.search(r'call\s+1371d90\b',op):
+                  print(f'### 0x{a:x} FDE={fde(a)}')
+                  ctx(a,15,25);print()
+
+          print('## Calls through virtual +0x68 in exact Skip Ad execution reports neighborhood')
+          for a,i,op,l in ins:
+              if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x68\]',op):
+                  # Restrict to known Skip-Ad/player construction neighborhood where possible.
+                  if 0x11e0000<=a<=0x1250000:
+                      print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+                      ctx(a,18,30);print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-skip-action-semantics.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode TimelineConductor skip action semantics"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
