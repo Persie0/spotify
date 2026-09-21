@@ -1,0 +1,90 @@
+name: Trace e99d07 arg13 source
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/trace-e99d07-arg13-source.yml'
+permissions:
+  contents: write
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/arg13
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/arg13
+      - name: Decode
+        run: |
+          SO=/tmp/arg13/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/arg13/all.dis
+          python3 - <<'PY' > analysis/e99d07-arg13-source.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/arg13/all.dis').read_text(errors='replace').splitlines()
+          rows=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:
+                  a=int(m.group(1),16)
+                  if 0xe92f2c <= a < 0xe98f3b: rows.append((a,i,m.group(2),l))
+          start=next(k for k,x in enumerate(rows) if x[0]==0xe95bce)
+          delta=0; norm=[]
+          for k in range(start,len(rows)):
+              a,i,op,l=rows[k]
+              for mm in re.finditer(r'\[rsp\+0x([0-9a-f]+)\]',op):
+                  raw=int(mm.group(1),16); norm.append((a,i,op,l,raw,raw-delta,delta))
+              m=re.match(r'sub\s+rsp,0x([0-9a-f]+)',op)
+              if m: delta+=int(m.group(1),16); continue
+              m=re.match(r'add\s+rsp,0x([0-9a-f]+)',op)
+              if m: delta-=int(m.group(1),16); continue
+              if re.match(r'push\s+',op): delta+=8
+              elif re.match(r'pop\s+',op): delta-=8
+              if a>=0xe95d35: break
+          print('# e99d07 argument 13 source')
+          print('\nProven: e99d07 rsp+0x1270 = arg13; caller 0xe95d02 reads stable rsp+0x88.\n')
+          print('## Normalized stable rsp+0x88 accesses in push sequence')
+          for a,i,op,l,raw,stable,d in norm:
+              if stable==0x88:
+                  side='WRITE' if f'[rsp+0x{raw:x}]' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: raw=0x{raw:x}, delta=0x{d:x}: {op}')
+                  for x in lines[max(0,i-18):min(len(lines),i+30)]: print('    '+x)
+                  print()
+          print('## Literal rsp+0x88 accesses before variable pushes')
+          for a,i,op,l in rows:
+              if a>=0xe95bce: break
+              if '[rsp+0x88]' in op:
+                  side='WRITE' if '[rsp+0x88]' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  for x in lines[max(0,i-24):min(len(lines),i+38)]: print('    '+x)
+                  print()
+          print('## Nearby +0x80/+0x88/+0x90 accesses before push sequence')
+          for a,i,op,l in rows:
+              if a>=0xe95bce: break
+              if any(s in op for s in ('[rsp+0x80]','[rsp+0x88]','[rsp+0x90]')):
+                  print(f'### 0x{a:x}: {op}')
+                  for x in lines[max(0,i-10):min(len(lines),i+18)]: print('    '+x)
+                  print()
+          print('## Object-field accesses in last 0x500 bytes before pushes')
+          for a,i,op,l in rows:
+              if 0xe956ce<=a<0xe95bce and re.search(r'\[(?:rbx|rbp|r12|r13|r14|r15|rax|rcx|rdx)(?:\+0x[0-9a-f]+)?\]',op): print('    '+l)
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/e99d07-arg13-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Trace e99d07 arg13 source'
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
