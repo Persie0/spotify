@@ -1,0 +1,110 @@
+name: Resolve readiness owner r13 class
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-readiness-owner-r13-class.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r13owner
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r13owner
+          objdump -d -M intel /tmp/r13owner/liborbit-jni-spotify.so > /tmp/r13owner/all.dis
+          readelf -rW /tmp/r13owner/liborbit-jni-spotify.so > /tmp/r13owner/rel.txt
+      - name: Resolve owner class
+        run: |
+          python3 - <<'PY' > analysis/readiness-owner-r13-class.md
+          from pathlib import Path
+          import re,bisect
+          dis=Path('/tmp/r13owner/all.dis').read_text(errors='replace').splitlines()
+          rel=Path('/tmp/r13owner/rel.txt').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dis):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=22,n=42):
+              j=idx(a)
+              return dis[max(0,ins[j][1]-b):min(len(dis),ins[j][1]+n+1)]
+          target=0xe92f2c
+          print('# Readiness e92f owner r13 class')
+          print()
+          print('Known: e92f2c saves incoming rsi in r13; e94787 later reads [r13+0x3b8] and calls provider virtual +0x10.')
+          print()
+          print('## Direct calls/jumps to e92f2c')
+          callers=[]
+          pat=re.compile(r'\b(?:call|jmp)\s+e92f2c\b')
+          for a,i,op,l in ins:
+              if pat.search(op):
+                  callers.append(a)
+                  print(f'### 0x{a:x}: {op}')
+                  for z in ctx(a,45,60): print('    '+z)
+                  print()
+          print('## Near-call RSI reaching definitions')
+          for a in callers:
+              j=idx(a)
+              rows=ins[max(0,j-80):j+1]
+              print(f'### call 0x{a:x}')
+              for aa,ii,op,l in reversed(rows[:-1]):
+                  if re.match(r'(mov|lea|xchg|pop)\s+rsi\b',op):
+                      print('    '+l)
+                      for z in ctx(aa,18,24): print('    '+z)
+                      break
+              print()
+          print('## All materializations/stores of known constructor-zero family around 0x109917a')
+          for a,i,op,l in ins:
+              if 0x109917a<=a<0x1099d71 and ('# 18' in l or re.search(r'mov\s+QWORD PTR \[[^]]+\],r\w+',op)):
+                  if '# 18' in l or '+0x3b8]' in op or '+0x0]' in op:
+                      print('    '+l)
+          print()
+          print('## Candidate same-owner nonzero +0x3b8 writers')
+          # Focus only FDE-ish neighborhoods whose surrounding code also touches offsets seen in e92f owner: +0x378/+0x480/+0x428/+0x418.
+          for a,i,op,l in ins:
+              first=op.split(',',1)[0]
+              if '+0x3b8]' not in first: continue
+              if re.search(r'(?:xor|and|movups|movdqu).*(?:xmm0|0x0)',op): continue
+              window='\n'.join(x[3] for x in ins[max(0,idx(a)-100):min(len(ins),idx(a)+100)])
+              score=sum(1 for off in ('+0x378]','+0x480]','+0x428]','+0x418]') if off in window)
+              if score:
+                  print(f'### 0x{a:x} score={score}: {op}')
+                  for z in ctx(a,28,48): print('    '+z)
+                  print()
+          print('## Vptr-looking constants near e92f callers')
+          for a in callers:
+              j=idx(a)
+              for aa,ii,op,l in ins[max(0,j-100):min(len(ins),j+30)]:
+                  m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+                  if m:
+                      print(f'- call 0x{a:x}: 0x{aa:x} -> 0x{m.group(1)} :: {op}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/readiness-owner-r13-class.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve readiness owner r13 class"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
