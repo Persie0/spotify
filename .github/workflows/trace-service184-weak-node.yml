@@ -1,0 +1,116 @@
+name: Trace service184 weak-node producer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-weak-node.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184node
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184node
+
+      - name: Trace node producer
+        run: |
+          SO=/tmp/s184node/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184node/all.dis
+          readelf -rW "$SO" > /tmp/s184node/relocs.txt
+          python3 - <<'PY' > analysis/service184-weak-node-producer.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/s184node/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def ctx(i,b=16,a=22):
+            return '\n'.join('    '+x for x in lines[max(0,i-b):min(len(lines),i+a+1)])
+
+          print('# Service184 weak-node producer trace')
+          print()
+          print('Recovered consumer:')
+          print('  node = 1334d26(container=r14+0x30, key=...)')
+          print('  weak = node+0xa8; lock(weak)')
+          print('  service184 = node+0xa0')
+          print('  rootTable+0x5c0 = service184')
+          print()
+
+          print('## 1334d26 map/node lookup helper')
+          for a,i,op,l in ins:
+            if 0x1334ca0<=a<0x1334e10: print('    '+l)
+          print()
+
+          print('## Direct callers of 1334d26')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+1334d26\b',op):
+              print(f'### 0x{a:x}')
+              print(ctx(i,22,28)); print()
+
+          print('## Writes to node-like +0xa0 / +0xa8 in 0x1300000..0x1360000')
+          # Keep writes where memory destination is before first comma.
+          for a,i,op,l in ins:
+            if not (0x1300000<=a<0x1360000): continue
+            left=op.split(',',1)[0]
+            if not ('[' in left and any(x in left for x in ('+0xa0]','+0xa8]'))): continue
+            if not re.search(r'\b(?:mov|movups|movdqu|lea)\b',op): continue
+            print(f'### 0x{a:x}: {op}')
+            print(ctx(i,14,20)); print()
+
+          print('## Paired +0xa0/+0xa8 accesses in same local neighborhoods')
+          for a,i,op,l in ins:
+            if not (0x1300000<=a<0x1360000): continue
+            if '+0xa0]' not in op: continue
+            neighborhood='\n'.join(lines[max(0,i-20):min(len(lines),i+21)])
+            if '+0xa8]' in neighborhood:
+              print(f'### centered 0x{a:x}')
+              print(ctx(i,20,20)); print()
+
+          print('## Vptr immediates near paired writers')
+          # Surface LEAs to high rodata addresses in same 0x133xxxx construction cluster.
+          for a,i,op,l in ins:
+            if not (0x1320000<=a<0x1340000): continue
+            if not ('lea' in op and '#' in l): continue
+            m=re.search(r'#\s*(18[0-9a-f]{5,})\b',l)
+            if not m: continue
+            # only emit if within 0x300 instructions of a +a0/+a8 write
+            nearby=False
+            for aa,ii,oo,ll in ins:
+              if abs(ii-i)>120: continue
+              left=oo.split(',',1)[0]
+              if '[' in left and ('+0xa0]' in left or '+0xa8]' in left):
+                nearby=True; break
+            if nearby:
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(i,8,12)); print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-weak-node-producer.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 weak-node producer"
+          git pull --rebase origin main
+          git push origin HEAD:main
