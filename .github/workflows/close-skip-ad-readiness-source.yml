@@ -1,0 +1,219 @@
+name: Close Skip Ad readiness source bridge
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/close-skip-ad-readiness-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readclose
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readclose
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace bridge
+        run: |
+          SO=/tmp/readclose/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readclose/all.dis
+          python3 - <<'PY' > analysis/skip-ad-readiness-source-bridge.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readclose/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/readclose/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':
+                loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=14,n=24):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po): return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(v,cap=240):
+            o=vo(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+
+          print('# Skip Ad readiness source bridge')
+          print()
+          print('Proven source coordinate:')
+          print('- constructor FDE begins near 0xef91d3')
+          print('- 0xef9217 saves incoming rsi to rsp+0x60')
+          print('- 0xefc623 tests source+0x1b5')
+          print('- 0xefc630 loads availability receiver = [source+0x10]')
+          print('- therefore the previous 0x183ba50/fb1b50 receiver identification was a false alias and is rejected')
+          print()
+
+          print('## All direct writes to source-family bytes +0x1b2/+0x1b5/+0x1b7/+0x1b8')
+          for off in (0x1b2,0x1b5,0x1b7,0x1b8):
+            print(f'### +0x{off:x}')
+            n=0
+            for a,i,op,l in ins:
+              left=op.split(',',1)[0]
+              if f'+0x{off:x}]' not in left:continue
+              if not re.match(r'(mov|and|or|xor|xchg)',op):continue
+              print(f'#### 0x{a:x}; FDE={fde(a)}: {op}')
+              ctx(a,10,16);print()
+              n+=1
+              if n>=40:break
+            if n==0:print('- no direct writes found')
+            print()
+
+          print('## FDEs that touch both source+0x10 and source+0x1b5')
+          by={}
+          for a,i,op,l in ins:
+            fr=fde(a)
+            if not fr:continue
+            s=by.setdefault(fr,set())
+            for off in (0x10,0x1b5):
+              if f'+0x{off:x}]' in op:s.add(off)
+          for fr,s in by.items():
+            if s=={0x10,0x1b5}:
+              print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1] and ('+0x10]' in op or '+0x1b5]' in op):
+                  print('    '+l)
+              print()
+
+          print('## Service ID 4 descriptor candidates')
+          # b85f7e proves ID 4 / table+0x20. Find tiny virtual ID methods returning 4.
+          idf=set()
+          for a,i,op,l in ins:
+            if re.fullmatch(r'mov\s+(?:al|eax),0x4',op):
+              fr=fde(a)
+              if fr and fr[1]-fr[0]<=0x40:idf.add(fr)
+          for fr in sorted(idf):
+            print(f'### ID method FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:print('    '+l)
+            slots=[off for off,add in rel.items() if add==fr[0]]
+            for slot in slots:
+              print(f'- relocation slot 0x{slot:x}')
+              # descriptor ID method normally at +0x10; examine nearby AP hypotheses.
+              for delta in (0x10,0x8,0x18):
+                ap=slot-delta
+                vals={o:q(ap+o) for o in range(0,0x38,8)}
+                code=sum(1 for v in vals.values() if v and fde(v))
+                if code<3:continue
+                print(f'  candidate AP 0x{ap:x} (slot delta +0x{delta:x})')
+                for o,v in vals.items():print(f'    +0x{o:x}: {("0x%x"%v) if v else None}')
+                meta=vals.get(0x18)
+                if meta and fde(meta):
+                  ss=[]
+                  for aa,ii,oo,ll in ins:
+                    if fde(aa)!=fde(meta):continue
+                    mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                    if mm:
+                      s=cstr(int(mm.group(1),16))
+                      if s and 3<=len(s)<=120 and s not in ss:ss.append(s)
+                  for s in ss:print(f'    metadata-string={s!r}')
+            print()
+
+          print('## Relocations directly targeting readiness factory FDE 0x13524a4')
+          targets=(0x13524a4,0x13524d4)
+          for t in targets:
+            slots=[off for off,add in rel.items() if add==t]
+            print(f'### target 0x{t:x}: slots={list(map(hex,slots))}')
+            for slot in slots:
+              for delta in range(0,0x40,8):
+                ap=slot-delta
+                vals={o:q(ap+o) for o in range(0,0x38,8)}
+                if vals.get(delta)!=t:continue
+                code=sum(1 for v in vals.values() if v and fde(v))
+                if code<3:continue
+                print(f'- possible AP 0x{ap:x}, factory slot +0x{delta:x}')
+                for o,v in vals.items():print(f'  +0x{o:x}: {("0x%x"%v) if v else None}')
+                meta=vals.get(0x18)
+                if meta and fde(meta):
+                  ss=[]
+                  for aa,ii,oo,ll in ins:
+                    if fde(aa)!=fde(meta):continue
+                    mm=re.search(r'#\s*([0-9a-f]+)\b',ll)
+                    if mm:
+                      s=cstr(int(mm.group(1),16))
+                      if s and 3<=len(s)<=120 and s not in ss:ss.append(s)
+                  for s in ss:print(f'  metadata-string={s!r}')
+          print()
+
+          print('## Service-4 accessor')
+          ctx(0xb85f7e,2,22)
+          print()
+          print('## +0x1b8 capture and branch')
+          ctx(0x1352547,20,36)
+          print()
+          print('## Source use in adapter constructor')
+          ctx(0xefc61e,8,32)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-source-bridge.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Close Skip Ad readiness source bridge"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
