@@ -1,0 +1,189 @@
+name: Classify TimelineAds sibling readiness interfaces
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-timelineads-sibling-interfaces.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tasib
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tasib
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Classify
+        run: |
+          SO=/tmp/tasib/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/tasib/all.dis
+          readelf -rW "$SO" > /tmp/tasib/rel.txt
+          python3 - <<'PY' > analysis/timelineads-sibling-interfaces.md
+          from pathlib import Path
+          import re,struct,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/tasib/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dis=Path('/tmp/tasib/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dis):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f); loads=[]; rel={}
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD': loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+            if not a:return None
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=10,n=24):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]:print('    '+x[3])
+          def cstr(v,cap=180):
+            o=vo(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+
+          print('# TimelineAds sibling readiness interfaces')
+          print()
+          print('Known:')
+          print('- TimelineAds owner AP 0x1867340')
+          print('- +0x30 returns owner+0x28')
+          print('- +0x38 returns owner+0x40')
+          print('- owner+0x28 fallback AP 0x1871558')
+          print('- owner+0x40 fallback AP 0x1871530')
+          print('- both dynamic branches use 0x1439114')
+          print('- TimelineConductor consumes both via TimelineAds +0x30/+0x38')
+          print()
+
+          aps=[0x1871530,0x1871558,0x18713e8,0x1871660]
+          for ap in aps:
+            print(f'## Address point 0x{ap:x}')
+            print(f'- header: -0x10={q(ap-0x10)} -0x8={q(ap-8)}')
+            vals={}
+            for off in range(0,0x181,8):
+              v=q(ap+off);vals[off]=v
+              if v is not None:
+                print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+            for off in (0x28,0x30,0x38,0x40,0x68,0x70,0x140):
+              v=vals.get(off)
+              if v and fde(v):
+                print(f'### slot +0x{off:x} body -> 0x{v:x}')
+                fr=fde(v); n=0
+                for a,i,op,l in ins:
+                  if fr[0]<=a<fr[1]:
+                    print('    '+l);n+=1
+                    if n>240:break
+                print()
+            print()
+
+          print('## Dynamic helper 0x1439114 high-address/vptr materializations')
+          fr=fde(0x1439114)
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*(18[0-9a-f]{5,})\b',l)
+              if m:
+                print(f'### 0x{a:x}: {op}')
+                ctx(a,8,14);print()
+          print()
+
+          print('## Dynamic helper output stores through original rdi / saved output register')
+          if fr:
+            # r12=rdi at entry; find stores to [r12] and direct helper calls with r12.
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              if '[r12]' in op or '[r12+' in op or re.search(r'\br12\b',op) and ('call' in op or 'mov' in op):
+                print('    '+l)
+          print()
+
+          print('## Fallback AP materialization contexts')
+          for target in (0x1871530,0x1871558):
+            print(f'### 0x{target:x}')
+            for a,i,op,l in ins:
+              if f'# {target:x} ' in l:
+                ctx(a,20,38);print()
+          print()
+
+          print('## TimelineConductor 0x1871660 wrapper creation / consumers')
+          for a,i,op,l in ins:
+            if '# 1871660 ' in l:
+              ctx(a,32,70);print()
+          print('### all direct refs to 0x1871660 methods')
+          vals={off:q(0x1871660+off) for off in range(0,0x100,8)}
+          methods={v for v in vals.values() if v and fde(v)}
+          for a,i,op,l in ins:
+            m=re.search(r'\b(?:call|jmp)\s+([0-9a-f]+)\b',op)
+            if m and int(m.group(1),16) in methods:
+              print(f'- 0x{a:x}: {op}; caller FDE={fde(a)}')
+          print()
+
+          print('## Strings used by sibling-interface methods')
+          methods=set()
+          for ap in aps:
+            for off in range(0,0x181,8):
+              v=q(ap+off)
+              if v and fde(v):methods.add(fde(v))
+          for fr in sorted(methods):
+            ss=[]
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                s=cstr(int(m.group(1),16))
+                if s and 4<=len(s)<=140 and s not in ss:ss.append(s)
+            if ss:print(f'- FDE 0x{fr[0]:x}: {ss}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timelineads-sibling-interfaces.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify TimelineAds sibling readiness interfaces"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 1; done
+          exit 1
