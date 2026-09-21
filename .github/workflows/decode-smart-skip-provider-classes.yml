@@ -1,0 +1,163 @@
+name: Decode smart skip provider classes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-smart-skip-provider-classes.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/provcls
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/provcls
+      - name: Install
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode classes
+        run: |
+          SO=/tmp/provcls/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/provcls/all.dis
+          python3 - <<'PY' > analysis/smart-skip-provider-classes.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/provcls/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/provcls/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f);loads=[];rel={}
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None:rel[rr['r_offset']]=add
+            dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def body(a,cap=2500):
+            fr=fde(a)
+            if not fr:return []
+            j=bisect.bisect_left(addrs,fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+              if len(out)>=cap:break
+            return out
+          def vo(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def q(v):
+            if v in rel:return rel[v]
+            o=vo(v)
+            if o is None or o+8>len(data):return None
+            return struct.unpack_from('<Q',data,o)[0]
+          def cstr(v,cap=500):
+            o=vo(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+
+          classes=[
+            (0x1869ea8,'primary','0x13a1b30'),
+            (0x186a0b8,'fallback','0x13a3b66')
+          ]
+          print('# Smart-skip interval provider classes')
+          print()
+          print('Primary object: TimelineConductor+0xb0, size 0x110, AP 0x1869ea8, setup helper 0x13a1b30.')
+          print('Fallback object: TimelineConductor+0xb8, size 0x110, AP 0x186a0b8, setup helper 0x13a3b66.')
+          print()
+
+          for ap,label,helper in classes:
+            print(f'## {label} AP 0x{ap:x}')
+            for off in range(0,0x100,8):
+              v=q(ap+off)
+              if v is None:continue
+              print(f'- +0x{off:x}: 0x{v:x} FDE={fde(v)}')
+            print()
+            print('### method strings')
+            seen=set()
+            for off in range(0,0x100,8):
+              v=q(ap+off)
+              if not v or not fde(v):continue
+              ss=[]
+              for a,i,op,l in body(v,1500):
+                m=re.search(r'#\s*([0-9a-f]+)\b',l)
+                if m:
+                  s=cstr(int(m.group(1),16))
+                  if s and 3<=len(s)<=300 and s not in ss:ss.append(s)
+              if ss:
+                print(f'#### slot +0x{off:x} -> 0x{v:x}')
+                for s in ss:
+                  if s not in seen:
+                    seen.add(s);print(f'- {s!r}')
+            print()
+
+          print('## Setup helpers')
+          for fn,label in [(0x13a1b30,'primary setup'),(0x13a3b66,'fallback setup'),(0x13a1922,'primary extractor'),(0x13a37f8,'fallback extractor')]:
+            print(f'### {label} 0x{fn:x} FDE={fde(fn)}')
+            ss=[]
+            for a,i,op,l in body(fn,2200):
+              print('    '+l)
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                s=cstr(int(m.group(1),16))
+                if s and 3<=len(s)<=300 and s not in ss:ss.append(s)
+            if ss:
+              print('#### strings')
+              for s in ss:print(f'- {s!r}')
+            print()
+
+          print('## Callers of setup helpers')
+          for target in (0x13a1b30,0x13a3b66):
+            print(f'### target 0x{target:x}')
+            for a,i,op,l in ins:
+              if re.search(r'call\s+'+format(target,'x')+r'\b',op):
+                print(f'- caller 0x{a:x} FDE={fde(a)}')
+            print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-skip-provider-classes.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode smart skip provider classes"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
