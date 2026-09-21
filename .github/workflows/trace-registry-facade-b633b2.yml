@@ -1,0 +1,58 @@
+name: Trace registry facade constructor b633b2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-registry-facade-b633b2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regb633
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regb633
+      - name: Trace
+        run: |
+          set -euo pipefail
+          SO=/tmp/regb633/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/regb633/all.dis
+          {
+            echo '# Registry facade constructor b633b2'
+            echo
+            echo '## Exact function'
+            objdump -d -M intel --start-address=0xb633b2 --stop-address=0xb63451 "$SO"
+            echo
+            echo '## Wider helper family'
+            objdump -d -M intel --start-address=0xb63000 --stop-address=0xb63580 "$SO"
+            echo
+            echo '## Direct callers'
+            grep -n -E -B35 -A70 'call[[:space:]]+b633b2\b' /tmp/regb633/all.dis | head -n 24000 || true
+            echo
+            echo '## Calls into any point in this constructor/helper cluster'
+            grep -n -E -B25 -A55 'call[[:space:]]+b63(2[0-9a-f]{3}|3[0-9a-f]{3}|4[0-9a-f]{3})\b' /tmp/regb633/all.dis | head -n 32000 || true
+          } > analysis/registry-facade-b633b2.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-b633b2.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace registry facade constructor b633b2"
+          git pull --rebase origin main
+          git push origin HEAD:main
