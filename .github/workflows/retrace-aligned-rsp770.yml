@@ -1,0 +1,151 @@
+name: Retrace aligned rsp770 provenance
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/retrace-aligned-rsp770.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/r770a
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/r770a
+
+      - name: Aligned trace
+        run: |
+          SO=/tmp/r770a/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/r770a/all.dis
+          python3 - <<'PY' > analysis/rsp770-aligned-provenance.md
+          from pathlib import Path
+          import re,bisect
+          lines=Path('/tmp/r770a/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=12,n=25):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          lo,hi=0xe9c8b0,0xe9cd20
+          rows=[x for x in ins if lo<=x[0]<hi]
+
+          print('# Aligned rsp+0x770 provenance into 0x18365e0 owner')
+          print()
+          print('This report intentionally parses the globally aligned full disassembly instead of starting objdump at an arbitrary byte address.')
+          print()
+          print('## Exact aligned window')
+          for x in rows:print('    '+x[3])
+          print()
+
+          print('## Direct references to rsp+0x770 / +0x778 / +0x780')
+          for k,(a,i,op,l) in enumerate(rows):
+              if any(s in op for s in ('rsp+0x770','rsp+0x778','rsp+0x780')):
+                  left=op.split(',',1)[0]
+                  side='WRITE' if any(s in left for s in ('rsp+0x770','rsp+0x778','rsp+0x780')) else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  for x in rows[max(0,k-10):min(len(rows),k+22)]:print('    '+x[3])
+                  print()
+
+          # Track aliases made with LEA to any point in the local object [770..7bf].
+          aliases={}
+          for k,(a,i,op,l) in enumerate(rows):
+              m=re.match(r'lea\s+(r\w+),\[rsp\+0x(7[789a-b][0-9a-f])\]',op)
+              if m:
+                  reg=m.group(1); off=int(m.group(2),16)
+                  aliases.setdefault(reg,[]).append((a,off,k))
+          print('## Aliases into local object 0x770..0x7bf')
+          for reg,defs in aliases.items():
+              for a,off,k in defs:
+                  print(f'### {reg} = rsp+0x{off:x} @0x{a:x}')
+                  for aa,ii,oo,ll in rows[k:min(len(rows),k+80)]:
+                      if re.search(r'\b'+re.escape(reg)+r'\b',oo) or re.search(r'\bcall\b',oo):
+                          print('    '+ll)
+                  print()
+
+          print('## All stores capable of modifying rsp+0x770 indirectly')
+          # If alias points to 0x780, negative offsets like [alias-0x10] hit 0x770.
+          for reg,defs in aliases.items():
+              for a0,off0,k0 in defs:
+                  for a,i,op,l in rows[k0:]:
+                      if a<a0:continue
+                      left=op.split(',',1)[0]
+                      if '['+reg not in left:continue
+                      # parse displacement if simple
+                      mm=re.search(r'\['+re.escape(reg)+r'(?:(\+|-)0x([0-9a-f]+))?\]',left)
+                      if not mm:continue
+                      d=0
+                      if mm.group(2):
+                          d=int(mm.group(2),16)*(1 if mm.group(1)=='+' else -1)
+                      absolute=off0+d
+                      if 0x770<=absolute<0x780:
+                          print(f'- 0x{a:x}: alias {reg}@0x{off0:x}, effective rsp+0x{absolute:x}: {op}')
+                          print(ctx(a,8,12))
+                          print()
+
+          print('## Value reaching e9ccef/e9ccf3')
+          for target in [0xe9ccef,0xe9ccf3]:
+              print(f'### around 0x{target:x}')
+              print(ctx(target,20,20));print()
+
+          # Find the exact last write to 0x770 before the read by symbolic direct/alias rules.
+          writes=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe9ccef:break
+              left=op.split(',',1)[0]
+              if 'rsp+0x770' in left:
+                  writes.append((a,op,'direct'))
+          # aliases only valid until reassigned; simple local tracking.
+          regdef={}
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe9ccef:break
+              m=re.match(r'lea\s+(r\w+),\[rsp\+0x([0-9a-f]+)\]',op)
+              if m: regdef[m.group(1)]=(int(m.group(2),16),a)
+              m2=re.match(r'(?:mov|lea|xor|pop)\s+(r\w+),',op)
+              if m2 and not m:
+                  regdef.pop(m2.group(1),None)
+              left=op.split(',',1)[0]
+              for reg,(base,da) in list(regdef.items()):
+                  mm=re.search(r'\['+re.escape(reg)+r'(?:(\+|-)0x([0-9a-f]+))?\]',left)
+                  if not mm:continue
+                  d=0
+                  if mm.group(2):d=int(mm.group(2),16)*(1 if mm.group(1)=='+' else -1)
+                  if base+d==0x770:
+                      writes.append((a,op,f'via {reg} from 0x{base:x}'))
+          print('## Candidate writes reaching local +0x770 before e9ccef')
+          for x in writes:print(f'- 0x{x[0]:x}: {x[1]} ({x[2]})')
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/rsp770-aligned-provenance.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Retrace aligned rsp770 provenance"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
