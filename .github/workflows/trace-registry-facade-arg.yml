@@ -1,0 +1,111 @@
+name: Trace registry facade argument into 11ee608
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-registry-facade-arg.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/regarg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/regarg
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace rcx facade argument
+        run: |
+          SO=/tmp/regarg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/regarg/all.dis
+          python3 - <<'PY' > analysis/registry-facade-arg11ee608.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          lines=Path('/tmp/regarg/all.dis').read_text(errors='replace').splitlines()
+          with open('/tmp/regarg/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f);dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          print('# Registry facade argument provenance into 0x11ee608')
+          print()
+          print('0x11ee608 copies incoming rcx to rbx; that exact rbx is passed to b8f02e.')
+          print('Therefore caller rcx is the proven registry-facade pointer.')
+          print()
+          print('## Direct call sites to 0x11ee608')
+          hits=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+            if re.search(r'\bcall\s+11ee608\b',op):
+              hits.append((idx,a,i))
+              print(f'### call@0x{a:x} callerFDE={fde(a)}')
+              for x in lines[max(0,i-45):min(len(lines),i+22)]:print('    '+x)
+              print()
+          print(f'count={len(hits)}')
+          print()
+          print('## Backward rcx definitions in each caller')
+          for idx,a,i in hits:
+            fr=fde(a)
+            fs=[x for x in ins if fr and fr[0]<=x[0]<fr[1] and x[0]<=a]
+            print(f'### call@0x{a:x} FDE={fr}')
+            # Walk backward from call and emit rcx-defining/use chain, plus nearby calls.
+            n=0
+            for x in reversed(fs):
+              aa,ii,op,ll=x
+              if a-aa>0x500:break
+              if re.search(r'\b(rcx|ecx)\b',op) or re.search(r'\bcall\b',op):
+                print('    '+ll);n+=1
+                # Stop at strong rcx definition after some context.
+                first=op.split(',',1)[0].strip()
+                if aa<a and re.match(r'(mov|lea|pop|xor)\s+(?:rcx|ecx)\b',first) and n>2:
+                  print('    [nearest strong rcx definition]')
+                  break
+            print()
+          # Also find address-taken refs if no direct call due thunk.
+          print('## Textual references to function address 0x11ee608')
+          for a,i,op,l in ins:
+            if '# 11ee608 ' in l:
+              print(f'### @0x{a:x} FDE={fde(a)}')
+              for x in lines[max(0,i-18):min(len(lines),i+28)]:print('    '+x)
+              print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/registry-facade-arg11ee608.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace registry facade argument into 11ee608"
+          git pull --rebase origin main
+          git push origin HEAD:main
