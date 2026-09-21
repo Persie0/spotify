@@ -1,0 +1,57 @@
+name: Map dispatcher arg9 to this+8
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/map-dispatcher-arg9-this8.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/arg9
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/arg9
+      - name: Map constructor argument
+        run: |
+          SO=/tmp/arg9/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/arg9/all.dis
+          {
+            echo '# Secondary dispatcher constructor: service184 dependency -> this+8'
+            echo
+            echo '## 0x11ef334 prologue and first argument loads'
+            objdump -d -M intel --start-address=0x11ef334 --stop-address=0x11ef760 "$SO"
+            echo
+            echo '## Object construction around vptr 0x185ba80 / secondary 0x185bf88'
+            objdump -d -M intel --start-address=0x11f3e80 --stop-address=0x11f4230 "$SO"
+            echo
+            echo '## Exact methods around secondary address point use'
+            objdump -d -M intel --start-address=0x1204218 --stop-address=0x12046a0 "$SO"
+            echo
+            echo '## All stores to allocated dispatcher +0x8/+0x20 near constructor'
+            objdump -d -M intel --start-address=0x11f3c00 --stop-address=0x11f4300 "$SO" | grep -E -B12 -A18 '\+(0x)?8\]|\+0x20\]' || true
+          } > analysis/dispatcher-arg9-this8.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/dispatcher-arg9-this8.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Map service184 dependency into dispatcher"
+          git pull --rebase origin main
+          git push origin HEAD:main
