@@ -1,0 +1,83 @@
+name: Find final TimelineConductor c8 r14 definition
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/find-final-timeline-c8-r14.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/tlfinal
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/tlfinal
+
+      - name: Find final definition
+        run: |
+          SO=/tmp/tlfinal/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0x135d056 --stop-address=0x135fd70 "$SO" > /tmp/tlfinal/win.dis
+          python3 - <<'PY' > analysis/timeline-conductor-c8-final-r14.md
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/tlfinal/win.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          defs=[]
+          for a,i,op,l in ins:
+            if a>=0x135fd57: break
+            if re.match(r'(mov|lea|pop|xchg)\s+r14\b',op) or re.match(r'(mov|lea)\s+r14[dwb]\b',op):
+              defs.append((a,i,op,l))
+
+          print('# Final r14 definition feeding TimelineConductor+0xc8')
+          print()
+          print(f'- total r14 definitions before 0x135fd57: {len(defs)}')
+          print()
+          print('## All r14 definitions in address order')
+          for a,i,op,l in defs:
+            print(l)
+          print()
+          print('## Last 12 definitions with context')
+          for a,i,op,l in defs[-12:]:
+            print(f'### 0x{a:x}: {op}')
+            for x in lines[max(0,i-24):min(len(lines),i+45)]: print('    '+x)
+            print()
+          print('## Final definition only')
+          if defs:
+            a,i,op,l=defs[-1]
+            print(f'- 0x{a:x}: {op}')
+            for x in lines[max(0,i-80):min(len(lines),i+120)]: print('    '+x)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/timeline-conductor-c8-final-r14.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find final TimelineConductor c8 r14 definition"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main &&
+            git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
