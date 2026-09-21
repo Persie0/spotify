@@ -1,0 +1,54 @@
+name: Decode Orbit registry helper b622de
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-orbit-registry-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/reg184
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/reg184
+
+      - name: Decode helper
+        run: |
+          set -euo pipefail
+          SO=/tmp/reg184/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/reg184/all.dis
+          {
+            echo '# Orbit registry helper b622de'
+            echo
+            objdump -d -M intel --start-address=0xb621c0 --stop-address=0xb62520 "$SO"
+            echo
+            echo '## Calls to helper with id 0xb8'
+            grep -E -B8 -A18 'mov[[:space:]]+edx,0xb8' /tmp/reg184/all.dis |               grep -E -B8 -A18 'b622de|0xb8' | head -n 12000 || true
+          } > analysis/orbit-registry-helper-b622de.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/orbit-registry-helper-b622de.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode Orbit registry helper b622de"
+          git pull --rebase origin main
+          git push origin HEAD:main
