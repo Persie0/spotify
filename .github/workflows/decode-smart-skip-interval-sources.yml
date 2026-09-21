@@ -1,0 +1,143 @@
+name: Decode smart skip interval sources
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-smart-skip-interval-sources.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipints
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipints
+      - name: Install
+        run: python3 -m pip install --quiet pyelftools
+      - name: Decode
+        run: |
+          SO=/tmp/skipints/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipints/all.dis
+          python3 - <<'PY' > analysis/smart-skip-interval-sources.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipints/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/skipints/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD': loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def body(a,limit=1600):
+            fr=fde(a)
+            if not fr:return []
+            j=bisect.bisect_left(addrs,fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+              if len(out)>=limit:break
+            return out
+          def vaoff(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po): return po+(v-pv)
+          def cstr(v,cap=350):
+            o=vaoff(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+
+          funcs=[
+            (0x13a1922,'primary interval extractor'),
+            (0x13a37f8,'fallback interval extractor'),
+            (0x13a1a4a,'primary interval containment'),
+            (0x13a392c,'fallback interval containment'),
+          ]
+          print('# Smart skip interval-source trace')
+          print()
+          print('Known caller behavior: both containment helpers scan 16-byte [start,end) pairs and, when current_ms lies inside an interval, return that pair; smartSkipEmbeddedPodcastAd seeks to the returned end value.')
+          print()
+          for fn,label in funcs:
+            print(f'## {label}: 0x{fn:x} FDE={fde(fn)}')
+            rows=body(fn)
+            ss=[]
+            for a,i,op,l in rows:
+              print('    '+l)
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m:
+                v=int(m.group(1),16);s=cstr(v)
+                if s and 2<=len(s)<=250 and s not in ss:ss.append(s)
+            if ss:
+              print('### strings')
+              for s in ss:print(f'- {s!r}')
+            print()
+            print('### direct calls')
+            for a,i,op,l in rows:
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if m: print(f'- 0x{a:x} -> 0x{int(m.group(1),16):x}: {op}')
+            print()
+
+          print('## Callers of extractors')
+          for t in (0x13a1922,0x13a37f8):
+            print(f'### 0x{t:x}')
+            for a,i,op,l in ins:
+              if re.search(r'call\s+'+format(t,'x')+r'\b',op):
+                print(f'- caller 0x{a:x} FDE={fde(a)}')
+                j=bisect.bisect_left(addrs,a)
+                for x in ins[max(0,j-18):min(len(ins),j+30)]:print('    '+x[3])
+            print()
+
+          print('## Nearby printable strings for candidate field/type 0x3f users')
+          for fn in (0x13a1922,0x13a37f8):
+            for a,i,op,l in body(fn):
+              if '0x3f' in op or '+0x38]' in op:
+                print(f'- 0x{a:x}: {op}')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-skip-interval-sources.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode smart skip interval sources"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
