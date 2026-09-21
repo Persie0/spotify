@@ -1,0 +1,80 @@
+name: Trace service184 host r13 provider
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-host-r13.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184r13
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184r13
+
+      - name: Trace r13 provenance
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184r13/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184r13/all.dis
+          {
+            echo '# Service184 host r13 provider backslice'
+            echo
+            echo 'Target: ddac2b stores r13 into host+0x30. Host vptr is 0x1859058 and virtual +0x10 is 0x11a318c.'
+            echo
+            echo '## Full constructor prefix dda4fa..ddac40'
+            objdump -d -M intel --start-address=0xdda4fa --stop-address=0xddac40 "$SO"
+            echo
+            echo '## All r13 writes/definitions in constructor prefix'
+            objdump -d -M intel --start-address=0xdda4fa --stop-address=0xddac40 "$SO" | grep -E '(^|[[:space:]])(mov|lea|xchg|pop)[[:space:]]+r13|(^|[[:space:]])(mov|lea|xchg)[[:space:]]+r13d' || true
+            echo
+            echo '## Calls immediately before each r13 definition'
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/s184r13/all.dis').read_text(errors='replace').splitlines()
+          parsed=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:
+              a=int(m.group(1),16)
+              if 0xdda4fa<=a<0xddac40:
+                parsed.append((a,i,m.group(2),l))
+          for idx,(a,i,op,l) in enumerate(parsed):
+            if re.match(r'(mov|lea|xchg|pop)\s+r13(?:d)?\b',op):
+              print(f'### r13 definition at 0x{a:x}: {op}')
+              for aa,ii,oo,ll in parsed[max(0,idx-18):min(len(parsed),idx+18)]:
+                print('    '+ll)
+              print()
+          PY
+            echo
+            echo '## Direct callees in constructor prefix'
+            objdump -d -M intel --start-address=0xdda4fa --stop-address=0xddac40 "$SO" | grep -E 'call[[:space:]]+[0-9a-f]+' || true
+          } > analysis/service184-host-r13.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-host-r13.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 host r13 provider"
+          git pull --rebase origin main
+          git push origin HEAD:main
