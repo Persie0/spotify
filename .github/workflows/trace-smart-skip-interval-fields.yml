@@ -1,0 +1,145 @@
+name: Trace smart skip interval field producers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-smart-skip-interval-fields.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/skipfields
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/skipfields
+      - name: Install
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace fields
+        run: |
+          SO=/tmp/skipfields/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/skipfields/all.dis
+          python3 - <<'PY' > analysis/smart-skip-interval-field-producers.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/skipfields/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          dl=Path('/tmp/skipfields/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for s in elf.iter_segments():
+              if s['p_type']=='PT_LOAD':loads.append((s['p_offset'],s['p_offset']+s['p_filesz'],s['p_vaddr']))
+            dwarf=elf.get_dwarf_info();fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort();starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def ctx(a,b=18,n=35):
+            j=bisect.bisect_left(addrs,a)
+            for x in ins[max(0,j-b):min(len(ins),j+n)]:print('    '+x[3])
+          def vaoff(v):
+            for po,pe,pv in loads:
+              if pv<=v<pv+(pe-po):return po+(v-pv)
+          def cstr(v,cap=400):
+            o=vaoff(v)
+            if o is None:return None
+            e=data.find(b'\0',o,min(len(data),o+cap))
+            if e<0:return None
+            try:return data[o:e].decode('utf8')
+            except:return None
+
+          print('# Smart-skip interval field producers')
+          print()
+          print('Target object: TimelineConductor dependency, allocated 0xbd0 at 0x135f2b8, pointer r14, AP 0x1868200.')
+          print('Target fields: +0xb08 and +0xb10, consumed by smartSkipEmbeddedPodcastAd interval lookup.')
+          print()
+
+          # Constructor window after allocation through install.
+          rows=[x for x in ins if 0x135f2b8<=x[0]<=0x135fd57]
+          for off in ('b08','b10'):
+            print(f'## Constructor writes/references to r14+0x{off}')
+            for a,i,op,l in rows:
+              if f'[r14+0x{off}]' in op or f'[r14+{off}]' in op:
+                print(f'### 0x{a:x}: {op}')
+                ctx(a);print()
+
+          # Global direct reads/writes to these offsets on arbitrary bases, grouped by FDE,
+          # prioritizing qword stores and calls using loaded pointers.
+          for off in ('b08','b10'):
+            print(f'## Non-stack qword stores to +0x{off} across binary')
+            count=0
+            for a,i,op,l in ins:
+              left=op.split(',',1)[0]
+              if not re.search(r'\[[a-z0-9]+\+0x'+off+r'\]',left):continue
+              if not re.match(r'(mov|xchg|and|or|xor)\b',op):continue
+              if '[rsp+' in left:continue
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              ctx(a,10,20);print()
+              count+=1
+              if count>=80:break
+
+          print('## High-address/string refs near constructor field setup')
+          seen=set()
+          for a,i,op,l in rows:
+            if not (0x135f2b8<=a<=0x135fd57):continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if not m:continue
+            v=int(m.group(1),16)
+            s=cstr(v)
+            if s and 3<=len(s)<=250:
+              key=(v,s)
+              if key in seen:continue
+              seen.add(key)
+              if any(k in s.lower() for k in ['ad','podcast','segment','slice','clip','skip','timeline','media','marker','break']):
+                print(f'- 0x{a:x} -> 0x{v:x}: {s!r}')
+
+          # Direct helpers called around writes to those fields.
+          print('## Calls within ±40 instructions of constructor field refs')
+          refs=[(a,i,op,l) for a,i,op,l in rows if '[r14+0xb08]' in op or '[r14+0xb10]' in op]
+          for a,i,op,l in refs:
+            print(f'### field ref 0x{a:x}: {op}')
+            j=bisect.bisect_left(addrs,a)
+            for aa,ii,oo,ll in ins[max(0,j-40):min(len(ins),j+40)]:
+              if re.search(r'\bcall\b',oo):
+                print(f'- {ll}')
+            print()
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/smart-skip-interval-field-producers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace smart skip interval field producers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
