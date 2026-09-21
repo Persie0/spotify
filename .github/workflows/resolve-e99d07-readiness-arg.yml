@@ -1,0 +1,194 @@
+name: Resolve e99d07 readiness argument vptr
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-e99d07-readiness-arg.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/e99arg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/e99arg
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve argument
+        run: |
+          SO=/tmp/e99arg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/e99arg/all.dis
+          readelf -rW "$SO" > /tmp/e99arg/rel.txt
+          python3 - <<'PY' > analysis/e99d07-readiness-arg-vptr.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/e99arg/all.dis').read_text(errors='replace').splitlines()
+          rel_lines=Path('/tmp/e99arg/rel.txt').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with open('/tmp/e99arg/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          rel={}
+          for l in rel_lines:
+              p=l.split()
+              if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  j=p.index('R_X86_64_RELATIVE')
+                  if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                      rel[int(p[0],16)]=int(p[j+1],16)
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def body(fr):
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+          def ctx(a,b=16,n=30):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          print('# e99d07 readiness argument concrete vptr')
+          print()
+          print('Corrected proven chain:')
+          print('- e99d07 [rsp+0x1338] is an incoming argument, not the 0x6b0 record from another FDE')
+          print('- e9a38a/e9a425 load it and call its virtual +0x148')
+          print('- e9c8e4/e9ccf3 store the same pointer into AP 0x18365e0 object +0x10')
+          print('- ef91cc later gates on owner+0x1b5, then uses owner+0x10 as the Skip Ad readiness receiver')
+          print('- caller mapping: callee +0x1338 = caller pre-call +0xf8, pushed at e95c3f from caller-final stack +0x3a8')
+          print()
+
+          # Caller FDE containing call e95d35.
+          cf=fde(0xe95d35)
+          print(f'## Caller FDE containing e95d35: {cf}')
+          rows=body(cf) if cf else []
+          print()
+
+          print('## Every caller rsp+0x3a8 reference before call')
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe95d35:break
+              if 'rsp+0x3a8' in op:
+                  side='WRITE' if 'rsp+0x3a8' in op.split(',',1)[0] else 'READ'
+                  print(f'### {side} 0x{a:x}: {op}')
+                  for x in rows[max(0,k-14):min(len(rows),k+28)]:print('    '+x[3])
+                  print()
+
+          print('## Stack source used by push e95c3f')
+          print(ctx(0xe95c3f,80,18));print()
+
+          # Simulate reverse through pushes: before first push e95bce, target logical pre-call +0x3a8
+          # corresponds to original caller rsp offset; search broad offsets 0x2a8..0x3c0.
+          print('## Candidate provenance refs around original caller stack slots 0x2a8..0x3c0')
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe95bce:break
+              m=re.search(r'\[rsp\+0x([23][0-9a-f]{2})\]',op)
+              if not m:continue
+              off=int(m.group(1),16)
+              if 0x2a0<=off<=0x3c0:
+                  left=op.split(',',1)[0]
+                  if re.match(r'(mov|lea|movaps|movdqa|movups|movdqu)',op):
+                      print(f'- 0x{a:x}: {op}')
+          print()
+
+          # Exact instruction e95c3f uses current rsp+0x2a8 after many pushes.
+          # There are 0x100 bytes already pushed from e95bce to before e95c3f?
+          # Instead use already proven final slot mapping and track caller final_rsp+0x3a8 writes.
+          # Identify caller frame's stable rsp (no dynamic rsp changes) before push sequence and translate.
+          print('## rsp adjustments in caller before push sequence')
+          for a,i,op,l in rows:
+              if a>=0xe95d35:break
+              if re.match(r'(sub|add)\s+rsp,',op) or re.match(r'push\b',op) or re.match(r'pop\b',op):
+                  if a>=0xe95a00: print('    '+l)
+          print()
+
+          # Find source object consumers in caller: vtable calls on candidates loaded from stack.
+          print('## Polymorphic calls in caller before e95d35')
+          for k,(a,i,op,l) in enumerate(rows):
+              if a>=0xe95d35:break
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x(?:140|148)\]',op):
+                  print(f'### 0x{a:x}: {op}')
+                  for x in rows[max(0,k-20):min(len(rows),k+20)]:print('    '+x[3])
+                  print()
+
+          # Search constructors/materializations near caller for APs whose +0x148 and +0x140 are code.
+          print('## High-address AP materializations in caller with code at +0x140/+0x148')
+          highs=[]
+          for a,i,op,l in rows:
+              if a>=0xe95d35:break
+              m=re.search(r'#\s*(18[0-9a-f]{5,}|19[0-9a-f]{5,})\b',l)
+              if m:highs.append((a,int(m.group(1),16),op))
+          seen=set()
+          for a,va,op in highs:
+              for ap in range(max(0,va-0x20),va+0x21,8):
+                  if ap in seen:continue
+                  v140=rel.get(ap+0x140); v148=rel.get(ap+0x148)
+                  if v140 and v148 and fde(v140) and fde(v148):
+                      seen.add(ap)
+                      print(f'### AP 0x{ap:x} materialization-near 0x{a:x}; +0x140=0x{v140:x} FDE={fde(v140)}; +0x148=0x{v148:x} FDE={fde(v148)}')
+                      print(f'- source insn: {op}')
+                      print('#### +0x140')
+                      for x in body(fde(v140)): print('    '+x[3])
+                      print('#### +0x148')
+                      for x in body(fde(v148)): print('    '+x[3])
+                      print()
+
+          # Global shortlist of APs where +140/+148 are both valid, then direct materialization/caller refs.
+          print('## Global APs with +0x140 and +0x148 code, materialized in caller family')
+          ap_candidates=[]
+          for ap in sorted(rel):
+              v140=rel.get(ap+0x140);v148=rel.get(ap+0x148)
+              if v140 and v148 and fde(v140) and fde(v148):
+                  ap_candidates.append((ap,v140,v148))
+          caller_text='\n'.join(x[3] for x in rows)
+          for ap,v140,v148 in ap_candidates:
+              token=f'# {ap:x}'
+              if token in caller_text:
+                  print(f'- AP 0x{ap:x}: +140=0x{v140:x}, +148=0x{v148:x}')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/e99d07-readiness-arg-vptr.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve e99d07 readiness argument vptr"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
