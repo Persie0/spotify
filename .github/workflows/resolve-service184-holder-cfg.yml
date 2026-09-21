@@ -1,0 +1,84 @@
+name: Resolve service184 holder CFG
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-holder-cfg.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184cfg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184cfg
+      - name: Dump CFG slice
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184cfg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184cfg/all.dis
+          {
+            echo '# Service184 holder CFG'
+            echo
+            echo '## Tight block'
+            objdump -d -M intel --start-address=0x1333f00 --stop-address=0x1334568 "$SO"
+            echo
+            echo '## Direct branch/call references to cold targets'
+            for T in 133444f 13344cb 1334512 1334519 133452a; do
+              echo "### target $T"
+              grep -n -E "(j[a-z]+|call)[[:space:]]+$T\\b" /tmp/s184cfg/all.dis || true
+            done
+            echo
+            echo '## Every branch in owning range into 0x1334400..0x1334568'
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          ls=Path('/tmp/s184cfg/all.dis').read_text(errors='replace').splitlines()
+          for l in ls:
+              m=re.match(r'^\s*([0-9a-f]+):.*\s(j[a-z]+|call)\s+([0-9a-f]+)\b',l)
+              if not m: continue
+              a=int(m.group(1),16); t=int(m.group(3),16)
+              if 0x1332e00 <= a < 0x1334bd5 and 0x1334400 <= t < 0x1334568:
+                  print(l)
+          PY
+            echo
+            echo '## RAX/RCX definitions in 0x1333f00..0x133452a'
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for l in Path('/tmp/s184cfg/all.dis').read_text(errors='replace').splitlines():
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if not m: continue
+              a=int(m.group(1),16); op=m.group(2)
+              if 0x1333f00<=a<=0x133452a and (
+                  re.match(r'(mov|lea|xor|and|or|pop|cmov\w*)\s+(?:e?rax|e?rcx)\b',op)
+                  or re.search(r'\bcall\b',op)
+                  or re.search(r'\b(j[a-z]+)\s+13344(cb|4f)\b',op)
+              ):
+                  print(l)
+          PY
+          } > analysis/service184-holder-cfg.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-holder-cfg.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 holder CFG"
+          git pull --rebase origin main
+          git push origin HEAD:main
