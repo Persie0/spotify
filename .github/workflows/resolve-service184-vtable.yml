@@ -1,0 +1,227 @@
+name: Resolve service184 concrete vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184vt
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184vt
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools capstone
+
+      - name: Resolve variant source and vtable
+        run: |
+          SO=/tmp/s184vt/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184vt/all.dis
+          python3 - <<'PY' > analysis/service184-concrete-vtable.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/s184vt/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184vt/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'], seg['p_offset']+seg['p_filesz'], seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs[rel['r_offset']]=add
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr: lo=mid+1
+              else: hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+
+          def va_to_off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a): return a+(va-v)
+
+          def qword(va):
+            if va in relocs:return relocs[va], 'reloc'
+            o=va_to_off(va)
+            if o is None or o+8>len(data):return None,None
+            return struct.unpack_from('<Q',data,o)[0], 'raw'
+
+          def dump_context(i,b=20,a=34):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:
+              print('    '+x)
+
+          def dump_fde(addr,maxins=1600):
+            fr=fde_for(addr)
+            print(f'FDE: {fr}')
+            if not fr:return
+            n=0
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1]:
+                print('    '+l); n+=1
+                if n>=maxins:
+                  print('    ... truncated ...'); break
+
+          print('# Service184 concrete vtable trace')
+          print()
+          print('Established chain:')
+          print('rsp+0x290 tagged variant (tag +0x18 == 1) -> object pointer -> rsp+0x28 -> registry root slot +0x5c0 (service ID 184).')
+          print()
+
+          target=0x13330b5
+          fr=fde_for(target)
+          print('## Builder FDE and all definitions/uses of variant slots')
+          print(f'- containing FDE: {fr}')
+          slots=['0x290','0x298','0x2a0','0x2a8','0x2b0','0x2b8','0x28']
+          if fr:
+            for a,i,op,l in ins:
+              if not (fr[0]<=a<fr[1]): continue
+              if any(f'[rsp+{s}]' in op for s in slots):
+                print(f'### 0x{a:x}: {op}')
+                dump_context(i,14,24)
+                print()
+
+          print('## Backward slice immediately before tag test at 0x13330aa')
+          start=0x1332d00; end=0x13330c0
+          for a,i,op,l in ins:
+            if start<=a<end:
+              print('    '+l)
+          print()
+
+          print('## Vptr-looking RIP-relative addresses materialized in builder FDE')
+          candidate_vas=set()
+          if fr:
+            for a,i,op,l in ins:
+              if not(fr[0]<=a<fr[1]):continue
+              m=re.search(r'lea\s+(?:r\w+),\[rip[^#]*#\s*([0-9a-f]+)',op)
+              if not m: continue
+              va=int(m.group(1),16)
+              if 0x1700000 <= va <= 0x1a50000:
+                candidate_vas.add(va)
+                print(f'### 0x{a:x}: {op}')
+                dump_context(i,8,12)
+                print()
+
+          print('## Candidate vtable neighborhoods and +0x28 slots')
+          seen=set()
+          for va in sorted(candidate_vas):
+            for base in range(max(0,va-0x30),va+0x31,8):
+              vals=[]
+              ok=0
+              for j in range(0,0x80,8):
+                q,kind=qword(base+j)
+                vals.append((base+j,q,kind))
+                if q is not None and 0xa00000 <= q < 0x1800000: ok+=1
+              if ok < 4: continue
+              if base in seen:continue
+              seen.add(base)
+              print(f'### possible address point 0x{base:x} ({ok} code-looking entries/0x80)')
+              for sva,q,kind in vals:
+                ann=''
+                if q is not None and 0xa00000<=q<0x1800000:
+                  ann=f' code FDE={fde_for(q)}'
+                print(f'- +0x{sva-base:x} @0x{sva:x}: {kind} {("0x%x"%q) if q is not None else "None"}{ann}')
+              q28,_=qword(base+0x28)
+              if q28 is not None and 0xa00000<=q28<0x1800000:
+                print(f'#### +0x28 target 0x{q28:x}')
+                dump_fde(q28,500)
+              print()
+
+          print('## Static vtable scan for service-like four-method shape')
+          service_calls={0x20,0x28,0x30,0x38}
+          matches=[]
+          slots_sorted=sorted(relocs)
+          for base in slots_sorted:
+            vals={}
+            for off in service_calls:
+              q=relocs.get(base+off)
+              if q is None:
+                q,_=qword(base+off)
+              vals[off]=q
+            good=sum(1 for q in vals.values() if q is not None and 0xa00000<=q<0x1800000 and fde_for(q))
+            if good>=4:
+              q0,_=qword(base)
+              q8,_=qword(base+8)
+              if q0 is not None and q8 is not None:
+                matches.append((base,vals,q0,q8))
+          print(f'- candidates with code at +0x20/+0x28/+0x30/+0x38: {len(matches)}')
+          scored=[]
+          for base,vals,q0,q8 in matches:
+            score=0
+            for q in vals.values():
+              if q is None:continue
+              for a,i,op,l in ins:
+                if a<0x1000000: continue
+                if re.search(r'\bcall\s+'+format(q,'x')+r'\b',op):
+                  if 0x1300000<=a<0x1360000: score+=5
+                  elif 0x11e0000<=a<0x1210000: score+=3
+            if 0x1800000<=base<0x18a0000: score+=1
+            scored.append((score,base,vals))
+          scored.sort(reverse=True)
+          for score,base,vals in scored[:80]:
+            print(f'### score={score} address-point=0x{base:x}')
+            for off,q in sorted(vals.items()):
+              print(f'- +0x{off:x} -> {("0x%x"%q) if q is not None else "None"} FDE={fde_for(q) if q else None}')
+            print()
+
+          print('## Direct callers of b8f02e service184 accessor and post-access virtual slot')
+          for a,i,op,l in ins:
+            if re.search(r'\bcall\s+b8f02e\b',op):
+              print(f'### accessor call 0x{a:x}; FDE={fde_for(a)}')
+              dump_context(i,6,18)
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-concrete-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 concrete vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
