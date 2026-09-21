@@ -1,0 +1,79 @@
+name: Decode service184 erased dispatch block
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/decode-service184-erased-dispatch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184erase
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184erase
+
+      - name: Decode wrapper and producer
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184erase/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184erase/all.dis
+          {
+            echo '# Service184 erased dispatch block'
+            echo
+            echo 'Known chain:'
+            echo '- service184 published pointer = parent+0x578'
+            echo '- parent+0x570 is initialized by 0x121e20e from stack temp rsp+0x90'
+            echo '- 0x121e20e copies source[0] to dest[0], then e261e6(dest+8, source+8)'
+            echo '- therefore service184 is the sub-wrapper copied by e261e6 from rsp+0x98'
+            echo
+            echo '## e261e6 wrapper-copy helper'
+            objdump -d -M intel --start-address=0xe260e0 --stop-address=0xe26380 "$SO"
+            echo
+            echo '## stack-temp producer 0x133999a'
+            objdump -d -M intel --start-address=0x1339900 --stop-address=0x1339b20 "$SO"
+            echo
+            echo '## adjacent producer 0x13399d8'
+            objdump -d -M intel --start-address=0x1339980 --stop-address=0x1339b80 "$SO"
+            echo
+            echo '## source construction/use around 0x1339200'
+            objdump -d -M intel --start-address=0x1339180 --stop-address=0x1339310 "$SO"
+            echo
+            echo '## all direct callers of e261e6'
+            grep -n -E -B18 -A30 'call[[:space:]]+e261e6\\b' /tmp/s184erase/all.dis || true
+            echo
+            echo '## all direct callers of 133999a / 13399d8'
+            grep -n -E -B24 -A42 'call[[:space:]]+13399(9a|d8)\\b' /tmp/s184erase/all.dis || true
+            echo
+            echo '## allocations and high-address table constants in producer neighborhood'
+            objdump -d -M intel --start-address=0x1339800 --stop-address=0x1339c80 "$SO" | grep -E -B14 -A24 '17edf00|# 18[0-9a-f]{5,}|# 19[0-9a-f]{5,}' || true
+            echo
+            echo '## indirect calls through offsets 0x20..0x68 near producer helpers'
+            objdump -d -M intel --start-address=0x1339800 --stop-address=0x133a000 "$SO" | grep -E -B14 -A24 'call[[:space:]]+QWORD PTR \[[^]]+\+0x(20|28|30|38|40|48|50|58|60|68)\]' || true
+          } > analysis/service184-erased-dispatch.md
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-erased-dispatch.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Decode service184 erased dispatch block"
+          git pull --rebase origin main
+          git push origin HEAD:main
