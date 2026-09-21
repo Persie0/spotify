@@ -1,0 +1,89 @@
+name: Trace service184 holder factory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-holder-factory.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184factory
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184factory
+      - name: Trace factory
+        run: |
+          set -euo pipefail
+          SO=/tmp/s184factory/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184factory/all.dis
+          {
+            echo '# Service184 holder factory trace'
+            echo
+            echo '## Relevant constructor/function body 0x1333080..0x1333560'
+            objdump -d -M intel --start-address=0x1333080 --stop-address=0x1333560 "$SO"
+            echo
+            echo '## Direct branches into 0x13334ee..0x133354e'
+            grep -n -E '(j[a-z]+|call)[[:space:]]+13334(ee|f[0-9a-f]|[0-9a-f]{2})\b|(j[a-z]+|call)[[:space:]]+13335[0-4][0-9a-f]\b' /tmp/s184factory/all.dis | head -n 300 || true
+            echo
+            echo '## R14 definitions in owning FDE vicinity'
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          ls=Path('/tmp/s184factory/all.dis').read_text(errors='replace').splitlines()
+          for i,l in enumerate(ls):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if not m: continue
+              a=int(m.group(1),16); op=m.group(2)
+              if 0x1332e00 <= a <= 0x1333516 and (
+                  re.match(r'(mov|lea|xchg|cmov\w*)\s+r14\b',op)
+                  or re.match(r'(mov|lea|xor|and|or)\s+r14d\b',op)
+                  or re.search(r'\b(push|pop)\s+r14\b',op)
+              ):
+                  print(l)
+          PY
+            echo
+            echo '## Writes to +0x18 that could seed callback tables'
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          ls=Path('/tmp/s184factory/all.dis').read_text(errors='replace').splitlines()
+          for i,l in enumerate(ls):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if not m: continue
+              a=int(m.group(1),16); op=m.group(2)
+              if re.match(r'(mov|xchg)\s+QWORD PTR \[[a-z0-9]+\+0x18\],',op):
+                  prev='\n'.join(ls[max(0,i-8):i+3])
+                  if 'lea    ' in prev or 'call' in prev:
+                      print('### '+hex(a))
+                      print(prev)
+                      print()
+          PY
+            echo
+            echo '## All indirect calls through +0x18 in relevant code'
+            grep -n -E 'call[[:space:]]+QWORD PTR \[[a-z0-9]+\+0x18\]' /tmp/s184factory/all.dis | head -n 400 || true
+          } > analysis/service184-holder-factory.md
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-holder-factory.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace service184 holder factory"
+          git pull --rebase origin main
+          git push origin HEAD:main
