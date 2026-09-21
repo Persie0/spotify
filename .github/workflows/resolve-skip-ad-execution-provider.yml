@@ -1,0 +1,180 @@
+name: Resolve skip-ad execution provider
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-execution-provider.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/saprov
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/saprov
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Decode provider chain
+        run: |
+          SO=/tmp/saprov/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/saprov/all.dis
+          python3 - <<'PY' > analysis/skip-ad-execution-provider.md
+          from pathlib import Path
+          import re, struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/saprov/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/saprov/all.dis').read_text(errors='replace').splitlines()
+
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs.append((rel['r_offset'],add,sec.name))
+
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+
+          def fde_for(addr):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=addr:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              a,b=fdes[k]
+              if a<=addr<b:return a,b
+          def dump(addr,title,maxn=1600):
+            fr=fde_for(addr)
+            print(f'## {title}')
+            print('FDE: '+(f'0x{fr[0]:x}..0x{fr[1]:x} size=0x{fr[1]-fr[0]:x}' if fr else 'none'))
+            if fr:
+              n=0
+              for a,i,op,l in ins:
+                if fr[0]<=a<fr[1]:
+                  print('    '+l);n+=1
+                  if n>=maxn:
+                    print('    ... truncated ...');break
+            print()
+            return fr
+          def callers(target):
+            for a,i,op,l in ins:
+              m=re.search(r'\bcall\s+([0-9a-f]+)\b',op)
+              if m and int(m.group(1),16)==target:
+                yield a,i,fde_for(a)
+          def context(i,b=18,a=24):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Skip Ad lower execution provider trace')
+          print()
+          print('Proven chain:')
+          print('0x11ee6b0: b8f02e(rbx) -> provider')
+          print('0x11ee8f7..0x11ee902: provider->vtable[+0x28]() -> dependency')
+          print('dependency becomes callee arg9 -> secondary dispatcher object+0x20')
+          print('0x12044eb..f2: dependency->vtable[+0x68]() on exact "skip-ad"')
+          print()
+
+          fr=dump(0xb8f02e,'Provider getter b8f02e')
+
+          print('## Direct callers of b8f02e')
+          for a,i,cfr in callers(0xb8f02e):
+            print(f'### caller 0x{a:x}, FDE={cfr}')
+            context(i,16,22)
+            print()
+
+          # If b8f02e is a field getter, extract constant offsets referenced from first arg.
+          print('## Field-offset clues inside b8f02e')
+          if fr:
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and re.search(r'\[(?:rdi|rax|rcx|rdx|rsi|rbx)\+0x[0-9a-f]+\]',op):
+                print('    '+l)
+          print()
+
+          # Capture the provider +0x28 call sites everywhere and nearby setup.
+          print('## Indirect +0x28 calls near construction family')
+          for a,i,op,l in ins:
+            if not (0x11e0000<=a<0x1200000):continue
+            if re.search(r'call\s+QWORD PTR \[[^\]]+\+0x28\]',op):
+              print(f'### 0x{a:x}; FDE={fde_for(a)}')
+              context(i,12,18)
+              print()
+
+          # Search relocation tables for functions that themselves simply return a subobject/pointer,
+          # and whose slot is at table+0x28. We rank tables referenced in the b8f02e/caller neighborhood.
+          print('## Relocation vtable candidates around +0x28 getters')
+          relmap={off:add for off,add,sec in relocs}
+          # all tables with code ptr at +0x28; emit target body if small and getter-like
+          count=0
+          for base in sorted(relmap):
+            t=relmap.get(base+0x28)
+            if t is None:continue
+            frt=fde_for(t)
+            if not frt or frt[1]-frt[0]>0x100:continue
+            ops=[(a,op,l) for a,i,op,l in ins if frt[0]<=a<frt[1]]
+            textops=' '.join(op for _,op,_ in ops)
+            if not any(k in textops for k in ('mov    rax','lea    rax','mov    rdi','ret')):
+              continue
+            print(f'### table-base 0x{base:x} slot+0x28 -> 0x{t:x} FDE=0x{frt[0]:x}..0x{frt[1]:x}')
+            for _,_,l in ops[:80]:print('    '+l)
+            # refs to address point/base near table
+            for a,i,op,l in ins:
+              if '#' not in l:continue
+              m=re.search(r'#\s*([0-9a-f]+)\b',l)
+              if m and int(m.group(1),16) in (base,base+0x10,base+0x18,base+0x20):
+                print(f'  ref @0x{a:x}: {op}; FDE={fde_for(a)}')
+            print()
+            count+=1
+            if count>=160:break
+
+          # Exact skip-ad +0x68 branch and all +0x68 calls on the same dependency if discoverable later.
+          print('## Exact downstream execution branch')
+          for a,i,op,l in ins:
+            if 0x12044d8<=a<=0x1204536:
+              print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-execution-provider.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve skip-ad execution provider"
+          git pull --rebase origin main
+          git push origin HEAD:main
