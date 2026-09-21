@@ -1,0 +1,158 @@
+name: Trace concrete readiness source plus58
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-concrete-readiness-plus58.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/p58
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/p58
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace plus58
+        run: |
+          set -euo pipefail
+          SO=/tmp/p58/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/p58/all.dis
+          readelf -rW "$SO" > /tmp/p58/rel.txt
+          python3 - <<'PY' > analysis/concrete-readiness-source-plus58.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/p58/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/p58/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=34):
+            j=idx(a)
+            for x in ins[max(0,j-b):min(len(ins),j+n+1)]: print('    '+x[3])
+          rel={}
+          for l in Path('/tmp/p58/rel.txt').read_text(errors='replace').splitlines():
+            p=l.split()
+            if len(p)>=3 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+              j=p.index('R_X86_64_RELATIVE')
+              if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                rel[int(p[0],16)]=int(p[j+1],16)
+
+          AP=0x1832be8
+          print('# Concrete readiness source +0x58 trace')
+          print()
+          print('Proven object:')
+          print('- allocation 0xb0 @ e947b0')
+          print('- outer primary AP 0x1831a70 at outer+0')
+          print('- P = outer+0x18')
+          print('- P AP 0x1832be8')
+          print('- final fd381a receiver = P+0x40 = outer+0x58')
+          print('- constructor initially zeros outer+0x50..0x5f')
+          print()
+          print('## P vtable 0x1832be8 through +0x200')
+          for off in range(0,0x208,8):
+            v=rel.get(AP+off)
+            print(f'- +0x{off:x}: {("0x%x"%v) if v is not None else "NO_RELOC"}')
+          print()
+
+          print('## Direct AP materializations')
+          refs=[]
+          for a,i,op,l in ins:
+            if '# 1832be8' in l:
+              refs.append(a)
+              print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+              ctx(a,30,60); print()
+
+          print('## Exact [base+0x58] references in construction FDE e92xxx..e99xxx')
+          for a,i,op,l in ins:
+            if 0xe92000<=a<0xe9a500 and re.search(r'\[[a-z0-9]+\+0x58\]',op):
+              print(f'### 0x{a:x}; FDE={fde(a)}: {op}')
+              ctx(a,16,30); print()
+
+          print('## Functions referencing AP and +0x58')
+          ref_fdes=set(filter(None,(fde(a) for a in refs)))
+          for fr in sorted(ref_fdes):
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            plus=[x for x in rows if re.search(r'\[[a-z0-9]+\+0x58\]',x[2])]
+            if plus:
+              print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+              for a,i,op,l in plus:
+                print(f'- 0x{a:x}: {op}')
+                ctx(a,12,20)
+              print()
+
+          print('## All same-family methods that touch +0x40 relative to P')
+          # Methods in P table, if they directly access this+0x40 this is outer+0x58.
+          targets=sorted(set(v for off,v in [(o,rel.get(AP+o)) for o in range(0,0x208,8)] if v))
+          for t in targets:
+            fr=fde(t)
+            if not fr: continue
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            hits=[x for x in rows if re.search(r'\[[a-z0-9]+\+0x40\]',x[2])]
+            if hits:
+              print(f'### table target 0x{t:x}; FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+              for a,i,op,l in hits:
+                print(f'- 0x{a:x}: {op}')
+                ctx(a,14,24)
+              print()
+
+          print('## Candidate writes to outer+0x58 in same giant factory')
+          # giant FDE containing e947b0
+          fr=fde(0xe947b0)
+          if fr:
+            print(f'- FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            for a,i,op,l in rows:
+              lhs=op.split(',',1)[0]
+              if re.search(r'\[[a-z0-9]+\+0x58\]',lhs):
+                print(f'### WRITE 0x{a:x}: {op}')
+                ctx(a,22,38); print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/concrete-readiness-source-plus58.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace concrete readiness source plus58"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
