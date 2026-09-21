@@ -182,6 +182,8 @@ smart-skip-embedded-podcast-ad
 
 The exact native `"skip-ad"` discriminator at `0x12044d8` invokes dependency `+0x68` as a **this-only** call; the command string is consumed by the dispatcher and is not passed to `0x1371d90`. Inside `0x1371d90`, the camelCase identifier is used at the start of the conductor operation and the kebab-case identifier is used later in the transition/reporting path. One direct callee, `0x137cb68`, contains the explicit strings `"Seeking to position: %lldms"`, `"Seeking by playing clip %s with start offset"`, and `"Seeking within current clip"`. Thus this path is concretely a **TimelineConductor smart-seek/clip transition for embedded podcast ads**, not ordinary `SkipNext`.
 
+The target-selection logic is also recovered. `0x1371d90` obtains the active item, converts its current rational playback time to milliseconds, then probes two interval sources held at dependency `+0xb08` and `+0xb10`. Their lookup helpers `0x13a1a4a` and `0x13a392c` both iterate 16-byte `(start_ms, end_ms)` pairs and match exactly when `start_ms <= current_ms < end_ms`. On success, the helper copies that pair to the caller and `0x1371d90` loads the pair's second qword, **`end_ms`**, into the seek-target register. It tries the `+0xb08` source first and falls back to `+0xb10`; if neither contains the current position, it does not immediately issue the seek on that pass. The successful path calls `0x137cb68(this, end_ms, 0, 0, 1)`. In other words, the smart-skip action seeks to the **end boundary of the interval containing the current playback position**.
+
 This also narrows the scope of the branch: the native implementation selected by this `"skip-ad"` action is specifically `smartSkipEmbeddedPodcastAd`. It should not be generalized to every advertising format without separate evidence.
 
 A second correction applies to the first ABI-based service184 vtable shortlist. The initial addresses `0x18228d8`, `0x1821448`, `0x1822988`, and `0x181f788` were selected by method-shape scanning before enforcing the Itanium vtable header. Inspection of their surrounding qwords shows that several are shifted into the middle of larger vtable groups rather than true address points. For example, `0x1821440` is preceded by the characteristic `offset-to-top = 0` / null-typeinfo header, while `0x1821448` is already the second method slot. Therefore slot labels such as “candidate +0x28” from the original shortlist are not class-identity evidence and must not be used to name service184.
@@ -293,7 +295,7 @@ TimelineConductor seek/clip transition
 "smart-skip-embedded-podcast-ad" transition/reporting path
 ```
 
-The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> smartSkipEmbeddedPodcastAd`. What remains on the execution side is finer-grained reconstruction of how `0x1371d90` chooses the exact seek/clip target and which playback/ad-reporting event is emitted after that transition.
+The main readiness edge still open is the exact state propagation from `adObject+0x1b8` into the available-signal producer. The execution edge is now concrete through `TimelineConductorSetupImpl -> 0x1867c98:+0x28 -> [this+0xc8] -> 0x1868200:+0x68 -> 0x1371d90 -> interval end_ms -> 0x137cb68 seek`. The remaining execution-side question is which playback/ad-reporting event is emitted after the successful `smartSkipEmbeddedPodcastAd` transition and what semantic roles distinguish the two interval stores at dependency `+0xb08` and `+0xb10`.
 
 ## 6. Relationship to ordinary next-track restrictions
 
@@ -318,7 +320,7 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 1. recover the concrete interface/type behind the signal-state `+0x40` dependency and its virtual `+0x140` mode/state discriminator,
 2. prove whether that state directly observes `adObject+0x1b8` or receives a derived/copied readiness value,
-3. reconstruct `0x1371d90`'s exact target-selection logic: which current clip/ad boundary it queries, how the computed milliseconds are derived, and when it chooses in-clip seek versus clip advancement,
+3. identify the semantic roles and producers of the two interval sources at dependency `+0xb08` and `+0xb10` that feed the recovered `start_ms <= current_ms < end_ms` boundary lookup,
 4. identify the playback-ad reporting event emitted after a successful `smartSkipEmbeddedPodcastAd` transition (the recovered `fr0 -> "ad_skipped"` label belongs to the separate `android-ad-on-app-open` performance flow and must not be reused as proof here),
 5. map the equivalent path during Connect/remote playback and verify whether it reuses the same TimelineConductor operation.
 
@@ -346,3 +348,4 @@ Evidence reports:
 - `analysis/timeline-conductor-dependency-vtable.md`
 - `analysis/timeline-conductor-skip-action-literals.md`
 - `analysis/timeline-conductor-skipad-semantics.md`
+- `analysis/timeline-smart-skip-target.md`
