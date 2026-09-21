@@ -158,7 +158,9 @@ b8f02e(root)
 
 The accessor `b8f02e` is now structurally decoded further. It passes ID `0xb8` to `b622de`; that helper is a byte-search/validation routine over the registry's ID buffer, **not** the service factory. After the ID check, `b8f02e` reads the instance from `rootTable+0x5c0`, exactly `0xb8 * 8`. Thus this dependency originates from registry service **184**.
 
-At the caller, the service-184 object is first stored at a local stack slot and then replaced by the return of its `+0x28` method before being pushed as argument 9. The same resulting dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control interface rather than an ad-only helper.
+At the caller, the service-184 object is first stored at a local stack slot and then replaced by the return of its `+0x28` method before being pushed as argument 9. The ABI mapping is now exact rather than heuristic: the result occupies physical caller cell `S0+0x60`; among the 36 pushes before `0x11ef334`, push #34 reads it as `[rsp+0x168]` while RSP is `S0-0x108`, so it becomes SysV argument 9. The callee prologue maps argument 9 to `[rsp+0x650]`, which is written to dispatcher outer `+0x20`. Because address point `0x185bf88` begins at outer `+0x18`, its `[this+0x8]` load is the same pointer later invoked at virtual `+0x68` in the `"skip-ad"` branch.
+
+The same resulting dependency is reused elsewhere during player construction through virtual slots such as `+0x98`, `+0xb8`, and `+0xc0`, so it is a broader playback/control interface rather than an ad-only helper.
 
 The `+0x68` virtual call remains the strongest current candidate for the actual lower-level Skip Ad playback action. The concrete provider/dependency vtable and side effect of `+0x68` are the next target.
 
@@ -299,3 +301,4 @@ Evidence reports:
 - `analysis/skip-ad-execution-provider-fast.md`
 - `analysis/skip-ad-service-184-compact.md`
 - `analysis/orbit-registry-helper-b622de.md`
+- `analysis/service184-skipad-stackarg-proof.md`
