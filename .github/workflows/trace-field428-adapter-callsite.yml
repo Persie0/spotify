@@ -1,0 +1,204 @@
+name: Trace field428 adapter callsite
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-field428-adapter-callsite.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/f428call
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/f428call
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace callsite
+        run: |
+          set -euo pipefail
+          SO=/tmp/f428call/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/f428call/all.dis
+          python3 - <<'PY' > analysis/field428-adapter-callsite.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/f428call/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with open('/tmp/f428call/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+              for e in dwarf.EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]:return fdes[k]
+          def idx(a):return bisect.bisect_left(addrs,a)
+          def ctx(a,b=18,n=32):
+              j=idx(a)
+              return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          def body(fr):
+              if not fr:return []
+              j=idx(fr[0]); out=[]
+              for x in ins[j:]:
+                  if x[0]>=fr[1]:break
+                  out.append(x)
+              return out
+
+          fr=fde(0xe9ff24)
+          rows=body(fr)
+          print('# field428 adapter call-site / rsi-source trace')
+          print()
+          print('Known nested adapters:')
+          print('- inner AP 0x1834418 built at 0xe9ff24 from rsp+0x770/+0x780/+0x790; +0x30 -> 0xee6db8')
+          print('- outer AP 0x1834728 built at 0xea01e4; +0x10 copies rsp+0x1060 (inner shared-pointer pair); +0x30 -> 0xece084')
+          print('- outer allocation pointer is saved at rsp+0xea0 at 0xea01c0')
+          print(f'- containing FDE={fr}')
+          print()
+
+          # exact stack slots for shared_ptrs / allocations
+          slots=[0xea0,0xea8,0xeb0,0x1060,0x1068,0x1070,0x1078,0x1080,0x1088,
+                 0x770,0x778,0x780,0x788,0x790,0x798]
+          print('## All exact references to adapter stack slots')
+          for off in slots:
+              pat=f'rsp+0x{off:x}]'
+              hs=[x for x in rows if pat in x[2]]
+              print(f'### rsp+0x{off:x}: {len(hs)} refs')
+              for a,i,op,l in hs:
+                  print(f'- 0x{a:x}: {op}')
+              print()
+
+          # Show every use of outer raw pointer slot, enough context to see transfer.
+          print('## Context for every rsp+0xea0 use')
+          for a,i,op,l in rows:
+              if 'rsp+0xea0]' in op:
+                  print(f'### 0x{a:x}: {op}')
+                  print(ctx(a,20,45)); print()
+
+          # Shared-pointer pair: rsp+0x1060/1068. Show where written and later read.
+          print('## rsp+0x1060 shared-pointer pair provenance')
+          for off in (0x1060,0x1068):
+              pat=f'rsp+0x{off:x}]'
+              for a,i,op,l in rows:
+                  if pat in op:
+                      side='WRITE' if pat in op.split(',',1)[0] else 'READ'
+                      print(f'### {side} 0x{a:x}: {op}')
+                      print(ctx(a,16,32)); print()
+
+          # Candidate virtual +0x30 calls in giant FDE.
+          print('## All virtual +0x30 calls in containing FDE')
+          vcalls=[]
+          for k,(a,i,op,l) in enumerate(rows):
+              if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x30\]',op):
+                  vcalls.append((k,a,i,op,l))
+                  print(f'### call 0x{a:x}: {op}')
+                  print(ctx(a,32,42)); print()
+
+          # Backward local register trace for receiver + rsi at each +0x30 call.
+          print('## Register backslice for each +0x30 call')
+          for k,a,i,op,l in vcalls:
+              m=re.search(r'\[([a-z0-9]+)\+0x30\]',op)
+              vreg=m.group(1) if m else None
+              print(f'### call 0x{a:x}; vtableReg={vreg}')
+              # Last defs of call ABI regs and vreg in previous 80 instructions.
+              regs=['rdi','rsi','rdx','rcx','r8','r9']
+              if vreg: regs.append(vreg)
+              for reg in dict.fromkeys(regs):
+                  defs=[]
+                  for kk in range(max(0,k-100),k):
+                      aa,ii,oo,ll=rows[kk]
+                      if re.match(r'(?:mov|lea|xchg|pop|cmov\w+)\s+'+re.escape(reg)+r'\b',oo):
+                          defs.append((aa,oo))
+                  print(f'- {reg}: '+(' | '.join(f'0x{x:x} {o}' for x,o in defs[-4:]) if defs else 'no nearby direct def'))
+              print()
+
+          # Search for loads from known outer/shared slots into registers and subsequent vtable derefs.
+          print('## Loads of adapter pointers followed by polymorphic use')
+          for k,(a,i,op,l) in enumerate(rows):
+              if not any(f'rsp+0x{x:x}]' in op for x in (0xea0,0x1060)): continue
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x(?:ea0|1060)\]',op)
+              if not m: continue
+              reg=m.group(1)
+              print(f'### load 0x{a:x}: {op}')
+              for aa,ii,oo,ll in rows[k:min(len(rows),k+80)]:
+                  if re.search(r'\b'+re.escape(reg)+r'\b',oo) or re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x30\]',oo):
+                      print('    '+ll)
+              print()
+
+          # Find any later storage of AP1834728 object/shared_ptr outside stack.
+          print('## Transfers from outer adapter slots into non-stack objects')
+          tracked_slots=(0xea0,0xea8,0x1060,0x1068)
+          for k,(a,i,op,l) in enumerate(rows):
+              if not any(f'rsp+0x{x:x}]' in op for x in tracked_slots):continue
+              m=re.match(r'mov\s+(r\w+),QWORD PTR \[rsp\+0x[0-9a-f]+\]',op)
+              if not m:continue
+              reg=m.group(1)
+              for aa,ii,oo,ll in rows[k+1:min(len(rows),k+35)]:
+                  if re.match(r'mov\s+QWORD PTR \[[^r][^]]*\],'+re.escape(reg)+r'\b',oo):
+                      print(f'- source load 0x{a:x}: {op}')
+                      print(f'  -> store 0x{aa:x}: {oo}')
+                  # ordinary base-register stores
+                  elif re.match(r'mov\s+QWORD PTR \[(?:r(?:bx|bp|12|13|14|15|di|si|ax|cx|dx))(?:\+0x[0-9a-f]+)?\],'+re.escape(reg)+r'\b',oo):
+                      print(f'- source load 0x{a:x}: {op}')
+                      print(f'  -> store 0x{aa:x}: {oo}')
+              print()
+
+          # Entire binary: calls to +0x30 near materializations/known source helpers, ranked by same FDE.
+          print('## Direct references to builder targets ece084/ee6db8')
+          for target in (0xece084,0xee6db8):
+              pat=re.compile(r'\b(?:call|jmp)\s+'+format(target,'x')+r'\b')
+              hs=[x for x in ins if pat.search(x[2])]
+              print(f'### target 0x{target:x}: {len(hs)} direct refs')
+              for a,i,op,l in hs[:40]:
+                  print(f'- 0x{a:x} FDE={fde(a)}: {op}')
+                  print(ctx(a,12,20))
+              print()
+
+          # Focused region after outer construction to see where shared ptr pair moves.
+          print('## Full compact window ea0180..ea0900')
+          for a,i,op,l in rows:
+              if 0xea0180<=a<0xea0900:
+                  print('    '+l)
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/field428-adapter-callsite.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace field428 adapter callsite"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
