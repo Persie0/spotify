@@ -1,0 +1,73 @@
+name: Prove AdsSetup readiness source identity
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/prove-adssetup-readiness-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/asprove
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/asprove
+      - name: Dump exact identities
+        run: |
+          SO=/tmp/asprove/liborbit-jni-spotify.so
+          {
+            echo '# AdsSetupImpl -> readiness source identity proof'
+            echo
+            echo 'Known: AdsSetupImpl base AP 0x180dcd8; +0x28 = a4b8e0 = return this+0x10.'
+            echo
+            echo '## Embedded +0x10 constructor 0x14cd946'
+            objdump -d -M intel --start-address=0x14cd900 --stop-address=0x14cdda0 "$SO"
+            echo
+            echo '## AP 0x1879950 full relocation slice through +0x170'
+            readelf -rW "$SO" | awk '$1>="0000000001879940" && $1<="0000000001879ad0"'
+            echo
+            echo '## Exact target at AP+0x140 (slot VA 0x1879a90)'
+            TARGET=$(readelf -rW "$SO" | awk '$1=="0000000001879a90" {print $NF; exit}')
+            echo "target=$TARGET"
+            if [ -n "$TARGET" ]; then
+              START=$(printf '%x' $((0x$TARGET-0x20)))
+              END=$(printf '%x' $((0x$TARGET+0x80)))
+              objdump -d -M intel --start-address=0x$START --stop-address=0x$END "$SO"
+            fi
+            echo
+            echo '## AdsSetupImpl constructor fields around capability/timer region'
+            objdump -d -M intel --start-address=0xb86690 --stop-address=0xb87a00 "$SO" | grep -E -B8 -A14 '\[(r14|rbx|r15)\+0x(1a[0-9a-f]|1b[0-9a-f]|1c[0-9a-f]|348|350)\]' || true
+            echo
+            echo '## Global exact accesses near AdsSetup family'
+            objdump -d -M intel --start-address=0xb88000 --stop-address=0xb8c000 "$SO" | grep -E -B8 -A14 '\+0x(1b2|1b5|1b7|1c8)\]' || true
+            echo
+            echo '## All code refs to AP 0x1879950'
+            objdump -d -M intel "$SO" | grep -E -B18 -A38 '# 1879950' | head -n 4000 || true
+          } > analysis/adssetup-readiness-source-proof.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/adssetup-readiness-source-proof.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Prove AdsSetup readiness source identity"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
