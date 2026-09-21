@@ -1,0 +1,181 @@
+name: Resolve skip-ad readiness state object
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-skip-ad-readiness-state.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+            docs
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/readystate
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/readystate
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve state layout and +0x40 receiver
+        run: |
+          SO=/tmp/readystate/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/readystate/all.dis
+          readelf -rW "$SO" > /tmp/readystate/rel.txt
+          python3 - <<'PY' > analysis/skip-ad-readiness-state.md
+          from pathlib import Path
+          import re,bisect,collections
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/readystate/liborbit-jni-spotify.so')
+          dl=Path('/tmp/readystate/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dl):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def ctx_index(i,b=12,a=20):
+            return '\n'.join('    '+x for x in dl[max(0,i-b):min(len(dl),i+a+1)])
+          def body(fr,cap=1800):
+            j=bisect.bisect_left(addrs,fr[0]);out=[]
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              out.append(x)
+              if len(out)>=cap:break
+            return out
+
+          wanted={0x20,0x30,0x40,0x58,0x60,0x68}
+          memre=re.compile(r'\[([a-z0-9]+)\+0x([0-9a-f]+)\]')
+          access=collections.defaultdict(lambda:{'r':collections.defaultdict(list),'w':collections.defaultdict(list)})
+          for a,i,op,l in ins:
+            fr=fde(a)
+            if not fr:continue
+            left=op.split(',',1)[0]
+            for m in memre.finditer(op):
+              off=int(m.group(2),16)
+              if off not in wanted:continue
+              rw='w' if m.group(0) in left else 'r'
+              access[fr][rw][off].append((a,i,op,m.group(1)))
+
+          print('# Skip Ad readiness state / +0x40 receiver')
+          print()
+          print('Observed consumer layout:')
+          print('- state+0x20 -> polymorphic dep, virtual +0x70')
+          print('- state+0x30 -> polymorphic dep, virtual +0x20 in special branch')
+          print('- state+0x40 -> polymorphic dep, virtual +0x140')
+          print('- state+0x58/+0x60 -> range values')
+          print('- state+0x68 -> byte readiness gate')
+          print()
+
+          ranked=[]
+          for fr,d in access.items():
+            offs=set(d['r'])|set(d['w'])
+            score=len(offs)
+            writes=set(d['w'])
+            if score>=4 or len(writes)>=3:
+              ranked.append((score,len(writes),fr,d))
+          ranked.sort(key=lambda x:(-x[0],-x[1],x[2][0]))
+
+          print('## Functions matching the full state layout')
+          for score,wc,fr,d in ranked[:80]:
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x} score={score}/6 writeOffsets={wc}')
+            for rw in ('w','r'):
+              desc=[]
+              for off,xs in sorted(d[rw].items()):
+                desc.append(f'+0x{off:x}: '+', '.join(f'0x{a:x}' for a,_,_,_ in xs[:8]))
+              if desc: print(f'- {rw}: ' + ' | '.join(desc))
+            print('#### +0x40 accesses')
+            for rw in ('w','r'):
+              for a,i,op,base in d[rw].get(0x40,[]):
+                print(f'- {rw} 0x{a:x} base={base}: {op}')
+                print(ctx_index(i,10,16))
+            print()
+
+          print('## Every +0x40 write in functions touching at least 4 target offsets')
+          high={fr for score,wc,fr,d in ranked if score>=4}
+          for fr in sorted(high):
+            for a,i,op,base in access[fr]['w'].get(0x40,[]):
+              print(f'### 0x{a:x} FDE=0x{fr[0]:x}..0x{fr[1]:x}: {op}')
+              print(ctx_index(i,22,32));print()
+
+          print('## Copy/assignment candidates for state')
+          for score,wc,fr,d in ranked:
+            commons=set(d['r']) & set(d['w'])
+            if len(commons)<4: continue
+            print(f'### FDE 0x{fr[0]:x}..0x{fr[1]:x}; common={sorted(hex(x) for x in commons)}')
+            for a,i,op,l in body(fr,500):
+              if any(f'+0x{o:x}]' in op for o in wanted):
+                print('    '+l)
+            print()
+
+          print('## +0x140 indirect calls and receiver provenance within each FDE')
+          for a,i,op,l in ins:
+            if not re.search(r'call\s+QWORD PTR \[[^\]]+\+0x140\]',op):continue
+            fr=fde(a)
+            print(f'### call 0x{a:x} FDE={fr}: {op}')
+            if fr:
+              rows=body(fr,1200)
+              pos=next((k for k,x in enumerate(rows) if x[0]==a),None)
+              if pos is not None:
+                for x in rows[max(0,pos-45):min(len(rows),pos+30)]: print('    '+x[3])
+            print()
+
+          print('## Adapter method callers via vtable slot +0x70')
+          # Find all indirect +0x70 calls; highlight contexts where a second argument points to state-ish object.
+          cnt=0
+          for a,i,op,l in ins:
+            if not re.search(r'call\s+QWORD PTR \[[^\]]+\+0x70\]',op):continue
+            fr=fde(a)
+            print(f'### 0x{a:x} FDE={fr}: {op}')
+            print(ctx_index(i,18,26));print()
+            cnt+=1
+            if cnt>=120:break
+
+          print('## Direct code refs to known adapter AP 0x1841fc0')
+          for a,i,op,l in ins:
+            if '# 1841fc0 ' in l:
+              print(f'### 0x{a:x} FDE={fde(a)}: {op}')
+              print(ctx_index(i,24,34));print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/skip-ad-readiness-state.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve skip-ad readiness state object"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
