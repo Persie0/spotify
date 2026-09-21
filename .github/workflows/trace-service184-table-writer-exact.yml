@@ -1,0 +1,172 @@
+name: Trace exact service184 table writer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-service184-table-writer-exact.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184writer
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184writer
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Trace exact table writer
+        run: |
+          SO=/tmp/s184writer/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184writer/all.dis
+          python3 - <<'PY' > analysis/service184-table-writer-exact.md
+          from pathlib import Path
+          import re
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/s184writer/all.dis').read_text(errors='replace').splitlines()
+          so=Path('/tmp/s184writer/liborbit-jni-spotify.so')
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info()
+            fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+          fdes.sort()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde(a):
+            lo,hi=0,len(fdes)
+            while lo<hi:
+              mid=(lo+hi)//2
+              if fdes[mid][0]<=a:lo=mid+1
+              else:hi=mid
+            for k in range(max(0,lo-8),min(len(fdes),lo+2)):
+              x,y=fdes[k]
+              if x<=a<y:return x,y
+          def ctx(i,b=30,a=45):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+
+          print('# Exact service184 table+0x5c0 writer trace')
+          print()
+          print('Ground-truth reader:')
+          print('b8f02e: root+8/root+0x10 -> b622de(id=0xb8), then table=[root+0], service184=[table+0x5c0].')
+          print()
+
+          # Any true memory write whose destination ends in +0x5c0.
+          hits=[]
+          for idx,(a,i,op,l) in enumerate(ins):
+            left=op.split(',',1)[0]
+            if '+0x5c0]' not in left:continue
+            if not re.match(r'(mov|movq|movups|movdqu|movaps|movdqa|and|or|xor|xchg)\b',op):continue
+            m=re.search(r'\[([a-z0-9]+)\+0x5c0\]',left)
+            if not m:continue
+            base=m.group(1)
+            hits.append((idx,a,i,op,base))
+          print(f'## Direct writes to *+0x5c0: {len(hits)}')
+          for n,(idx,a,i,op,base) in enumerate(hits,1):
+            fr=fde(a)
+            print(f'### {n}. 0x{a:x}: {op}; base={base}; FDE={fr}')
+            # Back-slice same base reg up to 60 insns.
+            origins=[]
+            for j in range(max(0,idx-70),idx):
+              aa,ii,oo,ll=ins[j]
+              if fr and not(fr[0]<=aa<fr[1]):continue
+              if re.match(r'(mov|lea)\s+'+re.escape(base)+r',',oo):
+                origins.append((aa,oo))
+            for aa,oo in origins[-8:]:print(f'- base origin 0x{aa:x}: {oo}')
+            ctx(i,28,36);print()
+
+          # More general pattern: tableReg=[rootReg] then tableReg+0x5c0 written,
+          # with rootReg +8/+10 seen in same FDE.
+          print('## Back-sliced facade-shaped table writes')
+          for idx,a,i,op,base in hits:
+            fr=fde(a)
+            if not fr:continue
+            root_candidates=[]
+            for j in range(max(0,idx-90),idx):
+              aa,ii,oo,ll=ins[j]
+              if not(fr[0]<=aa<fr[1]):continue
+              m=re.match(r'mov\s+'+re.escape(base)+r',QWORD PTR \[([a-z0-9]+)\]$',oo)
+              if m:root_candidates.append((j,aa,m.group(1),oo))
+            for j,aa,root,origin in root_candidates:
+              window=[x for x in ins if fr[0]<=x[0]<fr[1]]
+              uses8=[];uses10=[]
+              for aaa,iii,ooo,lll in window:
+                if re.search(r'\['+re.escape(root)+r'\+0x8\]',ooo):uses8.append((aaa,ooo))
+                if re.search(r'\['+re.escape(root)+r'\+0x10\]',ooo):uses10.append((aaa,ooo))
+              if uses8 and uses10:
+                print(f'### write@0x{a:x}; tableBase={base}; root={root}; origin@0x{aa:x}: {origin}')
+                print('- root+8 uses: '+ '; '.join(f'0x{x:x} {o}' for x,o in uses8[:8]))
+                print('- root+0x10 uses: '+ '; '.join(f'0x{x:x} {o}' for x,o in uses10[:8]))
+                print('- exact write: '+op)
+                ctx(i,35,45);print()
+
+          # Find copy/population loops that write [tableReg+index*8], with constant 0xb8 nearby.
+          print('## Indexed table population candidates near literal 0xb8')
+          for idx,(a,i,op,l) in enumerate(ins):
+            if not re.search(r'\b(?:mov|push)\s+(?:e?[a-z0-9]+,)?0xb8\b',op) and '0xb8' not in op:continue
+            fr=fde(a)
+            if not fr:continue
+            w=ins[max(0,idx-45):min(len(ins),idx+75)]
+            stores=[(aa,oo) for aa,ii,oo,ll in w if re.search(r'\[[a-z0-9]+\+[a-z0-9]+\*8(?:\+0x[0-9a-f]+)?\]',oo) and re.match(r'(mov|xchg)',oo)]
+            if stores:
+              print(f'### literal 0xb8 near 0x{a:x}; FDE={fr}')
+              for aa,oo in stores:print(f'- 0x{aa:x}: {oo}')
+              ctx(i,20,35);print()
+
+          # Accessor root-shape constructors: same base written at +0,+8,+10.
+          print('## Exact 24-byte facade-shape construction candidates')
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15']
+          for fr in fdes:
+            rows=[x for x in ins if fr[0]<=x[0]<fr[1]]
+            if not rows:continue
+            for reg in regs:
+              w0=[];w8=[];w10=[]
+              for a,i,op,l in rows:
+                left=op.split(',',1)[0]
+                if '[' not in left or not re.match(r'(mov|lea|and|xor|or)',op):continue
+                if re.search(r'\['+reg+r'\]$',left):w0.append((a,op))
+                if re.search(r'\['+reg+r'\+0x8\]$',left):w8.append((a,op))
+                if re.search(r'\['+reg+r'\+0x10\]$',left):w10.append((a,op))
+              if w0 and w8 and w10:
+                # Require compact locality between writes.
+                addrs=[x[0] for x in w0+w8+w10]
+                if max(addrs)-min(addrs)<=0x180:
+                  print(f'### FDE={fr} base={reg}')
+                  print('- +0: '+str(w0[:5]))
+                  print('- +8: '+str(w8[:5]))
+                  print('- +10: '+str(w10[:5]))
+                  # print whole compact region only
+                  lo=min(addrs)-0x30;hi=max(addrs)+0x70
+                  for aa,ii,oo,ll in rows:
+                    if lo<=aa<=hi:print('    '+ll)
+                  print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-table-writer-exact.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace exact service184 table writer"
+          git pull --rebase origin main
+          git push origin HEAD:main
