@@ -1,0 +1,138 @@
+name: Resolve service184 host vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-service184-host-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/s184host
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/s184host
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Resolve host vtable and constructor
+        run: |
+          SO=/tmp/s184host/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/s184host/all.dis
+          python3 - <<'PY' > analysis/service184-host-vtable.md
+          from pathlib import Path
+          import re,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+          so=Path('/tmp/s184host/liborbit-jni-spotify.so')
+          data=so.read_bytes()
+          lines=Path('/tmp/s184host/all.dis').read_text(errors='replace').splitlines()
+          with so.open('rb') as f:
+            elf=ELFFile(f)
+            loads=[]
+            for seg in elf.iter_segments():
+              if seg['p_type']=='PT_LOAD':
+                loads.append((seg['p_offset'],seg['p_offset']+seg['p_filesz'],seg['p_vaddr']))
+            dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location'];b=a+e['address_range']
+                if b>a:fdes.append((a,b))
+            fdes.sort()
+            relocs=[]
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'):continue
+              for rel in sec.iter_relocations():
+                add=rel.entry.get('r_addend')
+                if add is not None: relocs.append((rel['r_offset'],add,sec.name))
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m:ins.append((int(m.group(1),16),i,m.group(2),l))
+          def fde_for(addr):
+            for a,b in fdes:
+              if a<=addr<b:return a,b
+          def va2off(va):
+            for a,b,v in loads:
+              if v<=va<v+(b-a):return a+(va-v)
+          def qword(va):
+            for off,add,sec in relocs:
+              if off==va:return add,'reloc'
+            o=va2off(va)
+            if o is None or o+8>len(data):return None,None
+            return struct.unpack_from('<Q',data,o)[0],'raw'
+          def ctx(i,b=16,a=28):
+            for x in lines[max(0,i-b):min(len(lines),i+a+1)]:print('    '+x)
+          target=0x11a318c
+          print('# Service184 host vtable / +0x30 provider trace')
+          print()
+          print(f'Target virtual method: 0x{target:x} (contains selector-5 service184 replacement).')
+          print()
+          slots=[(off,sec) for off,add,sec in relocs if add==target]
+          print('## Relocation slots pointing to target')
+          for off,sec in slots:print(f'- 0x{off:x} in {sec}')
+          print()
+          for slot,sec in slots:
+            for delta in range(-0x80,0x101,8):
+              base=slot-delta
+              if base<0:continue
+              # Treat base as possible address point when neighboring slots are code.
+              vals=[]
+              code=0
+              for o in range(-0x20,0x100,8):
+                q,k=qword(base+o)
+                vals.append((o,q,k))
+                if q is not None and 0xa00000<=q<0x1800000 and fde_for(q):code+=1
+              if code<5:continue
+              print(f'### possible address point 0x{base:x}; target relative +0x{slot-base:x}; code slots={code}')
+              for o,q,k in vals:
+                print(f'- {o:+#x}: {k} {("0x%x"%q) if q is not None else "None"} FDE={fde_for(q) if q and 0xa00000<=q<0x1800000 else None}')
+              print()
+          print('## Code that materializes nearby vtable/address points')
+          near=set()
+          for slot,_ in slots:
+            for x in range(slot-0x100,slot+0x101,8):near.add(x)
+          for a,i,op,l in ins:
+            if '#' not in l:continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16) in near and 'lea' in op:
+              print(f'### 0x{a:x} FDE={fde_for(a)}')
+              ctx(i,24,55);print()
+          print('## Writes to +0x30 in vtable-constructor FDEs')
+          ctor_fdes=set()
+          for a,i,op,l in ins:
+            if '#' not in l:continue
+            m=re.search(r'#\s*([0-9a-f]+)\b',l)
+            if m and int(m.group(1),16) in near and 'lea' in op:
+              fr=fde_for(a)
+              if fr:ctor_fdes.add(fr)
+          for fr in sorted(ctor_fdes):
+            print(f'### constructor-like FDE 0x{fr[0]:x}..0x{fr[1]:x}')
+            for a,i,op,l in ins:
+              if fr[0]<=a<fr[1] and '+0x30]' in op:
+                print(f'#### 0x{a:x}: {op}');ctx(i,14,24)
+            print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/service184-host-vtable.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve service184 host vtable"
+          git pull --rebase origin main
+          git push origin HEAD:main
