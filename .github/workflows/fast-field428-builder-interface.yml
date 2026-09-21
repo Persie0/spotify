@@ -1,0 +1,77 @@
+name: Fast field428 builder interface
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fast-field428-builder-interface.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/f428fast
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/f428fast
+      - name: Resolve interface
+        run: |
+          set -euo pipefail
+          SO=/tmp/f428fast/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/f428fast/all.dis
+          readelf -rW "$SO" > /tmp/f428fast/rel.txt
+          {
+            echo '# Fast field428 builder-interface resolution'
+            echo
+            echo '## Thunk/body around ece06e -> ece084'
+            objdump -d -M intel --start-address=0xece050 --stop-address=0xece0a0 "$SO"
+            echo
+            echo '## Builder variant around ee6d90'
+            objdump -d -M intel --start-address=0xee6d80 --stop-address=0xee6e30 "$SO"
+            echo
+            echo '## Relocations 0x18343f0..0x18344d0'
+            awk 'BEGIN{IGNORECASE=1} /^[0-9a-f]+/{a=strtonum("0x"$1); if(a>=strtonum("0x18343f0") && a<strtonum("0x18344d0")) print}' /tmp/f428fast/rel.txt || true
+            echo
+            echo '## Code refs to AP 0x1834440'
+            grep -i -B 10 -A 18 '# 1834440' /tmp/f428fast/all.dis || true
+            echo
+            echo '## Code refs to AP 0x1834460'
+            grep -i -B 10 -A 18 '# 1834460' /tmp/f428fast/all.dis || true
+            echo
+            echo '## Code refs to adjacent AP candidates'
+            for ap in 1834430 1834438 1834440 1834448 1834450 1834458 1834460 1834468; do
+              echo "### 0x$ap"
+              grep -i '# '"$ap" /tmp/f428fast/all.dis | head -20 || true
+            done
+            echo
+            echo '## Known TimelineAds owner+0x50 AP refs'
+            for ap in 18674c8 1867550 1867980; do
+              echo "### 0x$ap"
+              grep -i '# '"$ap" /tmp/f428fast/all.dis | head -30 || true
+            done
+          } > analysis/field428-builder-interface-fast.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/field428-builder-interface-fast.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve field428 builder interface fast"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
