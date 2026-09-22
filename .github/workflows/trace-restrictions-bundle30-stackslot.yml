@@ -1,0 +1,266 @@
+name: Trace Restrictions bundle30 stack slot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-bundle30-stackslot.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/bundle30-slot
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/bundle30-slot
+          unzip -j /tmp/bundle30-slot/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/bundle30-slot
+      - name: Trace stack slot
+        run: |
+          SO=/tmp/bundle30-slot/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/bundle30-slot/all.dis
+          python3 - <<'PY' > analysis/restrictions-bundle30-stackslot.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/bundle30-slot/all.dis').read_text(errors='replace').splitlines()
+          ins = []
+          for i, line in enumerate(dis):
+              m = re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1), 16), i, m.group(2), line))
+          addrs = [x[0] for x in ins]
+          def idx(addr): return bisect.bisect_left(addrs, addr)
+          def ctx_by_index(j, before=8, after=5):
+              lo=max(0,j-before); hi=min(len(ins),j+after+1)
+              return '\n'.join('    '+ins[k][3] for k in range(lo, hi))
+          def md(s):
+              return str(s).replace('|','\\|').replace('\n',' ')
+
+          start, end = 0x14cdc2a, 0x14d4d4c
+          region = [(a,i,op,line) for a,i,op,line in ins if start <= a < end]
+
+          arg_regs = ['rdi','rsi','rdx','rcx','r8','r9']
+          tracked_regs = ['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          state = {r: None for r in tracked_regs}
+          mem = {}
+          exact_refs=[]
+          alias_refs=[]
+          alias_sets=[]
+          helper_calls=[]
+          provider_calls=[]
+          write_like = ('mov','movups','movaps','movdqa','movdqu','and','xor','lea')
+
+          def split_ops(op):
+              parts = op.split(None, 1)
+              if len(parts) < 2:
+                  return parts[0] if parts else '', []
+              mnemonic = parts[0]
+              rest = parts[1]
+              vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch == '[': depth += 1
+                  elif ch == ']': depth -= 1
+                  if ch == ',' and depth == 0:
+                      vals.append(cur.strip()); cur=''
+                  else:
+                      cur += ch
+              if cur.strip(): vals.append(cur.strip())
+              return mnemonic, vals
+          def base_mem(arg):
+              m = re.search(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]', arg)
+              if not m:
+                  return None, None
+              return m.group(1), int(m.group(2) or '0', 16)
+          def exact_slot(arg):
+              return bool(re.search(r'\[rsp\+0x310\]', arg))
+          def exact_base(arg):
+              return bool(re.search(r'\[rsp\+0x2e0\]', arg))
+          def dest_reg(arg):
+              # Strip size prefixes.
+              arg = re.sub(r'^(?:BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+', '', arg)
+              return arg if arg in tracked_regs else None
+          def direct_reg(arg):
+              return arg if arg in tracked_regs else None
+          def call_target(op):
+              m = re.search(r'call\s+(.+)$', op)
+              return m.group(1) if m else ''
+          def state_label(x):
+              return x or ''
+
+          for a,i,op,line in region:
+              mnemonic, operands = split_ops(op)
+              # exact stack slot refs
+              if any(exact_slot(o) for o in operands):
+                  kind='read'
+                  if operands and exact_slot(operands[0]) and mnemonic in write_like:
+                      kind='write'
+                  exact_refs.append((a, kind, op, line))
+              if any(exact_base(o) for o in operands):
+                  kind='read'
+                  if operands and exact_base(operands[0]) and mnemonic in write_like:
+                      kind='write'
+                  exact_refs.append((a, kind+' base', op, line))
+
+              # calls with bundle-derived args
+              if mnemonic == 'call':
+                  arg_state = {r: state.get(r) for r in arg_regs if state.get(r)}
+                  if re.search(r'QWORD PTR \[rax\+0x28\]', op):
+                      provider_calls.append((a, dict(arg_state), line, ctx_by_index(idx(a), 9, 4)))
+                  elif arg_state:
+                      helper_calls.append((a, dict(arg_state), line, ctx_by_index(idx(a), 7, 3)))
+
+              # alias-based field refs before mutating state
+              for o in operands:
+                  b, off = base_mem(o)
+                  if b and state.get(b) == 'bundle_base':
+                      if off == 0x30:
+                          alias_refs.append((a, 'bundle+0x30', op, line))
+                      elif off in (0,8,0x10,0x18,0x20,0x28,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x78,0x80,0x98):
+                          alias_refs.append((a, f'bundle+0x{off:x}', op, line))
+                  if b and state.get(b) == 'bundle_30' and off == 0:
+                      alias_refs.append((a, 'bundle+0x30 direct-alias', op, line))
+
+              # state updates
+              if operands:
+                  dst = dest_reg(operands[0])
+                  if mnemonic == 'lea' and dst and len(operands) >= 2:
+                      b, off = base_mem(operands[1])
+                      if b == 'rsp' and off == 0x2e0:
+                          state[dst] = 'bundle_base'
+                          alias_sets.append((a, dst, 'bundle_base', line))
+                      elif b == 'rsp' and off == 0x310:
+                          state[dst] = 'bundle_30'
+                          alias_sets.append((a, dst, 'bundle_30', line))
+                      elif b and state.get(b) == 'bundle_base' and off == 0x30:
+                          state[dst] = 'bundle_30'
+                          alias_sets.append((a, dst, 'bundle_30', line))
+                      else:
+                          state[dst] = None
+                  elif mnemonic == 'mov' and dst and len(operands) >= 2:
+                      src = direct_reg(operands[1])
+                      b, off = base_mem(operands[1])
+                      if src and state.get(src):
+                          state[dst] = state[src]
+                          alias_sets.append((a, dst, state[dst], line))
+                      elif b == 'rsp' and off in mem:
+                          state[dst] = mem[off]
+                          alias_sets.append((a, dst, state[dst], line))
+                      else:
+                          state[dst] = None
+                  elif operands[0].startswith('QWORD PTR [rsp+') and len(operands) >= 2 and mnemonic == 'mov':
+                      m = re.search(r'\[rsp\+0x([0-9a-f]+)\]', operands[0])
+                      src = direct_reg(operands[1])
+                      if m and src and state.get(src):
+                          mem[int(m.group(1), 16)] = state[src]
+                  elif dst and mnemonic not in ('test','cmp'):
+                      # Clear clobbered destination for common non-copy instructions.
+                      if mnemonic not in ('push','pop'):
+                          state[dst] = None
+                  if mnemonic == 'pop' and operands[0] in state:
+                      state[operands[0]] = None
+
+          # Bounded output helpers.
+          def print_lines(title, rows, limit=80):
+              print(f'## {title}')
+              if not rows:
+                  print('\nNone found.\n'); return
+              shown = rows[:limit]
+              for row in shown:
+                  print(row)
+              if len(rows) > limit:
+                  print(f'\n... truncated {len(rows)-limit} additional rows ...')
+              print()
+
+          print('# Restrictions bundle+0x30 stack-slot trace')
+          print()
+          print('Target: provider-vector stack bundle base `rsp+0x2e0`; Restrictions `bundle+0x30` maps to `rsp+0x310`.')
+          print('FDE: `0x14cdc2a..0x14d4d4c`.')
+          print()
+          print('## Summary')
+          print(f'- instructions in FDE: {len(region)}')
+          print(f'- exact `[rsp+0x310]` / `[rsp+0x2e0]` refs: {len(exact_refs)}')
+          print(f'- alias assignments involving bundle base/slot: {len(alias_sets)}')
+          print(f'- alias-based bundle field refs: {len(alias_refs)}')
+          print(f'- helper calls with bundle-derived args: {len(helper_calls)}')
+          print(f'- provider `+0x28` calls: {len(provider_calls)}')
+          print()
+
+          rows=[]
+          for a,kind,op,line in exact_refs:
+              rows.append(f'- `0x{a:x}` {kind}: `{line.strip()}`')
+          print_lines('Exact stack-slot/base references', rows, 120)
+
+          rows=[]
+          for a,reg,label,line in alias_sets:
+              rows.append(f'- `0x{a:x}` `{reg}` = `{label}` via `{line.strip()}`')
+          print_lines('Alias assignments', rows, 120)
+
+          rows=[]
+          for a,label,op,line in alias_refs:
+              rows.append(f'- `0x{a:x}` `{label}` via `{line.strip()}`')
+          print_lines('Alias-based bundle field references', rows, 120)
+
+          print('## Helper calls with bundle-derived arguments')
+          if not helper_calls:
+              print('\nNone found.\n')
+          else:
+              print('| call | bundle-derived args | target/context |')
+              print('|---|---|---|')
+              for a,args,line,context in helper_calls[:80]:
+                  argtxt=', '.join(f'{k}={v}' for k,v in args.items())
+                  print(f'| `0x{a:x}` | `{md(argtxt)}` | `{md(line.strip())}` |')
+              if len(helper_calls) > 80:
+                  print(f'\nTruncated {len(helper_calls)-80} additional helper calls.\n')
+              print('\n### First helper-call contexts')
+              for a,args,line,context in helper_calls[:10]:
+                  print(f'#### helper `0x{a:x}` args `{", ".join(f"{k}={v}" for k,v in args.items())}`')
+                  print('```text')
+                  print(context)
+                  print('```')
+                  print()
+
+          print('## Provider +0x28 calls and bundle arg state')
+          if not provider_calls:
+              print('\nNone found.\n')
+          else:
+              print('| call | bundle-derived args at call |')
+              print('|---|---|')
+              for a,args,line,context in provider_calls:
+                  argtxt=', '.join(f'{k}={v}' for k,v in args.items())
+                  print(f'| `0x{a:x}` | `{md(argtxt)}` |')
+              print('\n### Provider-call contexts')
+              for a,args,line,context in provider_calls:
+                  print(f'#### provider call `0x{a:x}`')
+                  print('```text')
+                  print(context)
+                  print('```')
+                  print()
+
+          print('## Next interpretation')
+          print('- If direct writes to `[rsp+0x310]` appear above, those are the immediate source candidates for `RestrictionsSetupImpl` `bundle+0x30`.')
+          print('- If only helper calls receive `bundle_base`, the next trace should inspect the helper body that writes into `[bundle_base+0x30]`.')
+          print('- If `bundle+0x30` is only read, the source was initialized earlier or copied through another stack alias before this FDE window.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-bundle30-stackslot.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions bundle30 stack slot"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
