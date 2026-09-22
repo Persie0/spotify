@@ -1,0 +1,139 @@
+name: Resolve readiness caller source objects
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-readiness-caller-source-objects.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rsrcobj
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rsrcobj
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve source objects
+        run: |
+          SO=/tmp/rsrcobj/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rsrcobj/all.dis
+          readelf -rW "$SO" > /tmp/rsrcobj/rel.txt
+          python3 - <<'PY' > analysis/readiness-caller-source-objects.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/rsrcobj/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/rsrcobj/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=25,n=35):
+            j=ix(a); return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          fr=fde(0xe8dba7)
+          body=[]
+          if fr:
+            j=ix(fr[0])
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              body.append(x)
+          print('# Readiness caller source-object resolution')
+          print()
+          print('Caller FDE:',tuple(hex(x) for x in fr) if fr else None)
+          print('Final constructor call: 0xe8dba7 -> e8fad0')
+          print()
+
+          print('## All r13/r14 definitions before final argument setup')
+          for a,i,op,l in body:
+            if a>=0xe8d9ad:break
+            if re.match(r'(?:mov|lea|pop|xchg)\s+r1[34]\b',op):
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(a,14,20)); print()
+
+          print('## r13 virtual-call cluster e8d880..e8d9ad')
+          for a,i,op,l in body:
+            if 0xe8d860<=a<0xe8d9ad: print(l)
+          print()
+
+          print('## r14 +0x148 references in caller FDE')
+          for a,i,op,l in body:
+            if re.search(r'\[r14\+0x148\]',op):
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(a,25,35)); print()
+
+          # Before alignment pad, old stack slots corresponding to corrected sources.
+          slots={
+            0x88:'arg47 / owner+0x428 producer',
+            0x140:'arg52 / owner+0x3b8 provider producer',
+            0x50:'arg54 / owner+0x470 source pointer producer',
+            0xa0:'arg63 / owner+0x570 dependency producer',
+            0x148:'neighbor: r13-v+0x28 then +0x40 result',
+          }
+          for off,label in slots.items():
+            print(f'## Pre-pad direct refs to [rsp+0x{off:x}] — {label}')
+            for a,i,op,l in body:
+              if a>=0xe8d9ad: break
+              if f'[rsp+0x{off:x}]' in op:
+                print(f'### 0x{a:x}: {op}')
+                print(ctx(a,20,26)); print()
+
+          print('## Candidate vptr/address-point materializations near r13/r14 setup')
+          for a,i,op,l in body:
+            if a>=0xe8d9ad: break
+            if '# 18' in op and ('lea' in op or 'mov' in op):
+              print(l)
+
+          print()
+          print('## Calls returning values written to the five relevant source slots')
+          for off in slots:
+            for j,(a,i,op,l) in enumerate(body):
+              if a>=0xe8d9ad:break
+              if ',' in op and f'[rsp+0x{off:x}]' in op.split(',',1)[0]:
+                # print previous call in preceding 12 instructions
+                prev=[x for x in body[max(0,j-14):j] if x[2].startswith('call')]
+                if prev:
+                  x=prev[-1]
+                  print(f'- slot 0x{off:x}: write 0x{a:x} after call 0x{x[0]:x} ({x[2]})')
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-caller-source-objects.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve readiness caller source objects"
+          git pull --rebase origin main
+          git push
