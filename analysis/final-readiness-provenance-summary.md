@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, after the Restrictions setup-bundle source was resolved, and after the first `0x165dd40` branch-helper pass.
+This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, after the Restrictions setup-bundle source was resolved, and after the `0x165dd40` branch/buffer helper layers were classified.
 
 ## Correct high-level chain
 
@@ -170,7 +170,9 @@ slot AP 0x187e2f8
   +0x98 -> 0x153d0d0   ; semantic target used by 15e75f2
 ```
 
-`0x165dd40` is a large descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates a table of 0x28-byte entries, dispatches by entry kind, and repeatedly calls branch helpers. The traced branch helpers are not the final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
+## Descriptor interpreter and builder path
+
+`0x165dd40` is a large descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates a table of 0x28-byte entries, dispatches by entry kind, and repeatedly calls branch helpers. The traced branch helpers are not final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
 
 ```text
 0x165dd40 parent interpreter
@@ -199,25 +201,65 @@ Representative builder writes from `165e51e`:
 165e586  add [r14+0x10], -4        ; reduce available capacity
 ```
 
-This strongly suggests `0x165dd40` materializes/serializes descriptor fields into a builder/output buffer. It does not yet prove that this builder is the same object eventually exposed by `child+0x18`; that edge remains the next semantic gap.
+The deeper buffer/growth helpers reached by those branch helpers are now classified too. They are all builder buffer/capacity emit helpers and none has a direct `child+0x18` hit in the scanned windows:
 
-This means the final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
+```text
+165c600: refs=9, writes=5,  calls=3, child+0x18 hits=0 -> append/copy bytes into builder output buffer
+165c67e: refs=4, writes=6,  calls=0, child+0x18 hits=0 -> emit encoded scalar slow path
+165c6ca: refs=3, writes=21, calls=0, child+0x18 hits=0 -> single-byte emit slow path / capacity refill
+165c7ae: refs=5, writes=18, calls=0, child+0x18 hits=0 -> multi-byte varint emit slow path
+165d0d4: refs=7, writes=2,  calls=2, child+0x18 hits=0 -> 32-bit scalar emit fallback
+```
+
+Important `165c600` behavior:
+
+```text
+165c611  lea r14, [rdi+0x10]       ; builder capacity field
+165c615  lea r15, [rdi+0x8]        ; builder output pointer field
+165c626  call memcpy               ; copy data into current output buffer
+165c63b  mov rdi, [r13+0x18]
+165c648  call [rax+0x10]           ; refill/flush via builder sink interface
+165c64f  and [r13+0x8], 0
+165c654  and [r13+0x10], 0
+165c660..165c670                  ; fast-path memcpy + pointer/capacity update
+```
+
+So the proven semantic picture is:
+
+```text
+slot object AP 0x187e2f8
+  -> +0x90 / 0x165dd40
+  -> descriptor interpreter
+  -> branch helpers encode descriptor fields
+  -> builder/output buffer helpers append bytes, varints, scalars
+  -> builder sink/refill interface at builder+0x18 / vtable+0x10
+```
+
+This still does not prove that the builder/output buffer is itself the object eventually exposed through `child+0x18`. The builder path now appears to be a materialization/serialization layer below the Restrictions-derived source, not the final readiness/mode-discriminator interface.
+
+This means the final `state+0x40` dependency used by `fd381a` is still a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
 ## What remains open
 
-The setup-bundle `+0x30` source, factory-consumption path, slot AP relocation targets, and `0x165dd40` branch-helper behavior are now classified.
+The setup-bundle `+0x30` source, factory-consumption path, slot AP relocation targets, `0x165dd40` branch-helper behavior, and lower buffer/growth emit helpers are now classified.
 
-The remaining open area is the semantic bridge from the builder/output object produced by the slot descriptor interpreter to the object returned through `child+0x18`, and then into the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
-
-The next concrete targets are the buffer/growth and emit helpers reached by the branch helpers, because they own the builder/output storage semantics:
+The remaining open area is the semantic bridge after materialization:
 
 ```text
-165c600
-165c67e
-165d0d4
-165c6ca
-165c7ae
+builder/output buffer and sink interface
+  -> wrapper/storage step inside or after constructor 0x10aba36
+  -> object returned through child+0x18 / b411a4
+  -> state+0x40 virtual +0x140 readiness/mode discriminator used by fd381a
 ```
+
+The next concrete targets are therefore no longer the buffer emit helpers. They are the storage/finalization sites in `0x10aba36` after the builder output calls, plus the builder sink interface reached at:
+
+```text
+165c63b  mov rdi, [builder+0x18]
+165c648  call [sink.vtable+0x10]
+```
+
+Resolving that sink AP and the later constructor writes should show whether the materialized descriptor stream is wrapped into the object returned by `b411a4` or only used as intermediate setup data.
 
 The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
 
@@ -249,4 +291,5 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/restrictions-slot-vtable.md`
 - `analysis/restrictions-slot-relocations.md`
 - `analysis/restrictions-165dd40-branch-helpers.md`
+- `analysis/restrictions-builder-buffer-helpers.md`
 - `docs/15-skip-ad-signal.md`
