@@ -1,0 +1,222 @@
+name: Trace Restrictions other vtable methods
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-other-vtable-methods.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-vtable-other
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-vtable-other
+          unzip -j /tmp/restrictions-vtable-other/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-vtable-other
+      - name: Trace other vtable methods
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          SO=/tmp/restrictions-vtable-other/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-vtable-other/all.dis
+          python3 - <<'PY' > analysis/restrictions-other-vtable-methods.md
+          import re
+          from pathlib import Path
+
+          lines = Path('/tmp/restrictions-vtable-other/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in lines:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), m.group(2).strip(), line.rstrip()))
+
+          by_addr={a:(text,line) for a,text,line in ins}
+          targets=[
+              ('+0x0',0x153cada,'method at AP+0x0'),
+              ('+0x8',0x153cb74,'method at AP+0x8'),
+              ('+0x10',0x153cb86,'method reached before +0x30'),
+              ('+0x20',0x165d0fa,'secondary method at AP+0x20'),
+              ('+0x28',0x165dd40,'secondary method at AP+0x28'),
+              ('+0x38',0x153cd4e,'method after +0x30 body'),
+              ('+0x40',0x153cdf2,'method after +0x30 body'),
+              ('+0x48',0x153cea8,'method after +0x30 body'),
+              ('+0x50',0x153ceb0,'method after +0x30 body'),
+          ]
+          target_addrs=sorted(a for _,a,_ in targets)
+          addrs=[a for a,_,_ in ins]
+
+          reg_names='rax rbx rcx rdx rsi rdi rbp rsp r8 r9 r10 r11 r12 r13 r14 r15 eax ebx ecx edx esi edi r8d r9d r10d r11d r12d r13d r14d r15d'.split()
+          regpat='|'.join(sorted(reg_names,key=len, reverse=True))
+
+          def window(start, cap=240):
+              # start at first ins >= start, stop at ret after min, next target, or cap
+              idx=next((i for i,(a,_,__) in enumerate(ins) if a>=start), len(ins))
+              out=[]
+              for j in range(idx, min(len(ins), idx+cap)):
+                  a,text,line=ins[j]
+                  if j>idx and a in target_addrs:
+                      break
+                  out.append((a,text,line))
+                  if j>idx+8 and ('\tret' in line or text == 'ret' or text.startswith('ret ')):
+                      break
+              return out
+
+          def parse_memrefs(text):
+              return re.findall(r'\[([^\]]+)\]', text)
+          def disp_from_expr(expr, aliases):
+              # return resolved bundle offset for memory expr if based on known alias
+              # supports rdi, rbx, r14, etc plus +-hex/decimal and simple scale ignored
+              for reg,base in aliases.items():
+                  if re.search(r'(^|[^a-z0-9])'+re.escape(reg)+r'([^a-z0-9]|$)', expr):
+                      # exclude scaled/indexed refs with * where base may be index; still record unresolved
+                      if '*' in expr:
+                          return None
+                      disp=0
+                      for sign,val in re.findall(r'([+-])\s*(0x[0-9a-fA-F]+|\d+)', expr):
+                          n=int(val,0)
+                          disp += n if sign=='+' else -n
+                      return base+disp
+              return None
+
+          def is_write(text):
+              op=text.split(None,1)[0] if text.split() else ''
+              if not any(text.startswith(x) for x in ['mov','and','or','xor','add','sub','inc','dec','lea','cmpxchg','xchg']):
+                  return False
+              if ',' not in text:
+                  return False
+              dst=text.split(',',1)[0]
+              return '[' in dst and ']' in dst
+
+          def call_target(text):
+              m=re.search(r'call\s+([0-9a-f]+)', text)
+              return int(m.group(1),16) if m else None
+
+          def analyze_method(name,start,desc):
+              body=window(start)
+              aliases={'rdi':0}
+              writes=[]; refs=[]; calls=[]; exact=[]; passes=[]
+              for a,text,line in body:
+                  # alias transfer / lea aliases from bundle
+                  m=re.match(r'mov\s+('+regpat+r'),\s*('+regpat+r')$', text)
+                  if m and m.group(2) in aliases:
+                      aliases[m.group(1)] = aliases[m.group(2)]
+                  m=re.match(r'lea\s+('+regpat+r'),\s*\[([^\]]+)\]', text)
+                  if m:
+                      off=disp_from_expr(m.group(2), aliases)
+                      if off is not None:
+                          aliases[m.group(1)] = off
+                          if off == 0x30:
+                              passes.append((a,'lea-alias',line))
+                  # clobber simple destination regs on non-alias mov from non alias immediate/mem?
+                  # intentionally conservative: keep aliases unless overwritten from unknown imm/mem
+                  m=re.match(r'mov\s+('+regpat+r'),\s*(?!'+regpat+r'$)(.+)$', text)
+                  if m and m.group(1) in aliases and '[' not in m.group(2) and not m.group(2).startswith('0x'):
+                      aliases.pop(m.group(1),None)
+                  mems=parse_memrefs(text)
+                  for expr in mems:
+                      off=disp_from_expr(expr, aliases)
+                      if off is not None:
+                          refs.append((a,off,line))
+                          if is_write(text):
+                              writes.append((a,off,line))
+                              if off==0x30:
+                                  exact.append((a,off,line))
+                  ct=call_target(text)
+                  if ct is not None:
+                      # record calls and any arg aliases; rdi/rsi/rdx/rcx/r8/r9
+                      args={r:aliases[r] for r in ['rdi','rsi','rdx','rcx','r8','r9'] if r in aliases}
+                      calls.append((a,ct,args,line))
+              return body,refs,writes,exact,passes,calls
+
+          print('# Restrictions other bundle vtable methods\n')
+          print('Purpose: inspect the remaining methods in bundle AP `0x187e3c8` for direct or indirect `bundle+0x30` writes/passes after `+0x30` did not close the source.\n')
+          print('Initial ABI assumption for each method: `rdi = bundle_base`.\n')
+          print('## Summary table\n')
+          print('| vtable offset | target | insns | refs | writes | exact bundle+0x30 writes | bundle+0x30 passes | calls |')
+          print('|---:|---:|---:|---:|---:|---:|---:|---:|')
+          results=[]
+          for name,start,desc in targets:
+              body,refs,writes,exact,passes,calls=analyze_method(name,start,desc)
+              results.append((name,start,desc,body,refs,writes,exact,passes,calls))
+              print(f'| `{name}` | `0x{start:x}` | `{len(body)}` | `{len(refs)}` | `{len(writes)}` | `{len(exact)}` | `{len(passes)}` | `{len(calls)}` |')
+          print('\n## Details\n')
+          for name,start,desc,body,refs,writes,exact,passes,calls in results:
+              print(f'### Vtable `{name}` target `0x{start:x}` — {desc}\n')
+              print(f'- scanned instructions: `{len(body)}`')
+              print(f'- bundle-relative refs: `{len(refs)}`')
+              print(f'- bundle-relative writes: `{len(writes)}`')
+              print(f'- exact `bundle+0x30` writes: `{len(exact)}`')
+              print(f'- exact `bundle+0x30` passes/aliases: `{len(passes)}`')
+              print(f'- calls: `{len(calls)}`\n')
+              print('#### Entry excerpt')
+              print('```text')
+              for a,text,line in body[:70]:
+                  print(line)
+              if len(body)>70:
+                  print(f'... truncated {len(body)-70} instructions ...')
+              print('```\n')
+              if writes:
+                  print('#### Bundle-relative writes')
+                  print('| addr | resolved offset | instruction |')
+                  print('|---:|---:|---|')
+                  for a,off,line in writes[:60]:
+                      print(f'| `0x{a:x}` | `0x{off:x}` | `{line.strip()}` |')
+                  if len(writes)>60: print(f'| ... | ... | truncated {len(writes)-60} writes |')
+                  print()
+              if exact:
+                  print('#### Exact `bundle+0x30` writes')
+                  for a,off,line in exact:
+                      print(f'- `0x{a:x}` {line.strip()}')
+                  print()
+              if passes:
+                  print('#### Exact `bundle+0x30` aliases/passes')
+                  for a,kind,line in passes:
+                      print(f'- `0x{a:x}` {kind}: `{line.strip()}`')
+                  print()
+              if calls:
+                  print('#### Calls with tracked bundle args')
+                  print('| call | target | tracked args | instruction |')
+                  print('|---:|---:|---|---|')
+                  for a,ct,args,line in calls[:80]:
+                      argtxt=', '.join(f'{r}=bundle+0x{off:x}' for r,off in args.items())
+                      print(f'| `0x{a:x}` | `0x{ct:x}` | `{argtxt}` | `{line.strip()}` |')
+                  if len(calls)>80: print(f'| ... | ... | ... | truncated {len(calls)-80} calls |')
+                  print()
+
+          print('## Interpretation\n')
+          any_exact=sum(len(r[6]) for r in results)
+          any_pass=sum(len(r[7]) for r in results)
+          if any_exact:
+              print(f'Found `{any_exact}` direct writes resolving exactly to `bundle+0x30`; inspect the exact-write section above.')
+          else:
+              print('No scanned remaining vtable method produced a direct write resolving exactly to `bundle+0x30` under the conservative `rdi=bundle_base` tracker.')
+          if any_pass:
+              print(f'Found `{any_pass}` direct aliases/passes of `bundle+0x30`; inspect pass sections above.')
+          else:
+              print('No direct `lea arg, [bundle+0x30]` style pass was found in the scanned windows.')
+          print('\nThis narrows the remaining source toward either the local constructor materialization itself, a non-vtable helper not reached with a simple bundle alias, or an initialized inline field whose semantics come from the object layout rather than an explicit local store.\n')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-other-vtable-methods.md
+          if git diff --cached --quiet; then
+            echo "No report changes"
+            exit 0
+          fi
+          git commit -m "Trace other Restrictions bundle vtable methods"
+          git pull --rebase origin main
+          git push origin HEAD:main
