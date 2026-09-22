@@ -1,0 +1,274 @@
+name: Trace Restrictions helper semantics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-helper-semantics.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-helper-semantics
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-helper-semantics
+          unzip -j /tmp/restrictions-helper-semantics/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-helper-semantics
+      - name: Trace helper semantics
+        run: |
+          SO=/tmp/restrictions-helper-semantics/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-helper-semantics/all.dis
+          python3 - <<'PY' > analysis/restrictions-helper-semantics.md
+          import re
+          from pathlib import Path
+
+          dis = Path('/tmp/restrictions-helper-semantics/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          mem_re = re.compile(r'\[([^\]]+)\]')
+          call_re = re.compile(r'\b(?:call|jmp)\s+([0-9a-f]+)')
+
+          insts=[]
+          for line in dis:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          addr_to_idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          aliases={
+            'rax':'rax','eax':'rax','ax':'rax','al':'rax',
+            'rbx':'rbx','ebx':'rbx','bx':'rbx','bl':'rbx',
+            'rcx':'rcx','ecx':'rcx','cx':'rcx','cl':'rcx',
+            'rdx':'rdx','edx':'rdx','dx':'rdx','dl':'rdx',
+            'rsi':'rsi','esi':'rsi','si':'rsi','sil':'rsi',
+            'rdi':'rdi','edi':'rdi','di':'rdi','dil':'rdi',
+            'rbp':'rbp','ebp':'rbp','bp':'rbp','bpl':'rbp',
+            'rsp':'rsp','esp':'rsp','sp':'rsp','spl':'rsp',
+          }
+          for i in range(8,16):
+              aliases[f'r{i}']=f'r{i}'; aliases[f'r{i}d']=f'r{i}'; aliases[f'r{i}w']=f'r{i}'; aliases[f'r{i}b']=f'r{i}'
+          def canon(r): return aliases.get(r.strip().lower(), r.strip().lower())
+
+          def split_ops(s):
+              parts=[]; cur=''; depth=0
+              for ch in s:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      parts.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): parts.append(cur.strip())
+              return parts
+
+          def parse_mem(expr):
+              expr=expr.replace(' ','')
+              toks=re.split(r'(?=[+-])', expr)
+              regs=[]; off=0; scale=False
+              for t in toks:
+                  if not t: continue
+                  sign=1
+                  if t[0]=='+': t=t[1:]
+                  elif t[0]=='-': sign=-1; t=t[1:]
+                  if not t: continue
+                  if '*' in t:
+                      scale=True; continue
+                  if re.fullmatch(r'0x[0-9a-fA-F]+|\d+', t):
+                      off += sign*int(t,0)
+                  else:
+                      regs.append(canon(t))
+              return regs, off, scale
+
+          def origin_text(o):
+              if not o: return ''
+              b,off=o
+              return b if off==0 else f'{b}{off:+#x}'
+
+          def resolve_mem(mem, origins):
+              regs, off, scale=parse_mem(mem)
+              if len(regs)!=1 or scale:
+                  return None
+              if regs[0] not in origins:
+                  return None
+              b,boff=origins[regs[0]]
+              return (b, boff+off)
+
+          def is_write(mn,dst):
+              if '[' not in dst: return False
+              if mn.startswith(('cmp','test','call','jmp')): return False
+              return mn.startswith(('mov','lea','and','or','xor','add','sub','inc','dec','xchg'))
+
+          targets=[
+            dict(addr=0x15e768e, name='15e768e from constructor call 10abfc3', initial={'rdi':('slot_obj',0),'rdx':('bundle30_slot',0),'r8':('slot_obj',0)}, why='Receives rdi=load(bundle30_slot), rdx=bundle30_slot, r8=load(bundle30_slot).'),
+            dict(addr=0xa7b5e8, name='a7b5e8 after 15e768e at 10abfcd', initial={'rdx':('bundle30_slot',0),'r8':('slot_obj',0)}, why='Immediately follows 15e768e in constructor dataflow; may cleanup/wrap bundle30-derived objects.'),
+            dict(addr=0x15e75f2, name='15e75f2 from constructor calls 10abff8 and 10ac028', initial={'rdi':('slot_obj_inner',0),'rdx':('bundle30_slot',0),'r8':('slot_obj',0)}, why='Receives rdi=load(load(bundle30_slot)) and r8=load(bundle30_slot), likely method-helper on the resolved slot object.'),
+          ]
+
+          print('# Restrictions helper semantics trace')
+          print()
+          print('Purpose: continue after constructor-dataflow trace. The constructor `0x10aba36` does not directly store `rcx` into `child+0x18`; instead it repeatedly dereferences the `bundle30_slot` object and calls helper functions. This report inspects the strongest helpers.')
+          print()
+          print('## Summary')
+          print()
+          print('| helper | refs | writes | calls with tracked args | likely role |')
+          print('|---|---:|---:|---:|---|')
+
+          details=[]
+          for t in targets:
+              addr=t['addr']
+              if addr not in addr_to_idx:
+                  details.append((t, [], [], [], [], []));
+                  print(f"| `{addr:x}` | 0 | 0 | 0 | not found |")
+                  continue
+              i=addr_to_idx[addr]
+              window=[]
+              for j in range(i, min(len(insts), i+360)):
+                  a,line,text=insts[j]
+                  window.append((a,line,text))
+                  if j>i and (text.startswith('ret') or text.startswith('ud2') or text.startswith('int3')):
+                      break
+              origins={canon(k):v for k,v in t['initial'].items()}
+              refs=[]; writes=[]; calls=[]; notable=[]
+              for a,line,text in window:
+                  parts=text.split(None,1)
+                  if not parts: continue
+                  mn=parts[0]
+                  ops=split_ops(parts[1]) if len(parts)>1 else []
+                  for mem in mem_re.findall(text):
+                      res=resolve_mem(mem, origins)
+                      if res:
+                          refs.append((a,res,line))
+                  if ops:
+                      dst=ops[0]
+                      if is_write(mn,dst):
+                          m=mem_re.search(dst)
+                          if m:
+                              res=resolve_mem(m.group(1), origins)
+                              if res:
+                                  writes.append((a,res,line))
+                  if mn.startswith(('call','jmp')):
+                      tracked={r:origin_text(o) for r,o in origins.items() if r in ('rdi','rsi','rdx','rcx','r8','r9','r12','r13','r14','r15') and o}
+                      if tracked:
+                          mt=call_re.search(text)
+                          calls.append((a, mt.group(1) if mt else '?', tracked, line))
+                  # Propagate simple aliases and loads from tracked objects.
+                  if mn == 'lea' and len(ops)>=2:
+                      d=canon(ops[0]); m=mem_re.search(ops[1])
+                      if m:
+                          res=resolve_mem(m.group(1), origins)
+                          if res:
+                              origins[d]=res
+                              if res[0] in ('bundle30_slot','slot_obj','slot_obj_inner'):
+                                  notable.append((a, f'{d}={origin_text(res)}', line))
+                          elif d in origins:
+                              origins.pop(d,None)
+                      continue
+                  if mn.startswith('mov') and len(ops)>=2:
+                      d=canon(ops[0]); s=ops[1]
+                      # register-to-register origin copy
+                      if '[' not in ops[0] and '[' not in s:
+                          sc=canon(s)
+                          if sc in origins:
+                              origins[d]=origins[sc]
+                          elif d in origins:
+                              origins.pop(d,None)
+                      # load from tracked memory: keep synthetic load origin
+                      elif '[' not in ops[0] and '[' in s:
+                          m=mem_re.search(s)
+                          res=resolve_mem(m.group(1), origins) if m else None
+                          if res:
+                              name=f'load({origin_text(res)})'
+                              origins[d]=(name,0)
+                              notable.append((a, f'{d}={name}', line))
+                          elif d in origins:
+                              origins.pop(d,None)
+                      # writing to memory does not change register origins
+                      continue
+                  # Most arithmetic destroys destination origin unless it is an allowed stack adjustment.
+                  if ops and canon(ops[0]) in origins and mn not in ('cmp','test') and not mn.startswith(('call','jmp')):
+                      d=canon(ops[0])
+                      if mn not in ('push','pop'):
+                          # keep conservative only for add/sub immediate on originated pointer
+                          if mn in ('add','sub') and len(ops)>=2 and re.fullmatch(r'0x[0-9a-fA-F]+|\d+', ops[1].replace('-','')):
+                              delta=int(ops[1],0) * (-1 if mn=='sub' else 1)
+                              b,o=origins[d]; origins[d]=(b,o+delta)
+                          elif mn not in ('mov','lea'):
+                              origins.pop(d,None)
+              likely='inspect body'
+              if writes:
+                  likely='writes tracked object/subfields'
+              elif calls:
+                  likely='forwards tracked dependency to callees'
+              print(f"| `{addr:x}` | {len(refs)} | {len(writes)} | {len(calls)} | {likely} |")
+              details.append((t, window, refs, writes, calls, notable))
+
+          for t,window,refs,writes,calls,notable in details:
+              print('\n##', t['name'])
+              print()
+              print(t['why'])
+              print()
+              print('### Body excerpt')
+              print('```text')
+              for _,line,_ in window[:160]:
+                  print(line)
+              if len(window)>160:
+                  print(f'... truncated {len(window)-160} instructions ...')
+              print('```')
+              print('\n### Tracked refs')
+              if refs:
+                  print('| addr | resolved | instruction |')
+                  print('|---:|---|---|')
+                  for a,res,line in refs[:80]:
+                      print(f'| `0x{a:x}` | `{origin_text(res)}` | `{line}` |')
+                  if len(refs)>80: print(f'\n... truncated {len(refs)-80} refs ...')
+              else:
+                  print('No memory refs to tracked origins in scanned window.')
+              print('\n### Tracked writes')
+              if writes:
+                  print('| addr | resolved | instruction |')
+                  print('|---:|---|---|')
+                  for a,res,line in writes[:80]:
+                      print(f'| `0x{a:x}` | `{origin_text(res)}` | `{line}` |')
+                  if len(writes)>80: print(f'\n... truncated {len(writes)-80} writes ...')
+              else:
+                  print('No writes to tracked origins in scanned window.')
+              print('\n### Calls with tracked args')
+              if calls:
+                  print('| call | target | tracked args | instruction |')
+                  print('|---:|---:|---|---|')
+                  for a,target,tracked,line in calls[:80]:
+                      args=', '.join(f'{k}={v}' for k,v in sorted(tracked.items()))
+                      print(f'| `0x{a:x}` | `{target}` | `{args}` | `{line}` |')
+                  if len(calls)>80: print(f'\n... truncated {len(calls)-80} calls ...')
+              else:
+                  print('No calls with tracked args in scanned window.')
+              print('\n### Notable synthetic load/alias events')
+              if notable:
+                  print('| addr | event | instruction |')
+                  print('|---:|---|---|')
+                  for a,ev,line in notable[:80]:
+                      print(f'| `0x{a:x}` | `{ev}` | `{line}` |')
+              else:
+                  print('No notable tracked load/alias events.')
+
+          print('\n## Interpretation')
+          print()
+          print('This trace distinguishes three candidate roles: direct mutation of the `bundle30_slot` object, forwarding of the resolved slot object to deeper helpers, and pure cleanup/reference-management. The next target should be whichever helper first writes a stable object field or forwards the dependency toward the object returned by `b411a4` (`child+0x18`).')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-helper-semantics.md
+          git commit -m "Trace Restrictions helper semantics" || exit 0
+          git push
