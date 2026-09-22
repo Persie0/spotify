@@ -1,0 +1,264 @@
+name: Trace Restrictions installed object parallel v5
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-installed-object-v5.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-ap184d898:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace AP 0x184d898 installed object
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          try:
+              data=subprocess.check_output(['objdump','-s','--start-address=0x184d898','--stop-address=0x184da60',so], text=True, errors='replace')
+          except Exception as e:
+              data=f'objdump data failed: {e}'
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=24,aft=120):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def block(txt): return '```text\n'+txt.strip()+'\n```\n'
+          def table(rows,limit=360):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions installed `this+0x18` object / AP `0x184d898` trace\n\n']
+          md.append('Parallel v5 report. Focus: the `0x28` object installed into `this+0x18` at `10ac1a9`, whose first word is AP/literal `0x184d898`.\n\n')
+          ctor=win(0x10ac120,0x10ac260)
+          md.append('## Install window around `10ac1a9`\n\n'+fmt(around(0x10ac1a1,32,90)))
+          xrefs=[x for x in insns if '184d898' in x[1] or '0x184d898' in x[1]]
+          md.append('## Text xrefs mentioning `0x184d898`\n\n'+table(xrefs,220))
+          md.append('## Raw data bytes around `0x184d898`\n\n'+block(data))
+          rel_lines=[]
+          for line in rel.splitlines():
+              toks=line.split()
+              if not toks: continue
+              try: off=int(toks[0],16)
+              except Exception: continue
+              if 0x184d898 <= off < 0x184da60:
+                  rel_lines.append(line.rstrip())
+          md.append('## Relocations around `0x184d898`\n\n'+block('\n'.join(rel_lines) if rel_lines else '(none in range)'))
+          later=[]
+          for a,l,t in win(0x10ac1a0,0x10ad260):
+              if any(p in l for p in ['rsp+0x60','184d898','184d5d0','call   QWORD PTR [rax+0x28]','ff 50 28','10ac1a9','10ad136','10ad13b','rbx','[rbp+0x']):
+                  later.append((a,l,t))
+          md.append('## Chronological installed-object and late-use signals\n\n'+table(later,520))
+          Path('out/restrictions-installed-ap184d898-v5.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-installed-ap184d898-v5
+          path: out/restrictions-installed-ap184d898-v5.md
+
+  trace-child184da88:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace child AP 0x184da88 and b411a4
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          try:
+              data=subprocess.check_output(['objdump','-s','--start-address=0x184da88','--stop-address=0x184db60',so], text=True, errors='replace')
+          except Exception as e:
+              data=f'objdump data failed: {e}'
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=28,aft=120):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def block(txt): return '```text\n'+txt.strip()+'\n```\n'
+          def table(rows,limit=360):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions child AP `0x184da88` / getter `b411a4` trace\n\n']
+          md.append('Parallel v5 report. Focus: exact child AP/interface that exposes `b411a4`, plus relation to service AP `0x184ca90` and installed AP `0x184d898`.\n\n')
+          md.append('## Getter `b411a4` window\n\n'+fmt(around(0xb411a4,18,55)))
+          for target in ['184da88','184ca90','b411a4','184d898']:
+              refs=[x for x in insns if target in x[1]]
+              md.append(f'## Text xrefs mentioning `{target}`\n\n'+table(refs,240))
+          md.append('## Raw data bytes around child AP `0x184da88`\n\n'+block(data))
+          rel_lines=[]
+          for line in rel.splitlines():
+              toks=line.split()
+              if not toks: continue
+              try: off=int(toks[0],16)
+              except Exception: continue
+              if 0x184da88 <= off < 0x184db60:
+                  rel_lines.append(line.rstrip())
+          md.append('## Relocations around child AP `0x184da88`\n\n'+block('\n'.join(rel_lines) if rel_lines else '(none in range)'))
+          Path('out/restrictions-child184da88-v5.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-child184da88-v5
+          path: out/restrictions-child184da88-v5.md
+
+  trace-late-0x198:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace late 0x198/AP 0x184d5d0 consumer
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          try:
+              data=subprocess.check_output(['objdump','-s','--start-address=0x184d5d0','--stop-address=0x184d6b0',so], text=True, errors='replace')
+          except Exception as e:
+              data=f'objdump data failed: {e}'
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=36,aft=180):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def block(txt): return '```text\n'+txt.strip()+'\n```\n'
+          def table(rows,limit=440):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions late `this+0x18` consumer / `0x198` AP `0x184d5d0` trace\n\n']
+          md.append('Parallel v5 report. Focus: the late consumer starting at `10ad136`, where `this+0x18` is read into `rbx`, then a `0x198` object with AP/literal `0x184d5d0` is built.\n\n')
+          md.append('## Late consumer window around `10ad136`\n\n'+fmt(around(0x10ad136)))
+          xrefs=[x for x in insns if '184d5d0' in x[1] or '0x184d5d0' in x[1]]
+          md.append('## Text xrefs mentioning AP `0x184d5d0`\n\n'+table(xrefs,220))
+          md.append('## Raw data bytes around AP `0x184d5d0`\n\n'+block(data))
+          rel_lines=[]
+          for line in rel.splitlines():
+              toks=line.split()
+              if not toks: continue
+              try: off=int(toks[0],16)
+              except Exception: continue
+              if 0x184d5d0 <= off < 0x184d6b0:
+                  rel_lines.append(line.rstrip())
+          md.append('## Relocations around AP `0x184d5d0`\n\n'+block('\n'.join(rel_lines) if rel_lines else '(none in range)'))
+          relevant=[]
+          for a,l,t in win(0x10ad136,0x10ad520):
+              if any(p in l for p in ['rsp+0x60','rbx','rbp+','184d5d0','17edf00','call','[rbx','[rbp','[rdi','mov    QWORD PTR [rbp']):
+                  relevant.append((a,l,t))
+          md.append('## Chronological `0x198` construction/use events\n\n'+table(relevant,600))
+          Path('out/restrictions-late-0x198-184d5d0-v5.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-late-0x198-184d5d0-v5
+          path: out/restrictions-late-0x198-184d5d0-v5.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-ap184d898
+      - trace-child184da88
+      - trace-late-0x198
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -name '*.md' -maxdepth 3 -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-installed-ap184d898-v5.md analysis/restrictions-child184da88-v5.md analysis/restrictions-late-0x198-184d5d0-v5.md
+          git commit -m 'Trace Restrictions installed object in parallel' || exit 0
+          git pull --rebase origin main
+          git push
