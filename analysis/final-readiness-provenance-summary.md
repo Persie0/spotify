@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after rejecting the old `0x6b0` / TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the descriptor/builder false leads, and tracing the direct `this+0x18` writer plus installed-object consumers.
+Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, and tracing the installed object plus late downstream consumer.
 
 ## Correct high-level chain
 
@@ -12,30 +12,24 @@ readiness-source object
       |          AP 0x1834418/+0x30 -> 0xee6db8
       v
   ece57c
-      |
       | copies first 16 bytes of arg12
       v
 0x98-byte erased/shared wrapper
-      |
       v
 owner+0x428
-      |
       v
 e99d07
-      |
       v
 fd4c04
-      |
       v
 Skip-Ad adapter outer+0x58 / this+0x40
-      |
       v
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
 The final `state+0x40` dependency used by `fd381a` remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation.
 
-## Restrictions-derived source path
+## Restrictions service / child getter path
 
 ```text
 registry ID 0x9e
@@ -47,14 +41,14 @@ registry ID 0x9e
   -> b411a4 returns [child+0x18]
 ```
 
-`b411a4` is a trivial getter:
+Getter:
 
 ```text
 b411a4   mov rax, [rdi+0x18]
 b411a8   ret
 ```
 
-Relocation-backed child AP evidence now pins this exactly:
+Relocation-backed child AP evidence:
 
 ```text
 child AP 0x184da88
@@ -82,7 +76,7 @@ provider-vector caller
   -> factory passes it as rcx into constructor 0x10aba36
 ```
 
-Factory call evidence:
+Factory call:
 
 ```text
 10ab824  mov rax, [rbx+0x30]
@@ -96,7 +90,7 @@ Factory call evidence:
 10ab97f  call 10aba36
 ```
 
-## Slot/descriptor path: closed as final-source false lead
+## Descriptor/builder false leads: closed
 
 The slot AP is relocation-filled and resolves to:
 
@@ -109,9 +103,9 @@ slot AP 0x187e2f8
 
 `0x165dd40` and its helper chain are descriptor/builder/buffer logic, not the final readiness object. Wrapper-local `builder+0x18` was rejected because it overlaps stack-local output/canary layout in the wrapper path.
 
-## Direct `child+0x18` writer: resolved to installed AP `0x184d898`
+## Direct `child+0x18` writer: resolved
 
-The true direct writer is not the later `10ac7dd` output-store. It is `[rsp+0x60] = this+0x18` followed by `10ac1a9`:
+The true direct writer is `[rsp+0x60] = this+0x18` followed by `10ac1a9`:
 
 ```text
 10aba8a  lea rax, [rdi+0x18]
@@ -143,22 +137,42 @@ Late read confirms the same field is consumed again:
 10ad13b  rbx = [rax]               ; rbx = this+0x18
 ```
 
-## Installed object AP `0x184d898`
+## Installed object AP `0x184d898`: v6 status
 
-Relocation-backed AP/method entries now start as:
+Relocation-backed AP/method entries start as:
 
 ```text
 0x184d898 +0x00 -> 10bff2c
 0x184d898 +0x08 -> 10bff40
 0x184d898 +0x10 -> 10bff52
 0x184d898 +0x18 -> 10bffde
+0x184d8c8        -> abfe12
+0x184d8d0        -> abfe54
 ```
 
-Useful text xrefs:
+Method semantics currently known:
 
 ```text
-10ac180  lea rax, 0x184d898        ; constructor install into this+0x18
-10bff2c  lea rax, 0x184d898        ; method/constructor-side self AP reference
+10bff2c:
+  [this+0x00] = 0x184d898
+  de1c52(this+0x08)
+  => reset/destruct payload at +0x08
+
+10bff40:
+  calls 10bff2c(this)
+  operator delete(this)
+  => deleting destructor wrapper
+
+10bff52:
+  delegates through object field [this+0x20]
+  uses this+0x08 as payload input
+  transforms external rdx via a7b836 and 17c4ef2
+  => payload/string-style forwarding helper, not direct readiness verdict yet
+
+10bffde:
+  delegates through object field [this+0x20]
+  then calls 17c4edc and tests result
+  => boolean/condition helper over the installed payload, still needs semantic naming
 ```
 
 The current direct `b411a4` return object is therefore:
@@ -167,8 +181,59 @@ The current direct `b411a4` return object is therefore:
 child+0x18
   = allocated_0x28
   -> AP/literal 0x184d898
-  -> payload at +0x08 initialized via 107162a from stack_wrapper
+  -> erased/shared payload at +0x08 initialized via 107162a from stack_wrapper
+  -> payload helper/function field around +0x20 used by 10bff52/10bffde
 ```
+
+## Late consumer: `0x198` object AP `0x184d5d0`
+
+After `this+0x18` is read into `rbx`, the constructor builds a `0x198` object with AP `0x184d5d0` and stores the installed object into field `+0x60`:
+
+```text
+10ad136  rax = [rsp+0x60]
+10ad13b  rbx = [rax]               ; rbx = this+0x18 = allocated_0x28 / AP 0x184d898
+10ad156  operator new(0x198)
+10ad160  rbp = allocated_0x198
+10ad19e  lea rax, 0x184d5d0
+10ad1a5  [rbp+0x00] = 0x184d5d0
+...
+10ad217  [rbp+0x60] = rbx          ; captures installed this+0x18
+```
+
+Relocation-backed AP `0x184d5d0` starts as:
+
+```text
+0x184d5d0 +0x00 -> a3fa60
+0x184d5d8 +0x08 -> 10ba7ca
+0x184d5e0 +0x10 -> 10ba802
+0x184d5e8 +0x18 -> 10ba86e
+0x184d5f0 +0x20 -> 10ba802
+0x184d5f8 +0x28 -> 10ba8a6
+0x184d600 +0x30 -> 10ba8de
+0x184d608 +0x38 -> 10ba93e
+...
+0x184d738        -> 10bc22a
+0x184d740        -> 10bc6aa
+0x184d748        -> 10bc716
+```
+
+Early AP `0x184d5d0` method pattern:
+
+```text
+10ba802:
+  writes status 2 to output
+  checks [this+0x50]
+  dispatches [this.vtable+0x1a0] / [this.vtable+0x1a8]
+  calls helpers through fields +0x08/+0x10/+0x30
+
+10ba86e / 10ba8a6 / 10ba98e / 10baa26:
+  stack status wrappers that dispatch to sibling vtable offsets
+
+10ba976 / 10ba9c6:
+  similar condition/status helpers gated by [this+0x50]
+```
+
+So `0x184d5d0` is a large composite interface around the captured installed object, but v6 did **not yet prove** which AP method first reads `this+0x60` semantically. The trace only proves the capture at `+0x60`.
 
 ## Wrapper/side paths still relevant but not direct getter value
 
@@ -215,23 +280,6 @@ The direct output-store at `10ac7dd` writes `this+0x40`, not `this+0x18`:
 
 It remains semantically useful for the broader object graph, but not for `b411a4`'s direct `+0x18` getter value.
 
-## Late consumer: `0x198` AP `0x184d5d0`
-
-After `this+0x18` is read into `rbx`, the constructor builds a `0x198` object with AP `0x184d5d0` and stores the installed `this+0x18` object into that new object:
-
-```text
-10ad136  rax = [rsp+0x60]
-10ad13b  rbx = [rax]               ; rbx = this+0x18 = allocated_0x28 / AP 0x184d898
-10ad156  operator new(0x198)
-10ad160  rbp = allocated_0x198
-10ad19e  lea rax, 0x184d5d0
-10ad1a5  [rbp+0x00] = 0x184d5d0
-...
-10ad217  [rbp+0x60] = rbx          ; 0x198 object captures installed this+0x18
-```
-
-This makes `0x184d5d0` the strongest downstream consumer of the direct `child+0x18` value found so far.
-
 ## Current closed items
 
 ```text
@@ -250,24 +298,23 @@ child AP 0x184da88 +0x38 = b411a4
 [rsp+0x60] classified as &this+0x18
 this+0x18 direct writer at 10ac1a9
 installed this+0x18 object AP 0x184d898
-late 0x198/AP 0x184d5d0 consumer stores installed this+0x18 at +0x60
+AP 0x184d898 initial methods identified
+late 0x198/AP 0x184d5d0 consumer captures installed this+0x18 at +0x60
 ```
 
 ## Still open / next best targets
 
 ```text
-AP 0x184d898 method semantics:
-  +0x00 -> 10bff2c
-  +0x08 -> 10bff40
-  +0x10 -> 10bff52
-  +0x18 -> 10bffde
+1. Resolve payload at allocated_0x28+0x08:
+   - 107162a installation result
+   - object field/function at +0x20 used by 10bff52/10bffde
 
-Payload initialized at allocated_0x28+0x08 via 107162a:
-  determine exactly what the erased/shared wrapper stores there
+2. Trace AP 0x184d5d0 methods that read [this+0x60]:
+   - current v6 proves capture at +0x60
+   - still need the semantic consumer method of that captured installed object
 
-Late consumer AP 0x184d5d0:
-  trace methods that read [this+0x60]
-  confirm whether this is the object used by fd381a state+0x40 / +0x140 path
+3. Trace whether 0x184d5d0 connects to fd381a state+0x40 / +0x140:
+   - this is the remaining bridge from Restrictions child+0x18 to Skip-Ad readiness discriminator
 
 Known side paths:
   [rsp+0x70] wrapper_0x80/fallback holder
@@ -277,6 +324,9 @@ Known side paths:
 
 ## Evidence reports
 
+- `analysis/restrictions-ap184d898-methods-v6.md`
+- `analysis/restrictions-ap184d5d0-methods-v6.md`
+- `analysis/restrictions-this18-to-0x198-bridge-v6.md`
 - `analysis/restrictions-installed-ap184d898-v5.md`
 - `analysis/restrictions-child184da88-v5.md`
 - `analysis/restrictions-late-0x198-184d5d0-v5.md`
