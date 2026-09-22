@@ -1,0 +1,116 @@
+name: Trace Restrictions tail after wrapper d8
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-tail-after-wrapperd8.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace tail after wrapper d8
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+
+          so='liborbit-jni-spotify.so'
+          out=Path('analysis'); out.mkdir(exist_ok=True)
+          report=out/'restrictions-tail-after-wrapperd8.md'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def window(start,end):
+              return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def around(addr,b=16,aft=90):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def fmt(rows):
+              return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows:
+                  s += f'| `{a:#x}` | `{l.strip()}` |\n'
+              return s+'\n'
+
+          tail=window(0x10ac4e0,0x10ac900)
+          interesting=[]
+          pats=['rsp+0x70','184d9a8','184d0a0','184d1f0','call','0xd8','+0x18','+0x20','+0x28','+0x70','+0x78','b411a4','184da88','184ca90']
+          for a,l,t in tail:
+              if any(p in l for p in pats) or re.search(r'mov\s+QWORD PTR \[[^\]]+\],',t):
+                  interesting.append((a,l,t))
+
+          targets={
+            0x10ac4e4:'second [rsp+0x40] vtable+0x28 receiver',
+            0x10ac4f7:'operator new(0xd8)',
+            0x10ac503:'wrapper_0xd8 AP store 0x184d9a8',
+            0x10ac51b:'post wrapper_0xd8 tail begins',
+            0x10ac5da:'fallback branch target after 0xd8 area',
+            0x10ac487:'join after wrapper_0x80/fallback local stored at [rsp+0x70]',
+          }
+
+          xref_terms=['184d9a8','184d0a0','184d1f0','rsp+0x70','b411a4','184da88','184ca90']
+          xrefs={k:[] for k in xref_terms}
+          for i,(a,l,t) in enumerate(insns):
+              for k in xref_terms:
+                  if k in l:
+                      xrefs[k].append((a,max(0,i-6),min(len(insns),i+12)))
+
+          md=[]
+          md.append('# Restrictions constructor tail after wrapper_0xd8\n\n')
+          md.append('Parallel trace for the open constructor-tail path after `wrapper_0x80` and `wrapper_0xd8`.\n\n')
+          md.append('## Constructor tail `10ac4e0..10ac900` interesting events\n\n')
+          md.append(table(interesting[:320]))
+          md.append('## Focus windows\n\n')
+          for addr,desc in targets.items():
+              md.append(f'### `{addr:#x}` — {desc}\n\n')
+              md.append(fmt(around(addr)))
+          md.append('## Targeted xrefs\n\n')
+          for k,hits in xrefs.items():
+              md.append(f'### `{k}` hits ({len(hits)})\n\n')
+              for a,s,e in hits[:18]:
+                  md.append(f'#### hit `{a:#x}`\n\n')
+                  md.append(fmt(insns[s:e]))
+              if len(hits)>18: md.append(f'... truncated {len(hits)-18} more ...\n\n')
+          md.append('## Questions this report is meant to answer\n\n')
+          md.append('- Where does `[rsp+0x70]` flow after storing `wrapper_0x80` or fallback `0x184d1f0`?\n')
+          md.append('- Does `wrapper_0xd8 / AP 0x184d9a8` become the returned `child+0x18` object or feed the later readiness source?\n')
+          md.append('- Is there any direct call/write to `b411a4`, `0x184da88`, or `0x184ca90` in this constructor tail window?\n')
+          report.write_text(''.join(md),encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-tail-after-wrapperd8.md
+          git commit -m 'Trace Restrictions tail after wrapper d8' || exit 0
+          git push
