@@ -1,0 +1,210 @@
+name: Trace Restrictions substructure writers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-substructure-writers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-subwriters
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-subwriters
+          unzip -j /tmp/restrictions-subwriters/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-subwriters
+      - name: Trace substructure writers
+        run: |
+          SO=/tmp/restrictions-subwriters/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-subwriters/all.dis
+          python3 - <<'PY' > analysis/restrictions-substructure-writers.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/restrictions-subwriters/all.dis').read_text(errors='replace').splitlines()
+          ins=[]; labels=[]
+          for i,line in enumerate(dis):
+              lm=re.match(r'^([0-9a-f]+)\s+<([^>]+)>:', line)
+              if lm:
+                  labels.append((int(lm.group(1),16), i, lm.group(2), line))
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[x[0] for x in ins]
+          labs=[x[0] for x in labels]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def label(a):
+              j=bisect.bisect_right(labs,a)-1
+              return labels[j][2] if j>=0 else ''
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts
+              out=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      out.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): out.append(cur.strip())
+              return mn,out
+          def norm(x): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',x).strip()
+          subregs={'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','ebp':'rbp','esp':'rsp','r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15','al':'rax','bl':'rbx','cl':'rcx','dl':'rdx','sil':'rsi','dil':'rdi'}
+          def can(r): return subregs.get(r,r)
+          def mem(arg):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', arg)
+              if not m: return None
+              off=int(m.group(3) or '0',16)
+              if m.group(2)=='-': off=-off
+              return can(m.group(1)), off
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          argregs=['rdi','rsi','rdx','rcx','r8','r9']
+          targets={
+              0x1507a9e: ('bundle+0x18 vector slot helper', 0x18),
+              0x1507b20: ('bundle+0x58 vector slot helper', 0x58),
+              0x153d2a4: ('fill object returned by bundle+0x18 helper', None),
+              0x153d0d0: ('fill object returned by bundle+0x58 helper', None),
+              0x1660032: ('descriptor-to-bundle flag helper', None),
+              0x165fe6a: ('descriptor setup helper using bundle+0x10', None),
+              0x165ffb0: ('descriptor finalizer helper', None),
+          }
+
+          def analyze(t, base_off=None, limit=0x420):
+              body=[x for x in ins if t <= x[0] < t+limit]
+              st={r:None for r in regs}
+              for r in argregs: st[r]=f'arg:{r}'
+              if base_off is not None:
+                  st['rdi']=f'bundle+0x{base_off:x}'
+              refs=[]; writes=[]; bundle30=[]; calls=[]
+              def resolve(desc, off=0):
+                  if not desc: return None
+                  m=re.match(r'bundle\+0x([0-9a-f]+)$', desc)
+                  if m: return int(m.group(1),16)+off
+                  m=re.match(r'(?:arg:rdi)(?:\+([0-9a-f]+))?$', desc)
+                  if m and base_off is not None:
+                      return base_off + int(m.group(1) or '0',16) + off
+                  return None
+              for a,i,op,line in body:
+                  mn,ops=split_ops(op)
+                  for opnd in ops:
+                      b=mem(opnd)
+                      if b and st.get(b[0]):
+                          desc=st[b[0]] + (f'+0x{b[1]:x}' if b[1]>0 else (f'-0x{-b[1]:x}' if b[1]<0 else ''))
+                          bo=resolve(st[b[0]], b[1])
+                          refs.append((a,desc,bo,line))
+                          isdst = bool(ops and norm(ops[0])==norm(opnd) and mn not in ('cmp','test'))
+                          if isdst:
+                              writes.append((a,desc,bo,line))
+                              if bo == 0x30:
+                                  bundle30.append((a,desc,line))
+                  if mn=='call':
+                      calls.append((a,{r:st.get(r) for r in argregs if st.get(r)},line))
+                  if not ops: continue
+                  dst=norm(ops[0]); dst_reg=can(dst)
+                  if dst_reg not in regs: continue
+                  if mn=='lea' and len(ops)>1:
+                      b=mem(ops[1])
+                      if b and st.get(b[0]):
+                          st[dst_reg]=st[b[0]] + (f'+0x{b[1]:x}' if b[1]>0 else (f'-0x{-b[1]:x}' if b[1]<0 else ''))
+                      else:
+                          st[dst_reg]=None
+                  elif mn=='mov' and len(ops)>1:
+                      src=norm(ops[1]); sr=can(src)
+                      if sr in regs and st.get(sr):
+                          st[dst_reg]=st[sr]
+                      else:
+                          b=mem(src)
+                          st[dst_reg]=f'load({st[b[0]]}{b[1]:+x})' if b and st.get(b[0]) else None
+                  elif mn not in ('cmp','test'):
+                      st[dst_reg]=None
+              return body, refs, writes, bundle30, calls
+
+          print('# Restrictions substructure writer trace')
+          print()
+          print('Purpose: test whether `RestrictionsSetupImpl` field `bundle+0x30` is written indirectly as `bundle+0x18` substructure offset `+0x18`.')
+          print()
+          print('Context from `0x153cbfc`:')
+          print('```text')
+          print('153cc94  mov rdi, rbp        ; rbp = bundle+0x18')
+          print('153cc97  call 1507a9e        ; candidate vector/slot helper')
+          print('153cc9c  mov rdi, rax')
+          print('153cc9f  mov rsi, rbx        ; descriptor')
+          print('153cca2  call 153d2a4        ; fill returned slot')
+          print('```')
+          print()
+          for t,(name,base) in targets.items():
+              body,refs,writes,b30,calls=analyze(t,base)
+              print(f'## `{name}` at `0x{t:x}`')
+              print(f'- label: `{md(label(t))}`')
+              print(f'- initial `rdi` interpretation: `{("bundle+0x%x" % base) if base is not None else "plain arg:rdi"}`')
+              print(f'- instructions scanned: `{len(body)}`')
+              print(f'- arg/substructure refs: `{len(refs)}`')
+              print(f'- arg/substructure writes: `{len(writes)}`')
+              print(f'- writes resolving exactly to `bundle+0x30`: `{len(b30)}`')
+              print()
+              print('### Body excerpt')
+              print('```text')
+              for aa,i,op,line in body[:70]: print('    '+line)
+              if len(body)>70: print(f'    ... truncated {len(body)-70} instructions ...')
+              print('```')
+              print()
+              print('### Writes through tracked args/substructures')
+              if writes:
+                  print('| addr | tracked location | resolved bundle offset | instruction |')
+                  print('|---|---|---:|---|')
+                  for a,desc,bo,line in writes[:70]:
+                      bo_txt=f'`0x{bo:x}`' if bo is not None else '`?`'
+                      print(f'| `0x{a:x}` | `{md(desc)}` | {bo_txt} | `{md(line.strip())}` |')
+                  if len(writes)>70: print(f'| ... | ... | ... | truncated {len(writes)-70} rows |')
+              else:
+                  print('- none')
+              print()
+              if b30:
+                  print('### Direct answer: writes resolving to bundle+0x30')
+                  print('| addr | tracked location | instruction |')
+                  print('|---|---|---|')
+                  for a,desc,line in b30:
+                      print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+                  print()
+              print('### Calls with tracked args')
+              if calls:
+                  print('| call | tracked args | instruction |')
+                  print('|---|---|---|')
+                  for a,state,line in calls[:35]:
+                      txt=', '.join(f'{k}={v}' for k,v in state.items())
+                      print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+                  if len(calls)>35: print(f'| ... | ... | truncated {len(calls)-35} rows |')
+              else:
+                  print('- none')
+              print()
+          print('## Interpretation')
+          print('- If `1507a9e` writes through `bundle+0x18 + 0x18`, that resolves exactly to `bundle+0x30`, closing the source of the Restrictions factory `[rdx+0x30]` read.')
+          print('- If not, the next likely source is another substructure helper or initial bundle construction before the provider vector call.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-substructure-writers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions substructure writers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
