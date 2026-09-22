@@ -26,121 +26,63 @@ jobs:
           mkdir -p /tmp/bundle-source
           gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/bundle-source
           unzip -j /tmp/bundle-source/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/bundle-source
-      - name: Trace shared setup bundle source
+      - name: Trace bundle source
         run: |
           SO=/tmp/bundle-source/liborbit-jni-spotify.so
           objdump -d -M intel "$SO" > /tmp/bundle-source/all.dis
           python3 - <<'PY' > analysis/shared-setup-bundle-source.md
           from pathlib import Path
           import re, bisect
-
-          lines = Path('/tmp/bundle-source/all.dis').read_text(errors='replace').splitlines()
-          ins = []
-          for i, l in enumerate(lines):
-              m = re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', l)
-              if m:
-                  ins.append((int(m.group(1),16), i, m.group(2), l))
-          addrs = [a for a,_,_,_ in ins]
-          def idx(a): return bisect.bisect_left(addrs, a)
-          def ctx(a, before=35, after=28):
-              j = idx(a)
-              return '\n'.join('    '+x[3] for x in ins[max(0,j-before):min(len(ins),j+after+1)])
-          def section(title):
-              print('\n## ' + title)
-
-          start, end = 0x14cdc2a, 0x14d4d4c
-          region = [x for x in ins if start <= x[0] < end]
-
+          lines=Path('/tmp/bundle-source/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=28,n=22):
+            j=idx(a); return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          start,end=0x14cdc2a,0x14d4d4c
+          region=[x for x in ins if start <= x[0] < end]
           print('# Shared setup bundle source trace')
           print()
-          print('This report follows the likely shared provider-factory setup bundle used by the central provider-vector caller.')
+          print('Rank-1 provider-vector caller FDE: `0x14cdc2a..0x14d4d4c`.')
+          print('The previous report shows provider factories are called with hidden output in `rdi`, descriptor in `rsi`, shared setup bundle in `rdx`, and registry context in `rcx`.')
           print()
-          print('The previous `analysis/provider-vector-factory-caller.md` ranked FDE `0x14cdc2a..0x14d4d4c` first. In that region, provider factory calls use the ABI:')
-          print()
-          print('```text')
-          print('rdi = hidden/sret output')
-          print('rsi = provider descriptor')
-          print('rdx = shared setup bundle')
-          print('rcx = registry context')
-          print('call provider +0x28')
-          print('```')
-          print()
-          print('This run therefore treats `rdx` at provider `+0x28` call sites as authoritative and traces the source register/field that feeds it.')
-
-          section('Provider +0x28 calls using rdx as shared setup bundle')
-          calls = []
+          print('## Provider +0x28 calls and rdx source')
           for a,i,op,l in region:
-              if re.search(r'call\s+QWORD PTR \[rax\+0x28\]', op):
-                  win = region[max(0, region.index((a,i,op,l))-20):region.index((a,i,op,l))+1]
-                  txt = '\n'.join(x[2] for x in win)
-                  if 'mov    rdx,' in txt or 'lea    rdx,' in txt or 'xor    edx,edx' in txt:
-                      calls.append(a)
-                      print(f'### call 0x{a:x}')
-                      print(ctx(a, 32, 10)); print()
-          print(f'Total provider-like +0x28 call sites in ranked FDE: {len(calls)}')
-
-          section('r14/r15/r13/r12/rbx/rbp assignment points inside ranked FDE')
-          for reg in ['r14','r15','r13','r12','rbx','rbp']:
-              print(f'### {reg}')
-              for a,i,op,l in region:
-                  if re.search(rf'\b(mov|lea|xchg)\s+{reg}\b', op) or re.search(rf'\bpop\s+{reg}\b', op):
-                      print('    '+l)
-              print()
-
-          section('Direct references to r14 as candidate shared setup bundle')
-          for a,i,op,l in region:
-              if 'r14' in op:
-                  print('    '+l)
-
-          section('Stores into r14-relative fields')
-          any_store = False
-          for a,i,op,l in region:
-              if re.search(r'\b(mov|lea|and|or|xor|movups|movaps|movdqa|movdqu|movss|movsd)\b.*\[r14(?:\+0x[0-9a-f]+)?\]', op) and op.split()[0] not in ('cmp','test'):
-                  # destination usually appears before comma; keep all candidate stores for manual review.
-                  dst = op.split(',',1)[0]
-                  if '[r14' in dst:
-                      any_store = True
-                      print(f'### 0x{a:x}: {op}')
-                      print(ctx(a, 18, 14)); print()
-          if not any_store:
-              print('No obvious direct stores into [r14+...] were found inside the ranked provider-vector FDE; r14 is probably an already-built bundle passed into this routine.')
-
-          section('All references to candidate bundle offset +0x30 in ranked FDE')
-          for a,i,op,l in region:
-              if re.search(r'\[[^]]+\+0x30\]', op):
-                  print(f'### 0x{a:x}: {op}')
-                  print(ctx(a, 18, 18)); print()
-
-          section('Provider descriptor vector / context fingerprints')
-          for pat in ['+0xa0]', '+0x38]', '+0x18]', '+0x20]', '+0x10]']:
-              print(f'### uses containing `{pat}`')
-              count = 0
-              for a,i,op,l in region:
-                  if pat in op:
-                      print('    '+l)
-                      count += 1
-                      if count >= 80:
-                          print('    ... truncated after 80 matches')
-                          break
-              print()
-
-          section('Callers of ranked provider-vector FDE')
-          target = start
-          for a,i,op,l in ins:
-              if re.search(rf'\b(call|jmp)\s+{target:x}\b', op) or f'# {target:x}' in op:
-                  print(f'### 0x{a:x}: {op}')
-                  print(ctx(a, 45, 32)); print()
-
-          section('Potential setup-bundle construction calls near callers')
-          interesting = []
-          for a,i,op,l in ins:
-              if 0x14c0000 <= a < 0x14e0000 and ('call' in op or 'jmp' in op) and any(s in op for s in ['17edf00', 'memcpy', '14edb10', '17da794', '17d9bf2', '17da7e8']):
-                  interesting.append(a)
-          for a in interesting[:220]:
-              j = idx(a)
-              op = ins[j][2]
+            if re.search(r'call\s+QWORD PTR \[rax\+0x28\]',op):
               print(f'### 0x{a:x}: {op}')
-              print(ctx(a, 12, 8)); print()
+              print(ctx(a,34,10)); print()
+          print('## r14/r13/r12/r15/rbx/rbp assignment points')
+          for reg in ['r14','r13','r12','r15','rbx','rbp']:
+            print(f'### {reg}')
+            for a,i,op,l in region:
+              if re.search(rf'\b(mov|lea|pop|xchg)\s+{reg}\b',op): print('    '+l)
+            print()
+          print('## Direct r14 references inside ranked FDE')
+          for a,i,op,l in region:
+            if 'r14' in op: print('    '+l)
+          print('\n## Stores into r14-relative fields')
+          found=False
+          for a,i,op,l in region:
+            dst=op.split(',',1)[0]
+            if '[r14' in dst and not op.startswith(('cmp','test')):
+              found=True; print(f'### 0x{a:x}: {op}'); print(ctx(a,18,14)); print()
+          if not found:
+            print('No direct `[r14+...]` stores were found in the ranked caller; the bundle is likely passed in already built.')
+          print('\n## All +0x30 references in ranked FDE')
+          for a,i,op,l in region:
+            if '+0x30]' in op:
+              print(f'### 0x{a:x}: {op}'); print(ctx(a,18,18)); print()
+          print('\n## Callers of ranked FDE start')
+          for a,i,op,l in ins:
+            if re.search(r'\b(call|jmp)\s+14cdc2a\b',op) or '# 14cdc2a' in op:
+              print(f'### 0x{a:x}: {op}'); print(ctx(a,45,32)); print()
+          print('\n## Local helper calls around provider-vector region')
+          for a,i,op,l in region:
+            if 'call' in op and any(s in op for s in ['17da794','17d9bf2','17da7e8','14edb10','17edf00','memcpy@plt']):
+              print(f'### 0x{a:x}: {op}'); print(ctx(a,14,10)); print()
           PY
       - name: Commit report
         run: |
