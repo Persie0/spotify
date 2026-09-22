@@ -1,0 +1,348 @@
+name: Trace Restrictions open branches parallel v7
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-open-branches-v7.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-payload-107162a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace allocated_0x28 +0x08 payload
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=28,aft=95):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=360):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions installed payload `allocated_0x28+0x08` trace\n\n']
+          md.append('Parallel v7 report. Focus: the erased/shared payload copied into the `0x28` object at `+0x08` via `107162a`, then destroyed/reset through `de1c52` and `10bff2c`.\n\n')
+          md.append('## Install window `10ac120..10ac1b7`\n\n')
+          md.append(fmt(win(0x10ac120,0x10ac1b7)))
+          for name,addr in [('107162a payload installer',0x107162a),('de1c52 stack-wrapper cleanup/copy cleanup',0xde1c52),('a7a290 erased-wrapper copy helper',0xa7a290),('ac39da wrapper destroy/copy helper',0xac39da),('10adc16 payload adapter helper',0x10adc16),('10bff2c installed AP reset/destructor',0x10bff2c),('10bff52 installed AP forwarding helper',0x10bff52),('10bffde installed AP bool/helper',0x10bffde)]:
+              md.append(f'## `{name}` at `{addr:#x}`\n\n')
+              md.append(fmt(around(addr)))
+          filt=[]
+          for a,l,t in win(0x10aba36,0x10adc80):
+              if any(x in l for x in ['107162a','de1c52','a7a290','ac39da','10adc16','184d898','rsp+0x110','rsp+0x120','r14','r13+0x10','r13+0x18']):
+                  filt.append((a,l,t))
+          md.append('## Constructor payload-related signals\n\n')
+          md.append(table(filt,520))
+          xrefs=[]
+          for a,l,t in ins:
+              if any(s in l for s in ['107162a','de1c52','10adc16','184d898','10bff2c','10bff52','10bffde']):
+                  xrefs.append((a,l,t))
+          md.append('## Text mentions of payload helper targets\n\n')
+          md.append(table(xrefs,420))
+          Path('out/restrictions-payload-107162a-v7.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-payload-107162a-v7
+          path: out/restrictions-payload-107162a-v7.md
+
+  trace-ap184d5d0-60-readers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace AP 0x184d5d0 +0x60 readers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=22,aft=80):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=500):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ap=0x184d5d0
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x260]
+          targets=[]
+          for off,target,line in ap_rels:
+              if target not in [t for _,t in targets]: targets.append((off,target))
+          # Build method windows and score for references to field +0x60, including wrapper calls to [vtable+0x60].
+          rows=[]; interesting=[]
+          for off,target in targets:
+              win=around(target,8,90)
+              hits=[]
+              for a,l,t in win:
+                  if any(p in l for p in ['+0x60]', '[rdi+0x60]', '[rbx+0x60]', '[r14+0x60]', '[rbp+0x60]', '[r15+0x60]', '[rax+0x60]', '[rcx+0x60]', 'ff 50 60', 'ff 90 60 00 00 00']):
+                      hits.append((a,l,t))
+              if hits:
+                  interesting.append((off,target,hits,win))
+                  for h in hits: rows.append(h)
+          md=['# Restrictions AP `0x184d5d0` `+0x60` reader trace\n\n']
+          md.append('Parallel v7 report. Focus: actual method-table entries that read/call through `+0x60`, after the constructor stores the installed `this+0x18` object into `0x198+0x60`.\n\n')
+          md.append('## AP relocation entries scanned\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          md.append('## Candidate `+0x60` hits inside AP method windows\n\n')
+          md.append(table(rows,700))
+          for off,target,hits,win in interesting[:40]:
+              md.append(f'## Candidate AP entry `{off-ap:#x}` -> `{target:#x}`\n\n')
+              md.append('Hits:\n\n'+table(hits,80))
+              md.append(fmt(win))
+          broad=[]
+          for a,l,t in ins:
+              if any(p in l for p in ['[rdi+0x60]', '[rbx+0x60]', '[r14+0x60]', '[rbp+0x60]', '[r15+0x60]', '[rax+0x60]', '[rcx+0x60]', 'ff 50 60', 'ff 90 60 00 00 00']):
+                  if 0x10ba000 <= a <= 0x10bd500 or 0x10ad000 <= a <= 0x10ae900:
+                      broad.append((a,l,t))
+          md.append('## Broader nearby `+0x60` references\n\n'+table(broad,700))
+          Path('out/restrictions-ap184d5d0-60-readers-v7.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-ap184d5d0-60-readers-v7
+          path: out/restrictions-ap184d5d0-60-readers-v7.md
+
+  trace-fd381a-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace fd381a bridge candidates
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=38,aft=140):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=500):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions bridge to `fd381a state+0x40/+0x140` candidates\n\n']
+          md.append('Parallel v7 report. Focus: whether the installed Restrictions object or the `0x198/AP 0x184d5d0` consumer appears in the known `e99d07 -> fd4c04 -> fd381a` readiness path.\n\n')
+          targets=[('e99d07',0xe99d07),('fd4c04',0xfd4c04),('fd381a',0xfd381a),('candidate installed AP method 10bffde',0x10bffde),('late consumer AP family 10ba802',0x10ba802)]
+          for name,addr in targets:
+              md.append(f'## `{name}` `{addr:#x}` window\n\n')
+              md.append(fmt(around(addr)))
+          signals=[]
+          for a,l,t in ins:
+              if any(s in l for s in ['184d898','184d5d0','184da88','184ca90','10bffde','10ba802','fd381a','fd4c04','e99d07','+0x140]', '0x140]', '+0x40]', '0x40]']):
+                  if 0xe80000 <= a <= 0x1100000:
+                      signals.append((a,l,t))
+          md.append('## Filtered readiness-path signal mentions\n\n')
+          md.append(table(signals,900))
+          # More specific calls through +0x140 and state+0x40 near fd381a.
+          spec=[]
+          for a,l,t in win(0xfcf000,0xfd7000):
+              if any(s in l for s in ['0x140','0x40','call','mov']): spec.append((a,l,t))
+          md.append('## Focused `fd381a` neighborhood calls/field accesses\n\n')
+          md.append(table(spec,900))
+          Path('out/restrictions-fd381a-bridge-v7.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-fd381a-bridge-v7
+          path: out/restrictions-fd381a-bridge-v7.md
+
+  trace-side-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace side paths rsp70 rsp40 wrapperd8
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=24,aft=90):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=700):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions side paths: `[rsp+0x70]`, `[rsp+0x40]`, `wrapper_0xd8/AP 0x184d9a8`\n\n']
+          md.append('Parallel v7 report. Focus: all known side paths that are not the direct `b411a4 -> child+0x18` getter value but may feed broader construction.\n\n')
+          ctor=win(0x10ac300,0x10adbe8)
+          filt=[]
+          for a,l,t in ctor:
+              if any(s in l for s in ['rsp+0x70','rsp+0x40','184d9a8','184d0a0','184d1f0','10ac4ec','10ad69b','10adb4f','0xd8','0x80']):
+                  filt.append((a,l,t))
+          md.append('## Constructor-tail filtered side-path signals\n\n')
+          md.append(table(filt,1000))
+          for name,addr in [('wrapper_0xd8 creation',0x10ac4f7),('[rsp+0x70] late read',0x10ad69b),('[rsp+0x70] cleanup/read',0x10adb4f),('[rsp+0x40] late receiver 1',0x10acd33),('[rsp+0x40] late receiver 2',0x10acdad)]:
+              md.append(f'## `{name}` `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,28,110)))
+          for ap,name in [(0x184d9a8,'wrapper_0xd8 AP 0x184d9a8'),(0x184d0a0,'wrapper_0x80 AP 0x184d0a0')]:
+              ap_rels=[r for r in rels if ap <= r[0] < ap+0xc0]
+              md.append(f'## `{name}` relocations\n\n```text\n')
+              md.extend(line+'\n' for _,_,line in ap_rels)
+              md.append('```\n')
+              for off,target,line in ap_rels[:10]:
+                  md.append(f'### Entry `{off-ap:#x}` -> `{target:#x}`\n\n')
+                  md.append(fmt(around(target,12,54)))
+          Path('out/restrictions-side-paths-v7.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-side-paths-v7
+          path: out/restrictions-side-paths-v7.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-payload-107162a
+      - trace-ap184d5d0-60-readers
+      - trace-fd381a-bridge
+      - trace-side-paths
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -type f -name '*.md' -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-payload-107162a-v7.md \
+                  analysis/restrictions-ap184d5d0-60-readers-v7.md \
+                  analysis/restrictions-fd381a-bridge-v7.md \
+                  analysis/restrictions-side-paths-v7.md
+          git commit -m 'Trace Restrictions open branches in parallel'
+          git pull --rebase origin main
+          git push
