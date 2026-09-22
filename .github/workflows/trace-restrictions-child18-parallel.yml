@@ -1,0 +1,114 @@
+name: Trace Restrictions child18 side in parallel
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-child18-parallel.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace child18 / b411a4 side
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+
+          so='liborbit-jni-spotify.so'
+          out=Path('analysis'); out.mkdir(exist_ok=True)
+          report=out/'restrictions-child18-parallel.md'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=18,aft=80):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows: s += f'| `{a:#x}` | `{l.strip()}` |\n'
+              return s+'\n'
+
+          # Key APs / functions from proven Restrictions service path.
+          targets={
+            0xb411a4:'child +0x38 method returning [child+0x18]',
+            0x184da88:'child AP/literal',
+            0x184ca90:'service AP/literal',
+            0x10aba36:'constructor receiving rcx from bundle+0x30',
+            0x10ab97f:'factory call into constructor',
+          }
+          terms=['b411a4','184da88','184ca90','10aba36','10ab97f','+0x18','[rdi+0x18]','[rbx+0x18]','[r14+0x18]','[r15+0x18]']
+          xrefs={k:[] for k in ['b411a4','184da88','184ca90','10aba36','10ab97f']}
+          for i,(a,l,t) in enumerate(insns):
+              for k in xrefs:
+                  if k in l:
+                      xrefs[k].append((a,max(0,i-8),min(len(insns),i+14)))
+          # Broad but cheap: windows that mention child AP/service AP or the exact return load.
+          child_related=[]
+          for a,l,t in insns:
+              if any(k in l for k in ['b411a4','184da88','184ca90']) or '[rdi+0x18]' in l or 'QWORD PTR [rdi+0x18]' in l:
+                  child_related.append((a,l,t))
+          # Constructor local +0x18 writes/reads near the known constructor.
+          ctor=[x for x in insns if 0x10aba36 <= x[0] <= 0x10adc80]
+          ctor18=[x for x in ctor if '+0x18' in x[1] or '+0x10' in x[1] or '+0x20' in x[1] or 'child' in x[1]]
+
+          md=[]
+          md.append('# Restrictions child+0x18 / b411a4 parallel trace\n\n')
+          md.append('Parallel trace for the still-open direct child side while constructor-tail workflows follow wrapper objects.\n\n')
+          md.append('## Focus windows\n\n')
+          for addr,desc in targets.items():
+              md.append(f'### `{addr:#x}` — {desc}\n\n')
+              md.append(fmt(around(addr)))
+          md.append('## Targeted xrefs\n\n')
+          for k,hits in xrefs.items():
+              md.append(f'### `{k}` hits ({len(hits)})\n\n')
+              for a,s,e in hits[:24]:
+                  md.append(f'#### hit `{a:#x}`\n\n')
+                  md.append(fmt(insns[s:e]))
+              if len(hits)>24: md.append(f'... truncated {len(hits)-24} more ...\n\n')
+          md.append('## Child/service related direct hits\n\n')
+          md.append(table(child_related[:300]))
+          md.append('## Constructor `+0x18/+0x10/+0x20` activity\n\n')
+          md.append(table(ctor18[:420]))
+          md.append('## Questions this report is meant to answer\n\n')
+          md.append('- Does any path directly assign the constructor-tail wrappers to the child object returned by `b411a4`?\n')
+          md.append('- Are `0x184da88` and `0x184ca90` only AP/literals here, or do they reveal additional reader/writer methods?\n')
+          md.append('- Does the constructor `0x10aba36` itself write a field that later becomes `child+0x18`, or is that assignment in the service/child factory wrapper around it?\n')
+          report.write_text(''.join(md),encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-child18-parallel.md
+          git commit -m 'Trace Restrictions child18 side in parallel' || exit 0
+          git push
