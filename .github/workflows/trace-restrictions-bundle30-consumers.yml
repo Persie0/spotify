@@ -1,0 +1,195 @@
+name: Trace Restrictions bundle30 consumers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-bundle30-consumers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/bundle30-consumers
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/bundle30-consumers
+          unzip -j /tmp/bundle30-consumers/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/bundle30-consumers
+      - name: Trace bundle30 consumers
+        run: |
+          SO=/tmp/bundle30-consumers/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/bundle30-consumers/all.dis
+          python3 - <<'PY' > analysis/restrictions-bundle30-consumers.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/bundle30-consumers/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,line in enumerate(dis):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(j,b=14,a=14):
+              return '\n'.join('    '+ins[k][3] for k in range(max(0,j-b), min(len(ins), j+a+1)))
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts
+              vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      vals.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): vals.append(cur.strip())
+              return mn, vals
+          def mem(arg):
+              m=re.search(r'\[([a-z0-9]+)(?:\+0x([0-9a-f]+))?\]', arg)
+              return (m.group(1), int(m.group(2) or '0',16)) if m else (None,None)
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15']
+          args=['rdi','rsi','rdx','rcx','r8','r9']
+          state={r:None for r in regs}
+          start,end=0x14cdc2a,0x14d4d4c
+          region=[x for x in ins if start <= x[0] < end]
+          exact310=[]
+          calls30=[]
+          direct_after=[]
+          provider_calls=[]
+
+          for n,(a,i,op,line) in enumerate(region):
+              mn,ops=split_ops(op)
+              if '[rsp+0x310]' in op:
+                  exact310.append((a,n,line,ctx(idx(a),10,18)))
+                  # first few calls after this point
+                  after=[]
+                  for aa,ii,o,l in region[n+1:n+45]:
+                      mm,_=split_ops(o)
+                      if mm=='call':
+                          after.append((aa,l))
+                          if len(after)>=6: break
+                  direct_after.append((a, after))
+
+              if mn=='call':
+                  arg_state={r:state.get(r) for r in args if state.get(r)}
+                  if any(v=='bundle_30' for v in arg_state.values()):
+                      calls30.append((a, dict(arg_state), line, ctx(idx(a),12,8)))
+                  if re.search(r'QWORD PTR \[rax\+0x28\]', op):
+                      provider_calls.append((a, dict(arg_state), line))
+
+              # update state after call classification
+              if not ops: continue
+              dst=ops[0]
+              clean_dst=re.sub(r'^(?:BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',dst)
+              dst_reg=clean_dst if clean_dst in regs else None
+              if mn=='lea' and dst_reg and len(ops)>1:
+                  b,off=mem(ops[1])
+                  if b=='rsp' and off==0x2e0:
+                      state[dst_reg]='bundle_base'
+                  elif b=='rsp' and off==0x310:
+                      state[dst_reg]='bundle_30'
+                  elif b and state.get(b)=='bundle_base' and off==0x30:
+                      state[dst_reg]='bundle_30'
+                  else:
+                      state[dst_reg]=None
+              elif mn=='mov' and dst_reg and len(ops)>1:
+                  src=ops[1]
+                  if src in regs and state.get(src):
+                      state[dst_reg]=state[src]
+                  else:
+                      b,off=mem(src)
+                      if b and state.get(b)=='bundle_base' and off==0x30:
+                          state[dst_reg]='bundle_30'
+                      else:
+                          state[dst_reg]=None
+              elif dst_reg and mn not in ('test','cmp'):
+                  state[dst_reg]=None
+
+          print('# Restrictions bundle+0x30 consumer trace')
+          print()
+          print('This is the narrow follow-up to `analysis/restrictions-bundle30-stackslot.md`.')
+          print('It filters for `rsp+0x310` / `bundle_30` consumers inside `0x14cdc2a..0x14d4d4c`.')
+          print()
+          print('## Summary')
+          print(f'- exact `[rsp+0x310]` materializations/references: {len(exact310)}')
+          print(f'- calls with a `bundle_30` argument: {len(calls30)}')
+          print(f'- provider `+0x28` calls seen: {len(provider_calls)}')
+          print()
+
+          print('## Exact `[rsp+0x310]` contexts')
+          if not exact310:
+              print('\nNone found.\n')
+          for a,n,line,context in exact310[:20]:
+              print(f'### `0x{a:x}` `{line.strip()}`')
+              print('```text')
+              print(context)
+              print('```')
+              print()
+
+          print('## First calls after each `[rsp+0x310]` materialization')
+          if not direct_after:
+              print('\nNone found.\n')
+          else:
+              print('| source | following calls |')
+              print('|---|---|')
+              for a,after in direct_after[:20]:
+                  txt='; '.join(f'0x{aa:x} {l.strip()}' for aa,l in after)
+                  print(f'| `0x{a:x}` | `{md(txt)}` |')
+              print()
+
+          print('## Calls that carry `bundle_30` in an argument register')
+          if not calls30:
+              print('\nNone found. The slot is materialized but not passed to a call while the simple linear alias tracker still knows it. Inspect the exact contexts above.\n')
+          else:
+              print('| call | bundle_30 args | call |')
+              print('|---|---|---|')
+              for a,arg_state,line,context in calls30[:60]:
+                  txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+                  print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+              print()
+              print('### Contexts')
+              for a,arg_state,line,context in calls30[:12]:
+                  print(f'#### call `0x{a:x}` args `{", ".join(f"{k}={v}" for k,v in arg_state.items())}`')
+                  print('```text')
+                  print(context)
+                  print('```')
+                  print()
+
+          print('## Provider calls')
+          print('| call | tracked args |')
+          print('|---|---|')
+          for a,arg_state,line in provider_calls:
+              txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+              print(f'| `0x{a:x}` | `{md(txt)}` |')
+          print()
+
+          print('## Interpretation')
+          print('- A `bundle_30` call argument is the strongest candidate for the helper that populates or consumes Restrictions `bundle+0x30`.')
+          print('- If no `bundle_30` call argument is tracked, the next step is manual/automated local control-flow slicing around the exact `[rsp+0x310]` context rather than broader provider-vector scanning.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-bundle30-consumers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions bundle30 consumers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
