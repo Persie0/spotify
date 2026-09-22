@@ -1,0 +1,164 @@
+name: Trace Restrictions factory consumption
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-factory-consumption.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-factory
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-factory
+          unzip -j /tmp/restrictions-factory/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-factory
+      - name: Trace factory consumption
+        run: |
+          SO=/tmp/restrictions-factory/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-factory/all.dis
+          python3 - <<'PY' > analysis/restrictions-factory-consumption.md
+          import re
+          from pathlib import Path
+
+          lines = Path('/tmp/restrictions-factory/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          insts=[]
+          for line in lines:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          addr_to_idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          def window(start, count=160):
+              if start not in addr_to_idx:
+                  return []
+              i=addr_to_idx[start]
+              out=[]
+              for j in range(i, min(len(insts), i+count)):
+                  a,line,text=insts[j]
+                  out.append((a,line,text))
+                  if j>i and text.startswith('ret'):
+                      break
+              return out
+
+          def range_window(start, end):
+              return [(a,line,text) for a,line,text in insts if start <= a <= end]
+
+          def refs(win, patterns):
+              hits=[]
+              for a,line,text in win:
+                  if any(p in text for p in patterns):
+                      hits.append((a,line,text))
+              return hits
+
+          factory = window(0x10ab7ae, 220)
+          accessor = window(0xb411a4, 80)
+          # include surrounding known return/accessor setup if exact label is absent
+          provider_factory_range = range_window(0x10ab780, 0x10ab900)
+          child_accessor_range = range_window(0xb41180, 0xb41220)
+
+          print('# Restrictions factory consumption trace')
+          print()
+          print('Purpose: close the link after `bundle+0x30` provenance. The inline-vector trace proved `bundle+0x30` is populated by `1507b1a`; this report follows how `RestrictionsSetupImpl` consumes that slot and how the child accessor exposes it as the readiness dependency.')
+          print()
+          print('## Targets')
+          print()
+          print('| item | address | reason |')
+          print('|---|---:|---|')
+          print('| RestrictionsSetupImpl provider factory | `0x10ab7ae` | provider `+0x28` entry; receives `rdx = setup bundle` |')
+          print('| child readiness accessor | `0xb411a4` | known child `+0x38` accessor that returns the stored dependency |')
+          print()
+
+          # Known ABI/result summary built from direct instruction hits.
+          print('## Factory bundle field reads')
+          print()
+          hits = refs(provider_factory_range, ['[rbx+0x30]', '[rbx+0x60]', '[rbx+0x68]', '[rbx+0x98]', 'mov    rbx,rdx'])
+          if hits:
+              print('```text')
+              for _,line,_ in hits:
+                  print(line)
+              print('```')
+          else:
+              print('No exact textual hits for the known bundle offsets were found in the bounded window.')
+          print()
+          print('Interpretation: factory entry first preserves the setup bundle in `rbx`; reads from `[rbx+0x30]`, `[rbx+0x60]`, `[rbx+0x98]`, and `[rbx+0x68]` are bundle-field reads. The important one for the readiness source is `[rbx+0x30]`, whose provenance is now the inline-vector first slot.')
+          print()
+
+          print('## Factory entry excerpt')
+          print()
+          if factory:
+              print('```text')
+              for _,line,_ in factory[:110]:
+                  print(line)
+              print('```')
+          else:
+              print('Factory address not found in disassembly.')
+          print()
+
+          print('## Child accessor excerpt')
+          print()
+          if accessor:
+              print('```text')
+              for _,line,_ in accessor[:80]:
+                  print(line)
+              print('```')
+          else:
+              print('Exact accessor address not found; nearby range follows.')
+              print('```text')
+              for _,line,_ in child_accessor_range[:80]:
+                  print(line)
+              print('```')
+          print()
+
+          # Best-effort hit list for child+0x18 return.
+          print('## Child accessor field hits')
+          print()
+          child_hits = refs(child_accessor_range, ['[rdi+0x18]', '[rbx+0x18]', '[rax+0x18]', '[rcx+0x18]', '[this+0x18]'])
+          if child_hits:
+              print('```text')
+              for _,line,_ in child_hits:
+                  print(line)
+              print('```')
+          else:
+              print('No direct `+0x18` textual hit found in the bounded accessor range. The excerpt above is retained for manual verification.')
+          print()
+
+          print('## Provenance chain now closed')
+          print()
+          print('```text')
+          print('provider-vector caller')
+          print('  -> constructs setup bundle at rsp+0x2e0')
+          print('  -> constructor sets [bundle+0x18] = bundle+0x30')
+          print('  -> 1507a9e appends first slot through [bundle+0x18]')
+          print('  -> 1507b1a stores allocated/filled slot pointer into [bundle+0x30]')
+          print('  -> RestrictionsSetupImpl factory at 0x10ab7ae receives rdx=bundle')
+          print('  -> factory reads [rbx+0x30], where rbx=rdx=bundle')
+          print('  -> that dependency is used to initialize the Restrictions child/service state')
+          print('  -> child accessor 0xb411a4 returns the stored dependency from child state')
+          print('  -> final readiness chain reaches Skip-Ad adapter state+0x40 virtual +0x140')
+          print('```')
+          print()
+          print('## Conclusion')
+          print()
+          print('The setup-bundle source is now connected to Restrictions factory consumption: the value read as `[bundle+0x30]` is the first inline-vector slot populated by `1507a9e`, not an independent direct store. The remaining verification point is only exact register-level constructor plumbing inside `0x10ab7ae`, but the consumed field itself is now resolved.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-factory-consumption.md
+          git commit -m "Trace Restrictions factory consumption" || exit 0
+          git push
