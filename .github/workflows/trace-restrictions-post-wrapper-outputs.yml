@@ -1,0 +1,197 @@
+name: Trace Restrictions post-wrapper output consumption
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-post-wrapper-outputs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace post-wrapper output consumption
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-post-wrapper-output-consumption.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if not m:
+                  continue
+              insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+
+          by_addr = {a:(l,t) for a,l,t in insns}
+          ctor_start = 0x10aba36
+          ctor_end = 0x10ac260
+          ctor = [(a,l,t) for a,l,t in insns if ctor_start <= a < ctor_end]
+
+          targets = {
+              0x15e768e: '15e768e / slot AP +0x90 wrapper',
+              0x15e75f2: '15e75f2 / slot AP +0x98 wrapper',
+              0xa7b5e8:  'a7b5e8 / cleanup-style wrapper',
+          }
+
+          def fmt(ws, limit=120):
+              rows = [l for _,l,_ in ws[:limit]]
+              if len(ws) > limit:
+                  rows.append(f'... truncated {len(ws)-limit} more instructions ...')
+              return '```text\n' + ('\n'.join(rows) if rows else '(none)') + '\n```\n'
+
+          # Locate calls to the wrappers in constructor body.
+          callsites = []
+          for i,(a,l,t) in enumerate(ctor):
+              if 'call' not in t:
+                  continue
+              for target, name in targets.items():
+                  if f'{target:x}' in t:
+                      ctx = ctor[max(0,i-14):min(len(ctor),i+28)]
+                      after = ctor[i+1:min(len(ctor),i+22)]
+                      callsites.append((i,a,target,name,l,ctx,after))
+
+          # Generic immediate return-use tracker.
+          return_uses = []
+          for i,a,target,name,line,ctx,after in callsites:
+              ret_origin = f'return from {name} at {a:#x}'
+              regs = {'rax': ret_origin, 'al': ret_origin, 'eax': ret_origin}
+              for aa,ll,tt in after:
+                  # stop tracking at next non-trivial call, but include it.
+                  used = []
+                  for r,origin in regs.items():
+                      if re.search(rf'\b{re.escape(r)}\b', tt):
+                          used.append(origin)
+                  if used:
+                      return_uses.append((a, aa, '; '.join(sorted(set(used))), ll))
+                  # Track mov reg, rax/eax etc.
+                  m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)|e(?:ax|bx|cx|dx|si|di|bp)|[abcd]l),\s*(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)|e(?:ax|bx|cx|dx|si|di|bp)|[abcd]l)\b', tt)
+                  if m and m.group(2) in regs:
+                      regs[m.group(1)] = regs[m.group(2)]
+                  # Track test/cmp al/eax/rax then branch as return condition use.
+                  if 'call' in tt:
+                      break
+
+          # Constructor object / dependency field-write tracker.
+          aliases = {
+              'rdi': 'constructor_this_initial',
+              'rcx': 'bundle30_slot_arg_initial',
+          }
+          field_events = []
+          call_arg_events = []
+          for a,l,t in ctor:
+              # simple register alias moves
+              m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15))\b', t)
+              if m and m.group(2) in aliases:
+                  aliases[m.group(1)] = aliases[m.group(2)]
+              # lea dst,[tracked+off]
+              m = re.search(r'\blea\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'addr({origin}:{mem})'
+                          break
+              # mov reg,[tracked+off]
+              m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR )?\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'load({origin}:{mem})'
+                          break
+              # tracked memory refs/writes
+              for r,origin in list(aliases.items()):
+                  if re.search(rf'\[[^\]]*\b{re.escape(r)}\b[^\]]*\]', t):
+                      mem = re.search(r'\[([^\]]+)\]', t).group(1)
+                      is_write = bool(re.match(r'\b(?:mov|movups|movaps|and|or|xor|add|sub|inc|dec|xchg)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', t))
+                      if is_write or '+0x18' in mem or '+0x10' in mem or '+0x20' in mem or '+0x28' in mem or '+0x30' in mem:
+                          field_events.append((a, origin, mem, 'write' if is_write else 'read', l))
+              if 'call' in t:
+                  tracked_args=[]
+                  for arg in ['rdi','rsi','rdx','rcx','r8','r9','rax','rbx','rbp','r12','r13','r14','r15']:
+                      if arg in aliases:
+                          tracked_args.append(f'{arg}={aliases[arg]}')
+                  if tracked_args:
+                      call_arg_events.append((a, ', '.join(tracked_args), l))
+
+          # Window summaries around known wrapper callsites and a wider post-call tail.
+          md=[]
+          md.append('# Restrictions post-wrapper output consumption trace\n\n')
+          md.append('Purpose: after rejecting the `builder+0x18` sink as a semantic Restrictions object in the wrapper-local layout, trace what constructor `0x10aba36` does *after* the wrapper calls (`15e768e`, `a7b5e8`, `15e75f2`). This focuses on return-value use, constructor object field writes, and calls with tracked constructor/dependency arguments.\n\n')
+          md.append('## Wrapper callsites in constructor `0x10aba36`\n\n')
+          if not callsites:
+              md.append('No wrapper callsites found in scanned constructor window.\n')
+          for _,a,target,name,line,ctx,after in callsites:
+              md.append(f'### `{a:#x}` -> `{name}`\n\n')
+              md.append(fmt(ctx, 80))
+
+          md.append('## Immediate wrapper return-value uses\n\n')
+          if return_uses:
+              md.append('| wrapper call | use addr | origin | instruction |\n|---:|---:|---|---|\n')
+              for call_addr,use_addr,origin,line in return_uses[:120]:
+                  md.append(f'| `{call_addr:#x}` | `{use_addr:#x}` | `{origin}` | `{line.strip()}` |\n')
+          else:
+              md.append('No immediate `rax/eax/al` return-value uses found before the next call in the scanned post-call windows. This suggests the wrappers are primarily side-effect calls into stack-local output/finalization helpers, or the return is ignored in this constructor path.\n')
+          md.append('\n')
+
+          md.append('## Constructor object / bundle30-slot field events\n\n')
+          md.append('Initial aliases: `rdi=constructor_this_initial`, `rcx=bundle30_slot_arg_initial`. Aliases are simple syntactic propagation only.\n\n')
+          if field_events:
+              md.append('| addr | origin | mem | kind | instruction |\n|---:|---|---|---|---|\n')
+              for a,origin,mem,kind,line in field_events[:200]:
+                  md.append(f'| `{a:#x}` | `{origin}` | `{mem}` | `{kind}` | `{line.strip()}` |\n')
+          else:
+              md.append('No tracked constructor/dependency field events found.\n')
+          md.append('\n')
+
+          md.append('## Calls with tracked constructor/dependency args\n\n')
+          if call_arg_events:
+              md.append('| addr | tracked args | instruction |\n|---:|---|---|\n')
+              for a,args,line in call_arg_events[:160]:
+                  md.append(f'| `{a:#x}` | `{args}` | `{line.strip()}` |\n')
+          else:
+              md.append('No calls with tracked args found.\n')
+          md.append('\n')
+
+          # Important focused post sections after each call until next wrapper/known transition.
+          md.append('## Interpretation checklist\n\n')
+          md.append('- If wrapper returns are unused, the stack-local output objects likely serve as temporary builder/finalizer inputs inside the wrapper itself.\n')
+          md.append('- If constructor object writes cluster before the wrapper calls, `child+0x18` may have been set earlier by a helper not in the naive scanned direct-store window.\n')
+          md.append('- If post-wrapper calls carry `constructor_this_initial` plus wrapper-produced state, those calls become the next semantic target.\n')
+          md.append('- If no post-wrapper consumption is visible, the next target should be resolving constructor helper calls that receive `constructor_this_initial` and `bundle30_slot_arg_initial`, rather than following builder internals.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-post-wrapper-output-consumption.md
+          git commit -m 'Trace Restrictions post-wrapper output consumption' || exit 0
+          git push
