@@ -1,5 +1,5 @@
 name: Trace Restrictions provider callsite
-# kick: rerun after initial workflow registration
+# concise: keep generated report readable by connectors
 
 on:
   workflow_dispatch:
@@ -27,122 +27,116 @@ jobs:
           mkdir -p /tmp/restr-callsite
           gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restr-callsite
           unzip -j /tmp/restr-callsite/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restr-callsite
-      - name: Trace Restrictions callsite
+      - name: Trace Restrictions callsite concisely
         run: |
           SO=/tmp/restr-callsite/liborbit-jni-spotify.so
           objdump -d -M intel "$SO" > /tmp/restr-callsite/all.dis
-          readelf -rW "$SO" > /tmp/restr-callsite/rel.txt
           python3 - <<'PY' > analysis/restrictions-provider-callsite.md
           from pathlib import Path
           import re, bisect
 
-          dis = Path('/tmp/restr-callsite/all.dis').read_text(errors='replace').splitlines()
-          ins = []
-          for i, line in enumerate(dis):
-              m = re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+          lines = Path('/tmp/restr-callsite/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', l)
               if m:
-                  ins.append((int(m.group(1),16), i, m.group(2), line))
-          addrs = [x[0] for x in ins]
-          def idx(addr): return bisect.bisect_left(addrs, addr)
-          def ctx(addr, before=28, after=18):
-              j = idx(addr)
-              return '\n'.join('    ' + x[3] for x in ins[max(0, j-before):min(len(ins), j+after+1)])
-          def prev_write(window, reg):
+                  ins.append((int(m.group(1),16), i, m.group(2), l))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def stripline(line): return re.sub(r'^\s+', '', line)
+          def prev_write(call_i, reg, back=80):
               pat = re.compile(rf'\b(?:mov|lea|xor|pop)\s+{reg}\b|\bmov\s+{reg}d\b|\bmov\s+{reg[1:]}\b')
-              for a,i,op,line in reversed(window):
-                  if pat.search(op):
-                      return (a, op, line)
+              for a,i,op,l in reversed(ins[max(0,call_i-back):call_i+1]):
+                  if pat.search(op): return a,op,l
               return None
-          def stack_base_from_source(reg, call_index):
-              window = ins[max(0, call_index-70):call_index+1]
-              w = prev_write(window, reg)
-              if not w:
-                  return None, None
-              a, op, line = w
-              m = re.search(r'lea\s+' + re.escape(reg) + r',\[rsp\+0x([0-9a-f]+)\]', op)
-              if m:
-                  return int(m.group(1), 16), line
-              m = re.search(r'mov\s+' + re.escape(reg) + r',([a-z0-9]+)', op)
+          def stack_base(reg, call_i, depth=0):
+              if depth > 3: return None, None
+              w=prev_write(call_i,reg)
+              if not w: return None, None
+              a,op,l=w
+              m=re.search(r'lea\s+'+re.escape(reg)+r',\[rsp\+0x([0-9a-f]+)\]',op)
+              if m: return int(m.group(1),16), l
+              m=re.search(r'mov\s+'+re.escape(reg)+r',([a-z0-9]+)',op)
               if m and m.group(1) in ('r14','r15','r13','r12','rbx','rbp'):
-                  return stack_base_from_source(m.group(1), idx(a))
-              return None, line
-          def stack_write_lines(base, call_index, back=220):
-              if base is None:
-                  return []
-              targets = {base+o for o in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x78,0x80,0x98)}
+                  return stack_base(m.group(1), idx(a), depth+1)
+              return None, l
+          def stack_writes(base, call_i, offset=0x30, back=260, limit=10):
+              if base is None: return []
+              target=f'[rsp+0x{base+offset:x}]'
               out=[]
-              for a,i,op,line in ins[max(0, call_index-back):call_index]:
-                  for t in targets:
-                      if f'[rsp+0x{t:x}]' in op:
-                          dst = op.split(',',1)[0]
-                          if '[rsp+' in dst or op.startswith(('lea','mov','and','xor','movups','movaps','movdqa','movdqu')):
-                              out.append((a,line))
-                          break
-              return out
+              for a,i,op,l in ins[max(0,call_i-back):call_i]:
+                  if target in op:
+                      dst=op.split(',',1)[0]
+                      if target in dst or op.startswith(('lea','mov','and','xor','movups','movaps','movdqa','movdqu')):
+                          out.append(stripline(l))
+              return out[-limit:]
 
-          provider_start, provider_end = 0x14cdc2a, 0x14d4d4c
-          region = [x for x in ins if provider_start <= x[0] < provider_end]
+          start,end=0x14cdc2a,0x14d4d4c
+          region=[x for x in ins if start <= x[0] < end]
+          calls=[x for x in region if re.search(r'call\s+QWORD PTR \[rax\+0x28\]',x[2])]
+
           print('# Restrictions provider callsite trace')
           print()
-          print('Known Restrictions provider identity from earlier reports:')
-          print('- provider descriptor AP: `0x184ca50`')
-          print('- provider ID: `0x9e`')
-          print('- provider name: `RestrictionsSetupImpl`')
-          print('- provider factory: `0x10ab7ae`')
-          print('- ranked provider-vector caller FDE: `0x14cdc2a..0x14d4d4c`')
+          print('Known target identity: descriptor AP `0x184ca50`, ID `0x9e`, name `RestrictionsSetupImpl`, factory `0x10ab7ae`.')
+          print('Provider-vector caller FDE: `0x14cdc2a..0x14d4d4c`. The provider factory ABI is `rdi=sret`, `rsi=descriptor`, `rdx=shared setup bundle`, `rcx=registry context`.')
           print()
-          print('The goal is to identify which provider-vector call invokes the Restrictions factory and what stack/local setup bundle is passed as `rdx`, especially its `+0x30` source.')
+          print('## Summary')
+          print(f'- Provider-like `+0x28` calls in ranked FDE: {len(calls)}')
+          print('- This report is intentionally concise; older huge report was replaced because it was not connector-readable.')
+          print()
 
-          print('\n## Direct xrefs / materializations for Restrictions descriptor and factory')
-          needles = ('184ca50', '10ab7ae', '0x9e')
-          for a,i,op,line in ins:
-              if any(n in line for n in needles):
-                  print(f'### 0x{a:x}: {op}')
-                  print(ctx(a, 20, 20)); print()
+          print('## Restrictions descriptor/factory xrefs')
+          hits=[]
+          for a,i,op,l in ins:
+              if any(n in l for n in ('184ca50','10ab7ae')):
+                  hits.append(stripline(l))
+          for h in hits[:80]: print('- `'+h+'`')
+          if len(hits)>80: print(f'- ... truncated {len(hits)-80} more hits')
+          print()
 
-          print('\n## Provider +0x28 calls in ranked provider-vector caller')
-          calls=[]
-          for a,i,op,line in region:
-              if re.search(r'call\s+QWORD PTR \[rax\+0x28\]', op):
-                  calls.append((a,i,op,line))
-          print(f'Total calls: {len(calls)}')
-          for n,(a,i,op,line) in enumerate(calls,1):
-              win = ins[max(0, idx(a)-45):idx(a)+1]
-              rsi = prev_write(win, 'rsi')
-              rdx = prev_write(win, 'rdx')
-              rdi = prev_write(win, 'rdi')
-              base, base_line = stack_base_from_source('rdx', idx(a))
-              print(f'### call #{n} at 0x{a:x}')
-              print(f'- last rdi write: `{rdi[2].strip() if rdi else "none"}`')
-              print(f'- last rsi write: `{rsi[2].strip() if rsi else "none"}`')
-              print(f'- last rdx write: `{rdx[2].strip() if rdx else "none"}`')
-              print(f'- resolved rdx stack base: `{("rsp+0x%x" % base) if base is not None else "unresolved"}`')
-              if base_line:
-                  print(f'- base evidence: `{base_line.strip()}`')
+          print('## Provider +0x28 callsite table')
+          print('| # | call | last `rsi` source | last `rdx` source | resolved `rdx` stack base | `bundle+0x30` writes before call |')
+          print('|---:|---|---|---|---|---|')
+          all_call_data=[]
+          for n,(a,i,op,l) in enumerate(calls,1):
+              ci=idx(a)
+              rsi=prev_write(ci,'rsi')
+              rdx=prev_write(ci,'rdx')
+              base,be=stack_base('rdx',ci)
+              writes=stack_writes(base,ci,0x30)
+              all_call_data.append((n,a,base,rsi,rdx,writes))
+              def cell(x):
+                  if not x: return ''
+                  return stripline(x[2]).replace('|','\\|') if isinstance(x,tuple) else str(x).replace('|','\\|')
+              wcell='<br>'.join('`'+w.replace('|','\\|')+'`' for w in writes) if writes else ''
+              print(f'| {n} | `0x{a:x}` | `{cell(rsi)}` | `{cell(rdx)}` | `{("rsp+0x%x"%base) if base is not None else ""}` | {wcell} |')
+          print()
+
+          print('## Expanded callsite contexts')
+          for n,a,base,rsi,rdx,writes in all_call_data:
+              print(f'### call #{n} `0x{a:x}`')
+              print(f'- resolved rdx stack base: `{("rsp+0x%x"%base) if base is not None else "unresolved"}`')
+              if rsi: print(f'- rsi: `{stripline(rsi[2])}`')
+              if rdx: print(f'- rdx: `{stripline(rdx[2])}`')
+              if writes:
+                  print('- recent `bundle+0x30` writes:')
+                  for w in writes: print(f'  - `{w}`')
               print()
-              print(ctx(a, 36, 12)); print()
-              sw = stack_write_lines(base, idx(a))
-              if sw:
-                  print('#### candidate setup-bundle stack writes before call')
-                  for _, l in sw[-80:]:
-                      print('    ' + l)
-                  print()
-              else:
-                  print('#### candidate setup-bundle stack writes before call')
-                  print('    none found for resolved stack-base offsets in the scan window')
-                  print()
 
-          print('\n## Candidate descriptor vector slots near provider calls')
+          print('## Candidate descriptor vector slot references inside ranked FDE')
           for pat in ('[r13+0xa0]', '[r15+0x18]', '[r15+0x30]', '[r15+0x38]', '[r15+0x48]', '[r15+0x78]', '[rbp+0x98]', '[rbp+0x20]', '[rbp+0x30]', '[r12+0x30]', '[r12+0x48]'):
-              print(f'### {pat}')
-              for a,i,op,line in region:
-                  if pat in op:
-                      print('    ' + line)
+              refs=[stripline(l) for a,i,op,l in region if pat in op]
+              if not refs: continue
+              print(f'### `{pat}`')
+              for r in refs[:50]: print(f'- `{r}`')
+              if len(refs)>50: print(f'- ... truncated {len(refs)-50} more refs')
               print()
 
-          print('\n## Factory body entry reminder: RestrictionsSetupImpl loads from its bundle')
-          print('The Restrictions factory uses `rdx` as its shared bundle alias (`rbx=rdx`) and early-loads fields such as `[rbx+0x30]`, `[rbx+0x60]`, `[rbx+0x98]`, and `[rbx+0x68]`.')
-          print(ctx(0x10ab824, 20, 45))
+          print('## Restrictions factory bundle loads')
+          print('At factory entry, `rdx` is saved as the shared setup bundle alias (`rbx=rdx`). The early field loads are the reason `bundle+0x30` matters:')
+          for a,i,op,l in ins:
+              if 0x10ab7bf <= a <= 0x10ab846 and ('rbx+0x' in op or 'mov    rbx,rdx' in op):
+                  print(f'- `{stripline(l)}`')
           PY
       - name: Commit report
         run: |
