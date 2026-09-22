@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, rejecting wrapper-local builder false leads, tracing the constructor-owned `this+0x78` lifecycle, adding the targeted reader/method trace for the installed object, and tracing the first `vtable+0x28` provenance edge.
+This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, tracing the constructor-owned `this+0x78` lifecycle, and following the first constructor-tail wrapper objects.
 
 ## Correct high-level chain
 
@@ -12,23 +12,13 @@ readiness-source object
       |          AP 0x1834418/+0x30 -> 0xee6db8
       v
   ece57c
-      |
       | copies first 16 bytes of arg12
       v
 0x98-byte erased/shared wrapper
-      |
       v
 owner+0x428
-      |
       v
-e99d07
-      |
-      v
-fd4c04
-      |
-      v
-Skip-Ad adapter outer+0x58 / this+0x40
-      |
+e99d07 -> fd4c04 -> Skip-Ad adapter outer+0x58 / this+0x40
       v
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
@@ -54,7 +44,7 @@ base+0x28 = rbx
 base+0x48 = copied owner+0x470 pair
 ```
 
-`0x1843bf8:+0x10` resolves to `0xfec736`, which delegates through `interface+0x8` to the owner field `base+0x20`. Construction shows `base+0x20` is the secondary interface at `AP 0x1832be8`, not the rejected raw `0x6b0` record.
+`0x1843bf8:+0x10` resolves to `0xfec736`, which delegates through `interface+0x8` to the owner field `base+0x20`. Construction shows `base+0x20` is the secondary interface at `AP 0x1832be8`, not the rejected raw `0x6b0` record:
 
 ```text
 0x1843bf8:+0x10
@@ -81,14 +71,26 @@ registry ID 0x9e
       -> factory supplies constructor rcx from input dependency bundle +0x30
 ```
 
-## Setup-bundle source: closed
+Factory-consumption evidence:
 
-`bundle+0x30` is the first element of inline vector storage for the vector subobject at `bundle+0x18`, not an independent direct field store.
+```text
+10ab824  mov rax, [rbx+0x30]
+10ab828  mov [rsp+0x40], rax
+...
+10ab949  mov rcx, [rsp+0x40]
+10ab97f  call 10aba36
+
+b411a4   mov rax, [rdi+0x18]
+b411a8   ret
+```
+
+## Setup-bundle and slot-object path: closed
+
+`bundle+0x30` is the first element of inline vector storage for the vector subobject at `bundle+0x18`, not an independent direct field store:
 
 ```text
 provider-vector caller
   -> constructs setup bundle at rsp+0x2e0
-  -> rcx = rsp+0x310 = bundle+0x30
   -> [bundle+0x18] = bundle+0x30
   -> 166103c(bundle, post_add2a_obj)
   -> bundle.vtable+0x30 = 0x153cbfc
@@ -97,87 +99,34 @@ provider-vector caller
   -> 1507b1a stores that object pointer through [bundle+0x18] into bundle+0x30
   -> 153d2a4 fills that object from the descriptor stream
   -> RestrictionsSetupImpl factory reads [rdx+0x30]
-  -> factory copies it to rsp+0x40
   -> factory passes it as rcx into constructor 0x10aba36
-  -> child +0x38 / b411a4 returns child+0x18
 ```
 
-Factory-consumption evidence:
-
-```text
-10ab7c2  mov rbx, rdx
-10ab824  mov rax, [rbx+0x30]
-10ab828  mov [rsp+0x40], rax
-...
-10ab93c  mov rdi, rbx
-10ab93f  mov rsi, [rsp+0x58]
-10ab944  mov rdx, [rsp+0x50]
-10ab949  mov rcx, [rsp+0x40]
-10ab94e  mov r9,  [rsp+0x48]
-10ab97f  call 10aba36
-
-b411a4   mov rax, [rdi+0x18]
-b411a8   ret
-```
-
-## Slot object and descriptor/builder path
-
-At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, repeatedly dereferenced, and passed into deeper helpers. It is not a simple direct store to `child+0x18` in the scanned constructor windows.
-
-The slot object AP is relocation-filled, so raw `.data.rel.ro` bytes read as zero. Relocation-aware resolution gives:
+Slot AP relocation-aware resolution:
 
 ```text
 slot AP 0x187e2f8
-  +0x30 -> 0x153d2a4   ; fill method already seen from 153cbfc
-  +0x90 -> 0x165dd40   ; semantic target used by 15e768e
-  +0x98 -> 0x153d0d0   ; semantic target used by 15e75f2
+  +0x30 -> 0x153d2a4
+  +0x90 -> 0x165dd40
+  +0x98 -> 0x153d0d0
 ```
 
-`0x165dd40` is a descriptor/field interpreter, not the final readiness method. It iterates descriptor entries and calls branch helpers that write/update temporary builder/output objects:
+`0x165dd40` is a descriptor/field interpreter, not the final readiness method. Its branch helpers and deeper helpers write temporary builder/output buffers and do not touch `child+0x18`:
 
 ```text
-0x165dd40 parent interpreter
-  -> 165e51e(builder/output object, field id, scalar/value)
-  -> 165cc82(builder/output object, field id, type tag)
-  -> 165e60c(builder/output object, descriptor element value)
-```
-
-The deeper emit helpers are buffer/capacity helpers and do not directly touch `child+0x18`:
-
-```text
-165c600 / 165c67e / 165c6ca / 165c7ae / 165d0d4
-  -> buffer/growth/scalar emit helpers
+0x165dd40
+  -> 165e51e / 165cc82 / 165e60c builder writers
+  -> 165c600 / 165c67e / 165c6ca / 165c7ae / 165d0d4 buffer emit helpers
   -> child+0x18 hits = 0
 ```
 
-The wrapper-local output layout rejects the `builder+0x18` sink as a semantic Restrictions object because it overlaps the stack canary or adjacent local outputs:
+The wrapper-local `builder+0x18` sink was rejected because in the relevant wrapper call path it overlaps the stack canary or adjacent local outputs.
+
+## Constructor `this+0x78` lifecycle
+
+After the final two `15e75f2` calls, the constructor enters a persistent object allocation sequence:
 
 ```text
-15e768e out0 = rsp+0x38 -> out0+0x18 = rsp+0x50 = stack canary
-15e75f2 out0 = rsp+0x18 -> out0+0x18 = rsp+0x30 = stack canary
-```
-
-## Post-wrapper constructor consumption
-
-Wrapper return values are not semantically consumed. The apparent `rax` uses after `15e768e` are just stack cleanup pops of extra pushed arguments:
-
-```text
-10abb9b  call 15e768e
-10abba0  pop rax
-10abba1  pop rcx
-10abba2  mov rdi, r12
-10abba5  call a7b5e8
-```
-
-The same pattern repeats for the other `15e768e` callsites.
-
-## `this+0x78` lifecycle: persistent pivot
-
-The constructor transitions into persistent object allocation after the final two `15e75f2` calls:
-
-```text
-10ac0f1  call 15e75f2
-10ac120  call 15e75f2
 10ac12c  operator new(0x28)
 10ac131  r14 = allocated_0x28
 10ac149  operator new(0x30)
@@ -192,14 +141,12 @@ The constructor transitions into persistent object allocation after the final tw
 10ac1a9  [this+0x78_target] = allocated_0x28
 ```
 
-`a7a290` is a small erased/shared-wrapper copy helper. `ac39da` is a mode-based destroy/copy helper. `10adc16` reads `[rsi]`, then `[that+0x20]`, calls `aad0ba`, and returns `rdi`.
-
-After `allocated_0x28` is installed through the `this+0x78` slot, the constructor builds more inner objects:
+Then more inner objects are created:
 
 ```text
 10ac1ba  operator new(0x58)
 10ac1c6  [allocated_0x58+0x00] = 0x187e260
-...
+
 10ac249  operator new(0x150)
 10ac255  [allocated_0x150+0x00] = 0x184d808
 10ac262..10ac27e  zero [allocated_0x150+0x08..0x87]
@@ -212,20 +159,11 @@ After `allocated_0x28` is installed through the `this+0x78` slot, the constructo
 10ac309  [allocated_0x150+0x140] = 0
 ```
 
-## `this+0x78` reader and `vtable+0x28` trace: latest result
+## First `vtable+0x28` calls and `wrapper_0x80`
 
-The fast reader trace and the vtable-provenance trace confirm the immediate post-install call sequence:
+The post-install reader/method trace shows two indirect `vtable+0x28` calls:
 
 ```text
-10ac216  call 15e74c8
-10ac230  call a7b84f
-10ac23f  call aa6d30
-10ac249  operator new(0x150)
-10ac255  [allocated_0x150+0x00] = 0x184d808
-...
-10ac339  call 15e74c8
-10ac358  call a7b84f
-10ac36d  call aa6d30
 10ac372  mov rdi, [rsp+0x40]
 10ac377  mov rax, [rdi]
 10ac37a  call [rax+0x28]
@@ -236,48 +174,98 @@ The fast reader trace and the vtable-provenance trace confirm the immediate post
 10ac389  r15 = return_from_second_vtable28
 ```
 
-The two returned objects are then packed into a newly allocated `0x80` wrapper object:
+Those returns are packed into `wrapper_0x80`:
 
 ```text
 10ac391  operator new(0x80)
 10ac399  lea rax, 0x184d0a0
 10ac3a0  [wrapper_0x80+0x00] = 0x184d0a0
-10ac3a3  [wrapper_0x80+0x08] = r14_return
-10ac3a7  [wrapper_0x80+0x10] = r15_return
+10ac3a3  [wrapper_0x80+0x08] = first returned object
+10ac3a7  [wrapper_0x80+0x10] = second returned object
 10ac3ab  rax = [rsp+0x28]          ; allocated_0x150
 10ac3b0  [wrapper_0x80+0x18] = allocated_0x150
 ```
 
-So the latest semantic edge is **not** a direct `child+0x18` assignment. It is:
+This is not a direct `child+0x18` assignment.
+
+## `wrapper_0x80` continuation: latest result
+
+The wrapper trace shows `wrapper_0x80` is initialized further and saved in a stack slot, not immediately exported:
 
 ```text
-this+0x78 installed object family
-  -> two vtable+0x28 calls
-  -> r14/r15 returned objects
-  -> wrapper_0x80 with AP/literal 0x184d0a0
-      +0x08 = first returned object
-      +0x10 = second returned object
-      +0x18 = allocated_0x150 timer/state object
+10ac3b4  r15 = wrapper_0x80
+10ac3b7  call b64110
+10ac3bc  [wrapper_0x80+0x20] = rax
+10ac3c0  [wrapper_0x80+0x28] = rdx
+10ac3c4  [wrapper_0x80+0x30] = 0
+10ac3c9  rdi = wrapper_0x80+0x38
+10ac3cd  rsi = [wrapper_0x80+0x18] ; allocated_0x150
 ```
 
-The vtable-provenance trace also showed:
+It then builds erased stack wrappers around `wrapper_0x80` and calls methods on `allocated_0x150`:
 
 ```text
-[rsp+0x40]
-  -> only one reference in the scanned constructor window: the load at 10ac372
-  -> provenance must be from earlier frame setup or an outer stack/local alias
+10ac3d9  [stack_wrapper] = wrapper_0x80
+10ac3e3  [stack_wrapper+0x10] = a7c464
+10ac3ee  [stack_wrapper+0x18] = 10b2d7c
+10ac3f2  rax = [allocated_0x150]
+10ac3f5  call [rax+0x18]
 
-r15
-  -> used as the second vtable+0x28 receiver at 10ac386
-  -> after the call, overwritten with the second returned object
-  -> then stored into wrapper_0x80+0x10
+10ac408  rsi = [wrapper_0x80+0x18]
+10ac40c  [stack_wrapper] = wrapper_0x80
+10ac416  [stack_wrapper+0x10] = a7c464
+10ac421  [stack_wrapper+0x18] = 10b3082
+10ac425  rdi = wrapper_0x80+0x48
+10ac437  call [allocated_0x150.vtable+0x10]
 ```
 
-Important caution: the raw/AP mapping still does not resolve ordinary function entries for `0x184d898`. `0x184d898` has two constructor-like xrefs (`10ac180` and `10bff2c`) but no relocation-backed `+0x28` function entry in this report. The nearby APs `0x184d808` and `0x187e260` only exposed `__shared_weak_count::__get_deleter`-style relocation entries at their far slots, not the desired readiness method.
+Finally this branch stores the wrapper into a local slot and initializes local fields:
+
+```text
+10ac447  zero xmm0
+10ac44a  zero [wrapper_0x80+0x68]
+10ac44f  zero [wrapper_0x80+0x58]
+10ac454  [rsp+0x70] = wrapper_0x80
+10ac459  [wrapper_0x80+0x78] = 0x3f800000
+```
+
+If that branch is not taken, there is a fallback tiny object:
+
+```text
+10ac473  operator new(0x8)
+10ac478  AP/literal 0x184d1f0
+10ac47f  [rsp+0x70] = fallback_0x8
+10ac484  [fallback_0x8] = 0x184d1f0
+```
+
+Construction then continues into another object:
+
+```text
+10ac4e4  mov rdi, [rsp+0x40]
+10ac4ec  call [rax+0x28]
+10ac4ef  r14 = return_from_vtable28
+10ac4f7  operator new(0xd8)
+10ac4fc  AP/literal 0x184d9a8
+10ac503  [wrapper_0xd8+0x00] = 0x184d9a8
+10ac506  [wrapper_0xd8+0x08] = r14_return
+10ac50a  rsi = [rsp+0x28]          ; allocated_0x150
+10ac50f  [wrapper_0xd8+0x10] = allocated_0x150
+10ac513  [wrapper_0xd8+0x18] = 0
+```
+
+So the newest edge is:
+
+```text
+wrapper_0x80 / AP 0x184d0a0
+  -> initialized with returned objects + allocated_0x150
+  -> augmented with b64110 result and allocated_0x150 virtual calls
+  -> stored in [rsp+0x70]
+  -> constructor continues into wrapper_0xd8 / AP 0x184d9a8
+```
 
 ## Current conclusion
 
-The final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
+The final `state+0x40` dependency used by `fd381a` is still best attributed to a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
 Closed:
 
@@ -294,27 +282,28 @@ this+0x78 allocation sequence through allocated_0x28 install
 ac39da / 10adc16 stack-wrapper behavior
 this+0x78 fast reader trace through first [vtable+0x28] calls
 first vtable+0x28 return packing into wrapper_0x80 / AP 0x184d0a0
+wrapper_0x80 initialization through [rsp+0x70]
 ```
 
 Still open:
 
 ```text
-full provenance of [rsp+0x40] at 10ac372
+full provenance of [rsp+0x40] at 10ac372 / 10ac4e4
 full provenance of r15 before 10ac386
-concrete vtable+0x28 targets for both receivers
+concrete vtable+0x28 targets for the receivers
 lifecycle/readers of wrapper_0x80 AP 0x184d0a0
-whether wrapper_0x80 or its +0x08/+0x10 children feed child+0x18 / b411a4
+lifecycle/readers of wrapper_0xd8 AP 0x184d9a8
+whether wrapper_0x80, wrapper_0xd8, or their child objects feed child+0x18 / b411a4
 inner virtual +0x30 / state+0x40 readiness discriminator
 ```
 
-The next concrete batch should trace:
+Next concrete batch:
 
 ```text
-full 0x10aba36 frame setup for [rsp+0x40] and r15
-constructor tail after 10ac3b0
-AP/lifecycle/xrefs for 0x184d0a0
-where wrapper_0x80 is stored after creation
-whether wrapper_0x80, r14_return, or r15_return feed child+0x18 / b411a4 returned dependency
+trace constructor tail after 10ac50f / 10ac51b
+trace [rsp+0x70] consumption
+trace wrapper_0xd8 / AP 0x184d9a8 lifecycle
+search for the direct final store/read path to child+0x18 / b411a4
 ```
 
 ## Evidence reports
@@ -343,4 +332,5 @@ whether wrapper_0x80, r14_return, or r15_return feed child+0x18 / b411a4 returne
 - `analysis/restrictions-this78-lifecycle.md`
 - `analysis/restrictions-this78-readers-fast.md`
 - `analysis/restrictions-vtable28-provenance.md`
+- `analysis/restrictions-wrapper80-provenance.md`
 - `docs/15-skip-ad-signal.md`
