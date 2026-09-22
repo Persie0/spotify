@@ -1,0 +1,148 @@
+name: Trace Restrictions vtable30 summary
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-vtable30-summary.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/vtable30
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/vtable30
+          unzip -j /tmp/vtable30/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/vtable30
+      - name: Trace +0x30 method
+        run: |
+          SO=/tmp/vtable30/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/vtable30/all.dis
+          python3 - <<'PY' > analysis/restrictions-vtable30-method-summary.md
+          from pathlib import Path
+          import re
+          dis=Path('/tmp/vtable30/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for line in dis:
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m: ins.append((int(m.group(1),16),m.group(2),line))
+          start=0x153cbfc; end=0x153cd4e
+          body=[x for x in ins if start <= x[0] < end]
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          sub={'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15','al':'rax','cl':'rcx','dl':'rdx'}
+          def creg(r): return sub.get(r,r)
+          def norm(a): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',a).strip()
+          def mem(a):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]',a)
+              if not m: return None
+              off=int(m.group(3) or '0',16)
+              if m.group(2)=='-': off=-off
+              return creg(m.group(1)),off
+          def ops(op):
+              p=op.split(None,1)
+              if len(p)<2: return (p[0] if p else '',[])
+              mn,rest=p; out=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      out.append(cur.strip()); cur=''
+                  else: cur+=ch
+              if cur.strip(): out.append(cur.strip())
+              return mn,out
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          st={r:None for r in regs}
+          st['rdi']='bundle'
+          st['rsi']='descriptor'
+          st['rdx']='arg:rdx'
+          st['rcx']='arg:rcx'
+          st['r8']='arg:r8'
+          st['r9']='arg:r9'
+          reads=[]; writes=[]; calls=[]; allrefs=[]
+          for a,op,line in body:
+              mn,os=ops(op)
+              # collect mem refs before transfer update
+              for idx,arg in enumerate(os):
+                  b=mem(arg)
+                  if b and st.get(b[0]):
+                      desc=st[b[0]]+(f'{b[1]:+x}' if b[1] else '')
+                      rec=(a,desc,line)
+                      allrefs.append(rec)
+                      if idx==0 and mn not in ('cmp','test'):
+                          writes.append(rec)
+                      else:
+                          reads.append(rec)
+              if mn=='call':
+                  calls.append((a,{r:st.get(r) for r in ['rdi','rsi','rdx','rcx','r8','r9'] if st.get(r)},line))
+              if not os: continue
+              dst=norm(os[0]); dr=creg(dst)
+              if dr not in regs: continue
+              if mn=='lea' and len(os)>1:
+                  b=mem(os[1])
+                  st[dr]=st[b[0]]+(f'{b[1]:+x}' if b and b[1] else '') if b and st.get(b[0]) else None
+              elif mn=='mov' and len(os)>1:
+                  src=norm(os[1]); sr=creg(src)
+                  if sr in regs and st.get(sr): st[dr]=st[sr]
+                  else:
+                      b=mem(src)
+                      st[dr]=('load('+st[b[0]]+(f'{b[1]:+x}' if b and b[1] else '')+')') if b and st.get(b[0]) else None
+              elif mn not in ('cmp','test'):
+                  st[dr]=None
+          print('# Restrictions vtable +0x30 method summary')
+          print('\nTarget: `0x153cbfc..0x153cd4e`, resolved from vptr AP `0x187e3c8 + 0x30`.')
+          print('\nInitial ABI at `1661095`:')
+          print('```text\nrdi = bundle_base = rsp+0x2e0\nrsi = local descriptor at rsp+0x20 inside 166103c\ndescriptor+0x8 = post_add2a_obj = rsp+0x230\n```')
+          print('\n## Body')
+          print('```text')
+          for _,_,line in body: print('    '+line)
+          print('```')
+          print('\n## Bundle/descriptor memory refs')
+          print('| addr | classified location | instruction |')
+          print('|---|---|---|')
+          for a,d,line in allrefs:
+              print(f'| `0x{a:x}` | `{md(d)}` | `{md(line.strip())}` |')
+          print('\n## Writes / indirect calls through classified aliases')
+          if not writes: print('- none')
+          else:
+              print('| addr | classified location | instruction |')
+              print('|---|---|---|')
+              for a,d,line in writes:
+                  print(f'| `0x{a:x}` | `{md(d)}` | `{md(line.strip())}` |')
+          print('\n## Calls with tracked args')
+          print('| call | tracked args | instruction |')
+          print('|---|---|---|')
+          for a,args,line in calls:
+              txt=', '.join(f'{k}={v}' for k,v in args.items())
+              print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+          print('\n## Key interpretation')
+          hit30=[(a,d,line) for a,d,line in writes+reads if d.startswith('bundle+30') or d.startswith('bundle+0x30')]
+          if hit30:
+              print('- Direct `bundle+0x30` activity was observed in this method.')
+          else:
+              print('- No direct `bundle+0x30` memory access appears inside this method body.')
+          print('- The method mainly consumes the descriptor and mutates bundle substructures via aliases such as `bundle+0x18`, `bundle+0x50`, `bundle+0x58`, and `bundle+0x90`.')
+          print('- The field later read by `RestrictionsSetupImpl` as `rdx+0x30` may therefore be pre-existing bundle storage, not written in this `+0x30` method, unless one of the called helpers writes it indirectly.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-vtable30-method-summary.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Summarize Restrictions vtable30 method"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
