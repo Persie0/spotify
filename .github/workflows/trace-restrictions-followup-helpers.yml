@@ -1,0 +1,265 @@
+name: Trace Restrictions follow-up helpers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-followup-helpers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-followup
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-followup
+          unzip -j /tmp/restrictions-followup/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-followup
+      - name: Trace helpers
+        run: |
+          SO=/tmp/restrictions-followup/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-followup/all.dis
+          python3 - <<'PY' > analysis/restrictions-followup-helpers.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/restrictions-followup/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          labels=[]
+          for i,line in enumerate(dis):
+              lm=re.match(r'^([0-9a-f]+)\s+<([^>]+)>:', line)
+              if lm:
+                  labels.append((int(lm.group(1),16), i, lm.group(2), line))
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[x[0] for x in ins]
+          lab_addrs=[x[0] for x in labels]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def lidx(a): return bisect.bisect_right(lab_addrs,a)-1
+          def label_for(a):
+              j=lidx(a)
+              return labels[j][2] if j>=0 else None
+          def slice_addr(start, size):
+              return [x for x in ins if start <= x[0] < start+size]
+          def ctx_addr(a,b=18,af=24):
+              j=idx(a)
+              return '\n'.join('    '+ins[k][3] for k in range(max(0,j-b), min(len(ins), j+af+1)))
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts
+              vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      vals.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): vals.append(cur.strip())
+              return mn, vals
+          def normalize_arg(arg):
+              return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',arg)
+          def mem_base(arg):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', arg)
+              if not m: return None
+              off=int(m.group(3) or '0',16)
+              if m.group(2)=='-': off=-off
+              return (m.group(1), off)
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          args=['rdi','rsi','rdx','rcx','r8','r9']
+
+          targets={
+              '17add2a': 0x17add2a,
+              '17d5775': 0x17d5775,
+              'a79ce6': 0xa79ce6,
+          }
+          caller_points={
+              'local-call-17add2a': 0x14ce72c,
+              'a79a7e-call-17d5775': 0xa79af4,
+              'a79a7e-format-call-a79ce6': 0xa79b18,
+          }
+
+          def direct_xrefs(target):
+              pat = f'{target:x}'
+              refs=[]
+              for a,i,op,line in ins:
+                  if op.startswith('call') and pat in line:
+                      refs.append((a,line,label_for(a)))
+              return refs
+
+          def analyze_body(name,start,size=0x380):
+              body=slice_addr(start,size)
+              arg_refs=[]; writes=[]; calls=[]; rets=[]; jumps=[]
+              state={r:r for r in regs}
+              # seed original argument registers
+              for r in regs:
+                  state[r]=None
+              for r in args:
+                  state[r]=f'arg:{r}'
+              for a,i,op,line in body:
+                  mn,ops=split_ops(op)
+                  # record refs to original argument-derived pointers
+                  for arg in ops:
+                      b=mem_base(arg)
+                      if b and state.get(b[0]):
+                          desc=f'{state[b[0]]}{b[1]:+x}' if b[1] else state[b[0]]
+                          arg_refs.append((a,desc,line))
+                          if ops and normalize_arg(ops[0])==normalize_arg(arg) and mn not in ('cmp','test'):
+                              writes.append((a,desc,line))
+                  if mn=='call':
+                      arg_state={r:state.get(r) for r in args if state.get(r)}
+                      calls.append((a,arg_state,line,label_for(a)))
+                  if mn.startswith('ret'):
+                      rets.append((a,line))
+                  if mn.startswith('j'):
+                      jumps.append((a,line))
+                  # update simple aliases after classification
+                  if not ops: continue
+                  dst=normalize_arg(ops[0])
+                  dst_reg=dst if dst in regs else None
+                  if mn=='lea' and dst_reg and len(ops)>1:
+                      b=mem_base(ops[1])
+                      if b and state.get(b[0]):
+                          base=state[b[0]]
+                          off=b[1]
+                          state[dst_reg]=f'{base}{off:+x}' if off else base
+                      else:
+                          state[dst_reg]=None
+                  elif mn=='mov' and dst_reg and len(ops)>1:
+                      src=normalize_arg(ops[1])
+                      if src in regs and state.get(src):
+                          state[dst_reg]=state[src]
+                      else:
+                          b=mem_base(src)
+                          if b and state.get(b[0]):
+                              base=state[b[0]]
+                              off=b[1]
+                              state[dst_reg]=f'load({base}{off:+x})' if off else f'load({base})'
+                          else:
+                              state[dst_reg]=None
+                  elif dst_reg and mn not in ('cmp','test'):
+                      if mn in ('xor','sub') and len(ops)>1 and normalize_arg(ops[1])==dst_reg:
+                          state[dst_reg]='zero'
+                      else:
+                          state[dst_reg]=None
+              return {'body':body,'arg_refs':arg_refs,'writes':writes,'calls':calls,'rets':rets,'jumps':jumps}
+
+          print('# Restrictions follow-up helper trace')
+          print()
+          print('Purpose: follow the post-`rsp+0x310` helper path after `analysis/restrictions-local-slice-a79a7e.md`.')
+          print()
+          print('## Caller points')
+          print('| caller | address | context |')
+          print('|---|---:|---|')
+          for name,a in caller_points.items():
+              print(f'| `{name}` | `0x{a:x}` | `{md(label_for(a))}` |')
+          print()
+          for name,a in caller_points.items():
+              print(f'### Caller context `{name}` at `0x{a:x}`')
+              print('```text')
+              print(ctx_addr(a,16,14))
+              print('```')
+              print()
+
+          print('## Helper summaries')
+          print('| helper | label/context | direct xrefs | arg-memory refs in window | arg-derived writes | calls in window | returns in window |')
+          print('|---|---|---:|---:|---:|---:|---:|')
+          analyses={}
+          for name,a in targets.items():
+              an=analyze_body(name,a)
+              analyses[name]=an
+              refs=direct_xrefs(a)
+              print(f'| `{name}` / `0x{a:x}` | `{md(label_for(a))}` | {len(refs)} | {len(an["arg_refs"])} | {len(an["writes"])} | {len(an["calls"])} | {len(an["rets"])} |')
+          print()
+
+          for name,a in targets.items():
+              an=analyses[name]
+              print(f'## Helper `{name}` at `0x{a:x}`')
+              print()
+              print('### Entry body window')
+              print('```text')
+              for aa,i,op,line in an['body'][:120]:
+                  print('    '+line)
+              if len(an['body'])>120:
+                  print(f'    ... truncated {len(an["body"])-120} additional instructions ...')
+              print('```')
+              print()
+
+              print('### Arg-memory refs')
+              if not an['arg_refs']:
+                  print('- none in bounded window')
+              else:
+                  print('| addr | arg-derived location | instruction |')
+                  print('|---|---|---|')
+                  for aa,desc,line in an['arg_refs'][:80]:
+                      print(f'| `0x{aa:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+                  if len(an['arg_refs'])>80:
+                      print(f'| ... | ... | truncated {len(an["arg_refs"])-80} additional rows |')
+              print()
+
+              print('### Arg-derived writes')
+              if not an['writes']:
+                  print('- none in bounded window')
+              else:
+                  print('| addr | arg-derived location | instruction |')
+                  print('|---|---|---|')
+                  for aa,desc,line in an['writes'][:80]:
+                      print(f'| `0x{aa:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+                  if len(an['writes'])>80:
+                      print(f'| ... | ... | truncated {len(an["writes"])-80} additional rows |')
+              print()
+
+              print('### Calls inside helper window')
+              if not an['calls']:
+                  print('- none')
+              else:
+                  print('| call | tracked arg state | instruction |')
+                  print('|---|---|---|')
+                  for aa,arg_state,line,lab in an['calls'][:80]:
+                      txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+                      print(f'| `0x{aa:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+                  if len(an['calls'])>80:
+                      print(f'| ... | ... | truncated {len(an["calls"])-80} additional rows |')
+              print()
+
+              refs=direct_xrefs(a)
+              print('### First direct xrefs')
+              if not refs:
+                  print('- none')
+              else:
+                  for aa,line,lab in refs[:20]:
+                      print(f'- `0x{aa:x}` in `{md(lab)}`: `{md(line.strip())}`')
+                  if len(refs)>20:
+                      print(f'- truncated {len(refs)-20} additional xrefs')
+              print()
+
+          print('## Interpretation')
+          print('- `17add2a` is the key follow-up if it writes to its first argument (`rdi`, caller `rsp+0x230`) using the second argument (`rsi`, caller `rsp+0x3a0`).')
+          print('- `17d5775` is the key follow-up if it builds the temporary object consumed by `a79a7e`; its arg refs show whether original caller `rdi/rsi` data is copied or only formatted.')
+          print('- If neither helper writes toward the provider setup bundle, the `rsp+0x310` local object is probably an unrelated local/exception/string object near the provider-vector block, not the true Restrictions `bundle+0x30` source.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-followup-helpers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions follow-up helpers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
