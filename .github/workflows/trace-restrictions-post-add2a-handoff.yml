@@ -1,0 +1,218 @@
+name: Trace Restrictions post-add2a handoff
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-post-add2a-handoff.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-handoff
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-handoff
+          unzip -j /tmp/restrictions-handoff/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-handoff
+      - name: Trace handoff
+        run: |
+          SO=/tmp/restrictions-handoff/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-handoff/all.dis
+          python3 - <<'PY' > analysis/restrictions-post-add2a-handoff.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/restrictions-handoff/all.dis').read_text(errors='replace').splitlines()
+          ins=[]; labels=[]
+          for i,line in enumerate(dis):
+              lm=re.match(r'^([0-9a-f]+)\s+<([^>]+)>:', line)
+              if lm:
+                  labels.append((int(lm.group(1),16), i, lm.group(2), line))
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[x[0] for x in ins]
+          lab_addrs=[x[0] for x in labels]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def label_for(a):
+              j=bisect.bisect_right(lab_addrs,a)-1
+              return labels[j][2] if j>=0 else ''
+          def ctx(a,b=22,af=38):
+              j=idx(a)
+              return '\n'.join('    '+ins[k][3] for k in range(max(0,j-b), min(len(ins), j+af+1)))
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts
+              vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      vals.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): vals.append(cur.strip())
+              return mn, vals
+          def norm(a): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',a)
+          def mem(arg):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', arg)
+              if not m: return None
+              off=int(m.group(3) or '0',16)
+              if m.group(2)=='-': off=-off
+              return (m.group(1), off)
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          args=['rdi','rsi','rdx','rcx','r8','r9']
+
+          region=[x for x in ins if 0x14ce740 <= x[0] < 0x14ce7b0]
+          state={r:None for r in regs}
+          calls=[]; refs=[]
+          for a,i,op,line in region:
+              mn,ops=split_ops(op)
+              if mn=='call':
+                  arg_state={r:state.get(r) for r in args if state.get(r)}
+                  calls.append((a,arg_state,line))
+              for arg in ops:
+                  b=mem(arg)
+                  if b and b[0]=='rsp':
+                      refs.append((a,b[1],line))
+              if not ops: continue
+              dst=norm(ops[0])
+              dst_reg=dst if dst in regs else None
+              if mn=='lea' and dst_reg and len(ops)>1:
+                  b=mem(ops[1])
+                  if b and b[0]=='rsp':
+                      off=b[1]
+                      if off==0x2e0: state[dst_reg]='bundle_base(rsp+0x2e0)'
+                      elif off==0x230: state[dst_reg]='post_add2a_obj(rsp+0x230)'
+                      elif off==0x3a0: state[dst_reg]='a79a7e_out(rsp+0x3a0)'
+                      elif off==0x2b0: state[dst_reg]='copied_string(rsp+0x2b0)'
+                      else: state[dst_reg]=f'rsp+0x{off:x}'
+                  else: state[dst_reg]=None
+              elif mn=='mov' and dst_reg and len(ops)>1:
+                  src=norm(ops[1])
+                  state[dst_reg]=state.get(src) if src in regs else None
+              elif dst_reg and mn not in ('cmp','test'):
+                  state[dst_reg]=None
+
+          helper=0x166103c
+          body=[x for x in ins if helper <= x[0] < helper+0x420]
+          hstate={r:f'arg:{r}' for r in args}
+          for r in regs:
+              hstate.setdefault(r,None)
+          hrefs=[]; hwrites=[]; hcalls=[]
+          for a,i,op,line in body:
+              mn,ops=split_ops(op)
+              for arg in ops:
+                  b=mem(arg)
+                  if b and hstate.get(b[0]):
+                      desc=hstate[b[0]] + (f'{b[1]:+x}' if b[1] else '')
+                      hrefs.append((a,desc,line))
+                      if ops and norm(ops[0])==norm(arg) and mn not in ('cmp','test'):
+                          hwrites.append((a,desc,line))
+              if mn=='call':
+                  hcalls.append((a,{r:hstate.get(r) for r in args if hstate.get(r)},line))
+              if not ops: continue
+              dst=norm(ops[0]); dst_reg=dst if dst in regs else None
+              if mn=='lea' and dst_reg and len(ops)>1:
+                  b=mem(ops[1])
+                  if b and hstate.get(b[0]):
+                      hstate[dst_reg]=hstate[b[0]] + (f'{b[1]:+x}' if b[1] else '')
+                  else: hstate[dst_reg]=None
+              elif mn=='mov' and dst_reg and len(ops)>1:
+                  src=norm(ops[1])
+                  if src in regs and hstate.get(src):
+                      hstate[dst_reg]=hstate[src]
+                  else:
+                      b=mem(src)
+                      hstate[dst_reg]=(f'load({hstate[b[0]]}{b[1]:+x})' if b and hstate.get(b[0]) else None)
+              elif dst_reg and mn not in ('cmp','test'):
+                  hstate[dst_reg]=None
+
+          print('# Restrictions post-add2a handoff trace')
+          print()
+          print('Purpose: inspect the path immediately after `17add2a` where the caller reloads the provider setup bundle base.')
+          print()
+          print('## Caller context around `14ce72c..14ce78x`')
+          print('```text')
+          print(ctx(0x14ce76d,26,38))
+          print('```')
+          print()
+          print('## Tracked calls in caller handoff window')
+          print('| call | tracked args | instruction |')
+          print('|---|---|---|')
+          for a,arg_state,line in calls:
+              txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+              print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+          print()
+          print('## Stack refs in caller handoff window')
+          print('| addr | rsp offset | instruction |')
+          print('|---|---:|---|')
+          for a,off,line in refs:
+              print(f'| `0x{a:x}` | `0x{off:x}` | `{md(line.strip())}` |')
+          print()
+          print(f'## Helper `0x{helper:x}` / `{label_for(helper)}`')
+          print()
+          print('### Entry body window')
+          print('```text')
+          for aa,i,op,line in body[:140]: print('    '+line)
+          if len(body)>140: print(f'    ... truncated {len(body)-140} additional instructions ...')
+          print('```')
+          print()
+          print('### Arg-memory refs')
+          if not hrefs:
+              print('- none')
+          else:
+              print('| addr | arg-derived location | instruction |')
+              print('|---|---|---|')
+              for a,desc,line in hrefs[:100]: print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+              if len(hrefs)>100: print(f'| ... | ... | truncated {len(hrefs)-100} additional rows |')
+          print()
+          print('### Arg-derived writes')
+          if not hwrites:
+              print('- none')
+          else:
+              print('| addr | arg-derived location | instruction |')
+              print('|---|---|---|')
+              for a,desc,line in hwrites[:100]: print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+              if len(hwrites)>100: print(f'| ... | ... | truncated {len(hwrites)-100} additional rows |')
+          print()
+          print('### Calls inside helper')
+          if not hcalls:
+              print('- none')
+          else:
+              print('| call | tracked args | instruction |')
+              print('|---|---|---|')
+              for a,arg_state,line in hcalls[:80]:
+                  txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+                  print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+              if len(hcalls)>80: print(f'| ... | ... | truncated {len(hcalls)-80} additional rows |')
+          print()
+          print('## Interpretation')
+          print('- If `0x14ce76d` passes `rdi=bundle_base` and `rsi=post_add2a_obj`, then `166103c` is the first concrete candidate for copying the object into the shared setup bundle.')
+          print('- Arg-derived writes inside `166103c` tell whether it writes through `arg:rdi` (the bundle) or only reads from it.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-post-add2a-handoff.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions post-add2a handoff"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
