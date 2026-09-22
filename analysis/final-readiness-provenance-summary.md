@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, tracing the constructor-owned `this+0x78` lifecycle, following the first constructor-tail wrapper objects, and running parallel open-path traces for `[rsp+0x40]`, `[rsp+0x70]`, `wrapper_0xd8`, and `child+0x18 / b411a4`.
+Compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, tracing the constructor-owned `this+0x78` lifecycle, following constructor-tail wrapper objects, and tracing the `10ac7dd` output-store candidate.
 
 ## Correct high-level chain
 
@@ -33,7 +33,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The final `state+0x40` dependency used by `fd381a` is still best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation.
+The final `state+0x40` dependency used by `fd381a` remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation.
 
 ## Restrictions-derived source path
 
@@ -75,7 +75,7 @@ provider-vector caller
   -> factory passes it as rcx into constructor 0x10aba36
 ```
 
-Factory call evidence remains:
+Factory call evidence:
 
 ```text
 10ab824  mov rax, [rbx+0x30]
@@ -162,7 +162,7 @@ Frame-provenance trace v2 clarified:
   10adb4f  later cleanup/read into rdi
 ```
 
-## Latest constructor-tail result: wrapper_0xd8 and stronger final-store candidate
+## Wrapper_0xd8 path
 
 After the second `[rsp+0x40]` `vtable+0x28` call, the constructor builds a `0xd8` wrapper:
 
@@ -191,15 +191,35 @@ Then it initializes callback/erased-wrapper state on `wrapper_0xd8`:
 10ac584  call [allocated_0x150.vtable+0x10]
 ```
 
-The next stronger final-store candidate appears later in the same constructor tail:
+## Output-store trace: important correction
+
+The v3 output-store trace followed the direct store at `10ac7dd`:
 
 ```text
 10ac7d5  mov rax, [rsp+0x18]
-10ac7dd  mov [rax], r14
-10ac7e8  call [old_value.vtable+0x8]   ; cleanup of previous pointee if present
+10ac7da  mov rdi, [rax]           ; old pointee
+10ac7dd  mov [rax], r14           ; store new pointee
+10ac7e8  call [old_value.vtable+0x8] if old_value != null
 ```
 
-This is important because it is a direct store through an output pointer, unlike the earlier wrapper-local stores. The open question is now the provenance of `[rsp+0x18]` and whether the `r14` stored there is the object later exposed as `child+0x18`.
+This is a strong direct output-store pattern, but the trace also resolved its stack-slot provenance:
+
+```text
+10aba8a  lea rax, [rdi+0x18]
+10aba8e  [rsp+0x60] = rax         ; this+0x18, the b411a4-returned field candidate
+10aba93  lea rax, [rdi+0x40]
+10aba97  [rsp+0x18] = rax         ; this+0x40, NOT this+0x18
+```
+
+Therefore `10ac7dd` writes to `this+0x40`, not directly to the `child+0x18` field returned by `b411a4`. It remains semantically important because it updates another persistent output pointer and then uses that pointer again, but the direct `child+0x18` target should now shift to `[rsp+0x60]`.
+
+`[rsp+0x18]` is used later after the store:
+
+```text
+10ac81c  mov rax, [rsp+0x18]
+10ac821  mov rax, [rax]
+10ac82c  [stack_local-0x8] = [this+0x40]
+```
 
 ## Current closed items
 
@@ -218,21 +238,27 @@ this+0x78 fast reader trace through first [vtable+0x28] calls
 first vtable+0x28 returns packed into wrapper_0x80 / AP 0x184d0a0
 child getter b411a4 classified as trivial [rdi+0x18] getter
 [rsp+0x40] provenance as constructor argument rdx saved at entry
+10ac7dd output store classified as this+0x40, not child+0x18
 ```
 
 ## Still open / next best target
 
 ```text
-[rsp+0x18] provenance before 10ac7d5
+[rsp+0x60] / this+0x18 writer path
+  -> this is now the strongest direct child+0x18 candidate
+  -> refs known at 10aba8e, 10ac1a1, 10ac1e6, 10ad136, 10adbde
+
 r14 provenance at 10ac7dd
-whether [rsp+0x18] is the output slot that becomes child+0x18
+  -> useful for this+0x40 semantics, but no longer direct child+0x18
+
 later [rsp+0x70] read at 10ad69b and cleanup at 10adb4f
 later [rsp+0x40] receivers at 10acd33 / 10acdad
-whether wrapper_0xd8 / AP 0x184d9a8 or the later r14 store feeds b411a4
+whether wrapper_0xd8 / AP 0x184d9a8 feeds this+0x40 or this+0x18 indirectly
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-output-store-10ac7dd.md`
 - `analysis/restrictions-tail-after-wrapperd8-v2.md`
 - `analysis/restrictions-frame-provenance-v2.md`
 - `analysis/restrictions-child18-parallel.md`
