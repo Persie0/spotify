@@ -1,4 +1,5 @@
 name: Resolve Metadata readiness service
+# retrigger after initial workflow registration
 
 on:
   workflow_dispatch:
