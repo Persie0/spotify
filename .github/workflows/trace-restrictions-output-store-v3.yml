@@ -1,0 +1,146 @@
+name: Trace Restrictions output store candidate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-output-store-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace output store candidate
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          out = Path('analysis'); out.mkdir(exist_ok=True)
+          dis = subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs = [a for a,_,_ in insns]
+          def ni(addr):
+              lo, hi = 0, len(addrs)-1
+              while lo < hi:
+                  mid = (lo+hi)//2
+                  if addrs[mid] < addr:
+                      lo = mid+1
+                  else:
+                      hi = mid
+              return lo
+          def win(start,end):
+              return [(a,l,t) for a,l,t in insns if start <= a <= end]
+          def around(addr,before=26,after=90):
+              i = ni(addr)
+              return insns[max(0,i-before):min(len(insns),i+after)]
+          def fmt(rows):
+              return '```text\n' + '\n'.join(l for _,l,_ in rows) + '\n```\n'
+          def table(rows,limit=400):
+              s = '| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]:
+                  s += f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows) > limit:
+                  s += f'| ... | truncated {len(rows)-limit} more |\n'
+              return s + '\n'
+          def refs_in(start,end,terms,limit=500):
+              rows=[]
+              for a,l,t in win(start,end):
+                  if any(term in l for term in terms):
+                      rows.append((a,l,t))
+              return table(rows,limit)
+          def contexts_for_terms(start,end,terms,ctx_before=10,ctx_after=18,limit=24):
+              segment = win(start,end)
+              idxs = []
+              for i,(a,l,t) in enumerate(segment):
+                  if any(term in l for term in terms):
+                      idxs.append((i,a))
+              chunks=[]
+              for i,(idx,a) in enumerate(idxs[:limit]):
+                  chunks.append(f'#### hit `{a:#x}`\n\n')
+                  chunks.append(fmt(segment[max(0,idx-ctx_before):min(len(segment),idx+ctx_after)]))
+              if len(idxs)>limit:
+                  chunks.append(f'... truncated {len(idxs)-limit} more hits ...\n')
+              return ''.join(chunks)
+
+          ctor_start, ctor_end = 0x10aba36, 0x10adc80
+          md=[]
+          md.append('# Restrictions output-store candidate trace\n\n')
+          md.append('Focused v3 trace for the current strongest pivot: `10ac7dd [rax] = r14`, where `rax = [rsp+0x18]`. Also tracks late `[rsp+0x70]` and `[rsp+0x40]` consumers.\n\n')
+
+          md.append('## Main output-store candidate `10ac7d5..10ac7e8`\n\n')
+          md.append(fmt(around(0x10ac7d5, before=28, after=70)))
+
+          md.append('## `[rsp+0x18]` refs in constructor\n\n')
+          md.append(refs_in(ctor_start, ctor_end, ['rsp+0x18'], 260))
+          md.append('## `[rsp+0x18]` contexts\n\n')
+          md.append(contexts_for_terms(ctor_start, ctor_end, ['rsp+0x18'], limit=40))
+
+          md.append('## `r14` provenance near output store\n\n')
+          md.append(refs_in(0x10ac650,0x10ac820,['r14','r14d'],260))
+          md.append('## `r14` local contexts near output store\n\n')
+          md.append(contexts_for_terms(0x10ac650,0x10ac820,['r14','r14d'], limit=40))
+
+          md.append('## Late `[rsp+0x70]` consumers\n\n')
+          md.append(fmt(around(0x10ad69b, before=28, after=95)))
+          md.append(fmt(around(0x10adb4f, before=28, after=75)))
+          md.append('### `[rsp+0x70]` all refs\n\n')
+          md.append(refs_in(ctor_start,ctor_end,['rsp+0x70'],120))
+
+          md.append('## Late `[rsp+0x40]` receiver calls\n\n')
+          for addr in [0x10acd33,0x10acdad,0x10ad8ac]:
+              md.append(f'### around `{addr:#x}`\n\n')
+              md.append(fmt(around(addr, before=26, after=70)))
+          md.append('### `[rsp+0x40]` all refs\n\n')
+          md.append(refs_in(ctor_start,ctor_end,['rsp+0x40'],180))
+
+          md.append('## Output-ish stack slots and pointer stores after `10ac700`\n\n')
+          interesting = []
+          for a,l,t in win(0x10ac700,0x10adc80):
+              if any(p in l for p in ['rsp+0x18','rsp+0x30','rsp+0x70','rsp+0x80','rsp+0x40','184d9a8','184d0a0','184da30','184da88','b411a4']):
+                  interesting.append((a,l,t))
+              elif re.search(r'mov\s+QWORD PTR \[[^\]]+\],', t) or re.search(r'call\s+QWORD PTR \[[^\]]+\]', t):
+                  interesting.append((a,l,t))
+          md.append(table(interesting,520))
+
+          md.append('## Summary generated by script\n\n')
+          md.append('- `[rsp+0x18]` is the pointer dereferenced immediately before the strong store at `10ac7dd`.\n')
+          md.append('- `10ac7dd` stores `r14` through that pointer, then cleanup calls the old pointee via vtable `+0x8`.\n')
+          md.append('- This makes `[rsp+0x18]` a stronger output-slot candidate than the earlier wrapper-local fields.\n')
+          md.append('- The next semantic question is whether `[rsp+0x18]` aliases the storage later exposed as `child+0x18`, or another constructor output wrapper.\n')
+
+          Path('analysis/restrictions-output-store-10ac7dd.md').write_text(''.join(md), encoding='utf-8')
+          print('wrote analysis/restrictions-output-store-10ac7dd.md')
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-output-store-10ac7dd.md
+          git commit -m 'Trace Restrictions output store candidate' || exit 0
+          git pull --rebase origin main
+          git push
