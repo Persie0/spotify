@@ -1,4 +1,5 @@
 name: Trace Restrictions bundle30 consumers
+# kick: rerun after initial workflow registration
 
 on:
   workflow_dispatch:
@@ -75,7 +76,6 @@ jobs:
               mn,ops=split_ops(op)
               if '[rsp+0x310]' in op:
                   exact310.append((a,n,line,ctx(idx(a),10,18)))
-                  # first few calls after this point
                   after=[]
                   for aa,ii,o,l in region[n+1:n+45]:
                       mm,_=split_ops(o)
@@ -91,7 +91,6 @@ jobs:
                   if re.search(r'QWORD PTR \[rax\+0x28\]', op):
                       provider_calls.append((a, dict(arg_state), line))
 
-              # update state after call classification
               if not ops: continue
               dst=ops[0]
               clean_dst=re.sub(r'^(?:BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',dst)
