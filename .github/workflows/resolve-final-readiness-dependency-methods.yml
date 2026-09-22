@@ -1,0 +1,90 @@
+name: Resolve final readiness dependency methods
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-final-readiness-dependency-methods.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/rfinal
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/rfinal
+          unzip -j /tmp/rfinal/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rfinal
+      - name: Trace exact methods
+        run: |
+          SO=/tmp/rfinal/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rfinal/all.dis
+          readelf -rW "$SO" > /tmp/rfinal/rel.txt
+          {
+            echo '# Final readiness dependency methods'
+            echo
+            echo '## Proven Restrictions source chain'
+            echo '- registry ID 0x9e = RestrictionsSetupImpl'
+            echo '- service AP 0x184ca90'
+            echo '- +0x28 -> [this+0x10]'
+            echo '- constructor installs AP 0x184da88 child into this+0x10'
+            echo '- child +0x38 -> b411a4 -> [child+0x18]'
+            echo '- child+0x18 is constructor rcx'
+            echo '- factory supplies constructor rcx from its input dependency bundle +0x30'
+            echo
+            echo '## Restrictions factory call window'
+            objdump -d -M intel --start-address=0x10ab800 --stop-address=0x10ab990 "$SO"
+            echo
+            echo '## Restrictions child AP 0x184da88 table through +0x180'
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          rel={}
+          for l in Path('/tmp/rfinal/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=4 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  i=p.index('R_X86_64_RELATIVE')
+                  if i+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[i+1]):
+                      rel[int(p[0],16)]=int(p[i+1],16)
+          for ap in (0x184da88,0x1875b78):
+              print(f'### AP 0x{ap:x}')
+              for off in range(0,0x188,8):
+                  t=rel.get(ap+off)
+                  print(f'- +0x{off:x}: '+(f'0x{t:x}' if t is not None else 'NO_RELOC'))
+          PY
+            echo
+            echo '## Automix +0x30 exact getter'
+            objdump -d -M intel --start-address=0xc07290 --stop-address=0xc072b0 "$SO"
+            echo
+            echo '## Automix +0xc0 object +0x28 exact body'
+            objdump -d -M intel --start-address=0x1493660 --stop-address=0x14936a0 "$SO"
+            echo
+            echo '## Wider FDE-like neighborhood for 0x1493680'
+            objdump -d -M intel --start-address=0x14935f0 --stop-address=0x1493720 "$SO"
+            echo
+            echo '## AP/materialization refs for 0x1875b78'
+            grep -n -B18 -A35 '# 1875b78' /tmp/rfinal/all.dis || true
+            echo
+            echo '## Direct callers/refs to 0x1493680'
+            grep -n -E -B20 -A35 '(call|jmp)[[:space:]]+1493680\b|# 1493680\b' /tmp/rfinal/all.dis || true
+          } > analysis/final-readiness-dependency-methods.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/final-readiness-dependency-methods.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve final readiness dependency methods"
+          git pull --rebase origin main
+          git push
