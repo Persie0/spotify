@@ -1,6 +1,6 @@
 # Restrictions provider callsite summary
 
-This is the current compact state of the Restrictions setup-bundle provenance trace.
+This is the compact state of the Restrictions setup-bundle provenance trace.
 
 ## Known Restrictions provider target
 
@@ -38,11 +38,7 @@ rcx = registry context
 call provider +0x28
 ```
 
-The concise report found 8 provider-like `+0x28` callsites.
-
-## Shared setup bundle source at callsites
-
-All 8 provider-like callsites resolve their `rdx` setup-bundle argument to the same stack-local base:
+The concise report found 8 provider-like `+0x28` callsites. All 8 resolve their `rdx` setup-bundle argument to the same stack-local base:
 
 ```text
 rdx -> rsp+0x2e0
@@ -70,19 +66,9 @@ The Restrictions factory later consumes this bundle as:
 10ab842  mov rbp, [rbx+0x68]
 ```
 
-## Stack-slot and local construction findings
+## Stack bundle construction
 
-The stack-slot trace found no direct local `bundle+0x30` write in the broad provider-vector FDE. The visible alias field refs were offsets like:
-
-```text
-bundle+0x0
-bundle+0x8
-bundle+0x10
-bundle+0x18
-bundle+0x20
-```
-
-The concrete `rsp+0x310` materialization is:
+The broad stack-slot trace found no simple local `[bundle_base+0x30]` store in the provider-vector FDE. The concrete stack-bundle materialization is:
 
 ```text
 14ce65f  lea rax, [rip+...]  # 0x187e3c8
@@ -99,7 +85,7 @@ So `rsp+0x2e0` is a local stack bundle object whose vptr/address-point is `0x187
 
 ## Local helper path after materialization
 
-`a79a7e` does not receive `rsp+0x310` directly. At its callsite:
+`a79a7e` does not receive `rsp+0x310` directly. At the callsite:
 
 ```text
 14ce717  call a79a7e
@@ -108,7 +94,7 @@ rsi = rsp+0x2b1
 rcx = rsp+0x350
 ```
 
-`17add2a` then builds a post-`a79a7e` object at `rsp+0x230`:
+`17add2a` builds a post-`a79a7e` object at `rsp+0x230`:
 
 ```text
 14ce72c  17add2a(rdi=rsp+0x230, rsi=rsp+0x3a0)
@@ -137,12 +123,20 @@ The vptr/address-point stored in `[rsp+0x2e0]` resolves as:
 
 ```text
 AP 0x187e3c8
++0x00 -> 0x153cada
++0x08 -> 0x153cb74
 +0x10 -> 0x153cb86
 +0x18 -> 0xa3fa60
++0x20 -> 0x165d0fa
++0x28 -> 0x165dd40
 +0x30 -> 0x153cbfc
++0x38 -> 0x153cd4e
++0x40 -> 0x153cdf2
++0x48 -> 0x153cea8
++0x50 -> 0x153ceb0
 ```
 
-Inside `166103c`, these are reached as:
+Inside `166103c`, the relevant runtime dispatches are:
 
 ```text
 1661089  call [bundle.vtable+0x10]
@@ -150,19 +144,9 @@ Inside `166103c`, these are reached as:
 16610a2  call [bundle.vtable+0x18]
 ```
 
-The important dispatch is:
-
-```text
-1661095  bundle.vtable+0x30(bundle, local_descriptor)
-```
-
 ## `bundle.vtable+0x30` method summary
 
-`bundle.vtable+0x30` resolves to:
-
-```text
-0x153cbfc
-```
+`bundle.vtable+0x30` resolves to `0x153cbfc`.
 
 ABI at `1661095`:
 
@@ -172,7 +156,7 @@ rsi = local descriptor inside 166103c
 descriptor+0x8 = post_add2a_obj = rsp+0x230
 ```
 
-The method starts by preserving these inputs:
+The method preserves those inputs, then prepares bundle-substructure aliases:
 
 ```text
 153cc0a  mov rbx, rsi     ; descriptor
@@ -180,18 +164,14 @@ The method starts by preserving these inputs:
 153cc1e  lea rdx, [rdi+0x10]
 153cc27  mov rdi, rbx
 153cc2a  call 165fe6a
-```
 
-Then it prepares bundle-substructure aliases:
-
-```text
 153cc2f  lea r15, [r14+0x90]
 153cc36  lea rax, [r14+0x58]
 153cc3f  lea r13, [r14+0x50]
 153cc43  lea rbp, [r14+0x18]
 ```
 
-The method parses a descriptor stream and dispatches by tag. Observed bundle mutations are through substructures, not through a direct `bundle+0x30` access:
+It parses a descriptor stream and dispatches by tag. Observed bundle mutations are through substructures, not through a direct `bundle+0x30` access:
 
 ```text
 153cc94  mov rdi, rbp              ; bundle+0x18 path
@@ -213,18 +193,17 @@ The method parses a descriptor stream and dispatches by tag. Observed bundle mut
 153ccf3  or [r14+0x8], eax
 ```
 
-Current conclusion: `+0x30` is a real bundle mutation method, but it does not show a direct write to `bundle+0x30` in its own body. It appears to populate/merge parsed descriptor data into bundle substructures at `+0x18`, `+0x50`, `+0x58`, and `+0x90`, with status flags in `bundle+0x8`.
+Current conclusion: `+0x30` is a real bundle mutation method, but it does not show a direct write to `bundle+0x30` in its own body.
 
 ## Substructure and resize-helper findings
 
-`analysis/restrictions-substructure-writers.md` tested the most plausible indirect write hypothesis:
+`analysis/restrictions-substructure-writers.md` tested the plausible indirect write hypothesis:
 
 ```text
-153cc94  mov rdi, rbp        ; rbp = bundle+0x18
-153cc97  call 1507a9e
+bundle+0x18 + 0x18 = bundle+0x30
 ```
 
-If `1507a9e` wrote `arg+0x18`, that would resolve to `bundle+0x30`. It does not. The trace found:
+If `1507a9e` wrote `arg+0x18`, that would resolve to `bundle+0x30`. It does not:
 
 ```text
 1507a9e initial rdi = bundle+0x18
@@ -232,7 +211,7 @@ writes resolving exactly to bundle+0x30 = 0
 1507ab9  mov [rbx+0x8], ecx  ; resolves to bundle+0x20
 ```
 
-The capacity-growth helper reached from `1507a9e` was then traced in `analysis/restrictions-resize-helper.md`:
+The capacity-growth helper reached from `1507a9e` was then traced:
 
 ```text
 1507ad1  mov rdi, rbx
@@ -249,6 +228,37 @@ d15e15  mov [rbx+0x8], ecx  ; bundle+0x20
 ```
 
 So the `bundle+0x18 -> 1507a9e -> d15d98` vector/resize path is ruled out as the source of `bundle+0x30`.
+
+## Other vtable method exclusion
+
+`analysis/restrictions-other-vtable-methods.md` scanned the other resolved vtable entries under the ABI assumption `rdi = bundle_base`.
+
+Summary:
+
+```text
+vtable +0x00 -> writes 1, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
+vtable +0x08 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x10 -> writes 10, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x20 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x28 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x38 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x40 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x48 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
+vtable +0x50 -> writes 13, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
+```
+
+Important details:
+
+```text
++0x00 / 0x153cada aliases bundle+0x30 in a destructor/free comparison:
+153cb54  lea rax, [rbx+0x30]
+153cb58  cmp rdi, rax
+153cb5d  call free@plt
+```
+
+That is an inline-storage/free guard, not a writer.
+
+Current conclusion: none of the scanned remaining bundle vtable methods produce a direct write resolving exactly to `bundle+0x30`. The only `bundle+0x30` hits are aliases/passes, not stores.
 
 ## Current best path
 
@@ -275,16 +285,17 @@ The exact source of the value read by Restrictions as `rdx+0x30` is still not cl
 2. `a79a7e`,
 3. `17add2a`,
 4. `bundle.vtable+0x30` / `0x153cbfc` directly,
-5. the `bundle+0x18 -> 1507a9e` vector-slot helper, or
-6. the `bundle+0x18 -> d15d98` resize helper.
+5. the `bundle+0x18 -> 1507a9e` vector-slot helper,
+6. the `bundle+0x18 -> d15d98` resize helper, or
+7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking.
 
 Next best targets:
 
 ```text
-A) bundle constructor/setup around 14ce65f..14ce68d,
-B) other vtable methods such as +0x0/+0x8/+0x10/+0x20/+0x28,
+A) bundle constructor/setup semantics around 14ce65f..14ce68d,
+B) inline storage interpretation of bundle+0x30 rather than a separately written pointer,
 C) 0x153cbfc descriptor helper 165fe6a / 165ffb0,
-D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths.
+D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths where values may be stored into nested objects rather than directly into the bundle.
 ```
 
 ## Evidence files
@@ -300,6 +311,7 @@ D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths.
 - `analysis/restrictions-vtable30-method-summary.md`
 - `analysis/restrictions-substructure-writers.md`
 - `analysis/restrictions-resize-helper.md`
+- `analysis/restrictions-other-vtable-methods.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
