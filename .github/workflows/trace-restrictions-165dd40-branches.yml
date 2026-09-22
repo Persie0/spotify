@@ -1,0 +1,176 @@
+name: Trace Restrictions 165dd40 branch helpers
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-165dd40-branches.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace 165dd40 branches
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-165dd40-branch-helpers.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          lines = dis.splitlines()
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          call_re = re.compile(r'\bcall\s+([0-9a-fxQWORD\sPTR\[\]\+\-]+)')
+
+          insns = []
+          for line in lines:
+              m = insn_re.match(line)
+              if not m:
+                  continue
+              addr = int(m.group(1), 16)
+              text = m.group(3).strip()
+              insns.append((addr, line.rstrip(), text))
+
+          def window(start, end=None, count=None):
+              got = [(a,l,t) for a,l,t in insns if a >= start and (end is None or a < end)]
+              if count is not None:
+                  got = got[:count]
+              return got
+
+          def fmt_block(ws, max_lines=180):
+              if not ws:
+                  return '```text\n(no instructions found)\n```\n'
+              rows = [l for _, l, _ in ws[:max_lines]]
+              if len(ws) > max_lines:
+                  rows.append(f'... truncated {len(ws)-max_lines} more instructions ...')
+              return '```text\n' + '\n'.join(rows) + '\n```\n'
+
+          def classify_function(start, end, name, initial):
+              ws = window(start, end)
+              regs = dict(initial)
+              refs=[]; writes=[]; calls=[]; aliases=[]
+              for addr,line,text in ws:
+                  # simple mov reg,reg / mov reg,[tracked+off] / lea reg,[tracked+off]
+                  m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15))\b', text)
+                  if m and m.group(2) in regs:
+                      regs[m.group(1)] = regs[m.group(2)]
+                      aliases.append((addr, f'{m.group(1)}={regs[m.group(1)]}', line))
+                  m = re.search(r'\blea\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*\[([^\]]+)\]', text)
+                  if m:
+                      dst, mem = m.group(1), m.group(2)
+                      for r, origin in regs.items():
+                          if re.search(rf'\b{re.escape(r)}\b', mem):
+                              regs[dst] = f'addr({origin}:{mem})'
+                              aliases.append((addr, f'{dst}={regs[dst]}', line))
+                              break
+                  # tracked memory refs and writes
+                  for r, origin in list(regs.items()):
+                      if re.search(rf'\[[^\]]*\b{re.escape(r)}\b[^\]]*\]', text):
+                          loc = re.search(r'\[([^\]]+)\]', text).group(1)
+                          is_write = bool(re.match(r'\b(?:mov|movups|and|or|xor|add|sub|inc|dec|xchg)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', text))
+                          (writes if is_write else refs).append((addr, origin, loc, line))
+                          if text.startswith('mov ') and not is_write:
+                              # mov reg,[tracked]
+                              mm = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR )?\[', text)
+                              if mm:
+                                  regs[mm.group(1)] = f'load({origin}:{loc})'
+                                  aliases.append((addr, f'{mm.group(1)}={regs[mm.group(1)]}', line))
+                  if 'call' in text:
+                      tracked_args = []
+                      for arg in ['rdi','rsi','rdx','rcx','r8','r9','r10','r11','r12','r13','r14','r15','rbx','rax']:
+                          if arg in regs:
+                              tracked_args.append(f'{arg}={regs[arg]}')
+                      if tracked_args:
+                          calls.append((addr, ', '.join(tracked_args), line))
+              return {
+                  'name': name, 'start': start, 'end': end, 'ws': ws,
+                  'refs': refs, 'writes': writes, 'calls': calls, 'aliases': aliases
+              }
+
+          funcs = [
+              (0x165e51e, 0x165e60c, '165e51e', {'rdi':'builder/output object', 'rsi':'descriptor field id/value', 'rdx':'descriptor scalar/value'}),
+              (0x165cc82, 0x165cd80, '165cc82', {'rdi':'builder/output object', 'rsi':'descriptor field id', 'rdx':'constant/type tag'}),
+              (0x165e60c, 0x165e710, '165e60c', {'rdi':'builder/output object', 'rsi':'descriptor element value'}),
+          ]
+          traces = [classify_function(*f) for f in funcs]
+
+          # Extract callsites in 165dd40 body for these helpers plus nearby context.
+          main = window(0x165dd40, 0x165e364)
+          interesting_calls=[]
+          for addr,line,text in main:
+              if any(hex(t)[2:] in text for t in [0x165e51e,0x165cc82,0x165e60c]):
+                  idx = next(i for i,(a,_,_) in enumerate(main) if a==addr)
+                  ctx = main[max(0,idx-5):idx+3]
+                  interesting_calls.append((addr,line,ctx))
+
+          md=[]
+          md.append('# Restrictions 0x165dd40 branch-helper trace\n')
+          md.append('Purpose: continue after resolving slot AP `0x187e2f8` relocations. `0x165dd40` is the relocated `slot_obj.vtable+0x90` target reached via wrapper `15e768e`; this report traces the branch helpers called from the descriptor interpreter.\n')
+          md.append('## Parent interpreter callsites\n')
+          for addr,line,ctx in interesting_calls:
+              md.append(f'### call at `{addr:#x}`\n')
+              md.append(fmt_block(ctx, 20))
+          md.append('## Helper summary\n')
+          md.append('| helper | refs | writes | tracked calls | likely role |\n|---|---:|---:|---:|---|\n')
+          for tr in traces:
+              role = 'writes/updates builder object' if tr['writes'] else 'reads/forwards only in scanned window'
+              md.append(f"| `{tr['name']}` | {len(tr['refs'])} | {len(tr['writes'])} | {len(tr['calls'])} | {role} |\n")
+          md.append('\n')
+          for tr in traces:
+              md.append(f"## Helper `{tr['name']}` body\n\n")
+              md.append(fmt_block(tr['ws'], 180))
+              md.append('### Tracked refs\n')
+              if tr['refs']:
+                  md.append('| addr | origin | mem | instruction |\n|---:|---|---|---|\n')
+                  for addr,origin,loc,line in tr['refs'][:80]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No tracked memory reads in scanned window.\n')
+              md.append('\n### Tracked writes\n')
+              if tr['writes']:
+                  md.append('| addr | origin | mem | instruction |\n|---:|---|---|---|\n')
+                  for addr,origin,loc,line in tr['writes'][:100]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No tracked memory writes in scanned window.\n')
+              md.append('\n### Calls with tracked args\n')
+              if tr['calls']:
+                  md.append('| addr | tracked args | instruction |\n|---:|---|---|\n')
+                  for addr,args,line in tr['calls'][:80]:
+                      md.append(f'| `{addr:#x}` | `{args}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No calls with tracked args in scanned window.\n')
+              md.append('\n')
+          md.append('## Interpretation\n\n')
+          md.append('The key question is whether these helpers directly build the child-readiness object or only populate a descriptor/materialization builder. A helper that writes through `rdi`/builder strongly suggests materialization into an output object used by the constructor path; lack of direct `child+0x18` handling keeps the semantic edge one layer deeper.\n')
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-165dd40-branch-helpers.md
+          git commit -m 'Trace Restrictions 165dd40 branch helpers' || exit 0
+          git push
