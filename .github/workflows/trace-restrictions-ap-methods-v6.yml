@@ -1,0 +1,263 @@
+name: Trace Restrictions AP methods parallel v6
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-ap-methods-v6.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-ap184d898-methods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace AP 0x184d898 methods
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=24,aft=80):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=260):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ap=0x184d898
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x120]
+          md=['# Restrictions AP `0x184d898` method trace\n\n']
+          md.append('Parallel v6 report. Focus: the method table of the `0x28` object installed into `this+0x18` / returned by `b411a4`.\n\n')
+          md.append('## Relocation-backed entries near AP `0x184d898`\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          key_targets=[]
+          for off,target,line in ap_rels:
+              if off < ap+0x60 or target in (0x10bff2c,0x10bff40,0x10bff52,0x10bffde):
+                  key_targets.append((off,target))
+          seen=set()
+          for off,target in key_targets:
+              if target in seen: continue
+              seen.add(target)
+              md.append(f'## AP entry `{off-ap:#x}` -> `{target:#x}`\n\n')
+              md.append(fmt(around(target,18,72)))
+          ctor=win(0x10aba36,0x10adc80)
+          filt=[]
+          for a,l,t in ctor:
+              if any(x in l for x in ['184d898','10bff2c','10bff40','10bff52','10bffde','rsp+0x60','call   QWORD PTR [rax+0x28]','ff 50 28','[rax+0x20]','[rax+0x18]']):
+                  filt.append((a,l,t))
+          md.append('## Constructor references and follow-on calls\n\n'+table(filt,420))
+          xrefs=[]
+          for a,l,t in ins:
+              if '184d898' in l or any(hex(tgt)[2:] in l for _,tgt in key_targets[:8]):
+                  if len(xrefs)<260: xrefs.append((a,l,t))
+          md.append('## Text mentions of AP/method targets\n\n'+table(xrefs,260))
+          Path('out/restrictions-ap184d898-methods-v6.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-ap184d898-methods-v6
+          path: out/restrictions-ap184d898-methods-v6.md
+
+  trace-ap184d5d0-methods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace AP 0x184d5d0 methods and +0x60 readers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=20,aft=75):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=320):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ap=0x184d5d0
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x180]
+          md=['# Restrictions AP `0x184d5d0` / `0x198` object method trace\n\n']
+          md.append('Parallel v6 report. Focus: methods of the late `0x198` object that captures installed `this+0x18` at object field `+0x60`.\n\n')
+          md.append('## Relocation-backed entries near AP `0x184d5d0`\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          targets=[]
+          for off,target,line in ap_rels[:28]: targets.append((off,target))
+          seen=set()
+          for off,target in targets:
+              if target in seen: continue
+              seen.add(target)
+              md.append(f'## AP entry `{off-ap:#x}` -> `{target:#x}`\n\n')
+              md.append(fmt(around(target,18,68)))
+          readers=[]
+          for a,l,t in ins:
+              if any(p in l for p in ['+0x60]', '[rdi+0x60]', '[rbp+0x60]', '[rbx+0x60]', '[r14+0x60]', '[r15+0x60]', '0x60]']):
+                  if 0x10ad000 <= a <= 0x10ae800 or any(tgt-0x80 <= a <= tgt+0x140 for _,tgt in targets):
+                      readers.append((a,l,t))
+          md.append('## Candidate `+0x60` readers/writers near AP methods\n\n'+table(readers,420))
+          ctor=win(0x10ad136,0x10ad360)
+          md.append('## Construction/capture window `10ad136..10ad360`\n\n'+fmt(ctor))
+          Path('out/restrictions-ap184d5d0-methods-v6.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-ap184d5d0-methods-v6
+          path: out/restrictions-ap184d5d0-methods-v6.md
+
+  trace-capture-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace capture bridge from this18 to 0x198
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=28,aft=100):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=360):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions capture bridge: `this+0x18` -> `0x198+0x60`\n\n']
+          md.append('Parallel v6 report. Focus: the exact bridge where the object returned by `b411a4` is copied into the late `0x198` object, plus nearby consumers after construction.\n\n')
+          for addr,desc in [(0x10ad136,'read this+0x18 into rbx'),(0x10ad19e,'assign AP 0x184d5d0'),(0x10ad217,'store rbx into 0x198+0x60'),(0x10ad2a7,'late stack slot reuse/store after capture'),(0x10ad69b,'rsp70 late read')]:
+              md.append(f'## `{addr:#x}` — {desc}\n\n'+fmt(around(addr)))
+          segment=win(0x10ad120,0x10ad760)
+          filt=[]
+          for a,l,t in segment:
+              if any(p in l for p in ['rsp+0x60','184d5d0','[rbp+0x60]','rbx','0x198','rsp+0x70','rsp+0x40','call   QWORD PTR','ff 50']):
+                  filt.append((a,l,t))
+          md.append('## Chronological filtered bridge events\n\n'+table(filt,520))
+          Path('out/restrictions-this18-to-0x198-bridge-v6.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-this18-to-0x198-bridge-v6
+          path: out/restrictions-this18-to-0x198-bridge-v6.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-ap184d898-methods
+      - trace-ap184d5d0-methods
+      - trace-capture-bridge
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -name '*.md' -maxdepth 3 -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-ap184d898-methods-v6.md analysis/restrictions-ap184d5d0-methods-v6.md analysis/restrictions-this18-to-0x198-bridge-v6.md
+          git commit -m 'Trace Restrictions AP methods in parallel' || exit 0
+          git pull --rebase origin main
+          git push
