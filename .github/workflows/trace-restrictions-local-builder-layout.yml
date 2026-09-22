@@ -1,0 +1,130 @@
+name: Trace Restrictions local builder layout
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-local-builder-layout.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace local builder layout
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-local-builder-layout.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          lines = dis.splitlines()
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in lines:
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+
+          def window(start, end=None, count=None):
+              got = [(a,l,t) for a,l,t in insns if a >= start and (end is None or a < end)]
+              if count is not None:
+                  got = got[:count]
+              return got
+
+          def block(ws, limit=140):
+              rows = [l for _,l,_ in ws[:limit]]
+              if len(ws) > limit:
+                  rows.append(f'... truncated {len(ws)-limit} more instructions ...')
+              return '```text\n' + '\n'.join(rows) + '\n```\n'
+
+          w_15e768e = window(0x15e768e, 0x15e7742)
+          w_15e75f2 = window(0x15e75f2, 0x15e7682)
+          w_165c600 = window(0x165c600, 0x165c67e)
+          w_10aba36_tail = window(0x10abf80, 0x10ac080)
+
+          def layout_table(name, frame_size, canary_off, objects):
+              md = []
+              md.append(f'## {name} stack-local output layout\n\n')
+              md.append(f'Frame allocation: `sub rsp, {frame_size:#x}`. Stack canary at `[rsp+{canary_off:#x}]`.\n\n')
+              md.append('| local output object | base | `base+0x8` | `base+0x10` | `base+0x18` | sink-field interpretation |\n')
+              md.append('|---|---:|---:|---:|---:|---|\n')
+              for label, base in objects:
+                  b8, b10, b18 = base+0x8, base+0x10, base+0x18
+                  if b18 == canary_off:
+                      meaning = '**overlaps stack canary**'
+                  else:
+                      overlaps = [lab for lab, off in objects if off == b18]
+                      meaning = f'overlaps `{overlaps[0]}` base' if overlaps else 'ordinary stack slot / adjacent local'
+                  md.append(f'| `{label}` | `rsp+{base:#x}` | `rsp+{b8:#x}` | `rsp+{b10:#x}` | `rsp+{b18:#x}` | {meaning} |\n')
+              md.append('\n')
+              return ''.join(md)
+
+          md = []
+          md.append('# Restrictions local builder layout trace\n\n')
+          md.append('Purpose: test whether the `builder+0x18` sink/refill path seen in `165c600` is a real Restrictions readiness sink in the wrapper call path, or a generic slow path for stack-local output/string builders. Previous traces showed the byte-emitter helpers are generic builder-buffer helpers with no direct `child+0x18` hits.\n\n')
+
+          md.append('## Executive summary\n\n')
+          md.append('The output objects passed into the slot AP methods are stack-local objects inside `15e768e` and `15e75f2`. For the first output object in each wrapper, `builder+0x18` resolves to the stack canary slot, not to a stable Restrictions object. For the following output objects, `builder+0x18` overlaps adjacent local output objects. This strongly indicates that the `builder+0x18 -> sink.vtable+0x10` path in `165c600` is a generic conditional slow path for a builder/string representation, not the semantic Restrictions readiness object.\n\n')
+
+          md.append(layout_table('15e768e / AP +0x90 wrapper', 0x58, 0x50, [
+              ('out0 passed as rsi to AP+0x90', 0x38),
+              ('out1 passed as rdx to AP+0x90', 0x20),
+              ('out2 passed as rcx to AP+0x90', 0x08),
+          ]))
+          md.append('Wrapper callsite: `15e7708 call [slot_obj.vtable+0x90]` with `rdi=slot_obj`, `rsi=rsp+0x38`, `rdx=rsp+0x20`, `rcx=rsp+0x08`.\n\n')
+
+          md.append(layout_table('15e75f2 / AP +0x98 wrapper', 0x38, 0x30, [
+              ('out0 passed as rsi to AP+0x98', 0x18),
+              ('out1 passed as rdx to AP+0x98', 0x00),
+          ]))
+          md.append('Wrapper callsite: `15e764f call [slot_obj.vtable+0x98]` with `rdi=slot_obj`, `rsi=rsp+0x18`, `rdx=rsp`.\n\n')
+
+          md.append('## 165c600 sink/refill branch condition\n\n')
+          md.append('The sink/refill path is guarded by a builder flag/capacity branch. It is reached only after a copy attempt when `[builder+0] != 0` and capacity is insufficient. In the stack-local wrapper layout above, the alleged `builder+0x18` sink location is not a stable object field for the first local output.\n\n')
+          md.append(block(w_165c600, 100))
+
+          md.append('## 15e768e wrapper excerpt\n\n')
+          md.append(block(w_15e768e, 120))
+          md.append('## 15e75f2 wrapper excerpt\n\n')
+          md.append(block(w_15e75f2, 120))
+          md.append('## Constructor tail around wrapper calls\n\n')
+          md.append(block(w_10aba36_tail, 120))
+
+          md.append('## Interpretation\n\n')
+          md.append('- The `builder+0x18` slow path should no longer be treated as the next semantic Restrictions object without proof of an initialized sink object in this exact call path.\n')
+          md.append('- The AP methods `0x165dd40` and `0x153d0d0` appear to materialize textual/buffer outputs into stack-local output objects passed by the wrapper helpers.\n')
+          md.append('- The semantic bridge likely sits after these wrapper calls inside `0x10aba36`, where their output strings/buffers are consumed, copied, or wrapped into the child object state.\n')
+          md.append('- Next concrete target: trace uses of the stack-local outputs after `15e768e`, `a7b5e8`, and `15e75f2` return in `0x10aba36`, rather than following generic buffer slow paths further.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-local-builder-layout.md
+          git commit -m 'Trace Restrictions local builder layout' || exit 0
+          git push
