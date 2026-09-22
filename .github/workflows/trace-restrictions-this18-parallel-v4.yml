@@ -1,0 +1,251 @@
+name: Trace Restrictions this18 open paths parallel v4
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-this18-parallel-v4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-rsp60-this18:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace rsp60 / this+0x18
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=18,aft=70):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def win(start,end):
+              return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def fmt(rows):
+              return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=280):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]:
+                  s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit:
+                  s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ctor=win(0x10aba36,0x10adc80)
+          md=['# Restrictions this+0x18 / `[rsp+0x60]` trace\n\n']
+          md.append('Parallel v4 report. Focus: the true `b411a4` return slot candidate. Earlier v3 showed `[rsp+0x18] = this+0x40`; this report follows `[rsp+0x60] = this+0x18`.\n\n')
+          refs=[x for x in ctor if 'rsp+0x60' in x[1]]
+          md.append('## `[rsp+0x60]` refs in constructor\n\n'+table(refs))
+          for addr,desc in [
+              (0x10aba8a,'initial setup: [rsp+0x60] = this+0x18'),
+              (0x10ac1a1,'first read of [rsp+0x60] after allocated_0x28 construction'),
+              (0x10ac1e6,'second read of [rsp+0x60] near allocated_0x58/inner setup'),
+              (0x10ad136,'late read of [rsp+0x60]'),
+              (0x10adbde,'cleanup/read of [rsp+0x60]')
+          ]:
+              md.append(f'## `{addr:#x}` — {desc}\n\n'+fmt(around(addr)))
+          key=[]
+          for a,l,t in ctor:
+              if any(p in l for p in ['rsp+0x60','[rax]','[rax+0x8]','[rax+0x10]','[rax+0x18]','[rdi+0x18]','184d898','184d9a8','184d0a0','187e260','184d808','17edf00 <_Znwm']):
+                  key.append((a,l,t))
+          md.append('## Chronological key events touching `[rsp+0x60]`/rax stores\n\n'+table(key,420))
+          Path('out/restrictions-this18-rsp60-v4.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-this18-rsp60-v4
+          path: out/restrictions-this18-rsp60-v4.md
+
+  trace-rsp70-late:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace rsp70 late consumers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=20,aft=90):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=260):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ctor=win(0x10aba36,0x10adc80)
+          md=['# Restrictions late `[rsp+0x70]` consumer trace\n\n']
+          md.append('Parallel v4 report. Focus: wrapper_0x80/fallback holder stored in `[rsp+0x70]`, later read at `10ad69b`, and cleanup at `10adb4f`.\n\n')
+          refs=[x for x in ctor if 'rsp+0x70' in x[1]]
+          md.append('## `[rsp+0x70]` refs\n\n'+table(refs))
+          for addr,desc in [
+              (0x10ac454,'normal store: [rsp+0x70] = wrapper_0x80'),
+              (0x10ac47f,'fallback store: [rsp+0x70] = fallback_0x8'),
+              (0x10ad69b,'late read into rcx'),
+              (0x10adb4f,'late cleanup/read into rdi')
+          ]:
+              md.append(f'## `{addr:#x}` — {desc}\n\n'+fmt(around(addr)))
+          key=[]
+          for a,l,t in ctor:
+              if any(p in l for p in ['rsp+0x70','184d0a0','184d1f0','184d9a8','10ad69b','10adb4f','call','[rcx','[rdi','[rax']):
+                  if 0x10ac430 <= a <= 0x10adbf0:
+                      key.append((a,l,t))
+          md.append('## Chronological late holder events\n\n'+table(key,520))
+          Path('out/restrictions-rsp70-late-v4.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-rsp70-late-v4
+          path: out/restrictions-rsp70-late-v4.md
+
+  trace-rsp40-late:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace rsp40 late receiver calls
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in insns]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=24,aft=100):
+              i=ni(addr); return insns[max(0,i-b):min(len(insns),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in insns if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=320):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ctor=win(0x10aba36,0x10adc80)
+          md=['# Restrictions late `[rsp+0x40]` receiver trace\n\n']
+          md.append('Parallel v4 report. Focus: constructor arg `rdx` saved into `[rsp+0x40]`, then used as receiver for multiple later vtable calls before the stack slot is reused.\n\n')
+          refs=[x for x in ctor if 'rsp+0x40' in x[1]]
+          md.append('## `[rsp+0x40]` refs\n\n'+table(refs))
+          for addr,desc in [
+              (0x10aba54,'entry save: [rsp+0x40] = rdx'),
+              (0x10ac372,'first vtable+0x28 receiver'),
+              (0x10ac4e4,'second vtable+0x28 receiver'),
+              (0x10acd33,'late receiver before slot reuse'),
+              (0x10acdad,'late receiver before slot reuse'),
+              (0x10acf8d,'stack slot reused as byte'),
+              (0x10ad2a7,'stack slot reused as pointer')
+          ]:
+              md.append(f'## `{addr:#x}` — {desc}\n\n'+fmt(around(addr)))
+          calls=[]
+          for a,l,t in ctor:
+              if 0x10aba36 <= a <= 0x10ad300 and any(p in l for p in ['rsp+0x40','call   QWORD PTR [rax+0x28]','ff 50 28','ff 50 10','ff 50 18','184d9a8','184d0a0']):
+                  calls.append((a,l,t))
+          md.append('## Chronological receiver/call events\n\n'+table(calls,520))
+          Path('out/restrictions-rsp40-late-v4.md').write_text(''.join(md),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-rsp40-late-v4
+          path: out/restrictions-rsp40-late-v4.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-rsp60-this18
+      - trace-rsp70-late
+      - trace-rsp40-late
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -name '*.md' -maxdepth 3 -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-this18-rsp60-v4.md analysis/restrictions-rsp70-late-v4.md analysis/restrictions-rsp40-late-v4.md
+          git commit -m 'Trace Restrictions this18 open paths in parallel' || exit 0
+          git pull --rebase origin main
+          git push
