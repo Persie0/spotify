@@ -123,7 +123,46 @@ The same narrow trace found **0** calls carrying a `bundle_30` argument while th
 14ce717  a79a7e
 ```
 
-This means the next useful step is not another broad provider-vector scan. It should be a local slice around `0x14ce666..0x14ce717`, especially the object formed at `rsp+0x2e0..rsp+0x330` and the call at `0x14ce717`.
+## Local slice around `0x14ce666..0x14ce717`
+
+`analysis/restrictions-local-slice-a79a7e.md` narrows the next edge.
+
+The slice contained 64 local instructions and 6 calls. The key calls are:
+
+```text
+14ce65a  mutex::lock(rdi=r15)
+14ce6b8  basic_string copy ctor(rdi=rsp+0x2b0, rsi=r12)
+14ce6d4  operator new
+14ce717  a79a7e(rdi=rsp+0x3a0, rsi=rsp+0x2b1, rcx=rsp+0x350)
+14ce72c  helper(rdi=rsp+0x230, rsi=rsp+0x3a0)
+14ce739  basic_string dtor(rdi=rsp+0x3a0)
+```
+
+Important correction: `a79a7e` does **not** receive `rsp+0x310` directly. At the callsite, tracked arguments are:
+
+```text
+rdi = rsp+0x3a0
+rsi = rsp+0x2b1
+rcx = rsp+0x350
+```
+
+So `a79a7e` is more likely a string/object construction or append helper used after building the local object, not the direct `bundle+0x30` carrier.
+
+The helper target has many xrefs (`5651`), and its early body does not directly dereference incoming argument registers in the first `0x260` bytes. It saves arguments into callee-saved registers and forwards them to deeper helpers:
+
+```text
+a79abd  mov ebx, edx
+a79abf  mov r15, rsi
+a79ac2  mov r12, rdi
+...
+a79ae8  mov rdi, r13
+a79aeb  mov rsi, r14
+a79aee  mov rdx, r12
+a79af1  mov rcx, r15
+a79af4  call 17d5775
+```
+
+That means the next useful trace should follow `17d5775` and/or the post-`a79a7e` call `14ce72c -> 17add2a`, rather than treating `a79a7e` itself as the final owner.
 
 ## Restrictions factory consumption
 
@@ -143,7 +182,8 @@ Current best path:
 provider-vector caller rsp+0x310
   -> local object materialized at 14ce666
   -> object fields around rcx-0x30..rcx+0x20
-  -> call sequence 14ce6b8 / 14ce6d4 / 14ce717
+  -> local calls 14ce6b8 / 14ce6d4 / 14ce717 / 14ce72c
+  -> likely deeper helper 17d5775 or 17add2a
   -> RestrictionsSetupImpl rdx+0x30
   -> factory constructor rcx
   -> Restrictions child +0x18
@@ -153,17 +193,13 @@ provider-vector caller rsp+0x310
 
 ## Current limitation
 
-The traces do **not** yet prove the exact write source for the value that Restrictions reads from `rdx+0x30`. They prove the call-boundary mapping and narrow the local materialization site, but the value source still needs a local slice around:
-
-```text
-0x14ce666..0x14ce717
-```
+The traces do **not** yet prove the exact write source for the value that Restrictions reads from `rdx+0x30`. They prove the call-boundary mapping and narrow the local materialization site, but the value source still needs deeper slicing through the local call chain.
 
 Most likely next targets:
 
-1. classify the local object layout initialized around `rcx = rsp+0x310`,
-2. inspect call `0x14ce717 -> a79a7e`,
-3. determine whether that call moves/copies a field that later becomes provider setup `rdx+0x30`.
+1. inspect `14ce72c -> 17add2a` because it consumes the `rsp+0x3a0` object returned/built after `a79a7e`,
+2. inspect helper `17d5775` reached by `a79a7e`, because `a79a7e` forwards `rdi/rsi` there as `rdx/rcx`,
+3. determine whether either helper stores into the structure whose later provider-call alias is `rsp+0x2e0 + 0x30`.
 
 ## Evidence files
 
@@ -171,6 +207,7 @@ Most likely next targets:
 - `analysis/restrictions-provider-callsite-summary.md`
 - `analysis/restrictions-bundle30-stackslot.md`
 - `analysis/restrictions-bundle30-consumers.md`
+- `analysis/restrictions-local-slice-a79a7e.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
