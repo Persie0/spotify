@@ -1,0 +1,310 @@
+name: Trace Restrictions direct callees
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-direct-callees.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-direct-callees
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-direct-callees
+          unzip -j /tmp/restrictions-direct-callees/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-direct-callees
+      - name: Trace direct callees
+        run: |
+          SO=/tmp/restrictions-direct-callees/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-direct-callees/all.dis
+          python3 - <<'PY' > analysis/restrictions-direct-callees.md
+          import re
+          from pathlib import Path
+
+          dis = Path('/tmp/restrictions-direct-callees/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          call_target_re = re.compile(r'\b(?:call|jmp)\s+([0-9a-f]+)')
+          mem_re = re.compile(r'\[([^\]]+)\]')
+
+          insts = []
+          for line in dis:
+              m = inst_re.match(line)
+              if not m:
+                  continue
+              addr = int(m.group(1), 16)
+              text = m.group(2).strip()
+              insts.append((addr, line.rstrip(), text))
+          addr_to_idx = {addr:i for i,(addr,_,__) in enumerate(insts)}
+
+          reg_alias = {
+              'rax':'rax','eax':'rax','ax':'rax','al':'rax',
+              'rbx':'rbx','ebx':'rbx','bx':'rbx','bl':'rbx',
+              'rcx':'rcx','ecx':'rcx','cx':'rcx','cl':'rcx',
+              'rdx':'rdx','edx':'rdx','dx':'rdx','dl':'rdx',
+              'rsi':'rsi','esi':'rsi','si':'rsi','sil':'rsi',
+              'rdi':'rdi','edi':'rdi','di':'rdi','dil':'rdi',
+              'rbp':'rbp','ebp':'rbp','bp':'rbp','bpl':'rbp',
+              'rsp':'rsp','esp':'rsp','sp':'rsp','spl':'rsp',
+          }
+          for i in range(8,16):
+              reg_alias[f'r{i}'] = f'r{i}'
+              reg_alias[f'r{i}d'] = f'r{i}'
+              reg_alias[f'r{i}w'] = f'r{i}'
+              reg_alias[f'r{i}b'] = f'r{i}'
+
+          def canon(r):
+              return reg_alias.get(r.strip().lower(), r.strip().lower())
+
+          def split_ops(s):
+              parts=[]; cur=''; depth=0
+              for ch in s:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      parts.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): parts.append(cur.strip())
+              return parts
+
+          def parse_disp(expr):
+              expr = expr.replace(' ', '')
+              # rip-relative/non register cases ignored for origin tracking
+              tokens = re.split(r'(?=[+-])', expr)
+              off = 0
+              regs=[]
+              for t in tokens:
+                  if not t: continue
+                  sign = 1
+                  if t[0] == '+': t=t[1:]
+                  elif t[0] == '-': sign=-1; t=t[1:]
+                  if not t: continue
+                  if '*' in t:
+                      continue
+                  if re.fullmatch(r'0x[0-9a-fA-F]+|\d+', t):
+                      off += sign * int(t,0)
+                  else:
+                      regs.append(canon(t))
+              return regs, off
+
+          def origin_text(o):
+              if not o: return ''
+              base, off = o
+              if off == 0: return base
+              return f"{base}{off:+#x}"
+
+          def resolve_mem(mem, origins):
+              regs, off = parse_disp(mem)
+              if len(regs) != 1:
+                  return None
+              base_reg = regs[0]
+              if base_reg not in origins:
+                  return None
+              base, base_off = origins[base_reg]
+              return (base, base_off + off)
+
+          def is_write(mnemonic, dst):
+              if '[' not in dst: return False
+              if mnemonic.startswith(('cmp','test')): return False
+              if mnemonic.startswith(('jmp','call')): return False
+              return mnemonic.startswith(('mov','lea','and','or','xor','add','sub','inc','dec','xchg','push','pop')) or mnemonic in ('stosq','stosd')
+
+          targets = [
+              {
+                  'addr':0x16609b0,
+                  'name':'16609b0 reached from 165ffb0 with rdx=bundle+0x10',
+                  'initial':{'rdi':('descriptor',0), 'rsi':('local_out',0), 'rdx':('bundle',0x10)},
+                  'why':'strong direct callee: a write to rdx+0x20 would be bundle+0x30',
+              },
+              {
+                  'addr':0x1660346,
+                  'name':'1660346 reached from slot-fill helpers',
+                  'initial':{'rdi':('descriptor',0), 'rdx':('descriptor_stream',0), 'rcx':('descriptor_remaining',0)},
+                  'why':'descriptor skip/parser helper reached from 153d2a4 and 153d0d0',
+              },
+              {
+                  'addr':0x165feb3,
+                  'name':'165feb3 internal tail from 165fe6a',
+                  'initial':{'rdi':('descriptor',0), 'rsi':('local_out',0), 'rdx':('descriptor_stream',0), 'r14':('bundle',0x10)},
+                  'why':'165fe6a jumps here while preserving r14=bundle+0x10',
+              },
+              {
+                  'addr':0x1660070,
+                  'name':'1660070 internal tail from 1660032',
+                  'initial':{'rdi':('descriptor',0), 'rsi':('substructure',0)},
+                  'why':'1660032 jumps here after writing into bundle substructures',
+              },
+          ]
+
+          print('# Restrictions direct callee trace')
+          print()
+          print('Purpose: follow direct callees left open by the descriptor-helper trace. The strongest target is `16609b0`, called with `rdx=bundle+0x10`; a write to `rdx+0x20` would resolve exactly to the Restrictions factory field `bundle+0x30`.')
+          print()
+          print('## Summary table')
+          print()
+          print('| target | insns | refs | writes | exact bundle+0x30 writes | bundle+0x30 aliases/passes | calls |')
+          print('|---:|---:|---:|---:|---:|---:|---:|')
+
+          details=[]
+          summary=[]
+          for t in targets:
+              addr=t['addr']
+              if addr not in addr_to_idx:
+                  summary.append((addr,0,0,0,0,0,0))
+                  details.append((t, [], [], [], [], [], []))
+                  continue
+              i=addr_to_idx[addr]
+              window=[]
+              for j in range(i, min(len(insts), i+260)):
+                  a,line,text=insts[j]
+                  window.append((a,line,text))
+                  if j>i and (text.startswith('ret') or text.startswith('ud2') or text.startswith('int3')):
+                      # keep a compact function-like window
+                      break
+              origins={canon(k):v for k,v in t['initial'].items()}
+              refs=[]; writes=[]; exact=[]; aliases=[]; calls=[]
+              for a,line,text in window:
+                  parts=text.split(None,1)
+                  if not parts: continue
+                  mnemonic=parts[0]
+                  ops=split_ops(parts[1]) if len(parts)>1 else []
+                  # record memory refs before mutating origins
+                  for mem in mem_re.findall(text):
+                      res=resolve_mem(mem, origins)
+                      if res:
+                          refs.append((a,res,line))
+                  if ops:
+                      dst=ops[0]
+                      if is_write(mnemonic, dst):
+                          m=mem_re.search(dst)
+                          if m:
+                              res=resolve_mem(m.group(1), origins)
+                              if res:
+                                  writes.append((a,res,line))
+                                  if res == ('bundle',0x30):
+                                      exact.append((a,line))
+                  # call/jmp tracked args
+                  if mnemonic.startswith(('call','jmp')):
+                      tracked={r:origin_text(o) for r,o in origins.items() if r in ('rdi','rsi','rdx','rcx','r8','r9','r14','r15') and o}
+                      if tracked:
+                          mt=call_target_re.search(text)
+                          calls.append((a, mt.group(1) if mt else '?', tracked, line))
+                  # alias detection: lea reg,[origin+off]
+                  if mnemonic == 'lea' and len(ops)>=2:
+                      d=canon(ops[0])
+                      m=mem_re.search(ops[1])
+                      if m:
+                          res=resolve_mem(m.group(1), origins)
+                          if res:
+                              origins[d]=res
+                              if res == ('bundle',0x30):
+                                  aliases.append((a,'lea-alias',line))
+                          elif d in origins:
+                              origins.pop(d,None)
+                      continue
+                  # mov propagation
+                  if mnemonic.startswith('mov') and len(ops)>=2:
+                      d=canon(ops[0])
+                      s=ops[1]
+                      if '[' not in ops[0]:
+                          # reg <- reg or reg <- [origin]
+                          if '[' in s:
+                              m=mem_re.search(s)
+                              res=resolve_mem(m.group(1), origins) if m else None
+                              if res:
+                                  origins[d]=('load('+res[0]+')',res[1])
+                              else:
+                                  origins.pop(d,None)
+                          else:
+                              cs=canon(s)
+                              if cs in origins:
+                                  origins[d]=origins[cs]
+                              else:
+                                  # immediates/unknown clobber tracked destination regs
+                                  origins.pop(d,None)
+                      continue
+                  # arithmetic on tracked pointers
+                  if mnemonic in ('add','sub') and len(ops)>=2:
+                      d=canon(ops[0])
+                      if d in origins and re.fullmatch(r'0x[0-9a-fA-F]+|\d+', ops[1]):
+                          base,off=origins[d]
+                          val=int(ops[1],0)
+                          if mnemonic=='sub': val=-val
+                          origins[d]=(base,off+val)
+                      continue
+                  # xor reg,reg clears; other unknown writes clobber destination register
+                  if mnemonic == 'xor' and len(ops)>=2 and canon(ops[0]) == canon(ops[1]):
+                      origins.pop(canon(ops[0]),None)
+                      continue
+              summary.append((addr,len(window),len(refs),len(writes),len(exact),len(aliases),len(calls)))
+              details.append((t,window,refs,writes,exact,aliases,calls))
+
+          for addr,insn,refs,writes,exact,aliases,calls in summary:
+              print(f'| `0x{addr:x}` | `{insn}` | `{refs}` | `{writes}` | `{exact}` | `{aliases}` | `{calls}` |')
+          print()
+          print('## Details')
+          for t,window,refs,writes,exact,aliases,calls in details:
+              print()
+              print(f"### `{t['name']}` at `0x{t['addr']:x}`")
+              print()
+              print(f"- why: {t['why']}")
+              print(f"- initial origins: `{', '.join(k+'='+origin_text(v) for k,v in t['initial'].items())}`")
+              print(f"- instructions scanned: `{len(window)}`")
+              print(f"- tracked refs: `{len(refs)}`")
+              print(f"- tracked writes: `{len(writes)}`")
+              print(f"- exact `bundle+0x30` writes: `{len(exact)}`")
+              print(f"- exact `bundle+0x30` aliases/passes: `{len(aliases)}`")
+              print()
+              print('#### Entry excerpt')
+              print('```text')
+              for _,line,_ in window[:80]:
+                  print(line)
+              if len(window)>80:
+                  print('...')
+              print('```')
+              if writes:
+                  print('\n#### Tracked writes')
+                  print('| addr | resolved location | instruction |')
+                  print('|---:|---|---|')
+                  for a,res,line in writes[:40]:
+                      print(f'| `0x{a:x}` | `{origin_text(res)}` | `{line.strip()}` |')
+              if exact:
+                  print('\n#### Exact bundle+0x30 writes')
+                  for a,line in exact:
+                      print(f'- `0x{a:x}` `{line.strip()}`')
+              if aliases:
+                  print('\n#### Exact bundle+0x30 aliases/passes')
+                  for a,kind,line in aliases:
+                      print(f'- `0x{a:x}` {kind}: `{line.strip()}`')
+              if calls:
+                  print('\n#### Calls/jumps with tracked args')
+                  print('| call | target | tracked args | instruction |')
+                  print('|---:|---:|---|---|')
+                  for a,target,tracked,line in calls[:50]:
+                      args=', '.join(f'{k}={v}' for k,v in tracked.items())
+                      print(f'| `0x{a:x}` | `0x{target}` | `{args}` | `{line.strip()}` |')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-direct-callees.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions direct callees"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
