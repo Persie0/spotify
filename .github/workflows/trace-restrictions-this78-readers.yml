@@ -1,0 +1,234 @@
+name: Trace Restrictions this+0x78 readers and methods
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-this78-readers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace this+0x78 readers and object methods
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-this78-readers.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+
+          addrs = [a for a,_,_ in insns]
+          by_addr = {a:(l,t) for a,l,t in insns}
+
+          def window_addr(addr, before=18, after=50):
+              idx = min(range(len(insns)), key=lambda i: abs(insns[i][0] - addr))
+              return insns[max(0, idx-before):min(len(insns), idx+after)]
+
+          def func_window(addr, max_ins=180):
+              idx = min(range(len(insns)), key=lambda i: abs(insns[i][0] - addr))
+              # back up a little if exact target is not first instruction
+              start = idx
+              rows = []
+              for a,l,t in insns[start:start+max_ins]:
+                  rows.append((a,l,t))
+                  if a > addr and re.search(r'\bret\b|\bjmp\s+[0-9a-f]+\s', t):
+                      if len(rows) > 8:
+                          break
+              return rows
+
+          def fmt(rows, limit=180):
+              body = [l for _,l,_ in rows[:limit]]
+              if len(rows) > limit:
+                  body.append(f'... truncated {len(rows)-limit} more instructions ...')
+              return '```text\n' + ('\n'.join(body) if body else '(none)') + '\n```\n'
+
+          def xrefs_to(hexaddr, limit=60):
+              s = f'{hexaddr:x}'
+              hits = []
+              for i,(a,l,t) in enumerate(insns):
+                  if s in t or s in l:
+                      hits.append((a, window_addr(a, 5, 9)))
+              return hits[:limit], len(hits)
+
+          # Focused constructor region from first this+0x78 install through virtual method calls.
+          ctor = [(a,l,t) for a,l,t in insns if 0x10ac120 <= a <= 0x10ac3c0]
+
+          # Track a few concrete aliases in the constructor tail.
+          aliases = {}
+          events = []
+          calls = []
+          last_new = None
+          for a,l,t in ctor:
+              # seed known operations from the previous report
+              if a == 0x10ac12c:
+                  last_new = 'allocated_0x28_at_10ac12c'
+              if a == 0x10ac149:
+                  last_new = 'allocated_0x30_at_10ac149'
+              if a == 0x10ac1ba:
+                  last_new = 'allocated_0x58_at_10ac1ba'
+              if a == 0x10ac249:
+                  last_new = 'allocated_0x150_at_10ac249'
+              if a == 0x10ac131:
+                  aliases['r14'] = 'allocated_0x28_at_10ac12c'
+              if a == 0x10ac14e:
+                  aliases['r12'] = 'allocated_0x30_at_10ac149'
+              if a == 0x10ac15e:
+                  aliases['r13'] = 'stack_wrapper_at_rsp+0x110'
+              # simple moves
+              m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15))\b', t)
+              if m and m.group(2) in aliases:
+                  aliases[m.group(1)] = aliases[m.group(2)]
+              # load alias
+              m = re.search(r'\bmov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*(?:QWORD PTR )?\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'load({origin}:{mem})'
+                          break
+              # lea alias
+              m = re.search(r'\blea\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),\s*\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'addr({origin}:{mem})'
+                          break
+              # new returns
+              if 'call' in t and '_Znwm' in t:
+                  calls.append((a, 'operator new', dict(aliases), l))
+              # track writes/reads around allocated object and this+0x78-like paths
+              for r,origin in list(aliases.items()):
+                  if re.search(rf'\[[^\]]*\b{re.escape(r)}\b[^\]]*\]', t):
+                      mem = re.search(r'\[([^\]]+)\]', t).group(1)
+                      is_write = bool(re.match(r'\b(?:mov|movups|movaps|and|or|xor|add|sub|inc|dec|xchg)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', t))
+                      if is_write or 'call' in t or '+0x28' in mem or '+0x18' in mem or '+0x78' in mem:
+                          events.append((a, origin, mem, 'write' if is_write else 'read/callref', l))
+              if 'call' in t:
+                  tracked = []
+                  for r in ['rdi','rsi','rdx','rcx','r8','r9','rax','rbx','rbp','r12','r13','r14','r15']:
+                      if r in aliases:
+                          tracked.append(f'{r}={aliases[r]}')
+                  if tracked or re.search(r'\[rax\+0x28\]|\[rax\+0x8\]|\[rax\+0x10\]', t):
+                      calls.append((a, '; '.join(tracked) if tracked else 'untracked indirect call', dict(aliases), l))
+
+          # Global suspicious this+0x78 style memory references.
+          mem78_refs = []
+          for i,(a,l,t) in enumerate(insns):
+              if '+0x78' in t or '-0xffffffffffffff88' in t:
+                  # avoid printing thousands if generic; collect likely code refs only
+                  if re.search(r'\[(rdi|rbx|rbp|r12|r13|r14|r15|rax|rcx|rdx)\+0x78\]', t) or '+0x78' in t:
+                      mem78_refs.append((a,l,t))
+
+          # Xrefs to the object/AP/helper constants.
+          xref_targets = [0x184d898, 0x184d808, 0x187e260, 0x107162a, 0xde1c52, 0x10bff2c, 0x10bff40, 0x15e74c8, 0xaa6d30, 0xa7b84f]
+
+          # Explicit function/method windows to keep all next targets in one report.
+          method_targets = {
+              0x107162a: '107162a called as constructor/copy into allocated_0x28+0x08',
+              0xde1c52: 'de1c52 stack wrapper cleanup/finalizer',
+              0x10bff2c: 'alternate 0x184d898 object constructor',
+              0x10bff40: 'alternate wrapper around 10bff2c',
+              0x15e74c8: 'helper called with stack wrapper / allocated object data',
+              0xa7b84f: 'conditional string/helper after 15e74c8',
+              0xaa6d30: 'cleanup/finalizer after 15e74c8/a7b84f',
+          }
+
+          md = []
+          md.append('# Restrictions this+0x78 readers and methods trace\n\n')
+          md.append('Purpose: batch the next layer after `this+0x78` allocation/install was proven. This report traces readers and helper/method calls around the installed `allocated_0x28` object, including `107162a`, `de1c52`, alternate constructor `10bff2c/10bff40`, and indirect virtual calls on the object.\n\n')
+
+          md.append('## Constructor tail: install and immediate calls\n\n')
+          md.append(fmt(ctor, 220))
+
+          md.append('## Tracked constructor tail events\n\n')
+          if events:
+              md.append('| addr | origin | mem | kind | instruction |\n|---:|---|---|---|---|\n')
+              for a,origin,mem,kind,line in events[:220]:
+                  md.append(f'| `{a:#x}` | `{origin}` | `{mem}` | `{kind}` | `{line.strip()}` |\n')
+          else:
+              md.append('No tracked events found.\n')
+          md.append('\n')
+
+          md.append('## Tracked calls in constructor tail\n\n')
+          if calls:
+              md.append('| addr | tracked args / note | instruction |\n|---:|---|---|\n')
+              for a,note,aliases_snapshot,line in calls[:180]:
+                  md.append(f'| `{a:#x}` | `{note}` | `{line.strip()}` |\n')
+          else:
+              md.append('No tracked calls found.\n')
+          md.append('\n')
+
+          md.append('## Global `+0x78` memory references sample\n\n')
+          md.append('These are broad x86 memory references containing `+0x78`; they are not all the same type. Use the constructor-tail tracked section above as the semantic source of truth for this object path.\n\n')
+          if mem78_refs:
+              md.append('| addr | instruction |\n|---:|---|\n')
+              for a,l,t in mem78_refs[:160]:
+                  md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+              if len(mem78_refs) > 160:
+                  md.append(f'\nTruncated {len(mem78_refs)-160} additional `+0x78` refs.\n')
+          else:
+              md.append('No `+0x78` refs found.\n')
+          md.append('\n')
+
+          md.append('## Xrefs to object APs / helper targets\n\n')
+          for target in xref_targets:
+              hits, total = xrefs_to(target, limit=25)
+              md.append(f'### `{target:#x}` xrefs ({total})\n\n')
+              if not hits:
+                  md.append('(none)\n\n')
+                  continue
+              for a,rows in hits[:25]:
+                  md.append(f'#### xref at `{a:#x}`\n\n')
+                  md.append(fmt(rows, 40))
+
+          md.append('## Explicit helper / method target windows\n\n')
+          for target, desc in method_targets.items():
+              md.append(f'### `{target:#x}` — {desc}\n\n')
+              md.append(fmt(func_window(target, max_ins=220), 220))
+
+          md.append('## Interpretation checklist / next targets\n\n')
+          md.append('- If `107162a` copies the stack wrapper into `allocated_0x28+0x08`, classify the `0x28` object as an erased/shared wrapper holder rather than the readiness source itself.\n')
+          md.append('- If `10bff2c` only writes `0x184d898` and jumps to `de1c52`, it is likely an alternate constructor or cleanup wrapper for the same object family.\n')
+          md.append('- If constructor-tail indirect calls use `[allocated_0x28.vtable+0x28]`, resolve whether that method returns/stores the object later exposed as `child+0x18`.\n')
+          md.append('- If no direct reader connects `this+0x78` to `b411a4`, the remaining target should be the constructor-owned `child+0x18` write/read around service+0x10 and the object AP `0x184da88`, not the local string/builder helpers.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-this78-readers.md
+          git commit -m 'Trace Restrictions this+0x78 readers and methods' || exit 0
+          git push
