@@ -38,7 +38,7 @@ rcx = registry context
 call provider +0x28
 ```
 
-The concise report found 8 provider-like `+0x28` callsites. All 8 resolve their `rdx` setup-bundle argument to the same stack-local base:
+All 8 provider-like callsites resolve their `rdx` setup-bundle argument to the same stack-local base:
 
 ```text
 rdx -> rsp+0x2e0
@@ -50,19 +50,9 @@ Therefore the Restrictions factory field previously described abstractly as `bun
 rsp+0x310
 ```
 
-The Restrictions factory consumes this bundle as:
-
-```text
-10ab7c2  mov rbx, rdx
-10ab824  mov rax, [rbx+0x30]
-10ab82d  mov rax, [rbx+0x60]
-10ab836  mov rax, [rbx+0x98]
-10ab842  mov rbp, [rbx+0x68]
-```
-
 ## Closed `bundle+0x30` provenance
 
-The missing edge is now closed. `bundle+0x30` is not populated by a direct `[bundle+0x30]` store. It is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
+The missing edge is closed. `bundle+0x30` is not populated by a direct `[bundle+0x30]` store. It is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
 
 Constructor evidence:
 
@@ -101,9 +91,7 @@ Inside `1507a9e`, `rbx = bundle+0x18`; `[rbx]` is the vector data pointer. Since
 1507b1a  mov [rcx+rdx*8], rax       ; [bundle+0x30] = new slot object pointer
 ```
 
-`153d2a4` then fills that newly allocated object from the descriptor stream. The Restrictions factory later reads `[rdx+0x30]`, so it receives this first inline-vector slot pointer.
-
-The destructor/free guard corroborates the inline-storage interpretation:
+`153d2a4` then fills that newly allocated object from the descriptor stream. The destructor/free guard corroborates the inline-storage interpretation:
 
 ```text
 153cb29  mov rdi, [rbx+0x18]
@@ -113,6 +101,40 @@ The destructor/free guard corroborates the inline-storage interpretation:
 ```
 
 That check avoids freeing the inline vector buffer when the data pointer still equals `bundle+0x30`.
+
+## Factory consumption closure
+
+`analysis/restrictions-factory-consumption.md` confirms `RestrictionsSetupImpl` consumes the now-resolved inline-vector slot. At factory entry, `rdx` is the setup bundle and is preserved in `rbx`:
+
+```text
+10ab7c2  mov rbx, rdx
+10ab824  mov rax, [rbx+0x30]
+10ab828  mov [rsp+0x40], rax
+10ab82d  mov rax, [rbx+0x60]
+10ab831  mov [rsp+0x48], rax
+10ab836  mov rax, [rbx+0x98]
+10ab83d  mov [rsp+0x30], rax
+10ab842  mov rbp, [rbx+0x68]
+```
+
+Later the value copied from `[bundle+0x30]` into `rsp+0x40` is passed as a constructor argument in `rcx`:
+
+```text
+10ab93c  mov rdi, rbx
+10ab93f  mov rsi, [rsp+0x58]
+10ab944  mov rdx, [rsp+0x50]
+10ab949  mov rcx, [rsp+0x40]   ; rcx = value read from [bundle+0x30]
+10ab94e  mov r9,  [rsp+0x48]
+```
+
+The child readiness accessor is direct:
+
+```text
+b411a4  mov rax, [rdi+0x18]
+b411a8  ret
+```
+
+So the object pointer appended into inline vector storage at `bundle+0x30` is read by the Restrictions factory, forwarded through constructor state, and later exposed by the child accessor as the readiness dependency.
 
 ## Proven path
 
@@ -128,10 +150,10 @@ provider-vector caller
   -> 1507b1a stores that object pointer through [bundle+0x18] into bundle+0x30
   -> 153d2a4 fills that object from the descriptor stream
   -> provider +0x28 calls pass rdx = rsp+0x2e0
-  -> RestrictionsSetupImpl factory reads [rdx+0x30]
-  -> Restrictions child +0x18
-  -> child +0x38 / b411a4
-  -> final readiness dependency chain
+  -> RestrictionsSetupImpl factory copies [rdx+0x30] to rsp+0x40
+  -> factory passes that value as rcx into the child/service constructor path
+  -> child +0x38 / b411a4 returns child+0x18
+  -> returned dependency participates in the final readiness chain
 ```
 
 ## Ruled-out direct writer paths
@@ -152,11 +174,12 @@ The earlier apparent contradiction is resolved by distinguishing direct field st
 
 ## Current conclusion
 
-The `RestrictionsSetupImpl` dependency consumed at `[bundle+0x30]` is the first object pointer appended into the stack bundle's inline vector storage. That object is allocated by `1507a9e`, stored at `1507b1a`, and filled by `153d2a4` before provider factories consume the shared setup bundle.
+The `RestrictionsSetupImpl` dependency consumed at `[bundle+0x30]` is the first object pointer appended into the stack bundle's inline vector storage. That object is allocated by `1507a9e`, stored at `1507b1a`, filled by `153d2a4`, consumed by the factory at `10ab824`, and then forwarded through constructor state to the child accessor `b411a4`.
 
 ## Evidence files
 
 - `analysis/restrictions-inline-vector-layout.md`
+- `analysis/restrictions-factory-consumption.md`
 - `analysis/restrictions-provider-callsite.md`
 - `analysis/restrictions-bundle30-stackslot.md`
 - `analysis/restrictions-bundle30-consumers.md`
