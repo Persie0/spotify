@@ -260,6 +260,37 @@ That is an inline-storage/free guard, not a writer.
 
 Current conclusion: none of the scanned remaining bundle vtable methods produce a direct write resolving exactly to `bundle+0x30`. The only `bundle+0x30` hits are aliases/passes, not stores.
 
+## Descriptor-helper branch findings
+
+`analysis/restrictions-descriptor-helpers.md` followed the descriptor helper branch from `0x153cbfc`, especially the call where `rdx=bundle+0x10`:
+
+```text
+153cc1e  lea rdx, [rdi+0x10]   ; rdi=bundle_base, so rdx=bundle+0x10
+153cc22  lea rsi, [rsp+0x10]
+153cc27  mov rdi, rbx          ; descriptor
+153cc2a  call 165fe6a
+```
+
+A write to `rdx+0x20` would resolve to `bundle+0x30`. The descriptor-helper trace did not find that. Summary:
+
+```text
+165fe6a: exact bundle+0x30 writes 0, aliases/passes 0
+165ffb0: exact bundle+0x30 writes 0, aliases/passes 0
+1660032: exact bundle+0x30 writes 0, aliases/passes 0
+153d2a4: exact bundle+0x30 writes 0, aliases/passes 0
+153d0d0: exact bundle+0x30 writes 0, aliases/passes 0
+```
+
+Important detail: `165ffb0` writes `descriptor+0x30`, not `bundle+0x30`:
+
+```text
+165ffc6  mov [rbx+0x30], rax  ; rbx=descriptor
+```
+
+The slot-fill helpers `153d2a4` and `153d0d0` call `165fe6a` with `rdx=slot+0x10`, then update descriptor parser state in the traced window. They also did not write `bundle+0x30`.
+
+Current conclusion: the descriptor-helper branch is ruled out as a direct `bundle+0x30` writer under the tracked ABI windows.
+
 ## Current best path
 
 ```text
@@ -286,15 +317,16 @@ The exact source of the value read by Restrictions as `rdx+0x30` is still not cl
 3. `17add2a`,
 4. `bundle.vtable+0x30` / `0x153cbfc` directly,
 5. the `bundle+0x18 -> 1507a9e` vector-slot helper,
-6. the `bundle+0x18 -> d15d98` resize helper, or
-7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking.
+6. the `bundle+0x18 -> d15d98` resize helper,
+7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking, or
+8. the descriptor helpers `165fe6a`, `165ffb0`, `1660032`, `153d2a4`, and `153d0d0` under the tracked ABI windows.
 
 Next best targets:
 
 ```text
 A) bundle constructor/setup semantics around 14ce65f..14ce68d,
 B) inline storage interpretation of bundle+0x30 rather than a separately written pointer,
-C) 0x153cbfc descriptor helper 165fe6a / 165ffb0,
+C) deeper nested object/value helpers reached by the slot-fill paths, especially 1660346 and 16609b0,
 D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths where values may be stored into nested objects rather than directly into the bundle.
 ```
 
@@ -312,6 +344,7 @@ D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths where values may be st
 - `analysis/restrictions-substructure-writers.md`
 - `analysis/restrictions-resize-helper.md`
 - `analysis/restrictions-other-vtable-methods.md`
+- `analysis/restrictions-descriptor-helpers.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
