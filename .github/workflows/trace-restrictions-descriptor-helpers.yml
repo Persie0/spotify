@@ -1,0 +1,328 @@
+name: Trace Restrictions descriptor helpers
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-descriptor-helpers.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/restrictions-descriptor
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-descriptor
+          unzip -j /tmp/restrictions-descriptor/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-descriptor
+      - name: Trace descriptor helpers
+        run: |
+          set -euxo pipefail
+          SO=/tmp/restrictions-descriptor/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-descriptor/all.dis
+          python3 - <<'PY' > analysis/restrictions-descriptor-helpers.md
+          import re
+          from pathlib import Path
+
+          dis_path = Path('/tmp/restrictions-descriptor/all.dis')
+          lines = dis_path.read_text(errors='replace').splitlines()
+          ins_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          label_re = re.compile(r'^([0-9a-f]+)\s+<([^>]+)>:$')
+          ins = []
+          labels = {}
+          for line in lines:
+              m = label_re.match(line)
+              if m:
+                  labels[int(m.group(1), 16)] = m.group(2)
+              m = ins_re.match(line)
+              if m:
+                  addr = int(m.group(1), 16)
+                  text = m.group(2).strip()
+                  ins.append((addr, text, line))
+          ins.sort()
+          addr_to_i = {addr:i for i,(addr,_,__) in enumerate(ins)}
+
+          def label_at(addr):
+              best = None
+              for a, name in labels.items():
+                  if a <= addr and (best is None or a > best[0]):
+                      best = (a, name)
+              if not best:
+                  return ''
+              off = addr - best[0]
+              return best[1] if off == 0 else f'{best[1]}+0x{off:x}'
+
+          def split_ops(text):
+              if not text:
+                  return '', []
+              parts = text.split(None, 1)
+              op = parts[0]
+              rest = parts[1] if len(parts) > 1 else ''
+              ops, cur, depth = [], '', 0
+              for ch in rest:
+                  if ch == '[':
+                      depth += 1
+                  elif ch == ']':
+                      depth -= 1
+                  if ch == ',' and depth == 0:
+                      ops.append(cur.strip())
+                      cur = ''
+                  else:
+                      cur += ch
+              if cur.strip():
+                  ops.append(cur.strip())
+              return op, ops
+
+          regs = ['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15',
+                  'eax','ebx','ecx','edx','esi','edi','ebp','esp','r8d','r9d','r10d','r11d','r12d','r13d','r14d','r15d']
+          norm_map = {r:r for r in regs}
+          for a,b in [('eax','rax'),('ebx','rbx'),('ecx','rcx'),('edx','rdx'),('esi','rsi'),('edi','rdi'),('ebp','rbp'),('esp','rsp'),
+                      ('r8d','r8'),('r9d','r9'),('r10d','r10'),('r11d','r11'),('r12d','r12'),('r13d','r13'),('r14d','r14'),('r15d','r15')]:
+              norm_map[a] = b
+          reg_pat = '|'.join(sorted(map(re.escape, regs), key=len, reverse=True))
+          mem_re = re.compile(r'\[([^\]]+)\]')
+          reg_token_re = re.compile(r'\b(' + reg_pat + r')\b')
+          call_re = re.compile(r'\bcall\s+(?:QWORD PTR\s+)?(?:0x)?([0-9a-f]+)')
+          jmp_re = re.compile(r'\bjmp\s+(?:0x)?([0-9a-f]+)')
+
+          def first_base(mem):
+              mt = reg_token_re.search(mem)
+              if not mt:
+                  return None
+              return norm_map.get(mt.group(1), mt.group(1))
+
+          def parse_disp(mem, base):
+              s = mem.replace(' ', '')
+              # Strip scale/index terms when present; this tracker is deliberately conservative.
+              pos = s.find(base)
+              if pos < 0:
+                  return 0
+              rest = s[pos+len(base):]
+              m = re.match(r'([+-]0x[0-9a-f]+|[+-]\d+)', rest)
+              if not m:
+                  return 0
+              return int(m.group(1), 0)
+
+          def mem_origin(mem, origins):
+              b = first_base(mem)
+              if not b or b not in origins:
+                  return None
+              disp = parse_disp(mem, b)
+              base_name, base_off = origins[b]
+              return base_name, base_off + disp
+
+          def fmt_origin(o):
+              if not o:
+                  return ''
+              name, off = o
+              sign = '+' if off >= 0 else '-'
+              return f'{name}{sign}0x{abs(off):x}'
+
+          def analyze(target, title, initial_origins, cap=260):
+              i = addr_to_i.get(target)
+              if i is None:
+                  return {'title': title, 'target': target, 'missing': True}
+              rows = []
+              calls = []
+              writes = []
+              exact_writes = []
+              exact_passes = []
+              refs = []
+              origins = dict(initial_origins)
+              body = []
+              n = 0
+              while i < len(ins) and n < cap:
+                  addr, text, raw = ins[i]
+                  if n > 0 and addr in labels and addr != target:
+                      break
+                  body.append(raw)
+                  op, ops = split_ops(text)
+                  # refs/writes through tracked origins
+                  for mi, mm in enumerate(mem_re.finditer(text)):
+                      mem = mm.group(1)
+                      o = mem_origin(mem, origins)
+                      if o:
+                          refs.append((addr, o, raw.strip()))
+                          is_dest = (mi == 0 and ops and '[' in ops[0])
+                          if is_dest and op not in ('cmp','test'):
+                              writes.append((addr, o, raw.strip()))
+                              if o == ('bundle', 0x30):
+                                  exact_writes.append((addr, raw.strip()))
+                  # alias propagation
+                  if op in ('mov','lea') and len(ops) >= 2:
+                      dst = ops[0].split()[-1]
+                      dst = norm_map.get(dst, dst)
+                      src = ops[1]
+                      if dst in regs or dst in norm_map.values():
+                          dst = norm_map.get(dst, dst)
+                          src_reg = norm_map.get(src.strip(), src.strip())
+                          if src_reg in origins:
+                              origins[dst] = origins[src_reg]
+                          else:
+                              mm = mem_re.search(src)
+                              if op == 'lea' and mm:
+                                  o = mem_origin(mm.group(1), origins)
+                                  if o:
+                                      origins[dst] = o
+                                      if o == ('bundle', 0x30):
+                                          exact_passes.append((addr, 'lea-alias', raw.strip()))
+                                  else:
+                                      origins.pop(dst, None)
+                              elif op == 'mov' and mm:
+                                  o = mem_origin(mm.group(1), origins)
+                                  if o:
+                                      origins[dst] = (f'load({fmt_origin(o)})', 0)
+                                  else:
+                                      origins.pop(dst, None)
+                              else:
+                                  origins.pop(dst, None)
+                  elif op in ('xor','sub') and len(ops) >= 2 and ops[0] == ops[1]:
+                      origins.pop(norm_map.get(ops[0], ops[0]), None)
+                  # calls/jumps
+                  cm = call_re.search(text)
+                  if cm:
+                      ct = int(cm.group(1), 16)
+                      arg_state = []
+                      for ar in ['rdi','rsi','rdx','rcx','r8','r9']:
+                          if ar in origins:
+                              arg_state.append(f'{ar}={fmt_origin(origins[ar])}')
+                              if origins[ar] == ('bundle', 0x30):
+                                  exact_passes.append((addr, f'{ar} pass to 0x{ct:x}', raw.strip()))
+                      calls.append((addr, ct, ', '.join(arg_state), raw.strip()))
+                      # clobber volatile regs but leave callee-saved tracked aliases.
+                      for cr in ['rax','rcx','rdx','rsi','rdi','r8','r9','r10','r11']:
+                          origins.pop(cr, None)
+                  if op == 'ret':
+                      break
+                  jm = jmp_re.search(text)
+                  if jm and n > 5:
+                      # Tail-call boundary.
+                      ct = int(jm.group(1), 16)
+                      arg_state = []
+                      for ar in ['rdi','rsi','rdx','rcx','r8','r9']:
+                          if ar in origins:
+                              arg_state.append(f'{ar}={fmt_origin(origins[ar])}')
+                              if origins[ar] == ('bundle', 0x30):
+                                  exact_passes.append((addr, f'{ar} tail-pass to 0x{ct:x}', raw.strip()))
+                      calls.append((addr, ct, ', '.join(arg_state), raw.strip()))
+                      break
+                  i += 1
+                  n += 1
+              return {
+                  'title': title, 'target': target, 'missing': False, 'label': label_at(target),
+                  'body': body[:90], 'insns': len(body), 'refs': refs, 'writes': writes,
+                  'exact_writes': exact_writes, 'exact_passes': exact_passes, 'calls': calls,
+              }
+
+          targets = [
+              (0x165fe6a, 'descriptor pre-read helper 165fe6a, callsite rdx=bundle+0x10', {'rdi':('descriptor',0), 'rsi':('local_out',0), 'rdx':('bundle',0x10)}),
+              (0x165ffb0, 'nearby descriptor helper 165ffb0, conservative rdx=bundle+0x10', {'rdi':('descriptor',0), 'rsi':('local_out',0), 'rdx':('bundle',0x10)}),
+              (0x1660032, 'descriptor merge helper 1660032 with rsi=bundle substructure', {'rdi':('descriptor',0), 'rsi':('substructure',0)}),
+              (0x153d2a4, 'bundle+0x18 slot fill helper 153d2a4', {'rdi':('slot',0), 'rsi':('descriptor',0)}),
+              (0x153d0d0, 'bundle+0x58 slot fill helper 153d0d0', {'rdi':('slot',0), 'rsi':('descriptor',0)}),
+          ]
+          reports = [analyze(*t) for t in targets]
+
+          print('# Restrictions descriptor helper trace')
+          print()
+          print('Purpose: follow the descriptor helper branch from `bundle.vtable+0x30` because the call at `153cc2a` uses `rdx=bundle+0x10`. A write to `rdx+0x20` would resolve to the factory-consumed `bundle+0x30`.')
+          print()
+          print('Known call context:')
+          print('```text')
+          print('153cc1e  lea rdx, [rdi+0x10]   ; rdi=bundle_base, so rdx=bundle+0x10')
+          print('153cc22  lea rsi, [rsp+0x10]   ; local output/context')
+          print('153cc27  mov rdi, rbx          ; descriptor')
+          print('153cc2a  call 165fe6a')
+          print('```')
+          print()
+          print('## Summary table')
+          print()
+          print('| target | insns | refs | writes | exact bundle+0x30 writes | bundle+0x30 aliases/passes | calls |')
+          print('|---:|---:|---:|---:|---:|---:|---:|')
+          for r in reports:
+              if r.get('missing'):
+                  print(f"| `0x{r['target']:x}` | missing | 0 | 0 | 0 | 0 | 0 |")
+              else:
+                  print(f"| `0x{r['target']:x}` | `{r['insns']}` | `{len(r['refs'])}` | `{len(r['writes'])}` | `{len(r['exact_writes'])}` | `{len(r['exact_passes'])}` | `{len(r['calls'])}` |")
+          print()
+
+          for r in reports:
+              print(f"## `{r['title']}` at `0x{r['target']:x}`")
+              if r.get('missing'):
+                  print('\nMissing from disassembly.\n')
+                  continue
+              print(f"- label: `{r['label']}`")
+              print(f"- instructions scanned: `{r['insns']}`")
+              print(f"- tracked refs: `{len(r['refs'])}`")
+              print(f"- tracked writes: `{len(r['writes'])}`")
+              print(f"- exact `bundle+0x30` writes: `{len(r['exact_writes'])}`")
+              print(f"- exact `bundle+0x30` aliases/passes: `{len(r['exact_passes'])}`")
+              print()
+              print('### Entry excerpt')
+              print('```text')
+              for line in r['body']:
+                  print(line)
+              print('```')
+              print()
+              if r['writes']:
+                  print('### Tracked writes')
+                  print('| addr | resolved location | instruction |')
+                  print('|---:|---|---|')
+                  for addr,o,raw in r['writes'][:30]:
+                      print(f"| `0x{addr:x}` | `{fmt_origin(o)}` | `{raw}` |")
+                  print()
+              if r['exact_writes']:
+                  print('### Exact bundle+0x30 writes')
+                  for addr,raw in r['exact_writes']:
+                      print(f'- `0x{addr:x}` `{raw}`')
+                  print()
+              if r['exact_passes']:
+                  print('### Exact bundle+0x30 aliases/passes')
+                  for addr,kind,raw in r['exact_passes']:
+                      print(f'- `0x{addr:x}` {kind}: `{raw}`')
+                  print()
+              if r['calls']:
+                  print('### Calls with tracked args')
+                  print('| call | target | tracked args | instruction |')
+                  print('|---:|---:|---|---|')
+                  for addr,ct,args,raw in r['calls'][:40]:
+                      print(f"| `0x{addr:x}` | `0x{ct:x}` | `{args}` | `{raw}` |")
+                  print()
+
+          any_w = sum(len(r.get('exact_writes', [])) for r in reports)
+          any_p = sum(len(r.get('exact_passes', [])) for r in reports)
+          print('## Interpretation')
+          print()
+          if any_w:
+              print('At least one helper writes exactly to `bundle+0x30`; this should become the next provenance root.')
+          else:
+              print('No scanned descriptor helper writes exactly to `bundle+0x30` under the tracked ABI assumptions.')
+          if any_p:
+              print('Some helpers alias or pass `bundle+0x30`; inspect those call targets next if they are not allocator/free guards.')
+          else:
+              print('No scanned descriptor helper even aliases/passes `bundle+0x30` directly.')
+          PY
+      - name: Commit report
+        run: |
+          set -euxo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-descriptor-helpers.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions descriptor helpers"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
