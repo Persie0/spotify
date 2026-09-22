@@ -1,4 +1,5 @@
 name: Trace provider to service table bridge
+# retrigger for Restrictions bundle trace
 
 on:
   workflow_dispatch:
