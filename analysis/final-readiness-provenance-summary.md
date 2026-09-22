@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, and tracing the slot-object descriptor/builder path down through the local output layout.
+This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, and tracing the slot-object descriptor/builder path down through the local output and post-wrapper constructor path.
 
 ## Correct high-level chain
 
@@ -234,6 +234,75 @@ out1 = rsp+0x00 -> out1+0x18 = rsp+0x18 = out0 base
 
 This means `builder+0x18 -> sink.vtable+0x10` is a generic conditional slow path for the output/string-builder representation, not the Restrictions readiness object.
 
+## Post-wrapper constructor consumption
+
+The post-wrapper trace shows the wrapper return values are not semantically consumed. The apparent `rax` uses after `15e768e` are just stack cleanup pops of the extra pushed arguments:
+
+```text
+10abb9b  call 15e768e
+10abba0  pop rax
+10abba1  pop rcx
+10abba2  mov rdi, r12
+10abba5  call a7b5e8
+
+10abc2e  call 15e768e
+10abc33  pop rax
+10abc34  pop rcx
+10abc35  mov rdi, r12
+10abc38  call a7b5e8
+```
+
+The same pattern repeats for all `15e768e` callsites. This indicates the `+0x90` wrapper calls are side-effect setup/fill calls followed by cleanup of local temporary output/string objects, not return-value-producing constructors.
+
+After the final two `15e75f2` calls, the constructor transitions into persistent object allocation and field setup rooted at `this+0x78`:
+
+```text
+10ac0f1  call 15e75f2
+10ac0f6  add rsp, 0x10
+...
+10ac120  call 15e75f2
+10ac125  add rsp, 0x10
+10ac12c  call operator new(0x28)
+10ac131  mov r14, rax
+10ac149  call operator new(0x30)
+10ac14e  mov r12, rax
+10ac159  call a7a290
+10ac15e  lea r13, [rsp+0x110]
+10ac166  mov [r13+0x0], r12
+10ac171  mov [r13+0x10], ac39da
+10ac17c  mov [r13+0x18], 10adc16
+10ac187  mov [r14], 0x184d898
+```
+
+Constructor field tracking shows the persistent constructor storage is initialized around `this+0x78` rather than via a direct `this+0x18 = rcx` store:
+
+```text
+10aba70  [this+0x08] = 0
+10aba7b  [this+0x00] = vtable/AP
+10abaa3  zero [this+0x10..0x1f]
+10abaa7  zero [this+0x20..0x2f]
+10abaab  zero [this+0x30..0x3f]
+10abaaf  [this+0x40] = 0
+10abafc  zero [this+0x68..0x77]
+10abb00  zero [this+0x58..0x67]
+10abb04  [this+0x78] = 0
+```
+
+Later writes through the `this+0x78` address path initialize the allocated object graph:
+
+```text
+10ac187  [allocated_0x28+0x00] = 0x184d898
+10ac1a9  [this+0x78_target] = allocated_0x28
+10ac1c6  [inner+0x00] = rcx
+10ac1cb  [inner+0x08] = bpl
+10ac1cf  [inner+0x38] = bpl
+10ac1d3  [inner+0x40] = bpl
+10ac1e2  zero [inner+0x48..0x57]
+10ac255  [inner+0x00] = rcx
+```
+
+Therefore the next semantic target is **the `this+0x78` allocated object graph**, not the wrapper-local output builders. The unresolved edge is whether and how that graph is connected to the object returned by `b411a4` through `child+0x18`, or whether `b411a4` returns another constructor-owned dependency that eventually delegates into this `this+0x78` graph.
+
 ## Current conclusion
 
 The final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
@@ -248,17 +317,18 @@ slot AP relocation targets
 buffer/growth emit helpers
 builder sink/refill abstraction
 local output builder layout / builder+0x18 false lead
+post-wrapper return-value consumption / wrapper outputs as return values
 ```
 
 Still open:
 
 ```text
-post-wrapper output consumption inside 0x10aba36
-  -> object stored/exposed as child+0x18
+constructor this+0x78 allocated object graph
+  -> relation to object stored/exposed as child+0x18
   -> inner virtual +0x30 / state+0x40 readiness discriminator
 ```
 
-The next concrete target is not the generic emit/sink helpers. It is the post-wrapper object lifecycle inside `0x10aba36`: identify how the stack-local outputs from `15e768e`, `a7b5e8`, and `15e75f2` are consumed after the calls return, and where that processed result is assigned to the dependency returned by `b411a4`.
+The next concrete target is `this+0x78` lifecycle inside and after `0x10aba36`: resolve the AP/vtable/object at `0x184d898`, the object allocated at `10ac12c`, the object allocated at `10ac149`, helper `a7a290`, and the later writes at `10ac1a9/10ac1c6/10ac255`.
 
 ## Evidence reports
 
@@ -282,4 +352,5 @@ The next concrete target is not the generic emit/sink helpers. It is the post-wr
 - `analysis/restrictions-builder-buffer-helpers.md`
 - `analysis/restrictions-builder-sink-finalization.md`
 - `analysis/restrictions-local-builder-layout.md`
+- `analysis/restrictions-post-wrapper-output-consumption.md`
 - `docs/15-skip-ad-signal.md`
