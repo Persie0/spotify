@@ -1,0 +1,97 @@
+name: Resolve Metadata readiness service
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-metadata-readiness-service.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/metaready
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/metaready
+          unzip -j /tmp/metaready/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/metaready
+      - name: Resolve Metadata service
+        run: |
+          SO=/tmp/metaready/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/metaready/all.dis
+          readelf -rW "$SO" > /tmp/metaready/rel.txt
+          python3 - <<'PY' > analysis/metadata-readiness-service.md
+          from pathlib import Path
+          import re,bisect
+          dis=Path('/tmp/metaready/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dis):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          rel={}
+          for l in Path('/tmp/metaready/rel.txt').read_text(errors='replace').splitlines():
+              p=l.split()
+              if len(p)>=4 and re.fullmatch(r'[0-9a-fA-F]+',p[0]) and 'R_X86_64_RELATIVE' in l:
+                  j=p.index('R_X86_64_RELATIVE')
+                  if j+1<len(p) and re.fullmatch(r'[0-9a-fA-F]+',p[j+1]):
+                      rel[int(p[0],16)]=int(p[j+1],16)
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=20,n=40):
+              j=ix(a); return '\n'.join(x[3] for x in ins[max(0,j-b):min(len(ins),j+n)])
+          print('# MetadataSetupImpl readiness service')
+          print()
+          print('Proven upstream:')
+          print('- registry accessor b87f94 validates ID 0x55 and returns table[0x55] / +0x2a8')
+          print('- provider descriptor AP 0x1825060 identifies ID 0x55 as MetadataSetupImpl')
+          print('- readiness constructor caller e8c697 stores this service at rsp+0x90')
+          print('- corrected ABI maps that value to argument 47, the input later installed into owner+0x428')
+          print()
+          print('## b87f94 exact accessor')
+          print(ctx(0xb87f94,2,20))
+          print()
+          print('## MetadataSetupImpl provider table')
+          for off in range(0,0x40,8):
+              t=rel.get(0x1825060+off)
+              print(f'- +0x{off:x}: '+(f'0x{t:x}' if t is not None else 'NO_RELOC'))
+          print()
+          print('## Provider factory 0xd498ce')
+          print(ctx(0xd498ce,3,180))
+          print()
+          print('## Allocations and AP materializations inside factory FDE neighborhood')
+          rows=ins[ix(0xd498ce):ix(0xd4aa50)]
+          for k,(a,i,op,l) in enumerate(rows):
+              if ('call' in op and '17edf00' in op) or re.search(r'#\s+18[0-9a-f]{5}\b',op):
+                  print(f'### 0x{a:x}: {op}')
+                  print('\n'.join(x[3] for x in rows[max(0,k-10):min(len(rows),k+22)]))
+                  print()
+          print('## Candidate returned-object stores')
+          for a,i,op,l in rows:
+              if re.search(r'mov\s+QWORD PTR \[[^]]+\],(?:rbx|r12|r13|r14|r15|rax)',op) or re.search(r'mov\s+rax,(?:rbx|r12|r13|r14|r15)',op):
+                  if a>=0xd498ce:
+                      print(l)
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/metadata-readiness-service.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve Metadata readiness service"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
