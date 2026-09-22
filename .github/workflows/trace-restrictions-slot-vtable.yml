@@ -1,0 +1,131 @@
+name: Trace Restrictions slot vtable
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-slot-vtable.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-slot-vtable
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-slot-vtable
+          unzip -j /tmp/restrictions-slot-vtable/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-slot-vtable
+      - name: Trace slot vtable
+        run: |
+          SO=/tmp/restrictions-slot-vtable/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-slot-vtable/all.dis
+          readelf -SW "$SO" > /tmp/restrictions-slot-vtable/sections.txt
+          python3 - <<'PY' > analysis/restrictions-slot-vtable.md
+          import re, struct
+          from pathlib import Path
+
+          base = Path('/tmp/restrictions-slot-vtable')
+          so_path = base/'liborbit-jni-spotify.so'
+          data = so_path.read_bytes()
+          sections = (base/'sections.txt').read_text(errors='replace').splitlines()
+          dis = (base/'all.dis').read_text(errors='replace').splitlines()
+
+          sec_re = re.compile(r'^\s*\[\s*\d+\]\s+(\S+)\s+\S+\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)')
+          ranges=[]
+          for line in sections:
+              m=sec_re.match(line)
+              if not m:
+                  continue
+              name, addr, off, size = m.group(1), int(m.group(2),16), int(m.group(3),16), int(m.group(4),16)
+              if size:
+                  ranges.append((addr, addr+size, off, name))
+
+          def read_u64(vaddr):
+              for start,end,off,name in ranges:
+                  if start <= vaddr <= end-8:
+                      fo = off + (vaddr-start)
+                      return struct.unpack_from('<Q', data, fo)[0], name, fo
+              return None, None, None
+
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          insts=[]
+          for line in dis:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          addr_to_idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          slot_ap=0x187e2f8
+          offsets=[0x00,0x08,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88,0x90,0x98,0xa0]
+          resolved=[]
+          for off in offsets:
+              val, sec, fileoff = read_u64(slot_ap+off)
+              resolved.append((off,val,sec,fileoff))
+
+          targets=[]
+          for off,val,sec,fileoff in resolved:
+              if off in (0x90,0x98) and val:
+                  targets.append((off,val))
+
+          print('# Restrictions slot-object vtable trace')
+          print()
+          print('Purpose: resolve the object allocated by `1507a9e` and stored into `bundle+0x30`. Allocation writes AP `0x187e2f8` into the new slot object. The helper wrappers `15e768e` and `15e75f2` dispatch through this object at vtable offsets `+0x90` and `+0x98`.')
+          print()
+          print('## Slot AP entries')
+          print()
+          print('| offset | target | section | file offset |')
+          print('|---:|---:|---|---:|')
+          for off,val,sec,fileoff in resolved:
+              marker = ' **semantic target**' if off in (0x90,0x98) else ''
+              target = f'0x{val:x}' if val is not None else 'unresolved'
+              fo = f'0x{fileoff:x}' if fileoff is not None else ''
+              print(f'| `+0x{off:x}` | `{target}`{marker} | `{sec or ""}` | `{fo}` |')
+
+          for off,target in targets:
+              print(f'\n## AP +0x{off:x} target 0x{target:x}')
+              print()
+              if target not in addr_to_idx:
+                  print('Target not found in disassembly.')
+                  continue
+              i=addr_to_idx[target]
+              window=[]
+              for j in range(i, min(len(insts), i+260)):
+                  a,line,text=insts[j]
+                  window.append((a,line,text))
+                  if j>i and (text.startswith('ret') or text.startswith('ud2') or text.startswith('int3')):
+                      break
+              print('### Body excerpt')
+              print('```text')
+              for _,line,_ in window[:180]:
+                  print(line)
+              if len(window)>180:
+                  print(f'... truncated {len(window)-180} instructions ...')
+              print('```')
+              print('\n### Notable calls / field refs')
+              print('| addr | instruction |')
+              print('|---:|---|')
+              for a,line,text in window:
+                  if 'call' in text or re.search(r'\[[^\]]+\+0x(18|20|28|30|40|48|50|58|60|68|70|78|80|88|90|98|a0)\]', text):
+                      print(f'| `0x{a:x}` | `{line}` |')
+
+          print('\n## Interpretation')
+          print()
+          print('The semantic implementation of the bundle30-derived slot object is not in `15e768e` / `15e75f2`; those are wrapper thunks. The real implementation is the AP `0x187e2f8` entries at `+0x90` and `+0x98`, resolved above. These are the next concrete methods to classify against the final readiness/mode discriminator path.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-slot-vtable.md
+          git commit -m "Trace Restrictions slot vtable" || exit 0
+          git push
