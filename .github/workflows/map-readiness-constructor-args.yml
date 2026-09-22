@@ -1,0 +1,113 @@
+name: Map readiness constructor arguments
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/map-readiness-constructor-args.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rargs
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rargs
+
+      - name: Map caller pushes
+        run: |
+          SO=/tmp/rargs/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0xe8d500 --stop-address=0xe8dbc0 "$SO" > /tmp/rargs/caller.dis
+          python3 - <<'PY' > analysis/readiness-e8fad0-argument-map.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/rargs/caller.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for l in lines:
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),m.group(2),l))
+
+          call_i=next(i for i,x in enumerate(ins) if x[0]==0xe8dba7)
+          pushes=[(i,x) for i,x in enumerate(ins[:call_i]) if x[1].startswith('push')]
+          pushes=pushes[-62:]
+          print('# e8fad0 readiness-constructor argument map')
+          print()
+          print('The caller removes 0x1f0 bytes after e8fad0, exactly 62 stack arguments (args 7..68).')
+          print('Chronological push #1 is arg68; push #62 is arg7.')
+          print()
+
+          relevant={47:'owner+0x428 readiness wrapper',52:'owner+0x3b8 provider',54:'owner+0x470 state pair',63:'owner+0x570 dependency',67:'owner+0x598 state/control'}
+          rows=[]
+          for seq,(idx,(a,op,l)) in enumerate(pushes,1):
+            arg=69-seq
+            # stable S0 is RSP before first of these 62 pushes.
+            prior=seq-1
+            desc=op[len('push'):].strip()
+            normalized=''
+            m=re.search(r'\[rsp\+0x([0-9a-f]+)\]',desc)
+            if m:
+              off=int(m.group(1),16)-8*prior
+              normalized=f'value from S0+0x{off:x}'
+            else:
+              mr=re.fullmatch(r'(r\w+)',desc)
+              if mr:
+                reg=mr.group(1)
+                # search recent reaching definition, mainly LEA/mov
+                for j in range(idx-1,max(-1,idx-12),-1):
+                  pop=ins[j][1]
+                  if re.match(rf'(?:lea|mov)\s+{re.escape(reg)},',pop):
+                    normalized='last-def: '+pop
+                    mm=re.search(r'\[rsp\+0x([0-9a-f]+)\]',pop)
+                    if mm:
+                      # count pushes between this definition and current push
+                      nprev=sum(1 for pi,_ in pushes if pi<j)
+                      off=int(mm.group(1),16)-8*nprev
+                      normalized+=f' => pointer/value based on S0+0x{off:x}'
+                    break
+            rows.append((arg,seq,a,desc,normalized,idx))
+
+          print('## Full stack-argument map')
+          for arg,seq,a,desc,norm,idx in sorted(rows):
+            tag='  <-- '+relevant[arg] if arg in relevant else ''
+            print(f'- arg{arg:02d}: push @0x{a:x}: {desc}; {norm}{tag}')
+          print()
+
+          for arg in sorted(relevant):
+            row=next(x for x in rows if x[0]==arg)
+            _,seq,a,desc,norm,idx=row
+            print(f'## arg{arg}: {relevant[arg]}')
+            print(f'push @0x{a:x}: {desc}')
+            print(norm)
+            print('Context:')
+            for x in ins[max(0,idx-18):min(len(ins),idx+12)]: print(x[2])
+            print()
+
+          print('## Exact call tail')
+          for x in ins[max(0,call_i-180):call_i+3]:print(x[2])
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-e8fad0-argument-map.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Map readiness constructor arguments"
+          git pull --rebase origin main
+          git push
