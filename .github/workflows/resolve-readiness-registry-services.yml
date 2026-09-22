@@ -1,0 +1,117 @@
+name: Resolve readiness registry services
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-readiness-registry-services.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rreg
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rreg
+
+      - name: Trace services
+        run: |
+          SO=/tmp/rreg/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rreg/all.dis
+          readelf -rW "$SO" > /tmp/rreg/rel.txt
+          python3 - <<'PY' > analysis/readiness-registry-services.md
+          from pathlib import Path
+          import re,bisect
+
+          lines=Path('/tmp/rreg/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def dump(lo,hi):
+            j=ix(lo)
+            for x in ins[j:]:
+              if x[0]>=hi: break
+              print(x[3])
+
+          print('# Readiness registry-service resolution')
+          print()
+          print('## b88014 exact body')
+          dump(0xb88014,0xb88080)
+          print()
+
+          print('## Direct rsp+0xe0 references in caller e8c65c..e8d9ad')
+          caller=[x for x in ins[ix(0xe8c65c):ix(0xe8d9ad)]]
+          hits=[]
+          for n,x in enumerate(caller):
+            if '[rsp+0xe0]' in x[2]:
+              hits.append(n)
+              print(f'### 0x{x[0]:x}: {x[2]}')
+              for y in caller[max(0,n-18):min(len(caller),n+24)]: print(y[3])
+              print()
+
+          print('## Writes to rsp+0xe0 only')
+          for n,x in enumerate(caller):
+            op=x[2]
+            if ',' in op and '[rsp+0xe0]' in op.split(',',1)[0]:
+              print(f'### 0x{x[0]:x}: {op}')
+              for y in caller[max(0,n-22):min(len(caller),n+18)]: print(y[3])
+              print()
+
+          print('## Early registry-accessor result stores e8c680..e8c780')
+          dump(0xe8c680,0xe8c780)
+          print()
+
+          # Identify any accessor call whose return is stored to rsp+e0, then dump its exact body.
+          producers=[]
+          for n,x in enumerate(caller):
+            op=x[2]
+            if ',' in op and '[rsp+0xe0]' in op.split(',',1)[0]:
+              for y in reversed(caller[max(0,n-8):n]):
+                m=re.match(r'call\s+([0-9a-f]+)\b',y[2])
+                if m:
+                  producers.append(int(m.group(1),16)); break
+          print('## Direct-call producer bodies for rsp+0xe0')
+          for a in sorted(set(producers)):
+            print(f'### producer 0x{a:x}')
+            dump(a,a+0x70); print()
+
+          print('## All tiny registry accessors around b87f00..b8b500')
+          # Print compact candidates that call b622de and then load [root-table + constant].
+          region=[x for x in ins[ix(0xb85000):ix(0xb8c000)]]
+          for n,x in enumerate(region):
+            if re.search(r'call\s+b622de\b',x[2]):
+              lo=max(0,n-8); hi=min(len(region),n+12)
+              block=region[lo:hi]
+              # useful if nearby ID immediate and table-slot load
+              print(f'### b622de caller near 0x{x[0]:x}')
+              for y in block: print(y[3])
+              print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-registry-services.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve readiness registry services"
+          git pull --rebase origin main
+          git push
