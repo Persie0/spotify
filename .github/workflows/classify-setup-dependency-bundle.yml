@@ -1,0 +1,246 @@
+name: Classify setup dependency bundle
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/classify-setup-dependency-bundle.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/bundle30
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/bundle30
+          unzip -j /tmp/bundle30/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/bundle30
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Classify shared setup bundle
+        run: |
+          SO=/tmp/bundle30/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/bundle30/all.dis
+          python3 - <<'PY' > analysis/setup-dependency-bundle30.md
+          from pathlib import Path
+          import re,bisect
+          from collections import defaultdict
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          dis_lines=Path('/tmp/bundle30/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(dis_lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+
+          with open('/tmp/bundle30/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); fdes=[]
+              for e in elf.get_dwarf_info().EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a: fdes.append((a,z))
+          fdes.sort()
+          starts=[x[0] for x in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0] <= a < fdes[k][1]: return fdes[k]
+              return None
+          def slice_fde(fr):
+              a=bisect.bisect_left(addrs,fr[0]); b=bisect.bisect_left(addrs,fr[1])
+              return ins[a:b]
+
+          # Parse provider names / factory addresses / FDEs from the established report.
+          src=Path('analysis/native-provider-descriptor-ids.md').read_text(errors='replace')
+          providers=[]
+          cur=None
+          for line in src.splitlines():
+              m=re.match(r'^##\s+\d+\.\s+addb16@0x([0-9a-f]+)\s+AP=0x([0-9a-f]+)',line)
+              if m:
+                  if cur: providers.append(cur)
+                  cur={'regsite':int(m.group(1),16),'ap':int(m.group(2),16),'name':None,'factory':None,'fde':None}
+                  continue
+              if not cur: continue
+              m=re.search(r'^- \+0x18\s+0x[0-9a-f]+\s+metadata=.*?\'([^\']+)\'\)',line)
+              if m: cur['name']=m.group(1)
+              m=re.search(r'^- \+0x28\s+0x([0-9a-f]+)\s+FDE=\((\d+),\s*(\d+)\)',line)
+              if m:
+                  cur['factory']=int(m.group(1),16)
+                  cur['fde']=(int(m.group(2)),int(m.group(3)))
+          if cur: providers.append(cur)
+          providers=[p for p in providers if p['factory'] and p['fde'] and p['name']]
+
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15']
+
+          def aliases_from_rdx(xs, limit=45):
+              # Conservative straight-line alias discovery in the early prologue.
+              aliases={'rdx'}
+              for _,_,op,_ in xs[:limit]:
+                  # Stop once rdx is explicitly overwritten from something unrelated.
+                  m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))$',op)
+                  if m:
+                      dst,src=m.groups()
+                      if src in aliases: aliases.add(dst)
+                      elif dst in aliases and dst!='rdx': aliases.discard(dst)
+                  m=re.match(r'lea\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),\[(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))\]$',op)
+                  if m and m.group(2) in aliases: aliases.add(m.group(1))
+              return aliases
+
+          def refs_bundle30(xs,aliases):
+              out=[]
+              for k,x in enumerate(xs):
+                  op=x[2]
+                  for base in aliases:
+                      m=re.search(rf'\[{base}\+0x30\]',op)
+                      if m:
+                          out.append((k,x,base))
+                          break
+              return out
+
+          def loaded_reg(op,base):
+              m=re.match(rf'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),QWORD PTR \[{base}\+0x30\]',op)
+              return m.group(1) if m else None
+
+          def trace_target_uses(xs,k,reg):
+              if not reg: return []
+              aliases={reg}; out=[]
+              for j in range(k+1,min(len(xs),k+70)):
+                  op=xs[j][2]
+                  # Calls through receiver aliases or their vtable.
+                  for a in list(aliases):
+                      if re.search(rf'\bmov\s+rax,QWORD PTR \[{a}\]$',op):
+                          aliases.add('rax')
+                      if re.search(rf'\bmov\s+rcx,QWORD PTR \[{a}\]$',op):
+                          aliases.add('rcx')
+                      if re.search(rf'call\s+QWORD PTR \[[^]]+\+0x[0-9a-f]+\]',op) and (
+                          re.search(rf'\bmov\s+rdi,{a}\b', '\n'.join(y[2] for y in xs[max(k,j-5):j+1])) or
+                          re.search(rf'\bmov\s+rsi,{a}\b', '\n'.join(y[2] for y in xs[max(k,j-5):j+1]))
+                      ):
+                          out.append(xs[j])
+                  m=re.match(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)),(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))$',op)
+                  if m:
+                      dst,src=m.groups()
+                      if src in aliases: aliases.add(dst)
+                      elif dst in aliases and dst!=reg: aliases.discard(dst)
+                  # Direct dereferences are useful even without a virtual call.
+                  if any(re.search(rf'\[{a}(?:\+0x[0-9a-f]+)?\]',op) for a in aliases):
+                      if j>k and xs[j] not in out: out.append(xs[j])
+              # Keep concise.
+              uniq=[]; seen=set()
+              for x in out:
+                  if x[0] not in seen:
+                      seen.add(x[0]); uniq.append(x)
+              return uniq[:20]
+
+          consumers=[]
+          for p in providers:
+              xs=slice_fde(p['fde'])
+              aliases=aliases_from_rdx(xs)
+              refs=refs_bundle30(xs,aliases)
+              if not refs: continue
+              records=[]
+              for k,x,base in refs:
+                  reg=loaded_reg(x[2],base)
+                  uses=trace_target_uses(xs,k,reg)
+                  # Nearby literal references, especially strings/data.
+                  near=xs[max(0,k-16):min(len(xs),k+45)]
+                  lits=[y for y in near if re.search(r'#\s+[0-9a-f]+\s+<',y[2]) and ('lea' in y[2] or 'mov' in y[2])]
+                  records.append((k,x,base,reg,uses,lits[:8]))
+              consumers.append((p,aliases,records,xs))
+
+          print('# Shared setup dependency bundle +0x30 classification')
+          print()
+          print('This report treats the provider factory third argument (rdx) as one shared setup-dependency bundle and cross-correlates only factories that actually dereference bundle +0x30.')
+          print()
+          print(f'Providers parsed: {len(providers)}')
+          print(f'Providers consuming bundle+0x30: {len(consumers)}')
+          print()
+          for p,aliases,records,xs in consumers:
+              print(f'## {p["name"]}')
+              print(f'- descriptor AP: 0x{p["ap"]:x}')
+              print(f'- factory: 0x{p["factory"]:x}; FDE=0x{p["fde"][0]:x}..0x{p["fde"][1]:x}')
+              print(f'- early aliases of rdx: {", ".join(sorted(aliases))}')
+              for k,x,base,reg,uses,lits in records:
+                  print(f'- bundle+0x30 load/ref @ 0x{x[0]:x}: {x[2]}')
+                  if reg: print(f'  - loaded target register: {reg}')
+                  if uses:
+                      print('  - target-derived uses:')
+                      for y in uses: print(f'    - 0x{y[0]:x}: {y[2]}')
+                  if lits:
+                      print('  - nearby literal/AP materializations:')
+                      for y in lits: print(f'    - 0x{y[0]:x}: {y[2]}')
+              print()
+
+          # Find likely constructors/populators of the shared bundle:
+          # same base register receives stores at many of the exact offsets used by factories.
+          wanted={0x20,0x30,0x40,0x60,0x68,0x80,0x98}
+          stores_by_fde=defaultdict(lambda: defaultdict(list))
+          pat=re.compile(r'^(?:mov|movups|movdqa|movq)\s+(?:QWORD PTR |DWORD PTR |BYTE PTR |WORD PTR |XMMWORD PTR )?\[(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))\+0x([0-9a-f]+)\],')
+          for x in ins:
+              m=pat.match(x[2])
+              if not m: continue
+              off=int(m.group(2),16)
+              if off not in wanted: continue
+              fr=fde(x[0])
+              if fr: stores_by_fde[fr][m.group(1)].append((off,x))
+
+          candidates=[]
+          for fr,byreg in stores_by_fde.items():
+              for reg,vals in byreg.items():
+                  offs={o for o,x in vals}
+                  if len(offs)>=4:
+                      score=len(offs)
+                      if 0x30 in offs: score+=4
+                      if wanted.issubset(offs): score+=10
+                      candidates.append((score,fr,reg,offs,vals))
+          candidates.sort(reverse=True,key=lambda z:(z[0],len(z[3])))
+
+          print('## Shared-bundle constructor/populator candidates')
+          print('Candidates require stores to at least four exact factory-consumed offsets on one base register.')
+          for rank,(score,fr,reg,offs,vals) in enumerate(candidates[:30],1):
+              print(f'### rank {rank}: score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x} base={reg} offsets={",".join(hex(x) for x in sorted(offs))}')
+              xs=slice_fde(fr)
+              hit_addrs={x[0] for o,x in vals}
+              for k,x in enumerate(xs):
+                  if x[0] in hit_addrs:
+                      print(f'- 0x{x[0]:x}: {x[2]}')
+              # Compact context around +0x30 store only.
+              for off,x in vals:
+                  if off==0x30:
+                      k=next((i for i,y in enumerate(xs) if y[0]==x[0]),None)
+                      if k is not None:
+                          print('  - context around +0x30 store:')
+                          for y in xs[max(0,k-14):min(len(xs),k+26)]:
+                              print(f'    {y[3]}')
+                      break
+              print()
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/setup-dependency-bundle30.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Classify shared setup bundle30"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
