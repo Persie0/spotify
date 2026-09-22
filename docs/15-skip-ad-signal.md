@@ -303,15 +303,43 @@ TimelineConductor seek/clip transition
 "smart-skip-embedded-podcast-ad" transition/reporting path
 ```
 
-The final **availability-export** edge is still open at one specific pointer boundary: the exact state propagation from `adObject+0x1b8` into the concrete object later used as signal-state `+0x40` / virtual `+0x140`. The corrected constructor ABI now resolves the upstream source of `owner+0x428`: caller `e8c697` obtains registry service **ID `0x55`** through accessor `b87f94`, stores it at caller `rsp+0x90`, and that value maps to constructor argument 47, which is the input installed into `owner+0x428`. Provider descriptor AP `0x1825060` identifies service `0x55` as **`MetadataSetupImpl`**. This names the upstream service but does not yet identify the later concrete `P+0x40` receiver or its scalar virtual `+0x140` predicate. The raw 0x6b0 state record and the TimelineAds `0x18678f8` wrapper are both rejected as that final receiver: the former came from a superseded ABI interpretation (the relevant `e99d07 [rsp+0x1338]` value is an incoming argument, not the unrelated 0x6b0-stride record), while `0x18678f8:+0x140 -> 0xa3fa60` always returns 1 even though `fd381a` exposes `"skip-ad"` only when its receiver returns 0.
+The final **availability-export** edge is now narrowed to one concrete dependency boundary rather than an unknown `+0x428` pointer. Two different objects in this construction graph have a field at numeric offset `+0x428`, and they must be kept separate:
+
+- the preparatory context constructed at `e8fad0` receives registry service **ID `0x55` / `MetadataSetupImpl`** as constructor argument 47 and stores that service pointer at its own `+0x428`; this is a construction-time dependency, not the final Skip-Ad readiness wrapper,
+- the later readiness owner with primary AP **`0x1834498`**, constructed by `ece57c`, has a different `+0x428` field. Both sibling readiness-source builders (AP `0x1834728:+0x30 -> ece084` and AP `0x1834418:+0x30 -> ee6db8`) pass `source+0x178` as SysV argument 12, and `ece57c` copies that 16-byte shared/erased pair into the wrapper installed at this later owner's `+0x428`.
+
+The raw 0x6b0 state record and the TimelineAds `0x18678f8` wrapper remain rejected as the final receiver: the former came from a superseded ABI interpretation, while `0x18678f8:+0x140 -> 0xa3fa60` always returns 1 even though `fd381a` exposes `"skip-ad"` only when its final discriminator returns 0.
 
 A second table-coordinate correction is important for the downstream state family. The authoritative primary address point is **`0x1841fc0`**. In that contiguous table, `fd381a` is AP+`0x70`, `fd38d6` is AP+`0x128`, and `fd4a92` is AP+`0x1d8`. The address `0x1842150` is **not** a second class/address point; it is merely AP+`0x190` inside the same table. Consequently, any older report that treated `0x1842150` as a standalone vtable must not be used for class identity.
 
-The `fd4a92` materialization path is now exact through its helpers: it advances its second argument by `0x10`, `c8be5a` locks the resulting weak/shared pair, `f2505a` embeds that locked pair at wrapper+`0x10`, and `fd4c04` copies `[[wrapper+0x10]+0x40]` into the new Skip-Ad adapter at outer+`0x58`. Since the adapter is addressed as outer+`0x18`, that copied pointer is exactly the adapter's `this+0x40` receiver later used by `fd381a`.
+The `fd4a92` materialization path is exact through its helpers: it advances its second argument by `0x10`, `c8be5a` locks the resulting weak/shared pair, `f2505a` embeds that locked pair at wrapper+`0x10`, and `fd4c04` copies `[[wrapper+0x10]+0x40]` into the new Skip-Ad adapter at outer+`0x58`. Since the adapter is addressed as outer+`0x18`, that copied pointer is exactly the adapter's `this+0x40` receiver later used by `fd381a`.
 
-The corrected source/carrier provenance is now concrete one layer farther. The pair propagated through the `e99d07` readiness argument comes from the `0x58`-byte carrier allocated at `0xe948ff`. Its secondary interface at carrier `+0x18` has address point **`0x1843bf8`**; `0xe94925` stores the pointer `P` at carrier `+0x20`. `P` is not the rejected 0x6b0 record: it is `outer+0x18` of the separate `0xb0`-byte object allocated at `0xe947b0`, and its concrete interface address point is **`0x1832be8`**. Carrier virtual `+0x10` (`0xfec736`) reloads that stored `P` pointer and dispatches `P` virtual `+0x10` (`0xec5b7c`). In the final materialized Skip-Ad state, the dependency copied for `fd381a` is **`P+0x40 = outer+0x58`**. Construction at `0xe947fd..0xe94802` initially zeros the surrounding `outer+0x40..0x5f` region, so this final receiver field starts null and is populated later.
+The corrected source/carrier provenance is concrete. The pair propagated through `source+0x178` is a `{head, owner}` pair from the 0x58-byte object allocated at `e948ff`: the owner has primary AP `0x1831a70`, while `head = base+0x18` has secondary readiness AP **`0x1843bf8`**. At `e94925`, carrier `base+0x20` receives `P = r12`; `e947cb` proves `P = otherObject+0x18`, and `e947d6` installs **AP `0x1832be8`** at that interface. The delegation is therefore:
 
-This closes the identity of the corrected readiness carrier and the concrete source interface, but it does **not** yet prove the runtime vptr of the object eventually written to `P+0x40`, nor that object's real `+0x140` implementation. The remaining availability task is therefore narrowly defined: recover the later writer/populator of `P+0x40` (`outer+0x58`), identify the object written there, and resolve its ABI-compatible scalar `+0x140` method. The `d85524 -> d8a488 -> d8a5c2` family remains a parallel/rejected route for this final receiver.
+```text
+0x1843bf8:+0x10
+    -> 0xfec736
+    -> [this+0x8]
+    -> AP 0x1832be8
+    -> +0x10 / 0xea0f30
+    -> [this+0x8] virtual +0x30
+```
+
+That final delegated source is now constrained to the **Restrictions** registry path:
+
+```text
+registry ID 0x9e
+    -> RestrictionsSetupImpl
+    -> service AP 0x184ca90
+    -> service +0x28 returns [this+0x10]
+    -> child AP 0x184da88
+    -> child +0x38 = 0xb411a4
+    -> returns [child+0x18]
+    -> child+0x18 comes from constructor rcx
+    -> factory constructor rcx comes from dependency bundle +0x30
+```
+
+Thus the final `state+0x40` dependency used by `fd381a` is **RestrictionsSetupImpl-derived**, not the Metadata service, TimelineAds owner `+0x50`, the `0x18678f8` wrapper, or the old raw-0x6b0 record. The remaining availability task is now specifically to identify the object supplied at **Restrictions factory dependency bundle `+0x30`**, then resolve how that object implements or feeds the scalar virtual `+0x140` mode/state discriminator.
 
 The **execution-side readiness propagation is now proven farther downstream**, however. `TimelineAdsSetupImpl` (registry ID `0xb7`) samples the AdsRuntime byte at `0x1352547`. On the true branch it installs the 0x90 readiness state at TimelineAds owner `+0x20` and the AP `0x18678f8` wrapper at owner `+0x10`. Later in the same factory, `0x1352de2..0x1352df2` reloads owner `+0x10` and inserts that wrapper pointer as the head of the second 0x20-byte intermediate element. That two-element intermediate is normalized before construction of a 0x8e8-byte object (primary AP `0x18674c8`, secondary AP `0x1867550`, embedded AP `0x1867980`); the normalized state is copied into that object's `+0x58/+0x68` region, and the object is installed at TimelineAds owner `+0x50` at `0x1353121..0x1353129`. TimelineAds virtual `+0x28` (`0xaa712a`) returns exactly owner `+0x50`, and TimelineConductor consumes it at `0x135cbe5..0x135cbf0`. Thus the AdsRuntime readiness transition is demonstrably carried into the object graph used by Skip Ad execution, without claiming that the intermediate TimelineAds wrapper is itself the final availability discriminator.
 
