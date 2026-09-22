@@ -1,0 +1,142 @@
+name: Trace provider vector factory caller
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-provider-vector-factory-caller.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/pvec
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/pvec
+          unzip -j /tmp/pvec/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pvec
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+      - name: Find vector factory caller
+        run: |
+          SO=/tmp/pvec/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/pvec/all.dis
+          python3 - <<'PY' > analysis/provider-vector-factory-caller.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/pvec/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/pvec/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); fdes=[]
+              for e in elf.get_dwarf_info().EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort()
+          starts=[a for a,b in fdes]
+          def rows(fr):
+              a=bisect.bisect_left(addrs,fr[0]); b=bisect.bisect_left(addrs,fr[1]); return ins[a:b]
+
+          # Index instructions by FDE.
+          groups={}
+          for fr in fdes:
+              xs=rows(fr)
+              if xs: groups[fr]=xs
+
+          candidates=[]
+          for fr,xs in groups.items():
+              calls28=[(k,x) for k,x in enumerate(xs) if re.search(r'call\s+QWORD PTR \[[^]]+\+0x28\]',x[2])]
+              if not calls28: continue
+              txt='\n'.join(x[2] for x in xs)
+              score=0; feats=[]
+              # Vector iteration fingerprints.
+              if re.search(r'add\s+r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15),0x8\b',txt): score+=8; feats.append('stride8')
+              if re.search(r'cmp\s+r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15),r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15)',txt): score+=2
+              # begin/end vector loads off same owner shape.
+              if re.search(r'mov\s+r\w+,QWORD PTR \[r\w+\]\n.*mov\s+r\w+,QWORD PTR \[r\w+\+0x8\]',txt,re.S): score+=5; feats.append('begin-end')
+              # Provider metadata calls somewhere in function.
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x10\]',txt): score+=6; feats.append('+10')
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x18\]',txt): score+=3; feats.append('+18')
+              if re.search(r'call\s+QWORD PTR \[[^]]+\+0x20\]',txt): score+=6; feats.append('+20')
+              # Hidden-sret factory ABI immediately before a +0x28 call.
+              best=0; bestk=None
+              for k,x in calls28:
+                  pre='\n'.join(y[2] for y in xs[max(0,k-16):k+1])
+                  q=0
+                  if re.search(r'lea\s+rdi,\[rsp[^]]*\]',pre): q+=10
+                  if re.search(r'mov\s+rsi,r(?:ax|bx|cx|dx|di|bp|8|9|10|11|12|13|14|15)\b',pre): q+=5
+                  if re.search(r'mov\s+rdx,',pre): q+=5
+                  if re.search(r'mov\s+rcx,',pre): q+=5
+                  if re.search(r'mov\s+rax,QWORD PTR \[rsi\]',pre): q+=7
+                  if q>best: best=q;bestk=k
+              score+=best
+              if best: feats.append(f'sret={best}')
+              if score>=18:
+                  candidates.append((score,fr,feats,bestk,calls28,xs))
+
+          candidates.sort(reverse=True,key=lambda z:z[0])
+          print('# Provider vector factory caller')
+          print()
+          print('Expected factory ABI: hidden-sret output in rdi, provider descriptor in rsi, shared setup bundle in rdx, registry context in rcx, then provider virtual +0x28.')
+          print('Provider descriptors are stored by addb16 in a vector {begin,end,cap} with 8-byte elements.')
+          print()
+          print(f'Candidates: {len(candidates)}')
+          for rank,(score,fr,feats,bestk,calls28,xs) in enumerate(candidates[:35],1):
+              print(f'## rank {rank}: score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x} features={",".join(feats)}')
+              centers=[]
+              if bestk is not None: centers.append(bestk)
+              centers += [k for k,x in calls28[:4] if k not in centers]
+              for k in centers[:4]:
+                  x=xs[k]
+                  print(f'### +0x28 call 0x{x[0]:x}')
+                  for y in xs[max(0,k-28):min(len(xs),k+35)]: print(y[3])
+              print()
+
+          # Strong direct signature search independent of vector scoring.
+          print('## Exact hidden-sret +0x28 call shapes')
+          n=0
+          for k,x in enumerate(ins):
+              if not re.search(r'call\s+QWORD PTR \[[^]]+\+0x28\]',x[2]): continue
+              pre=ins[max(0,k-16):k+1]
+              txt='\n'.join(y[2] for y in pre)
+              if not re.search(r'lea\s+rdi,\[rsp[^]]*\]',txt): continue
+              if not re.search(r'mov\s+rsi,',txt): continue
+              if not re.search(r'mov\s+rdx,',txt): continue
+              if not re.search(r'mov\s+rcx,',txt): continue
+              print(f'### call 0x{x[0]:x}')
+              for y in ins[max(0,k-22):min(len(ins),k+24)]: print(y[3])
+              print()
+              n+=1
+              if n>=120: break
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/provider-vector-factory-caller.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace provider vector factory caller"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
