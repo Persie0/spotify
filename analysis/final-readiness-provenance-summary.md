@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying descriptor/builder false leads, tracing constructor-owned wrappers, and running the parallel v4 open-path trace for `[rsp+0x60]`, `[rsp+0x70]`, and `[rsp+0x40]`.
+Compact current state after rejecting the old `0x6b0` / TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the descriptor/builder false leads, and tracing the direct `this+0x18` writer plus installed-object consumers.
 
 ## Correct high-level chain
 
@@ -42,18 +42,26 @@ registry ID 0x9e
   -> RestrictionsSetupImpl
   -> service AP 0x184ca90
   -> service +0x28 returns [this+0x10]
-  -> child AP 0x184da88 / getter-side interface
-  -> b411a4 returns [rdi+0x18]
+  -> child AP 0x184da88 installed at service+0x10
+  -> child +0x38 = b411a4
+  -> b411a4 returns [child+0x18]
 ```
 
-`b411a4` itself is only a trivial getter:
+`b411a4` is a trivial getter:
 
 ```text
 b411a4   mov rax, [rdi+0x18]
 b411a8   ret
 ```
 
-So the important question is the writer/source of the object field read through that `+0x18` getter path.
+Relocation-backed child AP evidence now pins this exactly:
+
+```text
+child AP 0x184da88
+  +0x00 -> 10c09c6
+  +0x08 -> 10c0a66
+  +0x38 -> b411a4
+```
 
 ## Setup-bundle source: closed
 
@@ -101,121 +109,90 @@ slot AP 0x187e2f8
 
 `0x165dd40` and its helper chain are descriptor/builder/buffer logic, not the final readiness object. Wrapper-local `builder+0x18` was rejected because it overlaps stack-local output/canary layout in the wrapper path.
 
-## Constructor-owned persistent path
+## Direct `child+0x18` writer: resolved to installed AP `0x184d898`
 
-Constructor `0x10aba36` starts by setting up the service object:
-
-```text
-10aba74  lea rax, 0x184ca90
-10aba7b  [this+0x00] = 0x184ca90
-10aba7e  [rsp+0x98] = this+0x10
-10aba8a  [rsp+0x60] = this+0x18
-10aba93  [rsp+0x18] = this+0x40
-```
-
-The parallel v4 trace clarified a major correction: the real direct readiness-slot candidate is `[rsp+0x60] = this+0x18`, not `[rsp+0x18]`.
-
-### `this+0x18` / `[rsp+0x60]`: strongest current source
-
-The `this+0x18` path is now directly traced:
+The true direct writer is not the later `10ac7dd` output-store. It is `[rsp+0x60] = this+0x18` followed by `10ac1a9`:
 
 ```text
+10aba8a  lea rax, [rdi+0x18]
+10aba8e  [rsp+0x60] = rax          ; &this+0x18
+
 10ac12c  operator new(0x28)
 10ac131  r14 = allocated_0x28
-10ac149  operator new(0x30)
-10ac159  a7a290(allocated_0x30, [rsp+0x10])
+10ac180  lea rax, 0x184d898
 10ac187  [allocated_0x28+0x00] = 0x184d898
 10ac194  107162a(allocated_0x28+0x08, stack_wrapper)
-10ac19c  de1c52(stack_wrapper)
-10ac1a1  rax = [rsp+0x60]          ; rax = &this+0x18
+
+10ac1a1  rax = [rsp+0x60]          ; &this+0x18
 10ac1a6  rdi = [rax]               ; old this+0x18
 10ac1a9  [rax] = r14               ; this+0x18 = allocated_0x28
 10ac1b4  if old != null: call [old.vtable+0x8]
 ```
 
-So the constructor installs the `0x28` object with AP/literal `0x184d898` into `this+0x18`. This is currently the strongest concrete writer for the getter-side `+0x18` readiness source.
-
-The same slot is read again immediately:
+Immediate follow-up read confirms the installed object is reused:
 
 ```text
 10ac1e6  rax = [rsp+0x60]
 10ac1eb  r13 = [rax]               ; r13 = this+0x18 = allocated_0x28
 ```
 
-and much later:
+Late read confirms the same field is consumed again:
 
 ```text
 10ad136  rax = [rsp+0x60]
 10ad13b  rbx = [rax]               ; rbx = this+0x18
-...
-10ad15b  operator new(0x198)
-10ad1a5  [rbp+0x00] = 0x184d5d0
-10ad1bb  [rbp+0x18] = r12          ; r12 came from this+0x40, not this+0x18
 ```
 
-`[rsp+0x60]` is only cleanup-read at the end:
+## Installed object AP `0x184d898`
+
+Relocation-backed AP/method entries now start as:
 
 ```text
-10adbde  rdi = [rsp+0x60]
-10adbe3  call a79e28               ; cleanup helper on &this+0x18
+0x184d898 +0x00 -> 10bff2c
+0x184d898 +0x08 -> 10bff40
+0x184d898 +0x10 -> 10bff52
+0x184d898 +0x18 -> 10bffde
 ```
 
-## `this+0x40` / `[rsp+0x18]`: direct store, but not the getter slot
-
-The v3 output-store trace followed this store:
+Useful text xrefs:
 
 ```text
-10ac7d5  rax = [rsp+0x18]
-10ac7da  rdi = [rax]               ; old this+0x40
-10ac7dd  [rax] = r14               ; this+0x40 = r14
-10ac7e8  if old != null: call [old.vtable+0x8]
+10ac180  lea rax, 0x184d898        ; constructor install into this+0x18
+10bff2c  lea rax, 0x184d898        ; method/constructor-side self AP reference
 ```
 
-But `[rsp+0x18]` was proven to be `this+0x40`, not `this+0x18`:
+The current direct `b411a4` return object is therefore:
 
 ```text
-10aba93  lea rax, [rdi+0x40]
-10aba97  [rsp+0x18] = rax
+child+0x18
+  = allocated_0x28
+  -> AP/literal 0x184d898
+  -> payload at +0x08 initialized via 107162a from stack_wrapper
 ```
 
-So `10ac7dd` is semantically useful for the broader object graph, but it is **not** the direct `b411a4`/`+0x18` field writer.
+## Wrapper/side paths still relevant but not direct getter value
 
-## Wrapper paths still connected to the constructor graph
-
-The `vtable+0x28` calls on the saved constructor argument produce objects packed into `wrapper_0x80`:
+First `vtable+0x28` returns are packed into wrapper_0x80:
 
 ```text
-10aba54  [rsp+0x40] = rdx          ; constructor arg rdx
-10ac372  call [[rsp+0x40].vtable+0x28]
+10ac37a  call [rax+0x28]
 10ac37d  r14 = first_return
-10ac386  call [r15.vtable+0x28]
+10ac386  call [rax+0x28]
 10ac389  r15 = second_return
 10ac391  operator new(0x80)
 10ac3a0  [wrapper_0x80+0x00] = 0x184d0a0
 10ac3a3  [wrapper_0x80+0x08] = first_return
 10ac3a7  [wrapper_0x80+0x10] = second_return
 10ac3b0  [wrapper_0x80+0x18] = allocated_0x150
-10ac454  [rsp+0x70] = wrapper_0x80
 ```
 
-Fallback path:
+`wrapper_0x80` is stored in `[rsp+0x70]` or replaced by fallback_0x8, then read later at `10ad69b`; this is not the direct `this+0x18` writer.
+
+A later `0xd8` wrapper is also built:
 
 ```text
-10ac47f  [rsp+0x70] = fallback_0x8 AP 0x184d1f0
-```
-
-`[rsp+0x70]` is later consumed but not as the direct `this+0x18` writer:
-
-```text
-10ad69b  rcx = [rsp+0x70]
-10adb4f  rdi = [rsp+0x70]          ; cleanup/read
-```
-
-After the second `[rsp+0x40]` `vtable+0x28` call, the constructor also builds `wrapper_0xd8`:
-
-```text
-10ac4e4  rdi = [rsp+0x40]
-10ac4ec  call [rdi.vtable+0x28]
+10ac4e4  mov rdi, [rsp+0x40]
+10ac4ec  call [rax+0x28]
 10ac4ef  r14 = return_from_vtable28
 10ac4f7  operator new(0xd8)
 10ac503  [wrapper_0xd8+0x00] = 0x184d9a8
@@ -224,7 +201,36 @@ After the second `[rsp+0x40]` `vtable+0x28` call, the constructor also builds `w
 10ac513  [wrapper_0xd8+0x18] = 0
 ```
 
-`wrapper_0xd8` is initialized through callback wrappers and appears to feed the broader persistent graph, but the direct `this+0x18` writer is already the earlier `allocated_0x28` store at `10ac1a9`.
+## `10ac7dd` correction
+
+The direct output-store at `10ac7dd` writes `this+0x40`, not `this+0x18`:
+
+```text
+10aba93  lea rax, [rdi+0x40]
+10aba97  [rsp+0x18] = rax          ; this+0x40
+
+10ac7d5  mov rax, [rsp+0x18]
+10ac7dd  mov [rax], r14            ; this+0x40 = r14
+```
+
+It remains semantically useful for the broader object graph, but not for `b411a4`'s direct `+0x18` getter value.
+
+## Late consumer: `0x198` AP `0x184d5d0`
+
+After `this+0x18` is read into `rbx`, the constructor builds a `0x198` object with AP `0x184d5d0` and stores the installed `this+0x18` object into that new object:
+
+```text
+10ad136  rax = [rsp+0x60]
+10ad13b  rbx = [rax]               ; rbx = this+0x18 = allocated_0x28 / AP 0x184d898
+10ad156  operator new(0x198)
+10ad160  rbp = allocated_0x198
+10ad19e  lea rax, 0x184d5d0
+10ad1a5  [rbp+0x00] = 0x184d5d0
+...
+10ad217  [rbp+0x60] = rbx          ; 0x198 object captures installed this+0x18
+```
+
+This makes `0x184d5d0` the strongest downstream consumer of the direct `child+0x18` value found so far.
 
 ## Current closed items
 
@@ -237,34 +243,49 @@ buffer/growth emit helpers
 builder sink/refill abstraction
 local output builder layout / builder+0x18 false lead
 post-wrapper return-value consumption
-ac39da / 10adc16 stack-wrapper behavior
-first vtable+0x28 returns packed into wrapper_0x80 / AP 0x184d0a0
-child/getter-side b411a4 classified as trivial [rdi+0x18] getter
-[rsp+0x40] provenance as constructor argument rdx saved at entry
-10ac7dd output store classified as this+0x40, not direct getter +0x18
-[rsp+0x60] / this+0x18 writer resolved to allocated_0x28 AP 0x184d898 at 10ac1a9
+child getter b411a4 classified as trivial [rdi+0x18] getter
+child AP 0x184da88 +0x38 = b411a4
+[rsp+0x40] provenance as constructor arg rdx saved at entry
+10ac7dd classified as this+0x40, not child+0x18
+[rsp+0x60] classified as &this+0x18
+this+0x18 direct writer at 10ac1a9
+installed this+0x18 object AP 0x184d898
+late 0x198/AP 0x184d5d0 consumer stores installed this+0x18 at +0x60
 ```
 
-## Still open / next best target
+## Still open / next best targets
 
 ```text
-allocated_0x28 / AP 0x184d898 methods and readers after installation into this+0x18
-relation between service this+0x18 and the exact child AP 0x184da88 getter interface
-late this+0x18 consumer at 10ad136 and the 0x198 object AP 0x184d5d0
-late [rsp+0x70] read at 10ad69b
-late [rsp+0x40] receivers at 10acd33 / 10acdad
-whether wrapper_0xd8 / AP 0x184d9a8 feeds this+0x40 or later readiness state indirectly
+AP 0x184d898 method semantics:
+  +0x00 -> 10bff2c
+  +0x08 -> 10bff40
+  +0x10 -> 10bff52
+  +0x18 -> 10bffde
+
+Payload initialized at allocated_0x28+0x08 via 107162a:
+  determine exactly what the erased/shared wrapper stores there
+
+Late consumer AP 0x184d5d0:
+  trace methods that read [this+0x60]
+  confirm whether this is the object used by fd381a state+0x40 / +0x140 path
+
+Known side paths:
+  [rsp+0x70] wrapper_0x80/fallback holder
+  [rsp+0x40] constructor arg rdx vtable+0x28 receivers
+  wrapper_0xd8 / AP 0x184d9a8
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-installed-ap184d898-v5.md`
+- `analysis/restrictions-child184da88-v5.md`
+- `analysis/restrictions-late-0x198-184d5d0-v5.md`
 - `analysis/restrictions-this18-rsp60-v4.md`
 - `analysis/restrictions-rsp70-late-v4.md`
 - `analysis/restrictions-rsp40-late-v4.md`
 - `analysis/restrictions-output-store-10ac7dd.md`
 - `analysis/restrictions-tail-after-wrapperd8-v2.md`
 - `analysis/restrictions-frame-provenance-v2.md`
-- `analysis/restrictions-child18-parallel.md`
 - `analysis/restrictions-child18-parallel-v2.md`
 - `analysis/restrictions-wrapper80-provenance.md`
 - `analysis/restrictions-vtable28-provenance.md`
