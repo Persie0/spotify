@@ -215,6 +215,41 @@ The method parses a descriptor stream and dispatches by tag. Observed bundle mut
 
 Current conclusion: `+0x30` is a real bundle mutation method, but it does not show a direct write to `bundle+0x30` in its own body. It appears to populate/merge parsed descriptor data into bundle substructures at `+0x18`, `+0x50`, `+0x58`, and `+0x90`, with status flags in `bundle+0x8`.
 
+## Substructure and resize-helper findings
+
+`analysis/restrictions-substructure-writers.md` tested the most plausible indirect write hypothesis:
+
+```text
+153cc94  mov rdi, rbp        ; rbp = bundle+0x18
+153cc97  call 1507a9e
+```
+
+If `1507a9e` wrote `arg+0x18`, that would resolve to `bundle+0x30`. It does not. The trace found:
+
+```text
+1507a9e initial rdi = bundle+0x18
+writes resolving exactly to bundle+0x30 = 0
+1507ab9  mov [rbx+0x8], ecx  ; resolves to bundle+0x20
+```
+
+The capacity-growth helper reached from `1507a9e` was then traced in `analysis/restrictions-resize-helper.md`:
+
+```text
+1507ad1  mov rdi, rbx
+1507ad4  mov esi, r14d
+1507ad7  call d15d98
+```
+
+With `d15d98` interpreted as `rdi=bundle+0x18`, the writes were:
+
+```text
+d15daf  mov [rdi+0xc], esi  ; bundle+0x24
+d15dca  mov [rbx], rax      ; bundle+0x18
+d15e15  mov [rbx+0x8], ecx  ; bundle+0x20
+```
+
+So the `bundle+0x18 -> 1507a9e -> d15d98` vector/resize path is ruled out as the source of `bundle+0x30`.
+
 ## Current best path
 
 ```text
@@ -238,16 +273,18 @@ The exact source of the value read by Restrictions as `rdx+0x30` is still not cl
 
 1. a simple local provider-vector store,
 2. `a79a7e`,
-3. `17add2a`, or
-4. `bundle.vtable+0x30` / `0x153cbfc` directly.
+3. `17add2a`,
+4. `bundle.vtable+0x30` / `0x153cbfc` directly,
+5. the `bundle+0x18 -> 1507a9e` vector-slot helper, or
+6. the `bundle+0x18 -> d15d98` resize helper.
 
-Next best target:
+Next best targets:
 
 ```text
-resolve whether bundle+0x30 is initialized by:
-  A) the bundle constructor/setup around 14ce65f..14ce68d,
-  B) another vtable method such as +0x0/+0x8/+0x10,
-  C) a helper reached by 0x153cbfc, especially 165fe6a or the bundle+0x18/+0x50/+0x58/+0x90 helpers.
+A) bundle constructor/setup around 14ce65f..14ce68d,
+B) other vtable methods such as +0x0/+0x8/+0x10/+0x20/+0x28,
+C) 0x153cbfc descriptor helper 165fe6a / 165ffb0,
+D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths.
 ```
 
 ## Evidence files
@@ -261,6 +298,8 @@ resolve whether bundle+0x30 is initialized by:
 - `analysis/restrictions-post-add2a-handoff.md`
 - `analysis/restrictions-bundle-vtable.md`
 - `analysis/restrictions-vtable30-method-summary.md`
+- `analysis/restrictions-substructure-writers.md`
+- `analysis/restrictions-resize-helper.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
