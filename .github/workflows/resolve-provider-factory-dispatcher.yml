@@ -1,0 +1,149 @@
+name: Resolve provider factory dispatcher
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-provider-factory-dispatcher.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/pdispatch
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/pdispatch
+          unzip -j /tmp/pdispatch/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/pdispatch
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve dispatcher
+        run: |
+          SO=/tmp/pdispatch/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/pdispatch/all.dis
+          python3 - <<'PY' > analysis/provider-factory-dispatcher.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/pdispatch/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/pdispatch/liborbit-jni-spotify.so','rb') as f:
+              elf=ELFFile(f); fdes=[]
+              for e in elf.get_dwarf_info().EH_CFI_entries():
+                  if isinstance(e,FDE):
+                      a=e['initial_location']; z=a+e['address_range']
+                      if z>a:fdes.append((a,z))
+          fdes.sort()
+          starts=[a for a,b in fdes]
+          def fde(a):
+              k=bisect.bisect_right(starts,a)-1
+              if k>=0 and fdes[k][0]<=a<fdes[k][1]: return fdes[k]
+          def rows(fr):
+              lo=bisect.bisect_left(addrs,fr[0]); hi=bisect.bisect_left(addrs,fr[1])
+              return ins[lo:hi]
+          def fmt(xs): return '\n'.join(x[3] for x in xs)
+
+          print('# Provider factory dispatcher')
+          print()
+          print('Provider ABI anchor: descriptor +0x10 = this-only service-ID getter; descriptor +0x28 = factory.')
+          print('Restrictions descriptor AP 0x184ca50: +0x10 0x10ab792 returns 0x9e, +0x28 0x10ab7ae.')
+          print()
+
+          # addb16 body
+          fr=fde(0xaddb16)
+          print(f'## addb16 registration helper FDE={fr}')
+          if fr: print(fmt(rows(fr)))
+          print()
+
+          # Candidate FDEs: a virtual +0x10 call followed by AL/AX use indicative
+          # of a small ID result, plus any virtual +0x28 call in same FDE.
+          groups={}
+          for x in ins:
+              fr=fde(x[0])
+              if fr: groups.setdefault(fr,[]).append(x)
+          cand=[]
+          for fr,xs in groups.items():
+              p10=[]; p28=[]
+              for k,x in enumerate(xs):
+                  if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x10\]',x[2]):
+                      post='\n'.join(y[2] for y in xs[k+1:min(len(xs),k+16)])
+                      # strong ID-getter fingerprints
+                      score=0
+                      if re.search(r'\bmovzx\s+[^,]+,al\b',post): score+=8
+                      if re.search(r'\bmov\s+[^,]+,al\b',post): score+=5
+                      if re.search(r'\btest\s+al,al\b|\bcmp\s+al,',post): score+=3
+                      if re.search(r'\bshl\s+[^,]+,0x3\b',post): score+=5
+                      if re.search(r'\[[^]]+\*8[^]]*\]',post): score+=6
+                      if score: p10.append((k,x,score))
+                  if re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x28\]',x[2]):
+                      p28.append((k,x))
+              if p10 and p28:
+                  score=max(z[2] for z in p10)+5*len(p28)
+                  # service-table/factory context bonuses
+                  alltxt='\n'.join(x[2] for x in xs)
+                  if re.search(r'\[[^]]+\*8[^]]*\]',alltxt): score+=10
+                  if 'b622de' in alltxt: score+=8
+                  if re.search(r'lea\s+rdi,\[rsp',alltxt): score+=2
+                  cand.append((score,fr,p10,p28,xs))
+          cand.sort(reverse=True,key=lambda z:z[0])
+
+          print('## Strong provider-dispatch candidates')
+          print(f'- count={len(cand)}')
+          for rank,(score,fr,p10,p28,xs) in enumerate(cand[:25],1):
+              print(f'### rank {rank} score={score} FDE=0x{fr[0]:x}..0x{fr[1]:x}')
+              print('- +0x10:',[(hex(x[1][0]),x[2]) for x in p10])
+              print('- +0x28:',[hex(x[1][0]) for x in p28])
+              centers=sorted(set([x[0] for _,x,_ in p10]+[x[0] for _,x in p28]))
+              for a in centers:
+                  k=next(i for i,x in enumerate(xs) if x[0]==a)
+                  print(f'#### around 0x{a:x}')
+                  print(fmt(xs[max(0,k-28):min(len(xs),k+50)]))
+              print()
+
+          # Direct local patterns where +0x10 result is converted to index.
+          print('## All virtual +0x10 calls with immediate ID/index fingerprint')
+          n=0
+          for k,x in enumerate(ins):
+              if not re.search(r'call\s+QWORD PTR \[[a-z0-9]+\+0x10\]',x[2]): continue
+              post=ins[k+1:min(len(ins),k+18)]
+              txt='\n'.join(y[2] for y in post)
+              if not (re.search(r'movzx\s+[^,]+,al\b',txt) or re.search(r'shl\s+[^,]+,0x3\b',txt) or re.search(r'\[[^]]+\*8[^]]*\]',txt)): continue
+              print(f'### 0x{x[0]:x} FDE={fde(x[0])}')
+              print(fmt(ins[max(0,k-15):min(len(ins),k+30)])); print()
+              n+=1
+              if n>=80: break
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/provider-factory-dispatcher.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve provider factory dispatcher"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
