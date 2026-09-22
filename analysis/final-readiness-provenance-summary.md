@@ -134,7 +134,7 @@ b411a4   mov rax, [rdi+0x18]
 b411a8   ret
 ```
 
-Constructor dataflow narrowed the remaining semantic target. At `0x10aba36`, the `rcx` dependency is first preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers; it is not a simple direct store to `child+0x18` in the scanned constructor window.
+Constructor dataflow narrowed the semantic target. At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers; it is not a simple direct store to `child+0x18` in the scanned constructor window.
 
 ```text
 10aba51  mov rbp, rcx              ; rbp = bundle30-derived dependency
@@ -148,27 +148,47 @@ Constructor dataflow narrowed the remaining semantic target. At `0x10aba36`, the
 10abf30  mov r12, [rbp+0x0]
 ```
 
-The strongest follow-up helper calls involving the dependency are:
+The helper wrappers reached from that constructor are now classified:
 
 ```text
-10abfc3  call 15e768e  ; rdi=load(bundle30_slot), rdx=bundle30_slot, r8=load(bundle30_slot)
-10abfcd  call a7b5e8   ; rdx=bundle30_slot, r8=load(bundle30_slot)
-10abff8  call 15e75f2  ; rdi=load(load(bundle30_slot)), rdx=bundle30_slot, r8=load(bundle30_slot)
-10ac028  call 15e75f2  ; rdi=load(load(bundle30_slot)), rdx=bundle30_slot, r8=load(bundle30_slot)
+10abfc3  call 15e768e
+  -> 15e768e loads slot_obj vtable and calls [slot_obj.vtable+0x90]
+
+10abff8 / 10ac028  call 15e75f2
+  -> 15e75f2 loads slot_obj vtable and calls [slot_obj.vtable+0x98]
+
+a7b5e8
+  -> only forwards to a7b624 / cleanup-style wrapper in the scanned window
 ```
+
+Because the slot object AP is relocation-filled, raw `.data.rel.ro` bytes read as zero. The relocation-aware trace resolves AP `0x187e2f8` as:
+
+```text
+slot AP 0x187e2f8
+  +0x30 -> 0x153d2a4   ; fill method already seen from 153cbfc
+  +0x90 -> 0x165dd40   ; semantic target used by 15e768e
+  +0x98 -> 0x153d0d0   ; semantic target used by 15e75f2
+```
+
+`0x165dd40` is a large descriptor/field interpreter: it calls the slot object's `+0x48` method, then iterates a table of 0x28-byte entries, dispatches on entry kind, and calls helpers such as `165e51e`, `165cc82`, and `165e60c`. `0x153d0d0` is the other already-seen slot-fill/descriptor path. These are now the concrete semantic methods behind the bundle30-derived Restrictions source.
 
 This means the final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
 ## What remains open
 
-The setup-bundle `+0x30` source and factory-consumption path are closed. The remaining open area is deeper semantic interpretation: exactly how the `bundle30_slot` object processed inside constructor `0x10aba36` becomes or feeds the object returned through `child+0x18`, and how that returned object implements or feeds the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
-
-The next concrete targets are the helper calls reached from the constructor with the `bundle30_slot` dependency:
+The setup-bundle `+0x30` source and factory-consumption path are closed. The remaining open area is semantic interpretation inside the slot object's relocated AP methods:
 
 ```text
-15e768e
-a7b5e8
-15e75f2
+0x165dd40  ; AP 0x187e2f8 +0x90, descriptor/field interpreter
+0x153d0d0  ; AP 0x187e2f8 +0x98, slot-fill/descriptor path
+```
+
+The next concrete target is `0x165dd40`, especially its branch helpers that consume descriptor table entries and may construct or update the object returned through `child+0x18`:
+
+```text
+165e51e
+165cc82
+165e60c
 ```
 
 The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
@@ -197,4 +217,7 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/restrictions-factory-consumption.md`
 - `analysis/restrictions-child18-semantics.md`
 - `analysis/restrictions-constructor-dataflow.md`
+- `analysis/restrictions-helper-semantics.md`
+- `analysis/restrictions-slot-vtable.md`
+- `analysis/restrictions-slot-relocations.md`
 - `docs/15-skip-ad-signal.md`
