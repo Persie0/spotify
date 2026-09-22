@@ -1,0 +1,146 @@
+name: Trace Restrictions this+0x78 readers fast
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-this78-readers-fast.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Fast trace concrete this+0x78 readers
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-this78-readers-fast.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+          addr_to_idx = {a:i for i,(a,_,_) in enumerate(insns)}
+          addrs = [a for a,_,_ in insns]
+
+          def nearest_idx(addr):
+              # binary-search by address without importing bisect-heavy logic
+              lo, hi = 0, len(addrs)-1
+              while lo < hi:
+                  mid = (lo+hi)//2
+                  if addrs[mid] < addr:
+                      lo = mid + 1
+                  else:
+                      hi = mid
+              if lo > 0 and abs(addrs[lo-1]-addr) < abs(addrs[lo]-addr):
+                  return lo-1
+              return lo
+
+          def window(addr, before=18, after=70):
+              i = nearest_idx(addr)
+              return insns[max(0, i-before):min(len(insns), i+after)]
+
+          def fmt(rows):
+              return '```text\n' + '\n'.join(l for _,l,_ in rows) + '\n```\n'
+
+          ctor = [(a,l,t) for a,l,t in insns if 0x10ac120 <= a <= 0x10ac3a0]
+
+          # concrete callsites/methods from previous report and next targets
+          targets = {
+              0x10ac12c: 'operator new(0x28) for installed object',
+              0x10ac149: 'operator new(0x30) copied into stack wrapper',
+              0x10ac159: 'a7a290 copy/helper for allocated_0x30',
+              0x10ac194: '107162a(allocated_0x28+0x08, stack_wrapper)',
+              0x10ac19c: 'de1c52(stack_wrapper)',
+              0x10ac1a9: '[this+0x78_target] = allocated_0x28',
+              0x10ac216: '15e74c8 with stack wrapper / installed object state',
+              0x10ac339: 'second 15e74c8 with allocated_0x30 data',
+              0x10ac37a: 'indirect call [allocated_0x28.vtable+0x28] #1',
+              0x10ac386: 'indirect call [allocated_0x28.vtable+0x28] #2',
+              0x107162a: 'method/helper called at install time',
+              0xde1c52: 'stack wrapper finalizer',
+              0x10bff2c: 'alternate 0x184d898 object constructor',
+              0x10bff40: 'alternate wrapper around 10bff2c',
+              0x15e74c8: 'post-install descriptor/helper call',
+              0xa7b84f: 'conditional string/helper after 15e74c8',
+              0xaa6d30: 'cleanup/finalizer after 15e74c8',
+          }
+
+          # targeted xrefs: no nested scans, only exact string hits, capped
+          xref_strings = ['184d898', '184d808', '187e260', '107162a', 'de1c52', '10bff2c', '15e74c8']
+          xrefs = {s: [] for s in xref_strings}
+          for i,(a,l,t) in enumerate(insns):
+              for s in xref_strings:
+                  if s in l:
+                      xrefs[s].append((a, max(0, i-4), min(len(insns), i+8)))
+
+          # Simple interpretation: collect constructor-tail indirect calls and writes.
+          interesting = []
+          for a,l,t in ctor:
+              if 'call' in t or re.match(r'\bmov\s+(?:QWORD PTR |BYTE PTR |XMMWORD PTR )?\[', t) or '+0x78' in t or '+0x28' in t:
+                  interesting.append((a,l,t))
+
+          md = []
+          md.append('# Restrictions this+0x78 readers fast trace\n\n')
+          md.append('Fast replacement for the broad reader/xref workflow. Focuses only on concrete constructor-tail events and next-target helper windows.\n\n')
+          md.append('## Constructor tail interesting events\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          for a,l,t in interesting[:260]:
+              md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          md.append('\n')
+
+          md.append('## Focused callsite / helper windows\n\n')
+          for addr, desc in targets.items():
+              md.append(f'### `{addr:#x}` — {desc}\n\n')
+              md.append(fmt(window(addr, 18, 85)))
+
+          md.append('## Targeted xrefs\n\n')
+          for s, hits in xrefs.items():
+              md.append(f'### `{s}` xrefs ({len(hits)})\n\n')
+              for a,start,end in hits[:20]:
+                  md.append(f'#### xref at `{a:#x}`\n\n')
+                  md.append(fmt(insns[start:end]))
+              if len(hits) > 20:
+                  md.append(f'... truncated {len(hits)-20} more xrefs ...\n\n')
+
+          md.append('## Preliminary conclusion\n\n')
+          md.append('- `10ac1a9` is the concrete install of the `operator new(0x28)` object into the constructor-owned `this+0x78` target.\n')
+          md.append('- `107162a` and `de1c52` are now the primary construction/finalization helpers for that installed object path.\n')
+          md.append('- The constructor later makes indirect calls through the installed object vtable at `10ac37a` and `10ac386` using `[rax+0x28]`; resolving the concrete AP behind `0x184d898` or those call targets is the next method-level step.\n')
+          md.append('- If the installed object still does not connect to `b411a4`, return to the `child AP 0x184da88` object layout and find the direct `child+0x18` assignment/reader.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-this78-readers-fast.md
+          git commit -m 'Trace Restrictions this+0x78 readers fast' || exit 0
+          git push
