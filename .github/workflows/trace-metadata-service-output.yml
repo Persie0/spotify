@@ -1,0 +1,88 @@
+name: Trace Metadata service output
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-metadata-service-output.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/metaout
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/metaout
+          unzip -j /tmp/metaout/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/metaout
+      - name: Trace factory output
+        run: |
+          SO=/tmp/metaout/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/metaout/all.dis
+          readelf -rW "$SO" > /tmp/metaout/rel.txt
+          python3 - <<'PY' > analysis/metadata-service-output.md
+          from pathlib import Path
+          import re,bisect
+          lines=Path('/tmp/metaout/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx_idx(j,b=18,n=35): return '\n'.join(x[3] for x in ins[max(0,j-b):min(len(ins),j+n)])
+          lo,hi=0xd498ce,0xd4aa39
+          a,b=ix(lo),ix(hi)
+          rows=ins[a:b]
+          print('# MetadataSetupImpl concrete service output')
+          print()
+          print('Factory 0xd498ce saves incoming output pointer rdi to [rsp+0xa0].')
+          print()
+          print('## Every reference to saved output slot rsp+0xa0')
+          for k,x in enumerate(rows):
+              if 'rsp+0xa0]' in x[2]:
+                  print(f'### 0x{x[0]:x}: {x[2]}')
+                  print('\n'.join(y[3] for y in rows[max(0,k-18):min(len(rows),k+45)])); print()
+          print('## Last 220 instructions of factory')
+          for x in rows[-220:]: print(x[3])
+          print()
+          print('## Stores through registers loaded from rsp+0xa0')
+          # simple forward scan from each load of saved output pointer
+          for k,x in enumerate(rows):
+              m=re.search(r'mov\s+(r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)),QWORD PTR \[rsp\+0xa0\]',x[2])
+              if not m: continue
+              reg=m.group(1)
+              print(f'### load at 0x{x[0]:x}: {reg}')
+              for y in rows[k:min(len(rows),k+100)]:
+                  if re.search(rf'\[{reg}(?:\+0x[0-9a-f]+)?\]',y[2]):
+                      print(y[3])
+              print()
+          print('## Vtable/AP materializations in final 0x500 bytes')
+          for x in rows:
+              if x[0] >= hi-0x500 and re.search(r'#\s+18[0-9a-f]{5}\b',x[2]):
+                  print(x[3])
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/metadata-service-output.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Metadata service output"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
