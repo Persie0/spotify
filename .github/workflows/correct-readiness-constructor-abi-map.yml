@@ -1,0 +1,138 @@
+name: Correct readiness constructor ABI map
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/correct-readiness-constructor-abi-map.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rabi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rabi
+
+      - name: Correct argument map and trace sources
+        run: |
+          SO=/tmp/rabi/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0xe8d500 --stop-address=0xe8dbc0 "$SO" > /tmp/rabi/caller.dis
+          python3 - <<'PY' > analysis/readiness-e8fad0-argument-map-v2.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/rabi/caller.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for l in lines:
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),m.group(2),l))
+          byaddr={a:i for i,(a,_,_) in enumerate(ins)}
+          pad_i=byaddr[0xe8d9ad]
+          call_i=byaddr[0xe8dba7]
+          seq=ins[pad_i+1:call_i]
+          pushes=[(i+pad_i+1,x) for i,x in enumerate(seq) if x[1].startswith('push')]
+          print('# Corrected e8fad0 readiness-constructor ABI map')
+          print()
+          print('At 0xe8d9ad the caller executes sub rsp,0x8 for alignment. From there to the call at 0xe8dba7 there are',len(pushes),'push instructions.')
+          print('The callee cleanup is 0x1f0 = 0x8 alignment +',len(pushes),'*8 bytes.')
+          print('Therefore the first post-padding push is the highest stack argument and the last push is arg7.')
+          print()
+          highest=6+len(pushes)
+          print('Highest argument number:',highest)
+          print()
+
+          rows=[]
+          # S0 = RSP immediately after e8d9ad alignment sub, before first push.
+          for seqno,(idx,(a,op,l)) in enumerate(pushes,1):
+            arg=highest-seqno+1
+            prior=seqno-1
+            src=op[len('push'):].strip()
+            norm=''
+            m=re.search(r'\[rsp\+0x([0-9a-f]+)\]',src)
+            if m:
+              off=int(m.group(1),16)-8*prior
+              norm=f'value from aligned-S0+0x{off:x}'
+            else:
+              mr=re.fullmatch(r'(r\w+)',src)
+              if mr:
+                reg=mr.group(1)
+                for j in range(idx-1,max(pad_i,-1),-1):
+                  pop=ins[j][1]
+                  if re.match(rf'(?:lea|mov)\s+{re.escape(reg)},',pop):
+                    norm='last-def: '+pop
+                    mm=re.search(r'\[rsp\+0x([0-9a-f]+)\]',pop)
+                    if mm:
+                      nprev=sum(1 for pi,_ in pushes if pi<j)
+                      off=int(mm.group(1),16)-8*nprev
+                      norm+=f' => based on aligned-S0+0x{off:x}'
+                    break
+            rows.append((arg,seqno,a,src,norm,idx))
+
+          # Callee fields -> stack argument numbers from callee current offsets.
+          # e8fad0 prologue pushes 6 regs and sub 0x9c8. Return address and alignment are naturally handled:
+          # first stack arg (arg7) lives at [callee rsp+0xa00].
+          fields={
+            0xb40:'owner+0x428 readiness input',
+            0xb68:'owner+0x3b8 provider',
+            0xb78:'owner+0x470 source pair pointer',
+            0xbc0:'owner+0x570 dependency',
+            0xbe0:'owner+0x598 state/control',
+          }
+          print('## Callee field -> corrected argument mapping')
+          mapped={}
+          for off,label in fields.items():
+            arg=7+(off-0xa00)//8
+            mapped[arg]=(off,label)
+            print(f'- {label}: callee [rsp+0x{off:x}] -> arg{arg}')
+          print()
+
+          print('## Full post-padding stack argument map')
+          for arg,seqno,a,src,norm,idx in sorted(rows):
+            tag=''
+            if arg in mapped: tag=f'  <-- {mapped[arg][1]}'
+            print(f'- arg{arg:02d}: 0x{a:x}: {src}; {norm}{tag}')
+          print()
+
+          for arg,(off,label) in sorted(mapped.items()):
+            row=next((x for x in rows if x[0]==arg),None)
+            print(f'## arg{arg}: {label}')
+            if row:
+              _,seqno,a,src,norm,idx=row
+              print(f'- push @0x{a:x}: {src}')
+              print(f'- normalized: {norm}')
+              print('Context:')
+              for x in ins[max(0,idx-24):min(len(ins),idx+14)]: print(x[2])
+            else:
+              print('NO ROW')
+            print()
+
+          print('## Pre-push producer window')
+          for x in ins:
+            if 0xe8d880 <= x[0] <= 0xe8d9b0: print(x[2])
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-e8fad0-argument-map-v2.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Correct readiness constructor ABI map"
+          git pull --rebase origin main
+          git push
