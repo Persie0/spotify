@@ -1,0 +1,171 @@
+name: Trace Restrictions builder buffer helpers
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-builder-buffer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace builder buffer helpers
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-builder-buffer-helpers.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          lines = dis.splitlines()
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in lines:
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+
+          def window(start, end=None, count=None):
+              ws = [(a,l,t) for a,l,t in insns if a >= start and (end is None or a < end)]
+              return ws[:count] if count is not None else ws
+
+          def block(ws, max_lines=220):
+              if not ws:
+                  return '```text\n(no instructions found)\n```\n'
+              rows = [l for _,l,_ in ws[:max_lines]]
+              if len(ws) > max_lines:
+                  rows.append(f'... truncated {len(ws)-max_lines} more instructions ...')
+              return '```text\n' + '\n'.join(rows) + '\n```\n'
+
+          reg_pat = r'r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)'
+          def classify(start, end, name, initial, role_hint):
+              ws = window(start, end)
+              regs = dict(initial)
+              refs=[]; writes=[]; calls=[]; aliases=[]; direct_child18=[]; buffer_events=[]
+              for addr,line,text in ws:
+                  # direct child+0x18-ish checks, in case a helper unexpectedly reaches it
+                  if re.search(r'\+0x18\]', text) and ('child' in ' '.join(regs.values()) or 'rbx+0x18' in text or 'rdi+0x18' in text):
+                      direct_child18.append((addr,line))
+
+                  # register aliases
+                  m = re.search(rf'\bmov\s+({reg_pat}),\s*({reg_pat})\b', text)
+                  if m and m.group(2) in regs:
+                      regs[m.group(1)] = regs[m.group(2)]
+                      aliases.append((addr, f'{m.group(1)}={regs[m.group(1)]}', line))
+                  m = re.search(rf'\blea\s+({reg_pat}),\s*\[([^\]]+)\]', text)
+                  if m:
+                      dst, mem = m.group(1), m.group(2)
+                      for r, origin in list(regs.items()):
+                          if re.search(rf'\b{re.escape(r)}\b', mem):
+                              regs[dst] = f'addr({origin}:{mem})'
+                              aliases.append((addr, f'{dst}={regs[dst]}', line))
+                              break
+
+                  # refs and writes via tracked regs
+                  for r, origin in list(regs.items()):
+                      if re.search(rf'\[[^\]]*\b{re.escape(r)}\b[^\]]*\]', text):
+                          loc = re.search(r'\[([^\]]+)\]', text).group(1)
+                          is_write = bool(re.match(r'\b(?:mov|movups|and|or|xor|add|sub|inc|dec|xchg|stos)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', text))
+                          (writes if is_write else refs).append((addr, origin, loc, line))
+                          # common load alias
+                          if text.startswith('mov ') and not is_write:
+                              mm = re.search(rf'\bmov\s+({reg_pat}),\s*(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR )?\[', text)
+                              if mm:
+                                  regs[mm.group(1)] = f'load({origin}:{loc})'
+                                  aliases.append((addr, f'{mm.group(1)}={regs[mm.group(1)]}', line))
+                          # buffer signature events
+                          if '+0x8' in loc or '+0x10' in loc or '+0x20' in loc or '+0x24' in loc:
+                              buffer_events.append((addr, origin, loc, 'write' if is_write else 'read', line))
+                  if 'call' in text or 'jmp' in text:
+                      tracked = []
+                      for a in ['rdi','rsi','rdx','rcx','r8','r9','r10','r11','r12','r13','r14','r15','rbx','rax']:
+                          if a in regs:
+                              tracked.append(f'{a}={regs[a]}')
+                      if tracked and ('call' in text):
+                          calls.append((addr, ', '.join(tracked), line))
+              return dict(name=name, start=start, end=end, role_hint=role_hint, ws=ws, refs=refs, writes=writes, calls=calls, aliases=aliases, child18=direct_child18, buffer=buffer_events)
+
+          funcs = [
+              (0x165c600, 0x165c67e, '165c600', {'rdi':'builder/output object', 'rsi':'source buffer / inline byte area', 'rdx':'byte count'}, 'append/copy bytes into builder output buffer'),
+              (0x165c67e, 0x165c6ca, '165c67e', {'rdi':'builder/output object', 'rsi':'encoded scalar value'}, 'emit encoded scalar through slow path'),
+              (0x165c6ca, 0x165c7ae, '165c6ca', {'rdi':'builder/output object', 'rsi':'encoded byte/scalar value'}, 'single-byte emit slow path / capacity refill'),
+              (0x165c7ae, 0x165c900, '165c7ae', {'rdi':'builder/output object', 'rsi':'encoded varint/large scalar'}, 'multi-byte varint emit slow path'),
+              (0x165d0d4, 0x165d160, '165d0d4', {'rdi':'builder/output object', 'rsi':'descriptor scalar/value'}, '32-bit scalar emit fallback from 165e51e'),
+          ]
+          traces = [classify(*f) for f in funcs]
+
+          md=[]
+          md.append('# Restrictions builder/buffer helper trace\n\n')
+          md.append('Purpose: continue below `0x165dd40` branch helpers. `165e51e`, `165cc82`, and `165e60c` write a builder/output object; this report classifies their deeper buffer/growth/emit callees.\n\n')
+          md.append('## Summary\n\n')
+          md.append('| helper | role hint | refs | writes | calls | child+0x18 hits | interpretation |\n')
+          md.append('|---|---|---:|---:|---:|---:|---|\n')
+          for tr in traces:
+              writes_builder = any('builder/output object' in o for _,o,_,_ in tr['writes'])
+              buffer_sig = any(e for e in tr['buffer'])
+              interp = 'builder buffer/capacity emit helper' if (writes_builder or buffer_sig) else 'no builder writes in scanned window'
+              md.append(f"| `{tr['name']}` | {tr['role_hint']} | {len(tr['refs'])} | {len(tr['writes'])} | {len(tr['calls'])} | {len(tr['child18'])} | {interp} |\n")
+          md.append('\n')
+
+          for tr in traces:
+              md.append(f"## Helper `{tr['name']}`\n\n")
+              md.append(f"Role hint: {tr['role_hint']}\n\n")
+              md.append(block(tr['ws'], 180))
+              md.append('### Buffer/capacity events\n')
+              if tr['buffer']:
+                  md.append('| addr | origin | mem | kind | instruction |\n|---:|---|---|---|---|\n')
+                  for addr,origin,loc,kind,line in tr['buffer'][:120]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{kind}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No tracked `+0x8/+0x10/+0x20/+0x24` buffer events in scanned window.\n')
+              md.append('\n### Tracked writes\n')
+              if tr['writes']:
+                  md.append('| addr | origin | mem | instruction |\n|---:|---|---|---|\n')
+                  for addr,origin,loc,line in tr['writes'][:120]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No tracked writes in scanned window.\n')
+              md.append('\n### Calls with tracked args\n')
+              if tr['calls']:
+                  md.append('| addr | tracked args | instruction |\n|---:|---|---|\n')
+                  for addr,args,line in tr['calls'][:80]:
+                      md.append(f'| `{addr:#x}` | `{args}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No calls with tracked args in scanned window.\n')
+              md.append('\n')
+
+          md.append('## Interpretation\n\n')
+          md.append('These helpers are expected to sit below the descriptor interpreter and operate on the builder/output buffer, not on the final child service object directly. If the `child+0x18 hits` column stays zero and writes are concentrated in builder fields like `+0x8`, `+0x10`, `+0x20`, and inline byte storage `+0x24`, the semantic edge remains: descriptor stream -> builder/output buffer -> later wrapper/storage into the returned child dependency.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-builder-buffer-helpers.md
+          git commit -m 'Trace Restrictions builder buffer helpers' || exit 0
+          git push
