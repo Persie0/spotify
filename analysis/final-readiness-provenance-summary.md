@@ -93,7 +93,7 @@ registry ID 0x9e
       -> child AP 0x184da88 installed at service+0x10
       -> child +0x38 = 0xb411a4
       -> returns [child+0x18]
-      -> child+0x18 comes from constructor rcx
+      -> child+0x18 comes from constructor rcx path
       -> factory supplies constructor rcx from input dependency bundle +0x30
 ```
 
@@ -112,7 +112,7 @@ provider-vector caller
   -> 153d2a4 fills that object from the descriptor stream
   -> RestrictionsSetupImpl factory reads [rdx+0x30]
   -> factory copies it to rsp+0x40
-  -> factory passes it as rcx into the child/service constructor path
+  -> factory passes it as rcx into constructor 0x10aba36
   -> child +0x38 / b411a4 returns child+0x18
 ```
 
@@ -128,18 +128,48 @@ The factory-consumption evidence is:
 10ab944  mov rdx, [rsp+0x50]
 10ab949  mov rcx, [rsp+0x40]
 10ab94e  mov r9,  [rsp+0x48]
+10ab97f  call 10aba36
 
 b411a4   mov rax, [rdi+0x18]
 b411a8   ret
+```
+
+Constructor dataflow narrowed the remaining semantic target. At `0x10aba36`, the `rcx` dependency is first preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers; it is not a simple direct store to `child+0x18` in the scanned constructor window.
+
+```text
+10aba51  mov rbp, rcx              ; rbp = bundle30-derived dependency
+10abb09  mov r14, [rbp+0x0]
+10abbaa  mov r14, [rbp+0x0]
+10abc3d  mov r14, [rbp+0x0]
+10abcd4  mov r14, [rbp+0x0]
+10abd6b  mov r14, [rbp+0x0]
+10abe02  mov r14, [rbp+0x0]
+10abe99  mov r14, [rbp+0x0]
+10abf30  mov r12, [rbp+0x0]
+```
+
+The strongest follow-up helper calls involving the dependency are:
+
+```text
+10abfc3  call 15e768e  ; rdi=load(bundle30_slot), rdx=bundle30_slot, r8=load(bundle30_slot)
+10abfcd  call a7b5e8   ; rdx=bundle30_slot, r8=load(bundle30_slot)
+10abff8  call 15e75f2  ; rdi=load(load(bundle30_slot)), rdx=bundle30_slot, r8=load(bundle30_slot)
+10ac028  call 15e75f2  ; rdi=load(load(bundle30_slot)), rdx=bundle30_slot, r8=load(bundle30_slot)
 ```
 
 This means the final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
 ## What remains open
 
-The previously open setup-bundle `+0x30 -> child+0x18` edge is closed.
+The setup-bundle `+0x30` source and factory-consumption path are closed. The remaining open area is deeper semantic interpretation: exactly how the `bundle30_slot` object processed inside constructor `0x10aba36` becomes or feeds the object returned through `child+0x18`, and how that returned object implements or feeds the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
 
-The remaining open area is deeper semantic interpretation: exactly how the object returned through `child+0x18` implements or feeds the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
+The next concrete targets are the helper calls reached from the constructor with the `bundle30_slot` dependency:
+
+```text
+15e768e
+a7b5e8
+15e75f2
+```
 
 The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
 
@@ -165,4 +195,6 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/restrictions-provider-callsite-summary.md`
 - `analysis/restrictions-inline-vector-layout.md`
 - `analysis/restrictions-factory-consumption.md`
+- `analysis/restrictions-child18-semantics.md`
+- `analysis/restrictions-constructor-dataflow.md`
 - `docs/15-skip-ad-signal.md`
