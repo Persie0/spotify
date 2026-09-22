@@ -1,4 +1,5 @@
 name: Trace Restrictions bundle30 source
+# retrigger after registration
 
 on:
   workflow_dispatch:
