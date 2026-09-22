@@ -1,0 +1,155 @@
+name: Resolve restrictions readiness objects
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-restrictions-readiness-objects.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rrest
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rrest
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve objects
+        run: |
+          SO=/tmp/rrest/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rrest/all.dis
+          readelf -rW "$SO" > /tmp/rrest/rel.txt
+          python3 - <<'PY' > analysis/restrictions-readiness-objects.md
+          from pathlib import Path
+          import re,bisect,struct
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/rrest/liborbit-jni-spotify.so')
+          lines=Path('/tmp/rrest/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[a for a,z in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def dump(lo,hi):
+            for x in ins[ix(lo):]:
+              if x[0]>=hi:break
+              print(x[3])
+          def body(a):
+            fr=fde(a)
+            if not fr:return []
+            return [x for x in ins[ix(fr[0]):ix(fr[1])]]
+          def ctx(a,b=20,n=30):
+            j=ix(a); return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+
+          print('# Restrictions readiness object resolution')
+          print()
+          print('Known: registry accessor b88014 validates ID 0x9e and returns table[0x9e] at +0x4f0.')
+          print('Provider descriptor metadata identifies ID 0x9e as RestrictionsSetupImpl; descriptor factory is 0x10ab7ae.')
+          print()
+
+          print('## RestrictionsSetupImpl factory FDE')
+          fr=fde(0x10ab7ae); print(tuple(hex(x) for x in fr) if fr else None)
+          if fr:
+            for x in body(0x10ab7ae): print(x[3])
+          print()
+
+          if fr:
+            print('## Factory allocations and AP materializations')
+            for x in body(0x10ab7ae):
+              if '_Znwm@plt' in x[2] or '# 18' in x[2] or '# 17f' in x[2]:
+                print(f'### 0x{x[0]:x}: {x[2]}')
+                print(ctx(x[0],12,18)); print()
+
+          print('## Caller rsp+0xc0 writes before e8cc2b')
+          caller=[x for x in ins[ix(0xe8c65c):ix(0xe8cc2b)]]
+          for n,x in enumerate(caller):
+            op=x[2]
+            if ',' in op and '[rsp+0xc0]' in op.split(',',1)[0]:
+              print(f'### 0x{x[0]:x}: {op}')
+              for y in caller[max(0,n-22):min(len(caller),n+20)]:print(y[3])
+              print()
+
+          print('## All rsp+0xc0 references before final +0x30 call')
+          for n,x in enumerate(caller):
+            if '[rsp+0xc0]' in x[2]:
+              print(f'### 0x{x[0]:x}: {x[2]}')
+              for y in caller[max(0,n-12):min(len(caller),n+15)]:print(y[3])
+              print()
+
+          # Dump direct producer if rsp+c0 is result of a direct accessor call.
+          prod=[]
+          for n,x in enumerate(caller):
+            if ',' in x[2] and '[rsp+0xc0]' in x[2].split(',',1)[0]:
+              for y in reversed(caller[max(0,n-10):n]):
+                m=re.match(r'call\s+([0-9a-f]+)\b',y[2])
+                if m:
+                  prod.append(int(m.group(1),16));break
+          print('## Direct producer bodies for rsp+0xc0')
+          for a in sorted(set(prod)):
+            fr2=fde(a); print(f'### 0x{a:x} FDE={tuple(hex(x) for x in fr2) if fr2 else None}')
+            if fr2:
+              for x in body(a):print(x[3])
+            print()
+
+          print('## AP-like constants materialized in Restrictions factory')
+          if fr:
+            aps=[]
+            for x in body(0x10ab7ae):
+              m=re.search(r'#\s+(18[0-9a-f]{5})\b',x[2])
+              if m:
+                a=int(m.group(1),16)
+                if a not in aps:aps.append(a)
+            for ap in aps:
+              print(f'### candidate AP 0x{ap:x}')
+              for off in range(0,0x90,8):
+                t=rel.get(ap+off)
+                print(f'- +0x{off:x}: '+(f'0x{t:x}' if t is not None else 'NO_RELOC'))
+              print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/restrictions-readiness-objects.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve restrictions readiness objects"
+          git pull --rebase origin main
+          git push
