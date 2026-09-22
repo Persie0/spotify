@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, and after the Restrictions setup-bundle source was resolved.
+This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, after the Restrictions setup-bundle source was resolved, and after the first `0x165dd40` branch-helper pass.
 
 ## Correct high-level chain
 
@@ -97,7 +97,7 @@ registry ID 0x9e
       -> factory supplies constructor rcx from input dependency bundle +0x30
 ```
 
-The setup-bundle source for that constructor argument is now resolved. `bundle+0x30` is not an independent direct field store; it is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
+The setup-bundle source for that constructor argument is resolved. `bundle+0x30` is not an independent direct field store; it is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
 
 ```text
 provider-vector caller
@@ -116,7 +116,7 @@ provider-vector caller
   -> child +0x38 / b411a4 returns child+0x18
 ```
 
-The factory-consumption evidence is:
+Factory-consumption evidence:
 
 ```text
 10ab7c2  mov rbx, rdx
@@ -148,7 +148,7 @@ Constructor dataflow narrowed the semantic target. At `0x10aba36`, the `rcx` dep
 10abf30  mov r12, [rbp+0x0]
 ```
 
-The helper wrappers reached from that constructor are now classified:
+The helper wrappers reached from that constructor are classified:
 
 ```text
 10abfc3  call 15e768e
@@ -158,7 +158,7 @@ The helper wrappers reached from that constructor are now classified:
   -> 15e75f2 loads slot_obj vtable and calls [slot_obj.vtable+0x98]
 
 a7b5e8
-  -> only forwards to a7b624 / cleanup-style wrapper in the scanned window
+  -> forwards to a7b624 / cleanup-style wrapper in the scanned window
 ```
 
 Because the slot object AP is relocation-filled, raw `.data.rel.ro` bytes read as zero. The relocation-aware trace resolves AP `0x187e2f8` as:
@@ -170,25 +170,53 @@ slot AP 0x187e2f8
   +0x98 -> 0x153d0d0   ; semantic target used by 15e75f2
 ```
 
-`0x165dd40` is a large descriptor/field interpreter: it calls the slot object's `+0x48` method, then iterates a table of 0x28-byte entries, dispatches on entry kind, and calls helpers such as `165e51e`, `165cc82`, and `165e60c`. `0x153d0d0` is the other already-seen slot-fill/descriptor path. These are now the concrete semantic methods behind the bundle30-derived Restrictions source.
+`0x165dd40` is a large descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates a table of 0x28-byte entries, dispatches by entry kind, and repeatedly calls branch helpers. The traced branch helpers are not the final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
+
+```text
+0x165dd40 parent interpreter
+  -> 165e51e(builder/output object, field id, scalar/value)
+  -> 165cc82(builder/output object, field id, type tag)
+  -> 165e60c(builder/output object, descriptor element value)
+```
+
+Branch-helper classification:
+
+```text
+165e51e: refs=13, writes=14, tracked calls=2   -> writes/updates builder object
+165cc82: refs=13, writes=13, tracked calls=2   -> writes/updates builder object
+165e60c: refs=15, writes=9,  tracked calls=6   -> writes/updates builder object
+```
+
+Representative builder writes from `165e51e`:
+
+```text
+165e52c  mov [rdi+0x20], esi       ; builder field/index cursor
+165e544  mov [rcx], al             ; emit encoded tag byte
+165e546  inc [r14+0x8]             ; advance output pointer
+165e54a  dec [r14+0x10]            ; reduce available capacity
+165e57f  mov [rax], ebx            ; emit scalar/value
+165e581  add [r14+0x8], 0x4        ; advance output pointer
+165e586  add [r14+0x10], -4        ; reduce available capacity
+```
+
+This strongly suggests `0x165dd40` materializes/serializes descriptor fields into a builder/output buffer. It does not yet prove that this builder is the same object eventually exposed by `child+0x18`; that edge remains the next semantic gap.
 
 This means the final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
 ## What remains open
 
-The setup-bundle `+0x30` source and factory-consumption path are closed. The remaining open area is semantic interpretation inside the slot object's relocated AP methods:
+The setup-bundle `+0x30` source, factory-consumption path, slot AP relocation targets, and `0x165dd40` branch-helper behavior are now classified.
+
+The remaining open area is the semantic bridge from the builder/output object produced by the slot descriptor interpreter to the object returned through `child+0x18`, and then into the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
+
+The next concrete targets are the buffer/growth and emit helpers reached by the branch helpers, because they own the builder/output storage semantics:
 
 ```text
-0x165dd40  ; AP 0x187e2f8 +0x90, descriptor/field interpreter
-0x153d0d0  ; AP 0x187e2f8 +0x98, slot-fill/descriptor path
-```
-
-The next concrete target is `0x165dd40`, especially its branch helpers that consume descriptor table entries and may construct or update the object returned through `child+0x18`:
-
-```text
-165e51e
-165cc82
-165e60c
+165c600
+165c67e
+165d0d4
+165c6ca
+165c7ae
 ```
 
 The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
@@ -220,4 +248,5 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/restrictions-helper-semantics.md`
 - `analysis/restrictions-slot-vtable.md`
 - `analysis/restrictions-slot-relocations.md`
+- `analysis/restrictions-165dd40-branch-helpers.md`
 - `docs/15-skip-ad-signal.md`
