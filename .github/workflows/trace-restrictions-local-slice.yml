@@ -1,0 +1,266 @@
+name: Trace Restrictions local slice
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-local-slice.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-local-slice
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-local-slice
+          unzip -j /tmp/restrictions-local-slice/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-local-slice
+      - name: Trace local slice and helper
+        run: |
+          SO=/tmp/restrictions-local-slice/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-local-slice/all.dis
+          python3 - <<'PY' > analysis/restrictions-local-slice-a79a7e.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/restrictions-local-slice/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          labels=[]
+          label_re=re.compile(r'^([0-9a-f]+)\s+<([^>]+)>:$')
+          ins_re=re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          for i,line in enumerate(dis):
+              lm=label_re.match(line.strip())
+              if lm:
+                  labels.append((int(lm.group(1),16), lm.group(2), i, line))
+              m=ins_re.match(line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[x[0] for x in ins]
+          labs=[x[0] for x in labels]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx_addr(a,b=20,n=30):
+              j=idx(a)
+              return '\n'.join('    '+ins[k][3] for k in range(max(0,j-b), min(len(ins), j+n+1)))
+          def func_name(a):
+              k=bisect.bisect_right(labs,a)-1
+              return labels[k][1] if k>=0 else None
+          def func_start(a):
+              k=bisect.bisect_right(labs,a)-1
+              return labels[k] if k>=0 else None
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts
+              vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      vals.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): vals.append(cur.strip())
+              return mn, vals
+          def mems(s):
+              return re.findall(r'\[([^\]]+)\]', s)
+          def stack_slots(s):
+              out=[]
+              for m in re.finditer(r'\[rsp(?:\+0x([0-9a-f]+))?\]', s):
+                  out.append(int(m.group(1) or '0',16))
+              return out
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          args=['rdi','rsi','rdx','rcx','r8','r9']
+          interesting_slots={0xa0,0x2b0,0x2e0,0x310,0x350,0x380,0x388}
+          local_start,local_end=0x14ce638,0x14ce740
+          local=[x for x in ins if local_start <= x[0] < local_end]
+
+          state={r:None for r in regs}
+          stack={}
+          events=[]
+          calls=[]
+          def setreg(r, origin):
+              if r in state: state[r]=origin
+          def clean_dst(x):
+              return re.sub(r'^(?:BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',x)
+          def origin_of_operand(x):
+              x=clean_dst(x)
+              if x in state and state[x]: return state[x]
+              if x.startswith('['):
+                  slots=stack_slots(x)
+                  if slots:
+                      off=slots[0]
+                      return stack.get(off, f'[rsp+0x{off:x}]')
+                  for m in mems(x):
+                      mm=re.match(r'([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?', m)
+                      if mm:
+                          base=mm.group(1); sign=mm.group(2); off=int(mm.group(3) or '0',16)
+                          if sign=='-': off=-off
+                          bo=state.get(base)
+                          if bo: return f'{bo}{off:+#x}'
+              return x
+          def write_operand(dst, origin):
+              d=clean_dst(dst)
+              if d in state:
+                  setreg(d, origin)
+                  return
+              slots=stack_slots(d)
+              if slots:
+                  stack[slots[0]]=origin
+          for a,i,op,line in local:
+              mn,ops=split_ops(op)
+              note=[]
+              if stack_slots(op):
+                  note.append('stack '+','.join(f'0x{x:x}' for x in stack_slots(op)))
+              if any(f'rsp+0x{x:x}' in op for x in interesting_slots):
+                  note.append('interesting-stack')
+              if mn=='call':
+                  arg_state={r:state.get(r) for r in args if state.get(r)}
+                  calls.append((a,line,arg_state,ctx_addr(a,8,6)))
+                  note.append('CALL args: '+', '.join(f'{k}={v}' for k,v in arg_state.items()))
+              if ops:
+                  dst=clean_dst(ops[0])
+                  if mn=='lea' and len(ops)>1:
+                      origin='addr '+ops[1]
+                      # fold known stack aliases
+                      slots=stack_slots(ops[1])
+                      if slots: origin=f'[rsp+0x{slots[0]:x}] address'
+                      write_operand(dst, origin)
+                  elif mn in ('mov','movabs','movzx','movsxd') and len(ops)>1:
+                      write_operand(dst, origin_of_operand(ops[1]))
+                  elif mn in ('and','xor') and len(ops)>1:
+                      # zeroing or masking stack/register dst
+                      if ops[1] in ('0x0','0') or (mn=='xor' and clean_dst(ops[0])==clean_dst(ops[1])):
+                          write_operand(dst, 'zero')
+                  elif clean_dst(ops[0]) in state and mn not in ('cmp','test'):
+                      state[clean_dst(ops[0])]=None
+              events.append((a,line,note,dict((r,state[r]) for r in regs if state.get(r)),dict(stack)))
+
+          helper=0xa79a7e
+          hidx=idx(helper)
+          helper_end=helper+0x260
+          helper_region=[x for x in ins if helper <= x[0] < helper_end]
+          helper_arg_mem=[]
+          helper_calls=[]
+          for a,i,op,line in helper_region:
+              for base in args:
+                  if re.search(r'\['+base+r'(?:[+-]0x[0-9a-f]+)?\]', op):
+                      helper_arg_mem.append((a,line))
+              if op.startswith('call'):
+                  helper_calls.append((a,line))
+          xrefs=[]
+          for a,i,op,line in ins:
+              if op.startswith('call') and ('a79a7e' in op or re.search(r'\b'+format(helper,'x')+r'\b', op)):
+                  xrefs.append((a,func_name(a),line,ctx_addr(a,6,5)))
+
+          print('# Restrictions local slice around `0x14ce666` and helper `a79a7e`')
+          print()
+          print('Purpose: continue from the proven `bundle+0x30 == rsp+0x310` edge and inspect the only local materialization block plus the immediate helper reached at `0x14ce717`.')
+          print()
+          print('## Slice summary')
+          print(f'- local slice: `0x{local_start:x}..0x{local_end:x}`')
+          print(f'- local instructions parsed: {len(local)}')
+          print(f'- calls in local slice: {len(calls)}')
+          print(f'- helper target: `0x{helper:x}` / `{func_name(helper)}`')
+          print(f'- xrefs to helper target: {len(xrefs)}')
+          print(f'- helper early calls in first 0x260 bytes: {len(helper_calls)}')
+          print(f'- helper arg-memory refs in first 0x260 bytes: {len(helper_arg_mem)}')
+          print()
+
+          print('## Local instruction table with stack/arg annotations')
+          print('| addr | instruction | notes |')
+          print('|---|---|---|')
+          for a,line,note,st,stk in events:
+              marker='; '.join(note)
+              if marker or (0x14ce650 <= a <= 0x14ce720):
+                  print(f'| `0x{a:x}` | `{md(line.strip())}` | `{md(marker)}` |')
+          print()
+
+          print('## Calls in the local slice')
+          print('| call | tracked args before call | instruction |')
+          print('|---|---|---|')
+          for a,line,arg_state,context in calls:
+              txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
+              print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+          print()
+          print('### Contexts for local calls')
+          for a,line,arg_state,context in calls:
+              print(f'#### call `0x{a:x}`')
+              print('```text')
+              print(context)
+              print('```')
+              print()
+
+          print('## Focus context: `0x14ce666`')
+          print('```text')
+          print(ctx_addr(0x14ce666,18,38))
+          print('```')
+          print()
+          print('## Focus context: call `0x14ce717 -> a79a7e`')
+          print('```text')
+          print(ctx_addr(0x14ce717,24,18))
+          print('```')
+          print()
+
+          print('## Xrefs to helper `a79a7e`')
+          print('| call | containing function | instruction |')
+          print('|---|---|---|')
+          for a,fn,line,context in xrefs[:40]:
+              print(f'| `0x{a:x}` | `{md(fn)}` | `{md(line.strip())}` |')
+          print()
+          if xrefs:
+              print('### Xref contexts')
+              for a,fn,line,context in xrefs[:12]:
+                  print(f'#### caller `0x{a:x}` in `{fn}`')
+                  print('```text')
+                  print(context)
+                  print('```')
+                  print()
+
+          print('## Helper `a79a7e` early body')
+          print('```text')
+          print(ctx_addr(helper,0,100))
+          print('```')
+          print()
+          print('### Helper arg-memory refs in early body')
+          if helper_arg_mem:
+              for a,line in helper_arg_mem[:80]:
+                  print(f'- `0x{a:x}` `{line.strip()}`')
+          else:
+              print('- none found in first 0x260 bytes')
+          print()
+          print('### Helper calls in early body')
+          if helper_calls:
+              for a,line in helper_calls[:80]:
+                  print(f'- `0x{a:x}` `{line.strip()}`')
+          else:
+              print('- none found in first 0x260 bytes')
+          print()
+          print('## Interpretation')
+          print('- If `0x14ce717` passes the freshly allocated/string-built object rather than `rsp+0x310` directly, then `a79a7e` is probably an insertion/registration helper that receives pieces assembled from the local object.')
+          print('- Strong evidence would be either a tracked argument holding `[rsp+0x310]`/nearby stack object, or helper arg-memory refs that immediately dereference the same constructed object fields.')
+          print('- If the tracker loses the object through PLT/new/string calls, the next trace should bind concrete argument registers at `0x14ce717` from the table above and then inspect matching fields inside `a79a7e`.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-local-slice-a79a7e.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions local slice"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
+          
