@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, after the Restrictions setup-bundle source was resolved, and after the `0x165dd40` branch/buffer helper layers were classified.
+This is the compact state of the final availability/export investigation after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, and tracing the slot-object descriptor/builder path.
 
 ## Correct high-level chain
 
@@ -33,7 +33,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `owner+0x428` input is no longer just nearby or associated with `source+0x178`; the transfer is proven by the call layout into `ece57c`. Both sibling source builders pass `source+0x178` as SysV argument 12, and `ece57c` copies that pair into the wrapper installed at `owner+0x428`.
+The `owner+0x428` input is proven by the call layout into `ece57c`. Both sibling source builders pass `source+0x178` as SysV argument 12, and `ece57c` copies that pair into the wrapper installed at `owner+0x428`.
 
 ## Concrete secondary readiness interface
 
@@ -54,7 +54,7 @@ base+0x28 = rbx
 base+0x48 = copied owner+0x470 pair
 ```
 
-The secondary interface `0x1843bf8` is therefore the exported readiness interface head, not the full owning object.
+The secondary interface `0x1843bf8` is the exported readiness interface head, not the full owning object.
 
 ## Inner dependency behind the readiness interface
 
@@ -70,7 +70,7 @@ e947d6  [rbx+0x18] = AP 0x1832be8
 
 So the inner dependency reached by `0x1843bf8:+0x10` is the secondary interface at `AP 0x1832be8`, not the rejected raw `0x6b0` record.
 
-The current method chain is:
+Current method chain:
 
 ```text
 0x1843bf8:+0x10
@@ -97,7 +97,9 @@ registry ID 0x9e
       -> factory supplies constructor rcx from input dependency bundle +0x30
 ```
 
-The setup-bundle source for that constructor argument is resolved. `bundle+0x30` is not an independent direct field store; it is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
+## Setup-bundle source: closed
+
+`bundle+0x30` is not an independent direct field store. It is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
 
 ```text
 provider-vector caller
@@ -134,7 +136,9 @@ b411a4   mov rax, [rdi+0x18]
 b411a8   ret
 ```
 
-Constructor dataflow narrowed the semantic target. At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers; it is not a simple direct store to `child+0x18` in the scanned constructor window.
+## Constructor and slot-object semantics
+
+At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers. It is not a simple direct store to `child+0x18` in the scanned constructor window.
 
 ```text
 10aba51  mov rbp, rcx              ; rbp = bundle30-derived dependency
@@ -148,7 +152,7 @@ Constructor dataflow narrowed the semantic target. At `0x10aba36`, the `rcx` dep
 10abf30  mov r12, [rbp+0x0]
 ```
 
-The helper wrappers reached from that constructor are classified:
+The constructor helper wrappers are classified:
 
 ```text
 10abfc3  call 15e768e
@@ -161,7 +165,7 @@ a7b5e8
   -> forwards to a7b624 / cleanup-style wrapper in the scanned window
 ```
 
-Because the slot object AP is relocation-filled, raw `.data.rel.ro` bytes read as zero. The relocation-aware trace resolves AP `0x187e2f8` as:
+Because the slot object AP is relocation-filled, raw `.data.rel.ro` bytes read as zero. Relocation-aware resolution gives:
 
 ```text
 slot AP 0x187e2f8
@@ -172,7 +176,7 @@ slot AP 0x187e2f8
 
 ## Descriptor interpreter and builder path
 
-`0x165dd40` is a large descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates a table of 0x28-byte entries, dispatches by entry kind, and repeatedly calls branch helpers. The traced branch helpers are not final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
+`0x165dd40` is a descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates 0x28-byte descriptor entries, dispatches by entry kind, and repeatedly calls branch helpers. These helpers are not final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
 
 ```text
 0x165dd40 parent interpreter
@@ -201,76 +205,62 @@ Representative builder writes from `165e51e`:
 165e586  add [r14+0x10], -4        ; reduce available capacity
 ```
 
-The deeper buffer/growth helpers reached by those branch helpers are now classified too. They are all builder buffer/capacity emit helpers and none has a direct `child+0x18` hit in the scanned windows:
+The deeper buffer/growth helpers are also classified as buffer/capacity emit helpers. None directly touches `child+0x18`.
 
 ```text
-165c600: refs=9, writes=5,  calls=3, child+0x18 hits=0 -> append/copy bytes into builder output buffer
-165c67e: refs=4, writes=6,  calls=0, child+0x18 hits=0 -> emit encoded scalar slow path
-165c6ca: refs=3, writes=21, calls=0, child+0x18 hits=0 -> single-byte emit slow path / capacity refill
-165c7ae: refs=5, writes=18, calls=0, child+0x18 hits=0 -> multi-byte varint emit slow path
-165d0d4: refs=7, writes=2,  calls=2, child+0x18 hits=0 -> 32-bit scalar emit fallback
+165c600: refs=9, writes=5,  calls=3, child+0x18 hits=0
+165c67e: refs=4, writes=6,  calls=0, child+0x18 hits=0
+165c6ca: refs=3, writes=21, calls=0, child+0x18 hits=0
+165c7ae: refs=5, writes=18, calls=0, child+0x18 hits=0
+165d0d4: refs=7, writes=2,  calls=2, child+0x18 hits=0
 ```
 
-Important `165c600` behavior:
+`165c600` confirms `builder+0x18` is a sink/refill interface, not the final child dependency:
 
 ```text
-165c611  lea r14, [rdi+0x10]       ; builder capacity field
-165c615  lea r15, [rdi+0x8]        ; builder output pointer field
-165c626  call memcpy               ; copy data into current output buffer
-165c63b  mov rdi, [r13+0x18]
-165c648  call [rax+0x10]           ; refill/flush via builder sink interface
-165c64f  and [r13+0x8], 0
-165c654  and [r13+0x10], 0
-165c660..165c670                  ; fast-path memcpy + pointer/capacity update
+165c63b  mov rdi, [r13+0x18]       ; sink/interface object
+165c63f  mov rax, [rdi]
+165c642  mov rsi, r15              ; &builder output pointer
+165c645  mov rdx, r14              ; &builder capacity
+165c648  call [rax+0x10]           ; sink refill / flush
 ```
 
-So the proven semantic picture is:
+The scanned sink/finalization windows show:
 
 ```text
-slot object AP 0x187e2f8
-  -> +0x90 / 0x165dd40
-  -> descriptor interpreter
-  -> branch helpers encode descriptor fields
-  -> builder/output buffer helpers append bytes, varints, scalars
-  -> builder sink/refill interface at builder+0x18 / vtable+0x10
+a9ca1a builder/string setup helper: refs=5, writes=1, calls=9, +0x18 hits=0
+a7b624 cleanup/finalizer helper:    refs=9, writes=3, calls=6, +0x18 hits=1
+165c600 sink/refill helper:         refs=9, writes=5, calls=3, +0x18 hits=0
+10aba36 post slot-wrapper window:   refs=6, writes=0, calls=11, +0x18 hits=0
+10aba36 later finalization window:  refs=6, writes=7, calls=12, +0x18 hits=0
 ```
 
-This still does not prove that the builder/output buffer is itself the object eventually exposed through `child+0x18`. The builder path now appears to be a materialization/serialization layer below the Restrictions-derived source, not the final readiness/mode-discriminator interface.
+The `a7b624` `+0x18` hit is in a cleanup/finalizer candidate and is not a proven `child+0x18` assignment.
 
-This means the final `state+0x40` dependency used by `fd381a` is still a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
+## Current conclusion
 
-## What remains open
+The final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
 
-The setup-bundle `+0x30` source, factory-consumption path, slot AP relocation targets, `0x165dd40` branch-helper behavior, and lower buffer/growth emit helpers are now classified.
-
-The remaining open area is the semantic bridge after materialization:
+Closed:
 
 ```text
-builder/output buffer and sink interface
-  -> wrapper/storage step inside or after constructor 0x10aba36
-  -> object returned through child+0x18 / b411a4
-  -> state+0x40 virtual +0x140 readiness/mode discriminator used by fd381a
+setup-bundle +0x30 source
+factory-consumption path
+slot AP relocation targets
+0x165dd40 branch helpers
+buffer/growth emit helpers
+builder sink/refill abstraction
 ```
 
-The next concrete targets are therefore no longer the buffer emit helpers. They are the storage/finalization sites in `0x10aba36` after the builder output calls, plus the builder sink interface reached at:
+Still open:
 
 ```text
-165c63b  mov rdi, [builder+0x18]
-165c648  call [sink.vtable+0x10]
+builder/output buffer or sink finalization
+  -> object stored/exposed as child+0x18
+  -> inner virtual +0x30 / state+0x40 readiness discriminator
 ```
 
-Resolving that sink AP and the later constructor writes should show whether the materialized descriptor stream is wrapped into the object returned by `b411a4` or only used as intermediate setup data.
-
-The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
-
-```text
-AdsRuntime+0x1b8
-  -> TimelineAds owner+0x20/+0x10
-  -> TimelineAds owner+0x50
-  -> TimelineConductor consumption
-```
-
-But that graph must not be treated as the final availability-export receiver until it is connected to the Restrictions-derived `owner+0x428` source above.
+The next concrete target is not the emit helpers anymore. It is the object lifecycle around the builder sink and constructor-owned fields: identify the sink object stored at builder `+0x18`, its vtable `+0x10` implementation, and where the constructed/serialized output is later wrapped or assigned to the dependency returned by `b411a4`.
 
 ## Evidence reports
 
@@ -292,4 +282,5 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/restrictions-slot-relocations.md`
 - `analysis/restrictions-165dd40-branch-helpers.md`
 - `analysis/restrictions-builder-buffer-helpers.md`
+- `analysis/restrictions-builder-sink-finalization.md`
 - `docs/15-skip-ad-signal.md`
