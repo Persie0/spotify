@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact state of the final availability/export investigation after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, and tracing the slot-object descriptor/builder path.
+This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, and tracing the slot-object descriptor/builder path down through the local output layout.
 
 ## Correct high-level chain
 
@@ -56,9 +56,7 @@ base+0x48 = copied owner+0x470 pair
 
 The secondary interface `0x1843bf8` is the exported readiness interface head, not the full owning object.
 
-## Inner dependency behind the readiness interface
-
-`0x1843bf8:+0x10` resolves to `0xfec736`. That method delegates through the pointer stored at `interface+0x8`, which is the owning object's `base+0x20` field.
+`0x1843bf8:+0x10` resolves to `0xfec736`, which delegates through the pointer stored at `interface+0x8`, i.e. the owning object's `base+0x20` field.
 
 Construction shows:
 
@@ -138,7 +136,7 @@ b411a8   ret
 
 ## Constructor and slot-object semantics
 
-At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers. It is not a simple direct store to `child+0x18` in the scanned constructor window.
+At `0x10aba36`, the `rcx` dependency is preserved in `rbp`, then repeatedly dereferenced and passed to deeper helpers. It is not a simple direct store to `child+0x18` in the scanned constructor windows.
 
 ```text
 10aba51  mov rbp, rcx              ; rbp = bundle30-derived dependency
@@ -174,9 +172,9 @@ slot AP 0x187e2f8
   +0x98 -> 0x153d0d0   ; semantic target used by 15e75f2
 ```
 
-## Descriptor interpreter and builder path
+## Descriptor interpreter and local output path
 
-`0x165dd40` is a descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates 0x28-byte descriptor entries, dispatches by entry kind, and repeatedly calls branch helpers. These helpers are not final readiness methods; they write/update a builder/output object passed in `rdi`/`rbx`.
+`0x165dd40` is a descriptor/field interpreter. It calls the slot object's `+0x48` method, iterates 0x28-byte descriptor entries, dispatches by entry kind, and repeatedly calls branch helpers. These helpers are not final readiness methods; they write/update an output/builder object passed in `rdi`/`rbx`.
 
 ```text
 0x165dd40 parent interpreter
@@ -193,18 +191,6 @@ Branch-helper classification:
 165e60c: refs=15, writes=9,  tracked calls=6   -> writes/updates builder object
 ```
 
-Representative builder writes from `165e51e`:
-
-```text
-165e52c  mov [rdi+0x20], esi       ; builder field/index cursor
-165e544  mov [rcx], al             ; emit encoded tag byte
-165e546  inc [r14+0x8]             ; advance output pointer
-165e54a  dec [r14+0x10]            ; reduce available capacity
-165e57f  mov [rax], ebx            ; emit scalar/value
-165e581  add [r14+0x8], 0x4        ; advance output pointer
-165e586  add [r14+0x10], -4        ; reduce available capacity
-```
-
 The deeper buffer/growth helpers are also classified as buffer/capacity emit helpers. None directly touches `child+0x18`.
 
 ```text
@@ -215,27 +201,38 @@ The deeper buffer/growth helpers are also classified as buffer/capacity emit hel
 165d0d4: refs=7, writes=2,  calls=2, child+0x18 hits=0
 ```
 
-`165c600` confirms `builder+0x18` is a sink/refill interface, not the final child dependency:
+`165c600` contains a generic slow path that looks like a sink/refill interface:
 
 ```text
-165c63b  mov rdi, [r13+0x18]       ; sink/interface object
+165c63b  mov rdi, [r13+0x18]       ; sink/interface object, if this path is live
 165c63f  mov rax, [rdi]
 165c642  mov rsi, r15              ; &builder output pointer
 165c645  mov rdx, r14              ; &builder capacity
 165c648  call [rax+0x10]           ; sink refill / flush
 ```
 
-The scanned sink/finalization windows show:
+However, the local-builder layout trace shows this is a false semantic lead for the wrapper call path. The output objects passed into the slot AP methods are stack-local. For the first output object in each wrapper, `builder+0x18` resolves to the stack canary slot; for following output objects, `builder+0x18` overlaps adjacent local output objects.
+
+`15e768e / AP +0x90` stack layout:
 
 ```text
-a9ca1a builder/string setup helper: refs=5, writes=1, calls=9, +0x18 hits=0
-a7b624 cleanup/finalizer helper:    refs=9, writes=3, calls=6, +0x18 hits=1
-165c600 sink/refill helper:         refs=9, writes=5, calls=3, +0x18 hits=0
-10aba36 post slot-wrapper window:   refs=6, writes=0, calls=11, +0x18 hits=0
-10aba36 later finalization window:  refs=6, writes=7, calls=12, +0x18 hits=0
+frame: sub rsp,0x58
+canary: rsp+0x50
+out0 = rsp+0x38 -> out0+0x18 = rsp+0x50 = stack canary
+out1 = rsp+0x20 -> out1+0x18 = rsp+0x38 = out0 base
+out2 = rsp+0x08 -> out2+0x18 = rsp+0x20 = out1 base
 ```
 
-The `a7b624` `+0x18` hit is in a cleanup/finalizer candidate and is not a proven `child+0x18` assignment.
+`15e75f2 / AP +0x98` stack layout:
+
+```text
+frame: sub rsp,0x38
+canary: rsp+0x30
+out0 = rsp+0x18 -> out0+0x18 = rsp+0x30 = stack canary
+out1 = rsp+0x00 -> out1+0x18 = rsp+0x18 = out0 base
+```
+
+This means `builder+0x18 -> sink.vtable+0x10` is a generic conditional slow path for the output/string-builder representation, not the Restrictions readiness object.
 
 ## Current conclusion
 
@@ -250,17 +247,18 @@ slot AP relocation targets
 0x165dd40 branch helpers
 buffer/growth emit helpers
 builder sink/refill abstraction
+local output builder layout / builder+0x18 false lead
 ```
 
 Still open:
 
 ```text
-builder/output buffer or sink finalization
+post-wrapper output consumption inside 0x10aba36
   -> object stored/exposed as child+0x18
   -> inner virtual +0x30 / state+0x40 readiness discriminator
 ```
 
-The next concrete target is not the emit helpers anymore. It is the object lifecycle around the builder sink and constructor-owned fields: identify the sink object stored at builder `+0x18`, its vtable `+0x10` implementation, and where the constructed/serialized output is later wrapped or assigned to the dependency returned by `b411a4`.
+The next concrete target is not the generic emit/sink helpers. It is the post-wrapper object lifecycle inside `0x10aba36`: identify how the stack-local outputs from `15e768e`, `a7b5e8`, and `15e75f2` are consumed after the calls return, and where that processed result is assigned to the dependency returned by `b411a4`.
 
 ## Evidence reports
 
@@ -283,4 +281,5 @@ The next concrete target is not the emit helpers anymore. It is the object lifec
 - `analysis/restrictions-165dd40-branch-helpers.md`
 - `analysis/restrictions-builder-buffer-helpers.md`
 - `analysis/restrictions-builder-sink-finalization.md`
+- `analysis/restrictions-local-builder-layout.md`
 - `docs/15-skip-ad-signal.md`
