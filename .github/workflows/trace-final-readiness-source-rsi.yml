@@ -1,0 +1,116 @@
+name: Trace final readiness source rsi
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-final-readiness-source-rsi.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/finalrsi
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/finalrsi
+      - name: Trace source argument
+        run: |
+          SO=/tmp/finalrsi/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/finalrsi/all.dis
+          python3 - <<'PY' > analysis/final-readiness-source-rsi.md
+          from pathlib import Path
+          import re,bisect
+          lines=Path('/tmp/finalrsi/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def idx(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=36,n=24):
+            j=idx(a)
+            return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          print('# Final readiness source rsi trace')
+          print()
+          print('Authoritative sink: ef91cc is AP 0x18365e0 +0x30; it saves incoming rsi and later gates source+0x1b5 before copying [source+0x10] into the Skip-Ad readiness adapter.')
+          print()
+          # Exact ef91cc source use.
+          print('## ef91cc source use')
+          for a,i,op,l in ins:
+            if 0xef91cc <= a < 0xefc780 and any(s in op for s in ('[rsp+0x60]','+0x1b5]','+0x10]')):
+              print('    '+l)
+          print()
+          # cea164 is the strongest source-layout candidate. Emit every indirect call and
+          # every use of stack offsets that could represent source+0x10/+0x1b5.
+          print('## cea164 source-state candidate: all indirect calls')
+          for a,i,op,l in ins:
+            if 0xcea164 <= a < 0xceabe2 and ('call' in op or 'jmp' in op) and ('PTR [' in op):
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(a,42,20)); print()
+          print('## cea164 candidate: source-layout stack references')
+          for a,i,op,l in ins:
+            if 0xcea164 <= a < 0xceabe2 and re.search(r'rsp\+0x(?:10|1b[0-9a-f]|1c[0-9a-f]|1a[0-9a-f])\b',op):
+              print('    '+l)
+          print()
+          # All +0x30 indirect calls in the broad native region. Keep calls whose preceding
+          # window sets rsi from stack/object and/or mentions readiness fingerprint offsets.
+          print('## Candidate virtual +0x30 calls with readiness-shaped source setup')
+          hits=[]
+          for a,i,op,l in ins:
+            if not re.search(r'call\s+QWORD PTR \[[^]]+\+0x30\]',op): continue
+            win=ins[max(0,idx(a)-90):idx(a)+1]
+            txt='\n'.join(x[2] for x in win)
+            score=0
+            for pat,w in [
+              ('+0x1b5]',12),('+0x1b8]',6),('+0x10]',3),
+              ('lea    rsi,[rsp+',8),('mov    rsi,QWORD PTR [rsp+',7),
+              ('mov    rsi,',2),('# 18365e0',20),
+              ('+0x428]',8),('+0x178]',5),('+0x210]',2),('+0x258]',2)
+            ]:
+              if pat in txt: score+=w
+            if score>=8: hits.append((score,a,op))
+          hits.sort(reverse=True)
+          print(f'- candidates: {len(hits)}')
+          for score,a,op in hits[:220]:
+            print(f'### score={score} call 0x{a:x}: {op}')
+            print(ctx(a,70,25)); print()
+          # Direct textual references to the exact source gate fields across native code;
+          # useful to fingerprint constructors/copy routines for the rsi type.
+          print('## +0x1b5 users with nearby +0x10 accesses')
+          users=[]
+          for a,i,op,l in ins:
+            if '+0x1b5]' not in op: continue
+            win=ins[max(0,idx(a)-70):idx(a)+70]
+            txt='\n'.join(x[2] for x in win)
+            if '+0x10]' in txt:
+              users.append(a)
+          for a in users[:180]:
+            print(f'### 0x{a:x}')
+            print(ctx(a,40,40)); print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/final-readiness-source-rsi.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace final readiness source rsi"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
