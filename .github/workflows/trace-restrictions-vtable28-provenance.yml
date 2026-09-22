@@ -1,0 +1,222 @@
+name: Trace Restrictions vtable+0x28 provenance
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-vtable28-provenance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace vtable+0x28 provenance
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import bisect
+          import re
+          import struct
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-vtable28-provenance.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          readelf_s = subprocess.check_output(['readelf', '-S', so], text=True, errors='replace')
+          readelf_r = subprocess.check_output(['readelf', '-rW', so], text=True, errors='replace')
+          data = Path(so).read_bytes()
+
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+          addrs = [a for a,_,_ in insns]
+          addr_to_idx = {a:i for i,(a,_,_) in enumerate(insns)}
+
+          def idx(addr):
+              i = bisect.bisect_left(addrs, addr)
+              if i >= len(addrs):
+                  return len(addrs)-1
+              if i > 0 and abs(addrs[i-1] - addr) < abs(addrs[i] - addr):
+                  return i-1
+              return i
+
+          def window(addr, before=24, after=70):
+              i = idx(addr)
+              return insns[max(0, i-before):min(len(insns), i+after)]
+
+          def fmt(rows):
+              return '```text\n' + '\n'.join(line for _,line,_ in rows) + '\n```\n'
+
+          # Parse enough section table information to map VMAs to file offsets.
+          sections = []
+          # readelf -S wraps lines; use a permissive regex for common ELF64 output.
+          sec_re = re.compile(r'^\s*\[\s*(\d+)\]\s+(\S+)\s+\S+\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)')
+          for line in readelf_s.splitlines():
+              m = sec_re.match(line)
+              if m:
+                  _, name, addr, off, size = m.groups()
+                  sections.append((name, int(addr,16), int(off,16), int(size,16)))
+
+          def vma_to_offset(vma):
+              for name, addr, off, size in sections:
+                  if addr <= vma < addr + size:
+                      return name, off + (vma - addr)
+              return None, None
+
+          def read_qwords(vma, count=8):
+              name, off = vma_to_offset(vma)
+              rows = []
+              if off is None:
+                  return name, rows
+              for i in range(count):
+                  p = off + i*8
+                  if p + 8 <= len(data):
+                      val = struct.unpack_from('<Q', data, p)[0]
+                      rows.append((vma + i*8, val))
+              return name, rows
+
+          # Parse relocations by offset to resolve AP/vtable-style slots.
+          reloc = {}
+          rel_re = re.compile(r'^\s*([0-9a-fA-F]+)\s+[0-9a-fA-F]+\s+\S+\s+([0-9a-fA-F]+)\s+(.+)$')
+          for line in readelf_r.splitlines():
+              m = rel_re.match(line)
+              if not m:
+                  continue
+              off_s, symval_s, tail = m.groups()
+              try:
+                  off = int(off_s, 16)
+                  symval = int(symval_s, 16)
+              except ValueError:
+                  continue
+              reloc[off] = (symval, tail.strip())
+
+          def reloc_table(base, span=0x80):
+              rows = []
+              for off in range(base, base + span, 8):
+                  if off in reloc:
+                      rows.append((off, reloc[off][0], reloc[off][1]))
+              return rows
+
+          ctor = [(a,l,t) for a,l,t in insns if 0x10ac120 <= a <= 0x10ac3b0]
+          focus = [(a,l,t) for a,l,t in insns if 0x10ac300 <= a <= 0x10ac3b0]
+
+          def contains_any(text, terms):
+              return any(term in text for term in terms)
+
+          # Track interesting references in the constructor tail.
+          terms = ['rsp+0x40', 'r15', 'r14', '10ac37a', '10ac386', 'call', '[rax+0x28]', '[r15]', '[rsp+0x28]', '0x184d898', '0x184d808', '0x187e260']
+          interesting_ctor = [(a,l,t) for a,l,t in ctor if contains_any(l, terms)]
+
+          # Backward slices from the two indirect calls.
+          def backslice(call_addr, watched_regs=('rdi','rax','r15','r14'), stack_terms=('rsp+0x40','rsp+0x28','rsp+0x80')):
+              ci = idx(call_addr)
+              rows = []
+              for a,l,t in reversed(insns[max(0, ci-160):ci+1]):
+                  if contains_any(l, list(watched_regs) + list(stack_terms)) or 'call' in t:
+                      rows.append((a,l,t))
+              rows.reverse()
+              return rows
+
+          # Find stores/loads to stack slots globally inside constructor window.
+          stack_slots = ['rsp+0x40', 'rsp+0x28', 'rsp+0x80', 'rsp+0x110', 'rsp+0x120']
+          slot_refs = {s: [(a,l,t) for a,l,t in ctor if s in l] for s in stack_slots}
+
+          # Literal/AP xrefs, capped and local context only.
+          xref_terms = ['184d898', '184d808', '187e260', '10bff2c', '10bff40', '107162a', 'de1c52', '15e74c8', 'aa6d30', 'a7b84f']
+          xrefs = {term: [] for term in xref_terms}
+          for i,(a,l,t) in enumerate(insns):
+              for term in xref_terms:
+                  if term in l:
+                      xrefs[term].append((a, max(0, i-5), min(len(insns), i+10)))
+
+          md = []
+          md.append('# Restrictions vtable+0x28 provenance trace\n\n')
+          md.append('Focused follow-up to `analysis/restrictions-this78-readers-fast.md`. This avoids broad xref scans and instead tracks the two constructor-tail indirect calls at `10ac37a` and `10ac386`.\n\n')
+
+          md.append('## Constructor tail: focused window `10ac300..10ac3b0`\n\n')
+          md.append(fmt(focus))
+
+          md.append('## Constructor events mentioning stack slots / object registers\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          for a,l,t in interesting_ctor[:300]:
+              md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          md.append('\n')
+
+          md.append('## Backward slice for `10ac37a call [rax+0x28]`\n\n')
+          md.append(fmt(backslice(0x10ac37a)))
+
+          md.append('## Backward slice for `10ac386 call [rax+0x28]`\n\n')
+          md.append(fmt(backslice(0x10ac386)))
+
+          md.append('## Stack slot references inside constructor window\n\n')
+          for slot, rows in slot_refs.items():
+              md.append(f'### `{slot}` ({len(rows)} refs)\n\n')
+              md.append(fmt(rows))
+
+          md.append('## Raw/AP data around candidate object tables\n\n')
+          for base in [0x184d898, 0x184d808, 0x187e260, 0x184da88, 0x184ca90]:
+              sec, qws = read_qwords(base, 16)
+              md.append(f'### `{base:#x}` raw qwords, section `{sec}`\n\n')
+              md.append('| slot | raw qword | relocation |\n|---:|---:|---|\n')
+              for addr, val in qws:
+                  rel = reloc.get(addr)
+                  reltxt = '' if not rel else f'{rel[0]:#x} {rel[1]}'
+                  md.append(f'| `{addr-base:#x}` / `{addr:#x}` | `{val:#x}` | `{reltxt}` |\n')
+              md.append('\n')
+
+          md.append('## Relocation entries around candidate APs\n\n')
+          for base in [0x184d898, 0x184d808, 0x187e260, 0x184da88, 0x184ca90]:
+              rows = reloc_table(base, 0x100)
+              md.append(f'### `{base:#x}` relocations ({len(rows)})\n\n')
+              md.append('| slot | reloc target | symbol/tail |\n|---:|---:|---|\n')
+              for off, target, tail in rows:
+                  md.append(f'| `{off-base:#x}` / `{off:#x}` | `{target:#x}` | `{tail}` |\n')
+              md.append('\n')
+
+          md.append('## Targeted xrefs\n\n')
+          for term, hits in xrefs.items():
+              md.append(f'### `{term}` xrefs ({len(hits)})\n\n')
+              for a,start,end in hits[:12]:
+                  md.append(f'#### xref at `{a:#x}`\n\n')
+                  md.append(fmt(insns[start:end]))
+              if len(hits) > 12:
+                  md.append(f'... truncated {len(hits)-12} more xrefs ...\n\n')
+
+          md.append('## Preliminary interpretation checklist\n\n')
+          md.append('- `10ac37a` calls `vtable+0x28` on the object loaded from `[rsp+0x40]`. The stack-slot table above should show where `[rsp+0x40]` was last written.\n')
+          md.append('- `10ac386` calls `vtable+0x28` on `r15`. The backward slice should show whether `r15` still names the installed `allocated_0x28` or a later object/temporary.\n')
+          md.append('- If `0x184d898+0x28` has a relocation target, that is the concrete method target for the installed `0x28` object. If not, treat `0x184d898` as an AP/literal requiring constructor/xref-based resolution.\n')
+          md.append('- The next step after this report is to follow the return values placed into `r14` and `r15` after the two `+0x28` calls, and check whether either is assigned into `child+0x18` or into the `state+0x40` readiness path.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-vtable28-provenance.md
+          git commit -m 'Trace Restrictions vtable+0x28 provenance' || exit 0
+          git push
