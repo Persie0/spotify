@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, rejecting wrapper-local builder false leads, tracing the constructor-owned `this+0x78` lifecycle, and adding a targeted reader/method trace for the installed object.
+This is the compact current state after rejecting the old `0x6b0` and TimelineAds-wrapper interpretations, resolving the Restrictions setup-bundle source, classifying the slot-object descriptor/builder path, rejecting wrapper-local builder false leads, tracing the constructor-owned `this+0x78` lifecycle, adding the targeted reader/method trace for the installed object, and tracing the first `vtable+0x28` provenance edge.
 
 ## Correct high-level chain
 
@@ -212,9 +212,9 @@ After `allocated_0x28` is installed through the `this+0x78` slot, the constructo
 10ac309  [allocated_0x150+0x140] = 0
 ```
 
-## `this+0x78` reader/method trace: latest result
+## `this+0x78` reader and `vtable+0x28` trace: latest result
 
-The fast reader trace confirms the immediate post-install call sequence and identifies two important indirect calls on the installed object family:
+The fast reader trace and the vtable-provenance trace confirm the immediate post-install call sequence:
 
 ```text
 10ac216  call 15e74c8
@@ -226,32 +226,54 @@ The fast reader trace confirms the immediate post-install call sequence and iden
 10ac339  call 15e74c8
 10ac358  call a7b84f
 10ac36d  call aa6d30
-10ac37a  call QWORD PTR [rax+0x28]
-10ac386  call QWORD PTR [rax+0x28]
-10ac391  operator new(0x80)
-10ac3a0  [rcx] = rax
-```
-
-At the second indirect-call site, the surrounding sequence is:
-
-```text
-10ac339  call 15e74c8
-10ac33e  cmp BYTE PTR [r14+0x18],0x0
-10ac358  call a7b84f
-10ac36d  call aa6d30
 10ac372  mov rdi, [rsp+0x40]
 10ac377  mov rax, [rdi]
 10ac37a  call [rax+0x28]
-10ac37d  mov r14, rax
+10ac37d  r14 = return_from_first_vtable28
 10ac380  mov rax, [r15]
 10ac383  mov rdi, r15
 10ac386  call [rax+0x28]
-10ac389  mov r15, rax
+10ac389  r15 = return_from_second_vtable28
 ```
 
-So the next semantic edge is no longer the builder output path. It is the concrete method at `vtable+0x28` for the objects held in `[rsp+0x40]` and `r15` during this constructor tail, and whether those returned objects are later stored into the `child+0x18` object exposed by `b411a4`.
+The two returned objects are then packed into a newly allocated `0x80` wrapper object:
 
-Important caution: the relocation table did not expose ordinary function entries at `0x184d898` in this run. The report treats `0x184d898` as the AP/literal written into the `0x28` object and follows xrefs/constructors rather than claiming resolved virtual entries from relocation data.
+```text
+10ac391  operator new(0x80)
+10ac399  lea rax, 0x184d0a0
+10ac3a0  [wrapper_0x80+0x00] = 0x184d0a0
+10ac3a3  [wrapper_0x80+0x08] = r14_return
+10ac3a7  [wrapper_0x80+0x10] = r15_return
+10ac3ab  rax = [rsp+0x28]          ; allocated_0x150
+10ac3b0  [wrapper_0x80+0x18] = allocated_0x150
+```
+
+So the latest semantic edge is **not** a direct `child+0x18` assignment. It is:
+
+```text
+this+0x78 installed object family
+  -> two vtable+0x28 calls
+  -> r14/r15 returned objects
+  -> wrapper_0x80 with AP/literal 0x184d0a0
+      +0x08 = first returned object
+      +0x10 = second returned object
+      +0x18 = allocated_0x150 timer/state object
+```
+
+The vtable-provenance trace also showed:
+
+```text
+[rsp+0x40]
+  -> only one reference in the scanned constructor window: the load at 10ac372
+  -> provenance must be from earlier frame setup or an outer stack/local alias
+
+r15
+  -> used as the second vtable+0x28 receiver at 10ac386
+  -> after the call, overwritten with the second returned object
+  -> then stored into wrapper_0x80+0x10
+```
+
+Important caution: the raw/AP mapping still does not resolve ordinary function entries for `0x184d898`. `0x184d898` has two constructor-like xrefs (`10ac180` and `10bff2c`) but no relocation-backed `+0x28` function entry in this report. The nearby APs `0x184d808` and `0x187e260` only exposed `__shared_weak_count::__get_deleter`-style relocation entries at their far slots, not the desired readiness method.
 
 ## Current conclusion
 
@@ -271,27 +293,28 @@ post-wrapper return-value consumption / wrapper outputs as return values
 this+0x78 allocation sequence through allocated_0x28 install
 ac39da / 10adc16 stack-wrapper behavior
 this+0x78 fast reader trace through first [vtable+0x28] calls
+first vtable+0x28 return packing into wrapper_0x80 / AP 0x184d0a0
 ```
 
 Still open:
 
 ```text
-concrete objects behind [rsp+0x40] and r15 at 10ac37a/10ac386
-  -> resolve their vtable+0x28 methods
-  -> determine returned object semantics
-  -> relation to object exposed as child+0x18
-  -> inner virtual +0x30 / state+0x40 readiness discriminator
+full provenance of [rsp+0x40] at 10ac372
+full provenance of r15 before 10ac386
+concrete vtable+0x28 targets for both receivers
+lifecycle/readers of wrapper_0x80 AP 0x184d0a0
+whether wrapper_0x80 or its +0x08/+0x10 children feed child+0x18 / b411a4
+inner virtual +0x30 / state+0x40 readiness discriminator
 ```
 
 The next concrete batch should trace:
 
 ```text
-10ac372..10ac386 register provenance
-object in [rsp+0x40]
-object in r15
-concrete vtable/AP entries at +0x28 for both
-where returns from 10ac37a and 10ac386 are stored
-whether those returns feed child+0x18 / b411a4 returned dependency
+full 0x10aba36 frame setup for [rsp+0x40] and r15
+constructor tail after 10ac3b0
+AP/lifecycle/xrefs for 0x184d0a0
+where wrapper_0x80 is stored after creation
+whether wrapper_0x80, r14_return, or r15_return feed child+0x18 / b411a4 returned dependency
 ```
 
 ## Evidence reports
@@ -319,4 +342,5 @@ whether those returns feed child+0x18 / b411a4 returned dependency
 - `analysis/restrictions-post-wrapper-output-consumption.md`
 - `analysis/restrictions-this78-lifecycle.md`
 - `analysis/restrictions-this78-readers-fast.md`
+- `analysis/restrictions-vtable28-provenance.md`
 - `docs/15-skip-ad-signal.md`
