@@ -9,6 +9,8 @@ on:
 permissions:
   contents: write
 
+# kick: start first registered run
+
 jobs:
   trace:
     runs-on: ubuntu-latest
@@ -35,211 +37,135 @@ jobs:
           import re, bisect
 
           dis = Path('/tmp/restrictions-vtable/all.dis').read_text(errors='replace').splitlines()
-          rel_txt = Path('/tmp/restrictions-vtable/relocs.txt').read_text(errors='replace').splitlines()
-
+          rel = Path('/tmp/restrictions-vtable/relocs.txt').read_text(errors='replace').splitlines()
           ins=[]; labels=[]
           for i,line in enumerate(dis):
               lm=re.match(r'^([0-9a-f]+)\s+<([^>]+)>:', line)
-              if lm:
-                  labels.append((int(lm.group(1),16), i, lm.group(2), line))
+              if lm: labels.append((int(lm.group(1),16), i, lm.group(2)))
               m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
-              if m:
-                  ins.append((int(m.group(1),16), i, m.group(2), line))
-          addrs=[x[0] for x in ins]
-          lab_addrs=[x[0] for x in labels]
-
+              if m: ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs=[a for a,_,_,_ in ins]
+          lab_addrs=[a for a,_,_ in labels]
           def idx(a): return bisect.bisect_left(addrs,a)
-          def label_for(a):
+          def lab(a):
               if a is None: return ''
               j=bisect.bisect_right(lab_addrs,a)-1
               return labels[j][2] if j>=0 else ''
-          def ctx(a,b=16,af=48):
-              j=idx(a)
-              return '\n'.join('    '+ins[k][3] for k in range(max(0,j-b), min(len(ins), j+af+1)))
           def md(s): return str(s).replace('|','\\|').replace('\n',' ')
-          def split_ops(op):
-              parts=op.split(None,1)
-              if len(parts)<2: return (parts[0] if parts else '', [])
-              mn,rest=parts
-              vals=[]; cur=''; depth=0
+          def ops(op):
+              p=op.split(None,1)
+              if len(p)<2: return (p[0] if p else '', [])
+              mn,rest=p; out=[]; cur=''; depth=0
               for ch in rest:
                   if ch=='[': depth+=1
                   elif ch==']': depth-=1
                   if ch==',' and depth==0:
-                      vals.append(cur.strip()); cur=''
-                  else:
-                      cur+=ch
-              if cur.strip(): vals.append(cur.strip())
-              return mn, vals
-          def norm(a): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',a).strip()
-          def mem(arg):
-              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', arg)
+                      out.append(cur.strip()); cur=''
+                  else: cur+=ch
+              if cur.strip(): out.append(cur.strip())
+              return mn,out
+          def norm(x): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',x).strip()
+          def mem(x):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', x)
               if not m: return None
               off=int(m.group(3) or '0',16)
               if m.group(2)=='-': off=-off
-              return (m.group(1), off)
-
-          relocs={}
-          rel_sym={}
-          for line in rel_txt:
-              # Typical: 000000000187e3c8  0000000000000008 R_X86_64_RELATIVE                    123456
+              return (m.group(1),off)
+          relocs={}; tails={}
+          for line in rel:
               m=re.match(r'\s*([0-9a-fA-F]+)\s+\S+\s+(R_X86_64_[A-Z0-9_]+)\s*(.*)$', line)
               if not m: continue
-              off=int(m.group(1),16); typ=m.group(2); tail=m.group(3).strip()
-              if typ == 'R_X86_64_RELATIVE':
+              addr=int(m.group(1),16); typ=m.group(2); tail=m.group(3).strip()
+              if typ=='R_X86_64_RELATIVE':
                   hm=re.search(r'([0-9a-fA-F]+)$', tail)
                   if hm:
-                      relocs[off]=int(hm.group(1),16)
-                      rel_sym[off]=tail
+                      relocs[addr]=int(hm.group(1),16); tails[addr]=tail
               else:
-                  # Keep non-relative rows for diagnostics; sometimes vtables use symbolic absolute relocations.
-                  hm=re.search(r'([0-9a-fA-F]{4,})', tail)
-                  if hm:
-                      relocs.setdefault(off,int(hm.group(1),16))
-                      rel_sym.setdefault(off,typ+' '+tail)
-                  else:
-                      rel_sym.setdefault(off,typ+' '+tail)
-
+                  tails[addr]=typ+' '+tail
           regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
-          argregs=['rdi','rsi','rdx','rcx','r8','r9']
-          subregs={
-              'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','ebp':'rbp','esp':'rsp',
-              'r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15',
-              'al':'rax','bl':'rbx','cl':'rcx','dl':'rdx','sil':'rsi','dil':'rdi',
-          }
-          def canonical_reg(r): return subregs.get(r,r)
-
-          def analyze_method(target, max_bytes=0x520):
-              if target is None:
-                  return [], [], [], [], []
-              body=[x for x in ins if target <= x[0] < target+max_bytes]
+          args=['rdi','rsi','rdx','rcx','r8','r9']
+          sub={'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15','al':'rax','cl':'rcx'}
+          def creg(r): return sub.get(r,r)
+          def analyze(t, limit=0x500):
+              body=[x for x in ins if t <= x[0] < t+limit]
               st={r:None for r in regs}
-              for r in argregs: st[r]=f'arg:{r}'
+              for r in args: st[r]='arg:'+r
               refs=[]; writes=[]; calls=[]; rets=[]
               for a,i,op,line in body:
-                  mn,ops=split_ops(op)
-                  for arg in ops:
-                      b=mem(arg)
-                      base=canonical_reg(b[0]) if b else None
+                  mn,os=ops(op)
+                  for ar in os:
+                      b=mem(ar); base=creg(b[0]) if b else None
                       if b and st.get(base):
-                          desc=st[base] + (f'{b[1]:+x}' if b[1] else '')
-                          refs.append((a,desc,line))
-                          if ops and norm(ops[0])==norm(arg) and mn not in ('cmp','test'):
-                              writes.append((a,desc,line))
-                  if mn=='call':
-                      calls.append((a,{r:st.get(r) for r in argregs if st.get(r)},line))
-                  if mn.startswith('ret'):
-                      rets.append((a,line))
-                      # keep scanning in case linear body includes tail blocks, but record it
-                  if not ops: continue
-                  dst=norm(ops[0]); dst_reg=canonical_reg(dst) if canonical_reg(dst) in regs else None
-                  if mn=='lea' and dst_reg and len(ops)>1:
-                      b=mem(ops[1]); base=canonical_reg(b[0]) if b else None
-                      if b and st.get(base): st[dst_reg]=st[base] + (f'{b[1]:+x}' if b[1] else '')
-                      else: st[dst_reg]=None
-                  elif mn=='mov' and dst_reg and len(ops)>1:
-                      src=norm(ops[1]); src_reg=canonical_reg(src)
-                      if src_reg in regs and st.get(src_reg):
-                          st[dst_reg]=st[src_reg]
+                          d=st[base]+(f'{b[1]:+x}' if b[1] else '')
+                          refs.append((a,d,line))
+                          if os and norm(os[0])==norm(ar) and mn not in ('cmp','test'):
+                              writes.append((a,d,line))
+                  if mn=='call': calls.append((a,{r:st.get(r) for r in args if st.get(r)},line))
+                  if mn.startswith('ret'): rets.append((a,line))
+                  if not os: continue
+                  dst=norm(os[0]); dr=creg(dst)
+                  if dr not in regs: continue
+                  if mn=='lea' and len(os)>1:
+                      b=mem(os[1]); base=creg(b[0]) if b else None
+                      st[dr]=st[base]+(f'{b[1]:+x}' if b and b[1] else '') if b and st.get(base) else None
+                  elif mn=='mov' and len(os)>1:
+                      src=norm(os[1]); sr=creg(src)
+                      if sr in regs and st.get(sr): st[dr]=st[sr]
                       else:
-                          b=mem(src); base=canonical_reg(b[0]) if b else None
-                          st[dst_reg]=(f'load({st[base]}{b[1]:+x})' if b and st.get(base) else None)
-                  elif dst_reg and mn not in ('cmp','test'):
-                      st[dst_reg]=None
-              return body, refs, writes, calls, rets
+                          b=mem(src); base=creg(b[0]) if b else None
+                          st[dr]=f'load({st[base]}{b[1]:+x})' if b and st.get(base) else None
+                  elif mn not in ('cmp','test'):
+                      st[dr]=None
+              return body,refs,writes,calls,rets
 
-          # vptr AP proven in previous slice: [rsp+0x2e0] = 0x187e3c8.
           ap=0x187e3c8
-          offsets=[-0x20,-0x18,-0x10,-0x8,0x0,0x8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60]
-          entries=[]
-          for off in offsets:
-              addr=ap+off
-              val=relocs.get(addr)
-              entries.append((off, addr, val, label_for(val), rel_sym.get(addr,'')))
-
           print('# Restrictions bundle vtable trace')
-          print()
-          print('Purpose: resolve the vptr stored into `[rsp+0x2e0]` and inspect the methods called by `166103c`.')
-          print()
-          print('## Proven vptr materialization')
-          print('```text')
-          print('14ce65f  lea rax, [rip+...]  # 0x187e3c8')
-          print('14ce666  lea rcx, [rsp+0x310]')
-          print('14ce66e  mov [rcx-0x30], rax   ; [rsp+0x2e0] = 0x187e3c8')
-          print('```')
-          print()
-          print('## Vtable/address-point entries around `0x187e3c8`')
-          print('| offset from AP | entry address | resolved target | label | relocation tail |')
-          print('|---:|---:|---:|---|---|')
-          for off,addr,val,lab,sym in entries:
-              vt=f'`0x{val:x}`' if val is not None else '`?`'
-              print(f'| `{off:+#x}` | `0x{addr:x}` | {vt} | `{md(lab)}` | `{md(sym)}` |')
-          print()
-          call_offsets=[0x10,0x18,0x30]
-          print('## Methods reached from `166103c`')
-          print('| callsite in 166103c | vtable offset | method target | label |')
-          print('|---:|---:|---:|---|')
-          for off in call_offsets:
+          print('\nPurpose: resolve the vptr stored into `[rsp+0x2e0]` and inspect the methods called by `166103c`.')
+          print('\n## Proven vptr materialization')
+          print('```text\n14ce65f  lea rax, [rip+...]  # 0x187e3c8\n14ce666  lea rcx, [rsp+0x310]\n14ce66e  mov [rcx-0x30], rax   ; [rsp+0x2e0] = 0x187e3c8\n```')
+          print('\n## Vtable/address-point entries around `0x187e3c8`')
+          print('| offset | entry addr | target | label | reloc |\n|---:|---:|---:|---|---|')
+          for off in [-0x20,-0x18,-0x10,-0x8,0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60]:
+              ea=ap+off; val=relocs.get(ea)
+              print(f'| `{off:+#x}` | `0x{ea:x}` | `{("0x%x"%val) if val else "?"}` | `{md(lab(val))}` | `{md(tails.get(ea,""))}` |')
+          print('\n## Methods reached from `166103c`')
+          dispatch={0x10:0x1661089,0x30:0x1661095,0x18:0x16610a2}
+          print('| callsite | vtable offset | target | label |\n|---:|---:|---:|---|')
+          for off,cs in dispatch.items():
               val=relocs.get(ap+off)
-              callsite={0x10:0x1661089,0x30:0x1661095,0x18:0x16610a2}[off]
-              vt=f'`0x{val:x}`' if val is not None else '`?`'
-              print(f'| `0x{callsite:x}` | `+0x{off:x}` | {vt} | `{md(label_for(val))}` |')
-          print()
-          for off in call_offsets:
-              target=relocs.get(ap+off)
-              print(f'## Method vtable `+0x{off:x}` target `{("0x%x" % target) if target else "?"}`')
-              if target is None:
-                  print('- target could not be resolved from relocation table')
-                  print()
+              print(f'| `0x{cs:x}` | `+0x{off:x}` | `{("0x%x"%val) if val else "?"}` | `{md(lab(val))}` |')
+          for off,cs in dispatch.items():
+              val=relocs.get(ap+off)
+              print(f'\n## Method `+0x{off:x}` from callsite `0x{cs:x}` -> `{("0x%x"%val) if val else "?"}`')
+              if val is None:
+                  print('- unresolved from relocations')
                   continue
-              print(f'- label: `{md(label_for(target))}`')
-              body, refs, writes, calls, rets = analyze_method(target)
-              print(f'- instructions scanned: `{len(body)}`')
+              body,refs,writes,calls,rets=analyze(val)
+              print(f'- label: `{md(lab(val))}`')
+              print(f'- scanned instructions: `{len(body)}`')
               print(f'- arg-memory refs: `{len(refs)}`')
-              print(f'- arg-derived writes/calls: `{len(writes)}`')
+              print(f'- arg-derived writes/indirect calls: `{len(writes)}`')
               print(f'- calls: `{len(calls)}`')
-              print(f'- returns in window: `{len(rets)}`')
-              print()
-              print('### Entry body excerpt')
-              print('```text')
-              for aa,i,op,line in body[:90]:
-                  print('    '+line)
-              if len(body)>90: print(f'    ... truncated {len(body)-90} additional instructions ...')
+              print(f'- returns in scan window: `{len(rets)}`')
+              print('\n### Entry excerpt\n```text')
+              for _,_,_,line in body[:70]: print('    '+line)
+              if len(body)>70: print(f'    ... truncated {len(body)-70} additional instructions ...')
               print('```')
-              print()
-              print('### Arg-memory refs')
-              if refs:
-                  print('| addr | arg-derived location | instruction |')
-                  print('|---|---|---|')
-                  for a,desc,line in refs[:80]: print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
-                  if len(refs)>80: print(f'| ... | ... | truncated {len(refs)-80} rows |')
+              print('\n### Arg-derived writes / indirect calls')
+              if not writes: print('- none')
               else:
-                  print('- none')
-              print()
-              print('### Arg-derived writes / indirect calls')
-              if writes:
-                  print('| addr | arg-derived location | instruction |')
-                  print('|---|---|---|')
-                  for a,desc,line in writes[:80]: print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
-                  if len(writes)>80: print(f'| ... | ... | truncated {len(writes)-80} rows |')
+                  print('| addr | location | instruction |\n|---|---|---|')
+                  for a,d,line in writes[:60]: print(f'| `0x{a:x}` | `{md(d)}` | `{md(line.strip())}` |')
+              print('\n### Calls inside method')
+              if not calls: print('- none')
               else:
-                  print('- none')
-              print()
-              print('### Calls inside method')
-              if calls:
-                  print('| call | tracked args | instruction |')
-                  print('|---|---|---|')
-                  for a,arg_state,line in calls[:70]:
-                      txt=', '.join(f'{k}={v}' for k,v in arg_state.items())
-                      print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
-                  if len(calls)>70: print(f'| ... | ... | truncated {len(calls)-70} rows |')
-              else:
-                  print('- none')
-              print()
-          print('## Interpretation')
-          print('- `+0x30` is the dispatch used at `1661095` after building a local descriptor whose `+0x8` points to the post-`17add2a` object.')
-          print('- If the resolved `+0x30` method writes through `arg:rdi+0x30`, that closes the source of the Restrictions factory `rdx+0x30` read.')
-          print('- If it only delegates to another virtual/helper call, the next trace should follow that method-specific call rather than the generic string helpers.')
+                  print('| call | tracked args | instruction |\n|---|---|---|')
+                  for a,st,line in calls[:60]:
+                      s=', '.join(f'{k}={v}' for k,v in st.items())
+                      print(f'| `0x{a:x}` | `{md(s)}` | `{md(line.strip())}` |')
+          print('\n## Interpretation')
+          print('- `+0x30` is the dispatch at `1661095` after building a local descriptor whose `+0x8` points to the post-`17add2a` object.')
+          print('- If `+0x30` writes through `arg:rdi+0x30`, that closes the Restrictions factory `rdx+0x30` source; otherwise follow the method-specific delegate call.')
           PY
       - name: Commit report
         run: |
