@@ -1,0 +1,171 @@
+name: Trace Restrictions resize helper
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-resize-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-resize
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-resize
+          unzip -j /tmp/restrictions-resize/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-resize
+      - name: Trace resize helper
+        run: |
+          SO=/tmp/restrictions-resize/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-resize/all.dis
+          python3 - <<'PY' > analysis/restrictions-resize-helper.md
+          from pathlib import Path
+          import re, bisect
+          dis=Path('/tmp/restrictions-resize/all.dis').read_text(errors='replace').splitlines()
+          ins=[]; labels=[]
+          for i,line in enumerate(dis):
+              lm=re.match(r'^([0-9a-f]+)\s+<([^>]+)>:', line)
+              if lm: labels.append((int(lm.group(1),16),i,lm.group(2),line))
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),line))
+          addrs=[x[0] for x in ins]; labs=[x[0] for x in labels]
+          def label(a):
+              j=bisect.bisect_right(labs,a)-1
+              return labels[j][2] if j>=0 else ''
+          def md(s): return str(s).replace('|','\\|').replace('\n',' ')
+          def split_ops(op):
+              parts=op.split(None,1)
+              if len(parts)<2: return (parts[0] if parts else '', [])
+              mn,rest=parts; vals=[]; cur=''; depth=0
+              for ch in rest:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      vals.append(cur.strip()); cur=''
+                  else: cur+=ch
+              if cur.strip(): vals.append(cur.strip())
+              return mn, vals
+          def norm(x): return re.sub(r'^(BYTE|WORD|DWORD|QWORD|XMMWORD|YMMWORD) PTR\s+','',x).strip()
+          sub={'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15','al':'rax','bl':'rbx','cl':'rcx','dl':'rdx'}
+          def can(r): return sub.get(r,r)
+          def mem(arg):
+              m=re.search(r'\[([a-z0-9]+)(?:([+-])0x([0-9a-f]+))?\]', arg)
+              if not m: return None
+              off=int(m.group(3) or '0',16)
+              if m.group(2)=='-': off=-off
+              return can(m.group(1)), off
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']
+          argregs=['rdi','rsi','rdx','rcx','r8','r9']
+          target=0xd15d98
+          body=[x for x in ins if target <= x[0] < target+0x800]
+          # Analyze twice: 1507a9e calls d15d98 with rdi=bundle+0x18; 1507b20 calls it with rdi=bundle+0x58.
+          analyses=[('from bundle+0x18 vector',0x18),('from bundle+0x58 vector',0x58)]
+          print('# Restrictions resize helper trace')
+          print()
+          print('Purpose: follow `d15d98`, the capacity/resize helper called by `1507a9e` and `1507b20`, to see whether it writes a substructure offset that resolves to `bundle+0x30`.')
+          print()
+          print(f'Target: `0x{target:x}` / `{md(label(target))}`')
+          print()
+          print('## Body excerpt')
+          print('```text')
+          for aa,i,op,line in body[:120]: print('    '+line)
+          if len(body)>120: print(f'    ... truncated {len(body)-120} instructions ...')
+          print('```')
+          print()
+          for name,base in analyses:
+              st={r:None for r in regs}
+              st['rdi']=f'bundle+0x{base:x}'
+              st['rsi']='requested_capacity'
+              writes=[]; refs=[]; b30=[]; calls=[]
+              def bundle_off(desc,extra=0):
+                  m=re.match(r'bundle\+0x([0-9a-f]+)', desc or '')
+                  if not m: return None
+                  # only add offset to the first base; ignore any textual chained +0x beyond our direct memory offset
+                  return int(m.group(1),16)+extra
+              for a,i,op,line in body:
+                  mn,ops=split_ops(op)
+                  for arg in ops:
+                      b=mem(arg)
+                      if b and st.get(b[0]):
+                          base_desc=st[b[0]]
+                          desc=base_desc + (f'+0x{b[1]:x}' if b[1]>0 else (f'-0x{-b[1]:x}' if b[1]<0 else ''))
+                          bo=bundle_off(base_desc,b[1])
+                          refs.append((a,desc,bo,line))
+                          if ops and norm(ops[0])==norm(arg) and mn not in ('cmp','test'):
+                              writes.append((a,desc,bo,line))
+                              if bo==0x30: b30.append((a,desc,line))
+                  if mn=='call':
+                      calls.append((a,{r:st.get(r) for r in argregs if st.get(r)},line))
+                  if not ops: continue
+                  dst=norm(ops[0]); dr=can(dst)
+                  if dr not in regs: continue
+                  if mn=='lea' and len(ops)>1:
+                      b=mem(ops[1])
+                      if b and st.get(b[0]): st[dr]=st[b[0]] + (f'+0x{b[1]:x}' if b[1]>0 else (f'-0x{-b[1]:x}' if b[1]<0 else ''))
+                      else: st[dr]=None
+                  elif mn=='mov' and len(ops)>1:
+                      src=norm(ops[1]); sr=can(src)
+                      if sr in regs and st.get(sr): st[dr]=st[sr]
+                      else:
+                          b=mem(src)
+                          st[dr]=f'load({st[b[0]]}{b[1]:+x})' if b and st.get(b[0]) else None
+                  elif mn not in ('cmp','test'):
+                      st[dr]=None
+              print(f'## Analysis: {name}')
+              print(f'- initial `rdi`: `bundle+0x{base:x}`')
+              print(f'- tracked refs: `{len(refs)}`')
+              print(f'- tracked writes: `{len(writes)}`')
+              print(f'- writes resolving exactly to `bundle+0x30`: `{len(b30)}`')
+              print()
+              print('### Writes')
+              if writes:
+                  print('| addr | tracked location | resolved bundle offset | instruction |')
+                  print('|---|---|---:|---|')
+                  for a,desc,bo,line in writes[:120]:
+                      bo_txt=f'`0x{bo:x}`' if bo is not None else '`?`'
+                      print(f'| `0x{a:x}` | `{md(desc)}` | {bo_txt} | `{md(line.strip())}` |')
+              else: print('- none')
+              print()
+              if b30:
+                  print('### Direct `bundle+0x30` writes')
+                  print('| addr | tracked location | instruction |')
+                  print('|---|---|---|')
+                  for a,desc,line in b30:
+                      print(f'| `0x{a:x}` | `{md(desc)}` | `{md(line.strip())}` |')
+                  print()
+              print('### Calls')
+              if calls:
+                  print('| call | tracked args | instruction |')
+                  print('|---|---|---|')
+                  for a,state,line in calls[:50]:
+                      txt=', '.join(f'{k}={v}' for k,v in state.items())
+                      print(f'| `0x{a:x}` | `{md(txt)}` | `{md(line.strip())}` |')
+              else: print('- none')
+              print()
+          print('## Interpretation')
+          print('- A write through `rdi+0x18` when `rdi=bundle+0x18` resolves to `bundle+0x30`.')
+          print('- If this report still shows zero `bundle+0x30` writes, then `[rdx+0x30]` likely belongs to a different substructure/base than the `bundle+0x18` vector helper path.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-resize-helper.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions resize helper"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
