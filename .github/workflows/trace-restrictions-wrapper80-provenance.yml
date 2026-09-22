@@ -1,0 +1,179 @@
+name: Trace Restrictions wrapper 0x80 provenance
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-wrapper80-provenance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace wrapper_0x80 provenance
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-wrapper80-provenance.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+          addrs = [a for a,_,_ in insns]
+
+          def nearest_idx(addr):
+              lo, hi = 0, len(addrs)-1
+              while lo < hi:
+                  mid = (lo+hi)//2
+                  if addrs[mid] < addr:
+                      lo = mid + 1
+                  else:
+                      hi = mid
+              if lo > 0 and abs(addrs[lo-1]-addr) < abs(addrs[lo]-addr):
+                  return lo-1
+              return lo
+
+          def window(addr, before=24, after=96):
+              i = nearest_idx(addr)
+              return insns[max(0, i-before):min(len(insns), i+after)]
+
+          def range_rows(start, end):
+              return [(a,l,t) for a,l,t in insns if start <= a <= end]
+
+          def fmt(rows):
+              return '```text\n' + '\n'.join(l for _,l,_ in rows) + '\n```\n'
+
+          def table(rows, max_rows=260):
+              out = ['| addr | instruction |\n|---:|---|\n']
+              for a,l,t in rows[:max_rows]:
+                  out.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+              if len(rows) > max_rows:
+                  out.append(f'| ... | truncated {len(rows)-max_rows} more rows |\n')
+              return ''.join(out)
+
+          ctor = range_rows(0x10ac360, 0x10ac520)
+          interesting = []
+          for a,l,t in ctor:
+              if ('call' in t or 'mov' in t or 'lea' in t or 'jmp' in t or '[rcx+' in t or '[rsp+' in t or '184d0a0' in l or '184d898' in l):
+                  interesting.append((a,l,t))
+
+          # Tiny local register/slot annotations for wrapper_0x80 creation.
+          annotations = []
+          for a,l,t in ctor:
+              if 0x10ac391 <= a <= 0x10ac3d8:
+                  note = ''
+                  if a == 0x10ac391: note = 'operator new(0x80) -> rax'
+                  elif a == 0x10ac396: note = 'rcx = wrapper_0x80'
+                  elif a == 0x10ac399: note = 'rax = AP 0x184d0a0'
+                  elif a == 0x10ac3a0: note = '[wrapper+0x00] = AP'
+                  elif a == 0x10ac3a3: note = '[wrapper+0x08] = first vtable+0x28 return'
+                  elif a == 0x10ac3a7: note = '[wrapper+0x10] = second vtable+0x28 return'
+                  elif a == 0x10ac3ab: note = 'rax = allocated_0x150'
+                  elif a == 0x10ac3b0: note = '[wrapper+0x18] = allocated_0x150'
+                  elif '[rcx+' in t or '[rcx]' in t: note = 'wrapper_0x80 field write/read candidate'
+                  elif 'call' in t: note = 'post-wrapper call candidate'
+                  if note:
+                      annotations.append((a,l,note))
+
+          # Xref windows: exact disassembly-text matches only, capped.
+          xref_tokens = ['184d0a0', '184d898', '184d808', '187e260', '184da88', '184ca90', '10ac391', '10ac3a0', '10ac3b0']
+          xrefs = {tok: [] for tok in xref_tokens}
+          for i,(a,l,t) in enumerate(insns):
+              for tok in xref_tokens:
+                  if tok in l:
+                      xrefs[tok].append((a, max(0, i-6), min(len(insns), i+14)))
+
+          # Find direct stores that look like they use rcx wrapper after allocation in constructor tail.
+          wrapper_tail = range_rows(0x10ac391, 0x10ac520)
+          wrapper_refs = []
+          for a,l,t in wrapper_tail:
+              if any(s in t for s in ['rcx', 'r14', 'r15', 'rsp+0x28', 'rsp+0x40', 'rsp+0x60', 'rsp+0x80']) or 'call' in t:
+                  wrapper_refs.append((a,l,t))
+
+          # Locate all uses of AP 0x184d0a0 and the immediate constructor/destructor style helpers around it.
+          focus_targets = {
+              0x10ac391: 'operator new(0x80) wrapper allocation',
+              0x10ac399: 'AP 0x184d0a0 assigned to wrapper',
+              0x10ac3a0: 'wrapper field writes begin',
+              0x10ac3b0: 'wrapper+0x18 = allocated_0x150',
+              0x10ac3b4: 'post-wrapper code starts',
+              0x184d0a0: 'AP/literal written into wrapper_0x80',
+          }
+
+          md = []
+          md.append('# Restrictions wrapper_0x80 provenance trace\n\n')
+          md.append('Focused follow-up after the two `vtable+0x28` calls. Tracks the `operator new(0x80)` wrapper at `10ac391`, AP `0x184d0a0`, and immediate post-wrapper constructor tail.\n\n')
+
+          md.append('## Constructor tail `10ac360..10ac520`\n\n')
+          md.append(fmt(ctor))
+
+          md.append('## Interesting constructor events\n\n')
+          md.append(table(interesting))
+          md.append('\n')
+
+          md.append('## Wrapper_0x80 creation annotations\n\n')
+          md.append('| addr | instruction | interpretation |\n|---:|---|---|\n')
+          for a,l,note in annotations:
+              md.append(f'| `{a:#x}` | `{l.strip()}` | {note} |\n')
+          md.append('\n')
+
+          md.append('## Wrapper/register references after allocation\n\n')
+          md.append(table(wrapper_refs))
+          md.append('\n')
+
+          md.append('## Focus windows\n\n')
+          for addr, desc in focus_targets.items():
+              md.append(f'### `{addr:#x}` — {desc}\n\n')
+              md.append(fmt(window(addr, 18, 90)))
+
+          md.append('## Targeted xrefs\n\n')
+          for tok, hits in xrefs.items():
+              md.append(f'### `{tok}` xrefs ({len(hits)})\n\n')
+              for a,start,end in hits[:30]:
+                  md.append(f'#### xref at `{a:#x}`\n\n')
+                  md.append(fmt(insns[start:end]))
+              if len(hits) > 30:
+                  md.append(f'... truncated {len(hits)-30} more xrefs ...\n\n')
+
+          md.append('## Preliminary interpretation checklist\n\n')
+          md.append('- `wrapper_0x80` is allocated at `10ac391`, receives AP/literal `0x184d0a0`, then stores both `vtable+0x28` return values and the `allocated_0x150` timer/state object.\n')
+          md.append('- The important next semantic edge is the first store/call after `10ac3b0` that consumes `wrapper_0x80`; this report keeps the tail visible to avoid following generic helper paths blindly.\n')
+          md.append('- If `0x184d0a0` has only constructor xrefs and no relocation-resolved vtable entries, continue with xref/constructor-based resolution, not raw table interpretation.\n')
+          md.append('- Check whether the wrapper, or one of `wrapper+0x08`, `wrapper+0x10`, `wrapper+0x18`, flows into the object returned by `b411a4` (`child+0x18`).\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-wrapper80-provenance.md
+          git commit -m 'Trace Restrictions wrapper 0x80 provenance' || exit 0
+          git push
