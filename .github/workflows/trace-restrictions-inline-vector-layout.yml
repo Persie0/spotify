@@ -1,0 +1,158 @@
+name: Trace Restrictions inline vector layout
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-inline-vector-layout.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-inline-vector
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-inline-vector
+          unzip -j /tmp/restrictions-inline-vector/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-inline-vector
+      - name: Trace inline vector layout
+        run: |
+          SO=/tmp/restrictions-inline-vector/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-inline-vector/all.dis
+          python3 - <<'PY' > analysis/restrictions-inline-vector-layout.md
+          import re
+          from pathlib import Path
+
+          lines = Path('/tmp/restrictions-inline-vector/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          insts=[]
+          for line in lines:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          by_addr={a:(line,text) for a,line,text in insts}
+
+          def line(addr):
+              return by_addr.get(addr, (f'{addr:x}: <missing>', ''))[0]
+
+          def block(start,end):
+              out=[]
+              for a,l,t in insts:
+                  if start <= a <= end:
+                      out.append(l)
+              return out
+
+          ctor_addrs=[0x14ce65f,0x14ce666,0x14ce66e,0x14ce672,0x14ce677,0x14ce67b,0x14ce685,0x14ce689,0x14ce68d]
+          slot_addrs=[0x1507aa2,0x1507aa5,0x1507aa9,0x1507aac,0x1507aaf,0x1507ab1,0x1507ab9,0x1507abc,0x1507ac8,0x1507ae3,0x1507ae5,0x1507ae8,0x1507aeb,0x1507af0,0x1507af7,0x1507b0d,0x1507b10,0x1507b14,0x1507b17,0x1507b1a]
+          caller_addrs=[0x153cc43,0x153cc94,0x153cc97,0x153cc9c,0x153cc9f,0x153cca2]
+          dtor_addrs=[0x153cb26,0x153cb29,0x153cb54,0x153cb58,0x153cb5d,0x153cb62]
+
+          print('# Restrictions inline vector layout trace')
+          print()
+          print('Purpose: close the `bundle+0x30` provenance edge by interpreting `bundle+0x18` as a vector-like subobject whose inline storage starts at `bundle+0x30`. Earlier direct-write traces missed writes through the vector data pointer loaded from `[bundle+0x18]`.')
+          print()
+          print('## Key result')
+          print()
+          print('```text')
+          print('14ce677 initializes [bundle+0x18] = bundle+0x30')
+          print('1507b0d loads rcx = [bundle+0x18] = bundle+0x30')
+          print('1507b1a writes [rcx + 0*8] = new slot object pointer')
+          print('Therefore 1507b1a writes the value later read by Restrictions as [bundle+0x30].')
+          print('```')
+          print()
+          print('## Stack-bundle constructor evidence')
+          print()
+          print('At this point `rcx = rsp+0x310 = bundle+0x30`; therefore negative offsets from `rcx` are fields in the stack bundle object whose base is `rsp+0x2e0`.')
+          print()
+          print('```text')
+          for a in ctor_addrs:
+              print(line(a))
+          print('```')
+          print()
+          print('Field interpretation from the constructor:')
+          print()
+          print('| instruction | resolved field | interpretation |')
+          print('|---|---|---|')
+          print('| `mov [rcx-0x30], rax` | `bundle+0x00 = 0x187e3c8` | bundle vptr/address-point |')
+          print('| `and [rcx-0x20], 0` | `bundle+0x10 = 0` | subobject/state zero |')
+          print('| `mov [rcx-0x18], rcx` | `bundle+0x18 = bundle+0x30` | vector data pointer points at inline storage |')
+          print('| `mov [rcx-0x10], 0x400000000` | `bundle+0x20 low=0, bundle+0x24 high=4` | vector count/capacity-style packed fields |')
+          print('| `and [rcx-0x8], 0` | `bundle+0x28 = 0` | vector used/constructed count-style field |')
+          print('| `and [rcx+0x20], 0` | `bundle+0x50 = 0` | later scalar/substructure field |')
+          print()
+          print('## Caller and slot helper evidence')
+          print()
+          print('`0x153cbfc` passes the vector subobject, not the bundle base, to `1507a9e`:')
+          print()
+          print('```text')
+          for a in caller_addrs:
+              print(line(a))
+          print('```')
+          print()
+          print('With `rdi = bundle+0x18`, the vector helper uses `[rbx]` as the data pointer. Because the constructor set `[bundle+0x18] = bundle+0x30`, the store at `1507b1a` resolves to `bundle+0x30` for the first slot (`r14d = 0`).')
+          print()
+          print('```text')
+          for a in slot_addrs:
+              print(line(a))
+          print('```')
+          print()
+          print('Critical derivation:')
+          print()
+          print('```text')
+          print('entry to 1507a9e: rdi = bundle+0x18')
+          print('1507aa2: rbx = rdi = bundle+0x18')
+          print('constructor: [bundle+0x18] = bundle+0x30')
+          print('1507b0d: rcx = [rbx] = [bundle+0x18] = bundle+0x30')
+          print('1507b17: edx = r14d = 0 for the first appended slot')
+          print('1507b1a: [rcx + rdx*8] = rax -> [bundle+0x30] = allocated slot pointer')
+          print('caller 153cc9c/153cca2 then passes rax to 153d2a4 to fill that slot')
+          print('Restrictions factory later reads [rdx+0x30], so it reads this first slot pointer')
+          print('```')
+          print()
+          print('## Destructor/free-guard corroboration')
+          print()
+          print('The destructor path compares the vector data pointer against `bundle+0x30` before freeing it, matching the inline-storage interpretation:')
+          print()
+          print('```text')
+          for a in dtor_addrs:
+              print(line(a))
+          print('```')
+          print()
+          print('This pattern means `bundle+0x30` is not a normal independent field initialized by a direct store. It is inline vector storage used when `[bundle+0x18]` points at the embedded array. The first append stores into it through the loaded data pointer.')
+          print()
+          print('## Provenance closure')
+          print()
+          print('```text')
+          print('provider-vector caller')
+          print('  -> constructs stack bundle at rsp+0x2e0')
+          print('  -> rcx = rsp+0x310 = bundle+0x30')
+          print('  -> [bundle+0x18] = bundle+0x30')
+          print('  -> 153cbfc chooses bundle+0x18 vector')
+          print('  -> 1507a9e appends a newly allocated slot object')
+          print('  -> 1507b1a stores that pointer through [bundle+0x18] into bundle+0x30')
+          print('  -> 153d2a4 fills that object from the descriptor stream')
+          print('  -> provider +0x28 passes rdx = bundle base')
+          print('  -> RestrictionsSetupImpl factory reads [rdx+0x30]')
+          print('```')
+          print()
+          print('## Conclusion')
+          print()
+          print('The previously missing edge is closed: `bundle+0x30` is populated indirectly as the first element of inline vector storage, not through a direct `[bundle+0x30]` store. This explains why direct stack-slot, vtable-method, descriptor-helper, and resize-helper scans all saw zero direct writes.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-inline-vector-layout.md
+          git commit -m "Trace Restrictions inline vector layout" || exit 0
+          git push
