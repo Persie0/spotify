@@ -28,6 +28,9 @@ jobs:
           mkdir -p /tmp/rbundle
           gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/rbundle
           unzip -j /tmp/rbundle/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rbundle
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
       - name: Trace bundle producer
         run: |
           SO=/tmp/rbundle/liborbit-jni-spotify.so
