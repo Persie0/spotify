@@ -1,0 +1,157 @@
+name: Resolve readiness local hidden writes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-readiness-local-hidden-writes.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rhidden
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rhidden
+
+      - name: Analyze hidden writes
+        run: |
+          SO=/tmp/rhidden/liborbit-jni-spotify.so
+          objdump -d -M intel --start-address=0xe8fad0 --stop-address=0xe92c49 "$SO" > /tmp/rhidden/fde.dis
+          python3 - <<'PY' > analysis/readiness-local-hidden-writes.md
+          from pathlib import Path
+          import re
+
+          lines=Path('/tmp/rhidden/fde.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for l in lines:
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),m.group(2),l))
+
+          targets={0x618:'provider +0x3b8',0x688:'readiness +0x428',0x6d0:'state +0x470',0x7d0:'dep +0x570',0x7f8:'state +0x598'}
+          regs=['rax','rbx','rcx','rdx','rsi','rdi','rbp','r8','r9','r10','r11','r12','r13','r14','r15']
+          alias={r:None for r in regs}
+          volatile={'rax','rcx','rdx','rsi','rdi','r8','r9','r10','r11'}
+
+          def parse_imm(s):
+            s=s.strip()
+            neg=False
+            if s.startswith('-'):
+              neg=True;s=s[1:]
+            try:v=int(s,0)
+            except:return None
+            return -v if neg else v
+
+          def mem_base_disp(expr):
+            # Intel memory operand inner text, simple base +/- immediate only.
+            expr=expr.replace(' ','')
+            m=re.fullmatch(r'(r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15))(?:\+(-?0x[0-9a-f]+|-?\d+))?',expr)
+            if not m:return None
+            return m.group(1), parse_imm(m.group(2) or '0')
+
+          hits=[]
+          history=[]
+          for idx,(a,op,l) in enumerate(ins):
+            before=dict(alias)
+
+            # resolve writes to memory through currently-known stack aliases
+            mm=re.search(r'\[([^\]]+)\]',op)
+            if mm and ',' in op:
+              dest=op.split(',',1)[0]
+              if '[' in dest:
+                bd=mem_base_disp(mm.group(1))
+                if bd and alias.get(bd[0]) is not None:
+                  absolute=alias[bd[0]]+bd[1]
+                  if absolute in targets:
+                    hits.append((a,targets[absolute],absolute,bd[0],bd[1],op,before.copy()))
+
+            # Track direct stack-memory writes too
+            if mm and ',' in op and '[rsp' in op.split(',',1)[0]:
+              expr=mm.group(1).replace(' ','')
+              m2=re.fullmatch(r'rsp(?:\+(-?0x[0-9a-f]+|-?\d+))?',expr)
+              if m2:
+                off=parse_imm(m2.group(1) or '0')
+                if off in targets:
+                  hits.append((a,targets[off],off,'rsp',0,op,before.copy()))
+
+            # update aliases after instruction
+            # lea reg,[rsp+off]
+            m=re.match(r'lea\s+(r\w+),\[rsp(?:\+([^\]]+))?\]',op)
+            if m and m.group(1) in alias:
+              off=parse_imm(m.group(2) or '0')
+              alias[m.group(1)]=off
+            else:
+              m=re.match(r'mov\s+(r\w+),(r\w+)\b',op)
+              if m and m.group(1) in alias and m.group(2) in alias:
+                alias[m.group(1)]=alias[m.group(2)]
+              else:
+                m=re.match(r'(add|sub)\s+(r\w+),([^,]+)$',op)
+                if m and m.group(2) in alias and alias[m.group(2)] is not None:
+                  v=parse_imm(m.group(3))
+                  if v is not None:
+                    alias[m.group(2)] += v if m.group(1)=='add' else -v
+                else:
+                  # Generic explicit register destination clobber
+                  m=re.match(r'(?:mov|lea|xor|and|or|pop|movzx|movsxd)\s+(r\w+|e\w+)',op)
+                  if m:
+                    rr=m.group(1)
+                    # normalize e.g. eax->rax, edi->rdi
+                    norm={'eax':'rax','ebx':'rbx','ecx':'rcx','edx':'rdx','esi':'rsi','edi':'rdi','ebp':'rbp',
+                          'r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15'}.get(rr,rr)
+                    if norm in alias and not (op.startswith('mov ') and re.match(r'mov\s+(r\w+),(r\w+)\b',op)):
+                      alias[norm]=None
+
+            if op.startswith('call'):
+              for r in volatile:alias[r]=None
+
+            history.append((a,op,l,before.copy(),dict(alias)))
+
+          print('# Readiness local hidden-write resolver')
+          print()
+          print('Linear stack-alias pass over FDE e8fad0..e92c49. Hits are candidate concrete writes to fields of the rsp+0x260 object through direct stack operands or register aliases.')
+          print()
+          for a,label,off,base,disp,op,al in hits:
+            print(f'## 0x{a:x}: {label} (rsp+0x{off:x})')
+            print(f'- instruction: {op}')
+            if base!='rsp': print(f'- resolved alias: {base}=rsp+0x{al.get(base):x}, displacement={disp:+#x}')
+            j=next(i for i,x in enumerate(history) if x[0]==a)
+            for x in history[max(0,j-18):min(len(history),j+20)]:
+              print(x[2])
+            print()
+
+          print('## memcpy / memmove / memset calls in FDE')
+          for i,(a,op,l) in enumerate(ins):
+            if op.startswith('call') and any(k in op for k in ('memcpy','memmove','memset')):
+              print(f'### 0x{a:x}: {op}')
+              for x in ins[max(0,i-22):min(len(ins),i+8)]:print(x[2])
+              print()
+
+          print('## Construction prologue e8fad0..e90130')
+          for a,op,l in ins:
+            if 0xe8fad0 <= a < 0xe90130: print(l)
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-local-hidden-writes.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve readiness local hidden writes"
+          git pull --rebase origin main
+          git push
