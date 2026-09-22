@@ -125,7 +125,7 @@ The same narrow trace found **0** calls carrying a `bundle_30` argument while th
 
 ## Local slice around `0x14ce666..0x14ce717`
 
-`analysis/restrictions-local-slice-a79a7e.md` narrows the next edge.
+`analysis/restrictions-local-slice-a79a7e.md` narrowed the next edge.
 
 The slice contained 64 local instructions and 6 calls. The key calls are:
 
@@ -134,7 +134,7 @@ The slice contained 64 local instructions and 6 calls. The key calls are:
 14ce6b8  basic_string copy ctor(rdi=rsp+0x2b0, rsi=r12)
 14ce6d4  operator new
 14ce717  a79a7e(rdi=rsp+0x3a0, rsi=rsp+0x2b1, rcx=rsp+0x350)
-14ce72c  helper(rdi=rsp+0x230, rsi=rsp+0x3a0)
+14ce72c  17add2a(rdi=rsp+0x230, rsi=rsp+0x3a0)
 14ce739  basic_string dtor(rdi=rsp+0x3a0)
 ```
 
@@ -162,7 +162,85 @@ a79af1  mov rcx, r15
 a79af4  call 17d5775
 ```
 
-That means the next useful trace should follow `17d5775` and/or the post-`a79a7e` call `14ce72c -> 17add2a`, rather than treating `a79a7e` itself as the final owner.
+## Follow-up helper trace
+
+`analysis/restrictions-followup-helpers.md` traced the two immediate follow-up helpers plus the formatter reached by `a79a7e`.
+
+Helper summary:
+
+```text
+17add2a: direct xrefs 7, arg refs 6, arg-derived writes 4, calls 20
+17d5775: direct xrefs 64, arg refs 3, arg-derived writes 0, calls 8
+a79ce6 : direct xrefs 17, arg refs 2, arg-derived writes 1, calls 32
+```
+
+`17add2a` at the local callsite uses:
+
+```text
+rdi = rsp+0x230
+rsi = rsp+0x3a0
+```
+
+and writes an object at the first argument:
+
+```text
+17add3c  mov [rdi], rax
+17add7b  mov [rbx+0x8], r14
+```
+
+It reads the second argument as a small-string-like object:
+
+```text
+17add4e  test BYTE PTR [r15], 0x1
+17add54  mov r15, [r15+0x10]
+```
+
+So `17add2a` builds a post-`a79a7e` object at `rsp+0x230`; it is not itself the provider bundle writer.
+
+`17d5775` is more consistent with string/encoding conversion: it receives `a79a7e`'s original `rdi/rsi` as `rdx/rcx`, reads bytes from `arg:rdx`, and produced no arg-derived writes in the bounded window. This makes it less likely to be the Restrictions setup source.
+
+## Post-`17add2a` handoff
+
+`analysis/restrictions-post-add2a-handoff.md` found the concrete handoff back into the shared setup bundle.
+
+Immediately after `17add2a`, the caller destroys temporary strings, checks the object at `rsp+0x230`, and then does:
+
+```text
+14ce75d  lea rdi, [rsp+0x2e0]
+14ce765  lea rsi, [rsp+0x230]
+14ce76d  call 166103c
+```
+
+The tracked call state is:
+
+```text
+14ce76d: rdi=bundle_base(rsp+0x2e0), rsi=post_add2a_obj(rsp+0x230)
+```
+
+This is now the best concrete candidate for the setup-bundle mutation path.
+
+Inside `166103c`, the helper builds a local descriptor object from `rsi`, then calls virtual methods on the bundle object passed as `rdi`:
+
+```text
+166105d  mov [r14+0x8], rsi
+166107b  mov rbx, rdi
+1661086  mov rax, [rdi]
+1661089  call [rax+0x10]
+166108c  mov rax, [rbx]
+166108f  mov rdi, rbx
+1661092  mov rsi, r14
+1661095  call [rax+0x30]
+166109c  mov rax, [rbx]
+16610a2  call [rax+0x18]
+```
+
+The important part is that the actual mutation is probably hidden behind the bundle object's vtable calls, especially:
+
+```text
+bundle.vtable+0x30(bundle, local_descriptor)
+```
+
+That means the next trace should resolve the vtable used by the stack bundle object at `rsp+0x2e0`, then inspect its `+0x30` method. This is stronger than continuing through generic string helpers.
 
 ## Restrictions factory consumption
 
@@ -181,10 +259,12 @@ Current best path:
 ```text
 provider-vector caller rsp+0x310
   -> local object materialized at 14ce666
-  -> object fields around rcx-0x30..rcx+0x20
-  -> local calls 14ce6b8 / 14ce6d4 / 14ce717 / 14ce72c
-  -> likely deeper helper 17d5775 or 17add2a
-  -> RestrictionsSetupImpl rdx+0x30
+  -> local calls 14ce6b8 / 14ce6d4 / 14ce717
+  -> 17add2a builds object at rsp+0x230
+  -> 14ce76d calls 166103c(bundle=rsp+0x2e0, object=rsp+0x230)
+  -> 166103c calls bundle.vtable+0x30(bundle, local_descriptor)
+  -> provider +0x28 receives rdx=rsp+0x2e0
+  -> RestrictionsSetupImpl reads rdx+0x30
   -> factory constructor rcx
   -> Restrictions child +0x18
   -> child +0x38 / b411a4
@@ -193,13 +273,19 @@ provider-vector caller rsp+0x310
 
 ## Current limitation
 
-The traces do **not** yet prove the exact write source for the value that Restrictions reads from `rdx+0x30`. They prove the call-boundary mapping and narrow the local materialization site, but the value source still needs deeper slicing through the local call chain.
+The traces now prove the handoff from the local `rsp+0x230` object into the setup bundle interface, but they do **not** yet resolve the concrete vtable/method behind `bundle.vtable+0x30`. The next target is therefore:
+
+```text
+rsp+0x2e0 vtable source
+  -> method at +0x30
+  -> whether it writes setup_bundle+0x30
+```
 
 Most likely next targets:
 
-1. inspect `14ce72c -> 17add2a` because it consumes the `rsp+0x3a0` object returned/built after `a79a7e`,
-2. inspect helper `17d5775` reached by `a79a7e`, because `a79a7e` forwards `rdi/rsi` there as `rdx/rcx`,
-3. determine whether either helper stores into the structure whose later provider-call alias is `rsp+0x2e0 + 0x30`.
+1. identify where `[rsp+0x2e0]` gets its vtable,
+2. resolve the concrete target of `[bundle.vtable+0x30]` used at `1661095`,
+3. inspect whether that method stores the object/reference that becomes `rdx+0x30` for `RestrictionsSetupImpl`.
 
 ## Evidence files
 
@@ -208,6 +294,8 @@ Most likely next targets:
 - `analysis/restrictions-bundle30-stackslot.md`
 - `analysis/restrictions-bundle30-consumers.md`
 - `analysis/restrictions-local-slice-a79a7e.md`
+- `analysis/restrictions-followup-helpers.md`
+- `analysis/restrictions-post-add2a-handoff.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
