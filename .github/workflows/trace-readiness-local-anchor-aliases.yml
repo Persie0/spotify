@@ -1,0 +1,156 @@
+name: Trace readiness local anchor aliases
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-readiness-local-anchor-aliases.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/ralias
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/ralias
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Trace local object aliases
+        run: |
+          SO=/tmp/ralias/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/ralias/all.dis
+          python3 - <<'PY' > analysis/readiness-local-anchor-aliases.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/ralias/liborbit-jni-spotify.so')
+          lines=Path('/tmp/ralias/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with so.open('rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def ix(a): return bisect.bisect_left(addrs,a)
+          def ctx(a,b=20,n=30):
+            j=ix(a)
+            return '\n'.join('    '+x[3] for x in ins[max(0,j-b):min(len(ins),j+n+1)])
+          fr=fde(0xe91e06)
+          body=[]
+          if fr:
+            j=ix(fr[0])
+            for x in ins[j:]:
+              if x[0]>=fr[1]:break
+              body.append(x)
+
+          aliases={
+            0x260:'base',
+            0x618:'base+0x3b8 provider',
+            0x688:'base+0x428 readiness wrapper',
+            0x6d0:'base+0x470 optional/state',
+            0x7d0:'base+0x570 dependency',
+            0x7f8:'base+0x598 state/control',
+          }
+          print('# Readiness caller-local anchor aliases')
+          print()
+          print('Concrete alias: e91df6 passes caller rsp+0x260 as e92f2c rsi/r13.')
+          print('Therefore every owner-relative field in e92f2c maps to caller stack base 0x260 + field offset.')
+          print()
+          for off,label in aliases.items():
+            print(f'- rsp+0x{off:x}: {label}')
+          print()
+          print('Caller FDE:',tuple(hex(x) for x in fr) if fr else None)
+          print()
+
+          # Exact direct refs for each alias.
+          for off,label in aliases.items():
+            print(f'## Exact direct refs: rsp+0x{off:x} ({label})')
+            hits=[]
+            needle=f'rsp+0x{off:x}'
+            for a,i,op,l in body:
+              if needle in op:
+                hits.append((a,op,l))
+                print(l)
+            if not hits: print('(none)')
+            print()
+            for a,op,l in hits[:12]:
+              print(f'### context 0x{a:x}')
+              print(ctx(a,18,26)); print()
+
+          # Track address-taking of base and broad block-copy candidates.
+          print('## Address-taking of the rsp+0x260 base')
+          for a,i,op,l in body:
+            if re.search(r'lea\s+r(?:ax|bx|cx|dx|si|di|bp|8|9|10|11|12|13|14|15),\[rsp\+0x260\]',op):
+              print(f'### 0x{a:x}: {op}')
+              print(ctx(a,24,35)); print()
+
+          print('## Calls immediately following base-address materialization')
+          for idx,(a,i,op,l) in enumerate(body):
+            if 'rsp+0x260]' in op and op.startswith('lea'):
+              for y in body[idx+1:idx+20]:
+                if y[2].startswith('call'):
+                  print(f'### base @0x{a:x} -> call @0x{y[0]:x}: {y[2]}')
+                  print(ctx(y[0],22,30)); print()
+                  break
+
+          print('## Wide XMM/qword copies covering anchor neighborhoods')
+          # Capture nearby aligned copies around concrete anchor offsets.
+          for a,i,op,l in body:
+            mm=re.search(r'\[rsp\+0x([0-9a-f]+)\]',op)
+            if not mm: continue
+            off=int(mm.group(1),16)
+            if (0x5e0 <= off <= 0x820) and any(k in op for k in ('movaps','movups','movdqa','movdqu','mov    QWORD PTR')):
+              print(l)
+
+          print()
+          print('## Calls with destination/address inside rsp+0x240..0x280')
+          for idx,(a,i,op,l) in enumerate(body):
+            if op.startswith('lea'):
+              mm=re.search(r'\[rsp\+0x([0-9a-f]+)\]',op)
+              if not mm: continue
+              off=int(mm.group(1),16)
+              if 0x240<=off<=0x280:
+                for y in body[idx+1:idx+12]:
+                  if y[2].startswith('call'):
+                    print(f'### addr 0x{off:x} @0x{a:x} -> call 0x{y[0]:x}: {y[2]}')
+                    print(ctx(y[0],16,24)); print()
+                    break
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-local-anchor-aliases.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace readiness local anchor aliases"
+          git pull --rebase origin main
+          git push
