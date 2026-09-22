@@ -1,0 +1,132 @@
+name: Resolve readiness concrete service vtables
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/resolve-readiness-concrete-service-vtables.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input /tmp/rsvc
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir input
+          unzip -j input/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rsvc
+
+      - name: Install helper
+        run: python3 -m pip install --quiet pyelftools
+
+      - name: Resolve vtables
+        run: |
+          SO=/tmp/rsvc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rsvc/all.dis
+          readelf -rW "$SO" > /tmp/rsvc/rel.txt
+          python3 - <<'PY' > analysis/readiness-concrete-service-vtables.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          lines=Path('/tmp/rsvc/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+            m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+            if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          with open('/tmp/rsvc/liborbit-jni-spotify.so','rb') as f:
+            elf=ELFFile(f); dwarf=elf.get_dwarf_info(); fdes=[]; rel={}
+            for sec in elf.iter_sections():
+              if sec['sh_type'] not in ('SHT_RELA','SHT_REL'): continue
+              for rr in sec.iter_relocations():
+                add=rr.entry.get('r_addend')
+                if add is not None: rel[rr['r_offset']]=add
+            for e in dwarf.EH_CFI_entries():
+              if isinstance(e,FDE):
+                a=e['initial_location']; z=a+e['address_range']
+                if z>a:fdes.append((a,z))
+          fdes.sort(); starts=[x[0] for x in fdes]
+          def fde(a):
+            k=bisect.bisect_right(starts,a)-1
+            return fdes[k] if k>=0 and fdes[k][0]<=a<fdes[k][1] else None
+          def ix(a):return bisect.bisect_left(addrs,a)
+          def body(a):
+            fr=fde(a)
+            return [] if not fr else ins[ix(fr[0]):ix(fr[1])]
+          def print_body(a):
+            fr=fde(a); print('FDE=',tuple(hex(x) for x in fr) if fr else None)
+            if fr:
+              for x in body(a):print(x[3])
+          def aps_in(a):
+            out=[]
+            for x in body(a):
+              m=re.search(r'#\s+(18[0-9a-f]{5})\b',x[2])
+              if m:
+                v=int(m.group(1),16)
+                if v not in out:out.append(v)
+            return out
+          def table(ap,maxoff=0x90):
+            print(f'AP 0x{ap:x}')
+            for off in range(0,maxoff+1,8):
+              t=rel.get(ap+off)
+              print(f'  +0x{off:x}: '+(f'0x{t:x}' if t is not None else 'NO_RELOC'))
+
+          print('# Readiness concrete service vtables')
+          print()
+          print('## RestrictionsSetupImpl constructor 0x10aba36')
+          print_body(0x10aba36)
+          print()
+          raps=aps_in(0x10aba36)
+          print('## Restrictions constructor AP materializations')
+          for ap in raps: table(ap,0x88)
+          print()
+
+          print('## Restrictions AP slot method bodies (+0x28, +0x38, +0x68 where present)')
+          for ap in raps:
+            for off in (0x28,0x30,0x38,0x68):
+              t=rel.get(ap+off)
+              if t:
+                print(f'### AP 0x{ap:x} +0x{off:x} -> 0x{t:x}')
+                print_body(t); print()
+
+          print('## AutomixSetupImpl factory 0xc05d20')
+          print_body(0xc05d20)
+          print()
+          aaps=aps_in(0xc05d20)
+          print('## Automix factory AP materializations')
+          for ap in aaps: table(ap,0x88)
+          print()
+
+          print('## Automix allocation/AP contexts')
+          for x in body(0xc05d20):
+            if '_Znwm@plt' in x[2] or re.search(r'#\s+18[0-9a-f]{5}\b',x[2]):
+              j=ix(x[0])
+              print(f'### 0x{x[0]:x}: {x[2]}')
+              for y in ins[max(0,j-10):min(len(ins),j+18)]:print(y[3])
+              print()
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f analysis/readiness-concrete-service-vtables.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Resolve readiness concrete service vtables"
+          git pull --rebase origin main
+          git push
