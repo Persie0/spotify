@@ -1,0 +1,180 @@
+name: Trace Restrictions builder sink finalization
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-builder-sink.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace builder sink/finalization
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-builder-sink-finalization.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          lines = dis.splitlines()
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns=[]
+          for line in lines:
+              m=insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+
+          def window(start, end=None, count=None):
+              ws=[x for x in insns if x[0] >= start and (end is None or x[0] < end)]
+              return ws[:count] if count else ws
+
+          def fmt(ws, max_lines=160):
+              rows=[l for _,l,_ in ws[:max_lines]]
+              if len(ws)>max_lines:
+                  rows.append(f'... truncated {len(ws)-max_lines} more instructions ...')
+              return '```text\n' + ('\n'.join(rows) if rows else '(none)') + '\n```\n'
+
+          reg_re = r'r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)'
+
+          def analyze(start, end, name, initial):
+              ws=window(start,end)
+              regs=dict(initial)
+              refs=[]; writes=[]; calls=[]; aliases=[]; field_writes=[]; child_hits=[]
+              for addr,line,text in ws:
+                  # aliases from mov reg, reg
+                  m=re.search(rf'\bmov\s+({reg_re}),\s*({reg_re})\b', text)
+                  if m and m.group(2) in regs:
+                      regs[m.group(1)] = regs[m.group(2)]
+                      aliases.append((addr, f'{m.group(1)}={regs[m.group(1)]}', line))
+                  # lea reg,[tracked+off]
+                  m=re.search(rf'\blea\s+({reg_re}),\s*\[([^\]]+)\]', text)
+                  if m:
+                      dst, mem = m.group(1), m.group(2)
+                      for r, origin in list(regs.items()):
+                          if re.search(rf'\b{re.escape(r)}\b', mem):
+                              regs[dst]=f'addr({origin}:{mem})'
+                              aliases.append((addr, f'{dst}={regs[dst]}', line))
+                              break
+                  # mov reg,[tracked]
+                  m=re.search(rf'\bmov\s+({reg_re}),\s*(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR )?\[([^\]]+)\]', text)
+                  if m:
+                      dst, mem=m.group(1), m.group(2)
+                      for r, origin in list(regs.items()):
+                          if re.search(rf'\b{re.escape(r)}\b', mem):
+                              regs[dst]=f'load({origin}:{mem})'
+                              aliases.append((addr, f'{dst}={regs[dst]}', line))
+                              break
+                  # memory refs/writes through tracked regs
+                  for r,origin in list(regs.items()):
+                      if re.search(rf'\[[^\]]*\b{re.escape(r)}\b[^\]]*\]', text):
+                          loc=re.search(r'\[([^\]]+)\]', text).group(1)
+                          is_write=bool(re.match(r'\b(?:mov|movups|movdqu|and|or|xor|add|sub|inc|dec)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', text))
+                          (writes if is_write else refs).append((addr, origin, loc, line))
+                          if is_write:
+                              field_writes.append((addr, origin, loc, line))
+                              if '+0x18' in loc or '-0x18' in loc:
+                                  child_hits.append((addr, origin, loc, line))
+                  if 'call' in text:
+                      args=[]
+                      for arg in ['rdi','rsi','rdx','rcx','r8','r9','rax','rbx','r12','r13','r14','r15']:
+                          if arg in regs:
+                              args.append(f'{arg}={regs[arg]}')
+                      if args:
+                          calls.append((addr, ', '.join(args), line))
+              return dict(name=name,start=start,end=end,ws=ws,refs=refs,writes=writes,calls=calls,aliases=aliases,field_writes=field_writes,child_hits=child_hits)
+
+          traces=[]
+          traces.append(analyze(0xa9ca1a, 0xa9cb80, 'a9ca1a builder/string setup helper', {'rdi':'output builder object','rsi':'input arg rsi','rdx':'input arg rdx'}))
+          traces.append(analyze(0xa7b624, 0xa7b700, 'a7b624 cleanup/finalizer helper', {'rdi':'wrapper stack object'}))
+          traces.append(analyze(0x165c600, 0x165c67e, '165c600 append/copy with sink refill', {'rdi':'builder/output object','rsi':'source bytes','rdx':'byte count'}))
+          traces.append(analyze(0x10abfc0, 0x10ac120, '10aba36 post slot-wrapper calls', {'rbx':'child object','rbp':'bundle30_slot','r12':'load(bundle30_slot)','r14':'unknown/current object'}))
+          traces.append(analyze(0x10ac120, 0x10ac260, '10aba36 later finalization window', {'rbx':'child object','rbp':'bundle30_slot','r12':'load(bundle30_slot)','r14':'unknown/current object'}))
+
+          # Specific sink call context from 165c600.
+          sink_ctx=[]
+          ws=window(0x165c600,0x165c67e)
+          for i,(addr,line,text) in enumerate(ws):
+              if addr==0x165c648:
+                  sink_ctx=ws[max(0,i-10):i+6]
+                  break
+
+          md=[]
+          md.append('# Restrictions builder sink/finalization trace\n\n')
+          md.append('Purpose: follow the edge below the builder/buffer emit helpers. Previous traces showed `0x165dd40` and branch helpers only write a builder/output buffer. This trace checks the sink/refill interface at `builder+0x18` and later constructor finalization around `0x10aba36`.\n\n')
+          md.append('## Key sink call in `165c600`\n\n')
+          md.append(fmt(sink_ctx, 40))
+          md.append('Interpretation target: `builder+0x18` is loaded as a sink/interface object, then `[sink.vtable+0x10]` is called with pointers to builder output pointer/capacity fields.\n\n')
+          md.append('## Summary\n\n')
+          md.append('| window | refs | writes | calls with tracked args | `+0x18` writes/hits | interpretation |\n|---|---:|---:|---:|---:|---|\n')
+          for tr in traces:
+              interp=''
+              if '165c600' in tr['name']:
+                  interp='buffer append/copy; sink refill through builder+0x18 when capacity runs out'
+              elif 'a9ca1a' in tr['name']:
+                  interp='builder/string setup candidate'
+              elif 'a7b624' in tr['name']:
+                  interp='cleanup/finalizer candidate'
+              else:
+                  interp='constructor finalization window'
+              md.append(f"| `{tr['name']}` | {len(tr['refs'])} | {len(tr['writes'])} | {len(tr['calls'])} | {len(tr['child_hits'])} | {interp} |\n")
+          md.append('\n')
+
+          for tr in traces:
+              md.append(f"## `{tr['name']}`\n\n")
+              md.append(fmt(tr['ws'], 180))
+              md.append('### Writes/hits of tracked objects\n')
+              if tr['writes']:
+                  md.append('| addr | origin | mem | instruction |\n|---:|---|---|---|\n')
+                  for addr,origin,loc,line in tr['writes'][:100]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No tracked writes in scanned window.\n')
+              md.append('\n### Calls with tracked args\n')
+              if tr['calls']:
+                  md.append('| addr | tracked args | instruction |\n|---:|---|---|\n')
+                  for addr,args,line in tr['calls'][:80]:
+                      md.append(f'| `{addr:#x}` | `{args}` | `{line.strip()}` |\n')
+              else:
+                  md.append('No calls with tracked args in scanned window.\n')
+              if tr['child_hits']:
+                  md.append('\n### +0x18 writes/hits\n')
+                  md.append('| addr | origin | mem | instruction |\n|---:|---|---|---|\n')
+                  for addr,origin,loc,line in tr['child_hits'][:50]:
+                      md.append(f'| `{addr:#x}` | `{origin}` | `{loc}` | `{line.strip()}` |\n')
+              md.append('\n')
+
+          md.append('## Interpretation\n\n')
+          md.append('If the sink/finalization windows only touch stack builder objects and buffer pointers, the remaining semantic bridge is after serialization: a later constructor/factory step must wrap or store the materialized output into the object exposed by `b411a4`. Direct writes to `child+0x18` in these windows would close that edge.\n')
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-builder-sink-finalization.md
+          git commit -m 'Trace Restrictions builder sink finalization' || exit 0
+          git push
