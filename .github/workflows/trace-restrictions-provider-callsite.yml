@@ -1,0 +1,158 @@
+name: Trace Restrictions provider callsite
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-provider-callsite.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restr-callsite
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restr-callsite
+          unzip -j /tmp/restr-callsite/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restr-callsite
+      - name: Trace Restrictions callsite
+        run: |
+          SO=/tmp/restr-callsite/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restr-callsite/all.dis
+          readelf -rW "$SO" > /tmp/restr-callsite/rel.txt
+          python3 - <<'PY' > analysis/restrictions-provider-callsite.md
+          from pathlib import Path
+          import re, bisect
+
+          dis = Path('/tmp/restr-callsite/all.dis').read_text(errors='replace').splitlines()
+          ins = []
+          for i, line in enumerate(dis):
+              m = re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$', line)
+              if m:
+                  ins.append((int(m.group(1),16), i, m.group(2), line))
+          addrs = [x[0] for x in ins]
+          def idx(addr): return bisect.bisect_left(addrs, addr)
+          def ctx(addr, before=28, after=18):
+              j = idx(addr)
+              return '\n'.join('    ' + x[3] for x in ins[max(0, j-before):min(len(ins), j+after+1)])
+          def prev_write(window, reg):
+              pat = re.compile(rf'\b(?:mov|lea|xor|pop)\s+{reg}\b|\bmov\s+{reg}d\b|\bmov\s+{reg[1:]}\b')
+              for a,i,op,line in reversed(window):
+                  if pat.search(op):
+                      return (a, op, line)
+              return None
+          def stack_base_from_source(reg, call_index):
+              # Resolve one simple step such as rdx <- r14, r14 <- lea [rsp+K].
+              window = ins[max(0, call_index-70):call_index+1]
+              w = prev_write(window, reg)
+              if not w:
+                  return None, None
+              a, op, line = w
+              m = re.search(r'lea\s+' + re.escape(reg) + r',\[rsp\+0x([0-9a-f]+)\]', op)
+              if m:
+                  return int(m.group(1), 16), line
+              m = re.search(r'mov\s+' + re.escape(reg) + r',([a-z0-9]+)', op)
+              if m and m.group(1) in ('r14','r15','r13','r12','rbx','rbp'):
+                  return stack_base_from_source(m.group(1), idx(a))
+              return None, line
+          def stack_write_lines(base, call_index, back=220):
+              if base is None:
+                  return []
+              targets = {base+o for o in (0,8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x78,0x80,0x98)}
+              out=[]
+              for a,i,op,line in ins[max(0, call_index-back):call_index]:
+                  for t in targets:
+                      if f'[rsp+0x{t:x}]' in op:
+                          dst = op.split(',',1)[0]
+                          if '[rsp+' in dst or op.startswith(('lea','mov','and','xor','movups','movaps','movdqa','movdqu')):
+                              out.append((a,line))
+                          break
+              return out
+
+          provider_start, provider_end = 0x14cdc2a, 0x14d4d4c
+          region = [x for x in ins if provider_start <= x[0] < provider_end]
+          print('# Restrictions provider callsite trace')
+          print()
+          print('Known Restrictions provider identity from earlier reports:')
+          print('- provider descriptor AP: `0x184ca50`')
+          print('- provider ID: `0x9e`')
+          print('- provider name: `RestrictionsSetupImpl`')
+          print('- provider factory: `0x10ab7ae`')
+          print('- ranked provider-vector caller FDE: `0x14cdc2a..0x14d4d4c`')
+          print()
+          print('The goal is to identify which provider-vector call invokes the Restrictions factory and what stack/local setup bundle is passed as `rdx`, especially its `+0x30` source.')
+
+          print('\n## Direct xrefs / materializations for Restrictions descriptor and factory')
+          needles = ('184ca50', '10ab7ae', '0x9e')
+          for a,i,op,line in ins:
+              if any(n in line for n in needles):
+                  print(f'### 0x{a:x}: {op}')
+                  print(ctx(a, 20, 20)); print()
+
+          print('\n## Provider +0x28 calls in ranked provider-vector caller')
+          calls=[]
+          for a,i,op,line in region:
+              if re.search(r'call\s+QWORD PTR \[rax\+0x28\]', op):
+                  calls.append((a,i,op,line))
+          print(f'Total calls: {len(calls)}')
+          for n,(a,i,op,line) in enumerate(calls,1):
+              win = ins[max(0, idx(a)-45):idx(a)+1]
+              rsi = prev_write(win, 'rsi')
+              rdx = prev_write(win, 'rdx')
+              rdi = prev_write(win, 'rdi')
+              base, base_line = stack_base_from_source('rdx', idx(a))
+              print(f'### call #{n} at 0x{a:x}')
+              print(f'- last rdi write: `{rdi[2].strip() if rdi else "none"}`')
+              print(f'- last rsi write: `{rsi[2].strip() if rsi else "none"}`')
+              print(f'- last rdx write: `{rdx[2].strip() if rdx else "none"}`')
+              print(f'- resolved rdx stack base: `{("rsp+0x%x" % base) if base is not None else "unresolved"}`')
+              if base_line:
+                  print(f'- base evidence: `{base_line.strip()}`')
+              print()
+              print(ctx(a, 36, 12)); print()
+              sw = stack_write_lines(base, idx(a))
+              if sw:
+                  print('#### candidate setup-bundle stack writes before call')
+                  for _, l in sw[-80:]:
+                      print('    ' + l)
+                  print()
+              else:
+                  print('#### candidate setup-bundle stack writes before call')
+                  print('    none found for resolved stack-base offsets in the scan window')
+                  print()
+
+          print('\n## Candidate descriptor vector slots near provider calls')
+          for pat in ('[r13+0xa0]', '[r15+0x18]', '[r15+0x30]', '[r15+0x38]', '[r15+0x48]', '[r15+0x78]', '[rbp+0x98]', '[rbp+0x20]', '[rbp+0x30]', '[r12+0x30]', '[r12+0x48]'):
+              print(f'### {pat}')
+              for a,i,op,line in region:
+                  if pat in op:
+                      print('    ' + line)
+              print()
+
+          print('\n## Factory body entry reminder: RestrictionsSetupImpl loads from its bundle')
+          print('The Restrictions factory uses `rdx` as its shared bundle alias (`rbx=rdx`) and early-loads fields such as `[rbx+0x30]`, `[rbx+0x60]`, `[rbx+0x98]`, and `[rbx+0x68]`.')
+          print(ctx(0x10ab824, 20, 45))
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-provider-callsite.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions provider callsite"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
