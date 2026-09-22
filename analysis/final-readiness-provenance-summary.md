@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected.
+This is the compact state of the final availability/export investigation after the `0x6b0` and TimelineAds-wrapper aliases were rejected, and after the Restrictions setup-bundle source was resolved.
 
 ## Correct high-level chain
 
@@ -83,7 +83,7 @@ The current method chain is:
 
 ## Restrictions-derived final source
 
-The delegated source is now constrained to the Restrictions registry path:
+The delegated source is constrained to the Restrictions registry path:
 
 ```text
 registry ID 0x9e
@@ -97,11 +97,49 @@ registry ID 0x9e
       -> factory supplies constructor rcx from input dependency bundle +0x30
 ```
 
-This means the final `state+0x40` dependency used by `fd381a` is now a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
+The setup-bundle source for that constructor argument is now resolved. `bundle+0x30` is not an independent direct field store; it is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
 
-## What is still open
+```text
+provider-vector caller
+  -> constructs setup bundle at rsp+0x2e0
+  -> rcx = rsp+0x310 = bundle+0x30
+  -> [bundle+0x18] = bundle+0x30
+  -> 166103c(bundle, post_add2a_obj)
+  -> bundle.vtable+0x30 = 0x153cbfc
+  -> 153cbfc selects bundle+0x18 vector subobject
+  -> 1507a9e appends a newly allocated slot object
+  -> 1507b1a stores that object pointer through [bundle+0x18] into bundle+0x30
+  -> 153d2a4 fills that object from the descriptor stream
+  -> RestrictionsSetupImpl factory reads [rdx+0x30]
+  -> factory copies it to rsp+0x40
+  -> factory passes it as rcx into the child/service constructor path
+  -> child +0x38 / b411a4 returns child+0x18
+```
 
-The remaining unresolved edge has narrowed to the object supplied from the Restrictions factory dependency bundle `+0x30` into child `+0x18`, and how that source ultimately implements or feeds the `state+0x40 / virtual +0x140` discriminator used by `fd381a`.
+The factory-consumption evidence is:
+
+```text
+10ab7c2  mov rbx, rdx
+10ab824  mov rax, [rbx+0x30]
+10ab828  mov [rsp+0x40], rax
+...
+10ab93c  mov rdi, rbx
+10ab93f  mov rsi, [rsp+0x58]
+10ab944  mov rdx, [rsp+0x50]
+10ab949  mov rcx, [rsp+0x40]
+10ab94e  mov r9,  [rsp+0x48]
+
+b411a4   mov rax, [rdi+0x18]
+b411a8   ret
+```
+
+This means the final `state+0x40` dependency used by `fd381a` is a **RestrictionsSetupImpl-derived readiness source**. It should not be attributed to TimelineAds owner `+0x50`, the `0x18678f8` TimelineAds wrapper, or the old raw `0x6b0` interpretation.
+
+## What remains open
+
+The previously open setup-bundle `+0x30 -> child+0x18` edge is closed.
+
+The remaining open area is deeper semantic interpretation: exactly how the object returned through `child+0x18` implements or feeds the `state+0x40 / virtual +0x140` readiness/mode discriminator used by `fd381a`.
 
 The AdsRuntime/TimelineAds readiness graph is still proven as an execution-side readiness bridge:
 
@@ -124,4 +162,7 @@ But that graph must not be treated as the final availability-export receiver unt
 - `analysis/readiness-concrete-service-vtables.md`
 - `analysis/readiness-registry-services.md`
 - `analysis/restrictions-readiness-objects.md`
+- `analysis/restrictions-provider-callsite-summary.md`
+- `analysis/restrictions-inline-vector-layout.md`
+- `analysis/restrictions-factory-consumption.md`
 - `docs/15-skip-ad-signal.md`
