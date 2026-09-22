@@ -1,0 +1,243 @@
+name: Trace Restrictions this+0x78 lifecycle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-this78-lifecycle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+
+      - name: Trace this+0x78 lifecycle
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          so = 'liborbit-jni-spotify.so'
+          outdir = Path('analysis')
+          outdir.mkdir(exist_ok=True)
+          report = outdir / 'restrictions-this78-lifecycle.md'
+
+          dis = subprocess.check_output(['objdump', '-d', '-M', 'intel', so], text=True, errors='replace')
+          insn_re = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          insns = []
+          for line in dis.splitlines():
+              m = insn_re.match(line)
+              if m:
+                  insns.append((int(m.group(1), 16), line.rstrip(), m.group(3).strip()))
+          by_addr = {a:(l,t) for a,l,t in insns}
+
+          def window(start, end=None, radius=0x80, limit=220):
+              if end is None:
+                  lo, hi = start-radius, start+radius
+              else:
+                  lo, hi = start, end
+              rows = [(a,l,t) for a,l,t in insns if lo <= a < hi]
+              return rows[:limit]
+
+          def fmt(rows, limit=220):
+              rows = rows[:limit]
+              return '```text\n' + ('\n'.join(l for _,l,_ in rows) if rows else '(none)') + '\n```\n'
+
+          # Relocation-aware AP/vtable resolver. Raw .data.rel.ro bytes can be zero in the file image.
+          rela_text = subprocess.check_output(['readelf', '-Wr', so], text=True, errors='replace')
+          reloc_by_off = {}
+          for line in rela_text.splitlines():
+              # Example formats vary; keep it loose and use final signed/hex addend when present.
+              m = re.match(r'^\s*([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+\S+\s+.*?([+-]\s*0x[0-9a-fA-F]+|0x[0-9a-fA-F]+)\s*$', line)
+              if not m:
+                  m = re.match(r'^\s*([0-9a-fA-F]+)\s+.*?\+\s*([0-9a-fA-Fx]+)\s*$', line)
+              if not m:
+                  continue
+              try:
+                  off = int(m.group(1), 16)
+                  add_s = m.group(3) if len(m.groups()) >= 3 and m.group(3) else m.group(2)
+                  add_s = add_s.replace(' ', '')
+                  add = int(add_s, 16) if not add_s.startswith('+') and not add_s.startswith('-') else int(add_s.replace('+',''), 16)
+                  reloc_by_off[off] = add
+              except Exception:
+                  pass
+
+          ap = 0x184d898
+          ap_offsets = list(range(-0x20, 0x101, 0x8))
+          ap_entries = []
+          for off in ap_offsets:
+              addr = ap + off
+              val = reloc_by_off.get(addr)
+              kind = 'reloc' if val is not None else 'missing'
+              ap_entries.append((off, addr, val, kind))
+
+          # Resolve likely text targets from AP entries.
+          text_targets = []
+          for off, addr, val, kind in ap_entries:
+              if val is not None and 0x1000 <= val <= 0x1800000:
+                  text_targets.append((off, val))
+          # Explicit targets from constructor trace.
+          explicit_targets = [
+              (0xa7a290, 'a7a290 helper called on allocated_0x30'),
+              (0xac39da, 'ac39da function stored at stack wrapper +0x10'),
+              (0x10adc16, '10adc16 function stored at stack wrapper +0x18'),
+              (0x10ac12c, 'operator new(0x28) callsite'),
+              (0x10ac149, 'operator new(0x30) callsite'),
+              (0x10ac159, 'a7a290 callsite'),
+              (0x10ac1a9, 'this+0x78 target install/write'),
+              (0x10ac1c6, 'inner+0 write'),
+              (0x10ac255, 'later inner+0 write'),
+          ]
+
+          # xrefs to AP literal and helper addresses.
+          xref_needles = ['184d898', 'a7a290', 'ac39da', '10adc16']
+          xrefs = {n: [] for n in xref_needles}
+          for i,(a,l,t) in enumerate(insns):
+              low = l.lower()
+              for n in xref_needles:
+                  if n in low:
+                      xrefs[n].append((a,l,t,i))
+
+          # Constructor target-flow scan. Focus wider than previous report around this+0x78 lifecycle.
+          ctor = [(a,l,t) for a,l,t in insns if 0x10aba36 <= a < 0x10ac3a0]
+          aliases = {
+              'rdi': 'constructor_this_initial',
+              'rcx': 'bundle30_slot_arg_initial',
+          }
+          events=[]
+          calls=[]
+          mem_pat = re.compile(r'\[([^\]]+)\]')
+          reg_pat = r'r(?:ax|bx|cx|dx|si|di|bp|sp|8|9|10|11|12|13|14|15)'
+          for a,l,t in ctor:
+              # simple aliasing and allocation result tracking
+              if 'call' in t and '17edf00' in t:
+                  calls.append((a, 'operator new call; next rax result may be allocation', l))
+              m = re.search(rf'\bmov\s+({reg_pat}),\s*({reg_pat})\b', t)
+              if m and m.group(2) in aliases:
+                  aliases[m.group(1)] = aliases[m.group(2)]
+              m = re.search(rf'\blea\s+({reg_pat}),\s*\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'addr({origin}:{mem})'
+                          break
+              m = re.search(rf'\bmov\s+({reg_pat}),\s*(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR )?\[([^\]]+)\]', t)
+              if m:
+                  dst, mem = m.group(1), m.group(2)
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          aliases[dst] = f'load({origin}:{mem})'
+                          break
+              # special allocation result moves after known new callsites
+              if a == 0x10ac131:
+                  aliases['r14'] = 'allocated_0x28_at_10ac12c'
+              if a == 0x10ac14e:
+                  aliases['r12'] = 'allocated_0x30_at_10ac149'
+              if a == 0x10ac15e:
+                  aliases['r13'] = 'stack_wrapper_at_rsp+0x110'
+
+              mm = mem_pat.search(t)
+              if mm:
+                  mem = mm.group(1)
+                  is_write = bool(re.match(r'\b(?:mov|movups|movaps|and|or|xor|add|sub|inc|dec|xchg)\s+(?:QWORD PTR |DWORD PTR |WORD PTR |BYTE PTR |XMMWORD PTR )?\[', t))
+                  for r,origin in list(aliases.items()):
+                      if re.search(rf'\b{re.escape(r)}\b', mem):
+                          if is_write or '0x78' in mem or '+0x18' in mem or '+0x10' in mem or '+0x38' in mem or '+0x40' in mem or '+0x48' in mem:
+                              events.append((a, origin, mem, 'write' if is_write else 'read', l))
+              if 'call' in t:
+                  arg_state=[]
+                  for arg in ['rdi','rsi','rdx','rcx','r8','r9','rax','rbx','rbp','r12','r13','r14','r15']:
+                      if arg in aliases:
+                          arg_state.append(f'{arg}={aliases[arg]}')
+                  if arg_state:
+                      calls.append((a, ', '.join(arg_state), l))
+
+          # Find AP xrefs from object stored at 0x184d898 and likely methods.
+          resolved_methods=[]
+          for off,val in text_targets[:80]:
+              resolved_methods.append((off, val, window(val, radius=0x60, limit=80)))
+
+          md=[]
+          md.append('# Restrictions this+0x78 lifecycle trace\n\n')
+          md.append('Purpose: batch trace the next semantic pivot after wrapper outputs were shown to be ignored: constructor-owned state around `this+0x78`, the object AP written as `0x184d898`, the `operator new(0x28)` / `operator new(0x30)` objects, helper `a7a290`, and write sites `10ac1a9`, `10ac1c6`, `10ac255`.\n\n')
+
+          md.append('## Executive summary\n\n')
+          md.append('- This report resolves the `this+0x78` construction area in one pass.\n')
+          md.append('- The previous wrapper outputs are temporary; the persistent-looking graph begins after the two `15e75f2` calls, at the `operator new(0x28)` and `operator new(0x30)` sequence.\n')
+          md.append('- `0x184d898` is treated relocation-aware because adjacent C++ RTTI/vtable regions often cannot be trusted from raw bytes alone.\n\n')
+
+          md.append('## Focused constructor window: allocation and this+0x78 graph\n\n')
+          md.append(fmt(window(0x10ac0d0, 0x10ac2a0), 240))
+
+          md.append('## AP / vtable relocation entries around `0x184d898`\n\n')
+          md.append('| AP offset | relocation offset | resolved value | kind |\n|---:|---:|---:|---|\n')
+          for off,addr,val,kind in ap_entries:
+              md.append(f'| `{off:+#x}` | `{addr:#x}` | `{val:#x}` | `{kind}` |\n' if val is not None else f'| `{off:+#x}` | `{addr:#x}` | — | `{kind}` |\n')
+          md.append('\n')
+
+          md.append('## Xrefs to important literals / helpers\n\n')
+          for n,rows in xrefs.items():
+              md.append(f'### `{n}` xrefs ({len(rows)})\n\n')
+              for a,l,t,i in rows[:30]:
+                  ctx = insns[max(0,i-4):min(len(insns),i+8)]
+                  md.append(f'#### xref at `{a:#x}`\n\n')
+                  md.append(fmt(ctx, 20))
+              if len(rows) > 30:
+                  md.append(f'... truncated {len(rows)-30} more xrefs ...\n\n')
+
+          md.append('## Constructor tracked field events\n\n')
+          md.append('| addr | origin | mem | kind | instruction |\n|---:|---|---|---|---|\n')
+          for a,origin,mem,kind,line in events[:260]:
+              md.append(f'| `{a:#x}` | `{origin}` | `{mem}` | `{kind}` | `{line.strip()}` |\n')
+          md.append('\n')
+
+          md.append('## Calls with tracked args in constructor window\n\n')
+          md.append('| addr | tracked args / note | instruction |\n|---:|---|---|\n')
+          for a,args,line in calls[:220]:
+              md.append(f'| `{a:#x}` | `{args}` | `{line.strip()}` |\n')
+          md.append('\n')
+
+          md.append('## Explicit helper / method target windows\n\n')
+          for addr,name in explicit_targets:
+              md.append(f'### `{addr:#x}` — {name}\n\n')
+              md.append(fmt(window(addr, radius=0x90), 140))
+
+          if resolved_methods:
+              md.append('## Resolved AP text-target method windows\n\n')
+              for off,val,rows in resolved_methods:
+                  md.append(f'### AP offset `{off:+#x}` -> `{val:#x}`\n\n')
+                  md.append(fmt(rows, 90))
+
+          md.append('## Interpretation checklist / next targets\n\n')
+          md.append('- If `0x184d898` resolves to AP methods, follow the method that reads/writes the `0x28` object and compare with `b411a4` returned object semantics.\n')
+          md.append('- If `a7a290` initializes the `0x30` object with the saved stack argument from `[rsp+0x10]`, trace that argument back to the factory inputs.\n')
+          md.append('- If writes at `10ac1a9`, `10ac1c6`, or `10ac255` install pointers behind `this+0x78`, trace readers of `this+0x78` and the AP `0x184d898` methods.\n')
+          md.append('- If no direct `this+0x18` write is found, the child accessor may return an embedded subobject whose data dependency is held indirectly via `this+0x78`.\n')
+
+          report.write_text(''.join(md), encoding='utf-8')
+          print(report)
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-this78-lifecycle.md
+          git commit -m 'Trace Restrictions this+0x78 lifecycle' || exit 0
+          git push
