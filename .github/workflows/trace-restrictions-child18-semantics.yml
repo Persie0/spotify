@@ -1,0 +1,139 @@
+name: Trace Restrictions child18 semantics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-child18-semantics.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-child18
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-child18
+          unzip -j /tmp/restrictions-child18/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-child18
+      - name: Trace child18 semantics
+        run: |
+          SO=/tmp/restrictions-child18/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-child18/all.dis
+          python3 - <<'PY' > analysis/restrictions-child18-semantics.md
+          import re
+          from pathlib import Path
+
+          dis = Path('/tmp/restrictions-child18/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          insts=[]
+          for line in dis:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          def window(addr, n=180):
+              if addr not in idx:
+                  return []
+              out=[]
+              for j in range(idx[addr], min(len(insts), idx[addr]+n)):
+                  out.append(insts[j])
+                  if j>idx[addr] and insts[j][2].startswith('ret'):
+                      break
+              return out
+
+          def fmt(lines):
+              return '\n'.join(' '+line for _,line,__ in lines)
+
+          def hits(lines, pats):
+              hs=[]
+              for a,line,text in lines:
+                  if any(p in text for p in pats):
+                      hs.append((a,line,text))
+              return hs
+
+          ctor = window(0x10aba36, 260)
+          accessor = window(0xb411a4, 16)
+          # Factory call context surrounding constructor.
+          factory_tail = [x for x in insts if 0x10ab918 <= x[0] <= 0x10ab990]
+
+          print('# Restrictions child+0x18 semantic trace')
+          print()
+          print('Purpose: continue after the factory-consumption closure by tracing constructor `0x10aba36`, the call target reached after the factory loads `[bundle+0x30]` into `rcx`. The goal is to confirm how that dependency becomes the child field returned by `0xb411a4`, and to classify whether the object itself has meaningful readiness methods or is just a dependency carrier.')
+          print()
+          print('## Factory callsite into constructor')
+          print()
+          print('At the callsite, the resolved setup-bundle slot is loaded into `rcx` before calling `0x10aba36`:')
+          print()
+          print('```text')
+          print(fmt(factory_tail))
+          print('```')
+          print()
+          print('Call ABI interpretation at `10ab97f -> 10aba36`:')
+          print()
+          print('```text')
+          print('rdi = newly allocated 0x80-byte Restrictions child/service object')
+          print('rsi = dependency from rsp+0x58')
+          print('rdx = dependency from rsp+0x50')
+          print('rcx = dependency from rsp+0x40 = factory read of [bundle+0x30]')
+          print('r8  = local erased/shared wrapper at rsp+0x90')
+          print('r9  = dependency from rsp+0x48')
+          print('additional constructor arguments are pushed on the stack')
+          print('```')
+          print()
+
+          print('## Constructor `0x10aba36` excerpt')
+          print()
+          print('```text')
+          print(fmt(ctor))
+          print('```')
+          print()
+          interesting = hits(ctor, ['[rdi+0x18]', '[rbx+0x18]', '[rdi+18]', '[rbx+18]', '89 4', 'mov    QWORD PTR [rbx+0x18]', 'mov    QWORD PTR [rdi+0x18]', 'mov    QWORD PTR [rbx+0x10]', 'mov    QWORD PTR [rdi+0x10]', '184da88', '184ca90'])
+          print('## Constructor field/storage hits')
+          print()
+          if interesting:
+              print('```text')
+              for _,line,__ in interesting:
+                  print(' '+line)
+              print('```')
+          else:
+              print('No simple textual `[rdi/rbx+0x18]` hit found in the bounded constructor window. Inspect the excerpt above for register moves/aliases.')
+          print()
+
+          print('## Child accessor `0xb411a4`')
+          print()
+          print('```text')
+          print(fmt(accessor))
+          print('```')
+          print()
+
+          print('## Current interpretation')
+          print()
+          print('```text')
+          print('Restrictions factory:')
+          print('  [bundle+0x30] -> rsp+0x40 -> rcx')
+          print('Constructor 0x10aba36:')
+          print('  expected to store/carry rcx into child state')
+          print('Accessor 0xb411a4:')
+          print('  returns [child+0x18]')
+          print('```')
+          print()
+          print('If the constructor excerpt shows `rcx` being stored at `child+0x18`, the semantic role of the Restrictions child is simple: it is a carrier/provider for the resolved dependency object. The readiness behavior then belongs to that dependency object or the later erased/shared wrapper chain, not to `b411a4` itself.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-child18-semantics.md
+          git commit -m "Trace Restrictions child18 semantics" || exit 0
+          git push
