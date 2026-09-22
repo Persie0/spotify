@@ -1,0 +1,130 @@
+name: Trace Restrictions slot relocations
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-slot-relocations.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-slot-reloc
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-slot-reloc
+          unzip -j /tmp/restrictions-slot-reloc/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-slot-reloc
+      - name: Trace slot relocations
+        run: |
+          SO=/tmp/restrictions-slot-reloc/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-slot-reloc/all.dis
+          readelf -Wr "$SO" > /tmp/restrictions-slot-reloc/relocs.txt
+          python3 - <<'PY' > analysis/restrictions-slot-relocations.md
+          import re
+          from pathlib import Path
+
+          base=Path('/tmp/restrictions-slot-reloc')
+          relocs=(base/'relocs.txt').read_text(errors='replace').splitlines()
+          dis=(base/'all.dis').read_text(errors='replace').splitlines()
+
+          # Example RELA line for R_X86_64_RELATIVE usually ends in the relocated target/addend.
+          rel_re=re.compile(r'^\s*([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+(R_X86_64_\S+)(?:\s+\S+\s+\S+)?\s*([0-9a-fA-F]+)?')
+          reloc_map={}
+          raw_lines={}
+          for line in relocs:
+              m=rel_re.match(line)
+              if not m:
+                  continue
+              off=int(m.group(1),16)
+              typ=m.group(3)
+              # take the last hex token as the addend/target for RELATIVE-style entries
+              toks=re.findall(r'\b[0-9a-fA-F]{5,}\b', line)
+              target=None
+              if typ == 'R_X86_64_RELATIVE' and len(toks)>=3:
+                  target=int(toks[-1],16)
+              elif len(toks)>=3:
+                  target=int(toks[-1],16)
+              reloc_map[off]=target
+              raw_lines[off]=line.rstrip()
+
+          inst_re=re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          insts=[]
+          for line in dis:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          addr_to_idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          slot_ap=0x187e2f8
+          offsets=[0x0,0x8,0x10,0x18,0x20,0x28,0x30,0x38,0x40,0x48,0x50,0x58,0x60,0x68,0x70,0x78,0x80,0x88,0x90,0x98,0xa0]
+          rows=[]
+          for off in offsets:
+              addr=slot_ap+off
+              rows.append((off, addr, reloc_map.get(addr), raw_lines.get(addr,'')))
+
+          targets=[(off,target) for off,addr,target,line in rows if off in (0x90,0x98) and target]
+
+          print('# Restrictions slot-object relocation trace')
+          print()
+          print('Purpose: raw `.data.rel.ro` bytes for AP `0x187e2f8` are zero before relocation, so this resolves dynamic relocations for the slot-object vtable entries. The wrapper helpers dispatch `slot_obj.vtable+0x90` and `slot_obj.vtable+0x98`; these entries must be read from the RELA table, not from raw file bytes.')
+          print()
+          print('## Relocated AP entries')
+          print()
+          print('| offset | relocation address | resolved target | relocation line |')
+          print('|---:|---:|---:|---|')
+          for off,addr,target,line in rows:
+              marker=' **semantic target**' if off in (0x90,0x98) else ''
+              tgt=f'0x{target:x}' if target else 'unresolved/0'
+              print(f'| `+0x{off:x}` | `0x{addr:x}` | `{tgt}`{marker} | `{line}` |')
+
+          for off,target in targets:
+              print(f'\n## AP +0x{off:x} resolved target 0x{target:x}')
+              if target not in addr_to_idx:
+                  print('\nTarget not found in disassembly.')
+                  continue
+              i=addr_to_idx[target]
+              window=[]
+              for j in range(i, min(len(insts), i+320)):
+                  a,line,text=insts[j]
+                  window.append((a,line,text))
+                  if j>i and (text.startswith('ret') or text.startswith('ud2') or text.startswith('int3')):
+                      break
+              print('\n### Body excerpt')
+              print('```text')
+              for _,line,_ in window[:220]:
+                  print(line)
+              if len(window)>220:
+                  print(f'... truncated {len(window)-220} instructions ...')
+              print('```')
+              print('\n### Calls and notable field refs')
+              print('| addr | instruction |')
+              print('|---:|---|')
+              for a,line,text in window:
+                  if 'call' in text or re.search(r'\[[^\]]+\+0x(8|10|18|20|28|30|38|40|48|50|58|60|68|70|78|80|88|90|98|a0|140|178)\]', text):
+                      print(f'| `0x{a:x}` | `{line}` |')
+
+          print('\n## Interpretation')
+          print()
+          if targets:
+              print('The slot-object wrapper dispatch targets are now resolved from relocations. These methods are the concrete semantic implementation behind constructor calls through `15e768e` and `15e75f2`.')
+          else:
+              print('No relocation targets were resolved for +0x90/+0x98. The parser may need adjustment for this binary\'s relocation format.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-slot-relocations.md
+          git commit -m "Trace Restrictions slot relocations" || exit 0
+          git push
