@@ -1,0 +1,157 @@
+name: Trace Restrictions bundle30 source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-bundle30-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+          sparse-checkout-cone-mode: true
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/rbundle
+          gh release download r1 --repo "${{ github.repository }}" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/rbundle
+          unzip -j /tmp/rbundle/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/rbundle
+      - name: Trace bundle producer
+        run: |
+          SO=/tmp/rbundle/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/rbundle/all.dis
+          readelf -rW "$SO" > /tmp/rbundle/rel.txt
+          python3 - <<'PY' > analysis/restrictions-bundle30-source.md
+          from pathlib import Path
+          import re,bisect
+          from elftools.elf.elffile import ELFFile
+          from elftools.dwarf.callframe import FDE
+
+          so=Path('/tmp/rbundle/liborbit-jni-spotify.so')
+          lines=Path('/tmp/rbundle/all.dis').read_text(errors='replace').splitlines()
+          ins=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$',l)
+              if m: ins.append((int(m.group(1),16),i,m.group(2),l))
+          addrs=[x[0] for x in ins]
+          def ix(a): return bisect.bisect_left(addrs,a)
+
+          with so.open('rb') as f:
+              elf=ELFFile(f); fdes=[]
+              try:
+                  for e in elf.get_dwarf_info().EH_CFI_entries():
+                      if isinstance(e,FDE):
+                          a=e['initial_location']; z=a+e['address_range']
+                          if z>a:fdes.append((a,z))
+              except Exception: pass
+          fdes.sort()
+          def fde(a):
+              best=None
+              for x in fdes:
+                  if x[0] <= a < x[1]:
+                      if best is None or (x[1]-x[0]) < (best[1]-best[0]): best=x
+              return best
+          def dump(a,before=24,after=40):
+              j=ix(a)
+              return '\n'.join(x[3] for x in ins[max(0,j-before):min(len(ins),j+after)])
+
+          print('# RestrictionsSetupImpl dependency bundle +0x30 source')
+          print()
+          print('Known sink:')
+          print('- descriptor AP 0x184ca50, +0x28 -> RestrictionsSetupImpl factory 0x10ab7ae')
+          print('- factory receives dependency bundle in rdx, saves it in rbx')
+          print('- 0x10ab824 loads [rbx+0x30], later passes that value as constructor rcx')
+          print('- resulting service/child chain carries it through AP 0x184ca90 -> AP 0x184da88 -> child+0x18')
+          print()
+
+          print('## Restrictions descriptor registration')
+          print(dump(0xb60b43,12,26))
+          print()
+
+          print('## Exact factory body entry')
+          print(dump(0x10ab7ae,2,32))
+          print()
+
+          # All writes involving table slot +0x4f0: service ID 0x9e slot.
+          print('## Stores/loads using displacement +0x4f0')
+          for k,x in enumerate(ins):
+              op=x[2]
+              if re.search(r'\[[^]]+\+0x4f0\]',op):
+                  direction='STORE' if re.match(r'(mov|movups|movdqa|movq)\s+(?:QWORD PTR |XMMWORD PTR |DWORD PTR |BYTE PTR )?\[[^]]+\+0x4f0\]',op) else 'REF'
+                  print(f'### {direction} 0x{x[0]:x}: {op}; FDE={fde(x[0])}')
+                  print('\n'.join(y[3] for y in ins[max(0,k-22):min(len(ins),k+38)]))
+                  print()
+
+          # Locate every virtual +0x28 call and score factory-ABI looking sites.
+          print('## Factory-ABI-shaped virtual +0x28 call sites')
+          candidates=[]
+          for k,x in enumerate(ins):
+              if not re.search(r'call\s+QWORD PTR \[[^]]+\+0x28\]',x[2]):
+                  continue
+              lo=max(0,k-22); win=ins[lo:k+1]
+              txt='\n'.join(y[2] for y in win)
+              score=0
+              # Hidden-sret factory shape generally sets rdi to stack/local output and has rsi/rdx/rcx prepared.
+              if re.search(r'lea\s+rdi,\[rsp',txt): score+=3
+              if re.search(r'\bmov\s+rsi,',txt): score+=2
+              if re.search(r'\bmov\s+rdx,',txt): score+=2
+              if re.search(r'\bmov\s+rcx,',txt): score+=2
+              if re.search(r'mov\s+rax,QWORD PTR \[rsi\]',txt) or re.search(r'mov\s+\w+,QWORD PTR \[rsi\]',txt): score+=2
+              fr=fde(x[0])
+              candidates.append((score,x[0],fr,k))
+          candidates.sort(reverse=True)
+          for score,a,fr,k in candidates[:120]:
+              if score < 5: break
+              print(f'### score={score} call=0x{a:x} FDE={fr}')
+              print('\n'.join(y[3] for y in ins[max(0,k-26):min(len(ins),k+24)]))
+              print()
+
+          # Find places that materialize provider descriptor AP, and later potential uses.
+          print('## Code materializations of Restrictions descriptor AP 0x184ca50')
+          for k,x in enumerate(ins):
+              if '# 184ca50' in x[2]:
+                  print(f'### 0x{x[0]:x}; FDE={fde(x[0])}')
+                  print('\n'.join(y[3] for y in ins[max(0,k-20):min(len(ins),k+55)]));print()
+
+          # Literal factory address/relocation mentions.
+          print('## Direct code references to 0x10ab7ae')
+          for k,x in enumerate(ins):
+              if re.search(r'\b10ab7ae\b',x[2]):
+                  print('\n'.join(y[3] for y in ins[max(0,k-18):min(len(ins),k+30)]));print()
+
+          # Search probable bundle objects by exact +0x30 dereference adjacent to calls of provider factories.
+          print('## +0x30 loads in high-scoring factory caller FDEs')
+          seen=set()
+          for score,a,fr,k in candidates:
+              if score<7 or not fr or fr in seen: continue
+              seen.add(fr)
+              fi,fj=ix(fr[0]),ix(fr[1])
+              refs=[y for y in ins[fi:fj] if re.search(r'\[[^]]+\+0x30\]',y[2])]
+              if refs:
+                  print(f'### FDE={fr} call=0x{a:x} score={score}')
+                  for y in refs[:80]: print(y[3])
+                  print()
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-bundle30-source.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Trace Restrictions bundle30 source"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 1
+          done
+          exit 1
