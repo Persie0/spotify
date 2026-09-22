@@ -1,0 +1,215 @@
+name: Trace Restrictions constructor dataflow
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/trace-restrictions-constructor-dataflow.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            analysis
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/restrictions-constructor-dataflow
+          gh release download r1 --repo "Persie0/spotify" --pattern "spotify-9-1-84-2205.apk" --dir /tmp/restrictions-constructor-dataflow
+          unzip -j /tmp/restrictions-constructor-dataflow/spotify-9-1-84-2205.apk 'lib/x86_64/liborbit-jni-spotify.so' -d /tmp/restrictions-constructor-dataflow
+      - name: Trace constructor dataflow
+        run: |
+          SO=/tmp/restrictions-constructor-dataflow/liborbit-jni-spotify.so
+          objdump -d -M intel "$SO" > /tmp/restrictions-constructor-dataflow/all.dis
+          python3 - <<'PY' > analysis/restrictions-constructor-dataflow.md
+          import re
+          from pathlib import Path
+
+          dis = Path('/tmp/restrictions-constructor-dataflow/all.dis').read_text(errors='replace').splitlines()
+          inst_re = re.compile(r'^\s*([0-9a-f]+):\s+(?:[0-9a-f]{2}\s+)+\s*(.*)$')
+          call_re = re.compile(r'\bcall\s+([0-9a-f]+|QWORD PTR \[[^\]]+\])')
+          mem_re = re.compile(r'\[([^\]]+)\]')
+          insts=[]
+          for line in dis:
+              m=inst_re.match(line)
+              if m:
+                  insts.append((int(m.group(1),16), line.rstrip(), m.group(2).strip()))
+          idx={a:i for i,(a,_,__) in enumerate(insts)}
+
+          reg_alias = {r:r for r in ['rax','rbx','rcx','rdx','rsi','rdi','rbp','rsp','r8','r9','r10','r11','r12','r13','r14','r15']}
+          for b in ['a','b','c','d']:
+              reg_alias[f'e{b}x']=f'r{b}x'
+          reg_alias.update({'esi':'rsi','edi':'rdi','ebp':'rbp','esp':'rsp','r8d':'r8','r9d':'r9','r10d':'r10','r11d':'r11','r12d':'r12','r13d':'r13','r14d':'r14','r15d':'r15'})
+          def canon(r): return reg_alias.get(r.strip().lower(), r.strip().lower())
+          def split_ops(s):
+              parts=[]; cur=''; depth=0
+              for ch in s:
+                  if ch=='[': depth+=1
+                  elif ch==']': depth-=1
+                  if ch==',' and depth==0:
+                      parts.append(cur.strip()); cur=''
+                  else:
+                      cur+=ch
+              if cur.strip(): parts.append(cur.strip())
+              return parts
+          def parse_mem(expr):
+              expr=expr.replace(' ','')
+              toks=re.split(r'(?=[+-])', expr)
+              off=0; regs=[]
+              for t in toks:
+                  if not t: continue
+                  sign=1
+                  if t[0]=='+': t=t[1:]
+                  elif t[0]=='-': sign=-1; t=t[1:]
+                  if not t: continue
+                  if '*' in t: continue
+                  if re.fullmatch(r'0x[0-9a-fA-F]+|\d+', t): off += sign*int(t,0)
+                  else: regs.append(canon(t))
+              return regs,off
+          def add(o, off):
+              if o is None: return None
+              base,cur=o; return (base,cur+off)
+          def ostr(o):
+              if not o: return ''
+              b,off=o
+              return b if off==0 else f'{b}{off:+#x}'
+          def resolve_mem(mem, regs, stack):
+              rs,off=parse_mem(mem)
+              if len(rs)!=1: return None
+              r=rs[0]
+              if r=='rsp':
+                  return stack.get(off)
+              if r in regs:
+                  return add(regs[r], off)
+              return None
+          def mem_key(mem):
+              rs,off=parse_mem(mem)
+              if len(rs)==1 and rs[0]=='rsp': return off
+              return None
+          def is_mem(x): return '[' in x and ']' in x
+
+          start=0x10aba36
+          lines=[]
+          if start in idx:
+              for j in range(idx[start], min(len(insts), idx[start]+900)):
+                  lines.append(insts[j])
+                  if j>idx[start] and insts[j][2].startswith('ret'):
+                      break
+
+          regs={'rdi':('child',0), 'rcx':('bundle30_slot',0), 'rsi':('arg_rsi',0), 'rdx':('arg_rdx',0), 'r8':('arg_r8',0), 'r9':('arg_r9',0)}
+          stack={}
+          child_writes=[]; dep_reads=[]; dep_calls=[]; child18_calls=[]; stores=[]
+          call_args=('rdi','rsi','rdx','rcx','r8','r9')
+          for a,line,text in lines:
+              parts=text.split(None,1)
+              if not parts: continue
+              mnem=parts[0]; ops=split_ops(parts[1]) if len(parts)>1 else []
+
+              # record memory refs
+              for mem in mem_re.findall(text):
+                  o=resolve_mem(mem, regs, stack)
+                  if o and o[0]=='bundle30_slot':
+                      dep_reads.append((a, ostr(o), line))
+
+              # record stores before propagation
+              if ops and is_mem(ops[0]) and not mnem.startswith(('cmp','test','call','jmp')):
+                  o=resolve_mem(mem_re.search(ops[0]).group(1), regs, stack)
+                  if o:
+                      stores.append((a, ostr(o), line))
+                      if o[0]=='child': child_writes.append((a, ostr(o), line))
+
+              # calls with tracked args
+              if mnem.startswith('call'):
+                  tracked={r:ostr(regs.get(r)) for r in call_args if regs.get(r)}
+                  if any(v.startswith('bundle30_slot') for v in tracked.values()):
+                      dep_calls.append((a, tracked, line))
+                  if any(v.startswith('child+0x18') or v=='child+0x18' for v in tracked.values()):
+                      child18_calls.append((a, tracked, line))
+
+              # propagation
+              if mnem=='lea' and len(ops)>=2:
+                  d=canon(ops[0]); mm=mem_re.search(ops[1])
+                  if mm:
+                      o=resolve_mem(mm.group(1), regs, stack)
+                      if o: regs[d]=o
+                      else: regs.pop(d,None)
+                  continue
+              if mnem.startswith('mov') and len(ops)>=2:
+                  dst,src=ops[0],ops[1]
+                  # mov reg, reg
+                  cd=canon(dst)
+                  cs=canon(src)
+                  if cd in reg_alias.values():
+                      if cs in regs: regs[cd]=regs[cs]
+                      elif is_mem(src):
+                          mm=mem_re.search(src); o=resolve_mem(mm.group(1), regs, stack) if mm else None
+                          if o: regs[cd]=('load('+ostr(o)+')',0)
+                          else: regs.pop(cd,None)
+                      else:
+                          regs.pop(cd,None)
+                  # mov [rsp+off], reg/origin or mov [origin], reg
+                  if is_mem(dst):
+                      mm=mem_re.search(dst)
+                      key=mem_key(mm.group(1)) if mm else None
+                      if key is not None:
+                          if cs in regs: stack[key]=regs[cs]
+                          elif cd in regs: stack[key]=regs[cd]
+                      # preserve stack alias if writing direct immediate unknown? no
+                  continue
+              # common destructive clobbers
+              if mnem in ('xor','and') and len(ops)>=2 and canon(ops[0])==canon(ops[1]):
+                  regs.pop(canon(ops[0]),None)
+
+          print('# Restrictions constructor dataflow trace')
+          print()
+          print('Purpose: follow `0x10aba36` with symbolic origins: `rdi=child`, `rcx=bundle30_slot`, stack aliases, and calls using either the dependency or `child+0x18`.')
+          print()
+          print('## Key child field writes')
+          print()
+          print('| addr | resolved location | instruction |')
+          print('|---:|---|---|')
+          for a,o,line in child_writes[:120]:
+              print(f'| `{a:#x}` | `{o}` | `{line}` |')
+          print()
+          print('## Calls that receive the resolved bundle30 dependency')
+          print()
+          print('| call | tracked args | instruction |')
+          print('|---:|---|---|')
+          for a,tr,line in dep_calls[:80]:
+              args=', '.join(f'{k}={v}' for k,v in tr.items() if v)
+              print(f'| `{a:#x}` | `{args}` | `{line}` |')
+          print()
+          print('## Calls that receive child+0x18')
+          print()
+          print('| call | tracked args | instruction |')
+          print('|---:|---|---|')
+          for a,tr,line in child18_calls[:80]:
+              args=', '.join(f'{k}={v}' for k,v in tr.items() if v)
+              print(f'| `{a:#x}` | `{args}` | `{line}` |')
+          print()
+          print('## Direct refs involving bundle30 dependency')
+          print()
+          print('```text')
+          for a,o,line in dep_reads[:120]:
+              print(f'{a:#x} {o}: {line}')
+          print('```')
+          print()
+          print('## Interpretation')
+          print()
+          print('If the dependency is passed to a helper rather than directly stored to `child+0x18`, the child accessor `b411a4` still tells us the eventual exported field is `child+0x18`; the helper receiving both the dependency and `child+0x18` is the next semantic target.')
+          PY
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/restrictions-constructor-dataflow.md
+          git commit -m "Trace Restrictions constructor dataflow" || exit 0
+          git push
