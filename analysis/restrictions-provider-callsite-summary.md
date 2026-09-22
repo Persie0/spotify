@@ -44,19 +44,13 @@ The concise report found 8 provider-like `+0x28` callsites. All 8 resolve their 
 rdx -> rsp+0x2e0
 ```
 
-Therefore the Restrictions factory field previously described abstractly as:
-
-```text
-bundle+0x30
-```
-
-is, at the provider-vector call boundary, the concrete stack slot:
+Therefore the Restrictions factory field previously described abstractly as `bundle+0x30` is, at the provider-vector call boundary, the concrete stack slot:
 
 ```text
 rsp+0x310
 ```
 
-The Restrictions factory later consumes this bundle as:
+The Restrictions factory consumes this bundle as:
 
 ```text
 10ab7c2  mov rbx, rdx
@@ -66,263 +60,73 @@ The Restrictions factory later consumes this bundle as:
 10ab842  mov rbp, [rbx+0x68]
 ```
 
-## Stack bundle construction
+## Closed `bundle+0x30` provenance
 
-The broad stack-slot trace found no simple local `[bundle_base+0x30]` store in the provider-vector FDE. The concrete stack-bundle materialization is:
+The missing edge is now closed. `bundle+0x30` is not populated by a direct `[bundle+0x30]` store. It is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
+
+Constructor evidence:
 
 ```text
 14ce65f  lea rax, [rip+...]  # 0x187e3c8
-14ce666  lea rcx, [rsp+0x310]
-14ce66e  mov [rcx-0x30], rax   ; [rsp+0x2e0] = 0x187e3c8
-14ce672  and [rcx-0x20], 0x0
-14ce677  mov [rcx-0x18], rcx
-14ce685  mov [rcx-0x10], 0x400000000
-14ce689  and [rcx-0x8], 0x0
-14ce68d  and [rcx+0x20], 0x0
+14ce666  lea rcx, [rsp+0x310]       ; rcx = bundle+0x30
+14ce66e  mov [rcx-0x30], rax        ; bundle+0x00 = AP 0x187e3c8
+14ce672  and [rcx-0x20], 0x0        ; bundle+0x10 = 0
+14ce677  mov [rcx-0x18], rcx        ; bundle+0x18 = bundle+0x30
+14ce685  mov [rcx-0x10], 0x400000000; bundle+0x20/0x24 packed vector fields
+14ce689  and [rcx-0x8], 0x0         ; bundle+0x28 = 0
+14ce68d  and [rcx+0x20], 0x0        ; bundle+0x50 = 0
 ```
 
-So `rsp+0x2e0` is a local stack bundle object whose vptr/address-point is `0x187e3c8`.
-
-## Local helper path after materialization
-
-`a79a7e` does not receive `rsp+0x310` directly. At the callsite:
+`0x153cbfc` passes the vector subobject, not the whole bundle, to the slot helper:
 
 ```text
-14ce717  call a79a7e
-rdi = rsp+0x3a0
-rsi = rsp+0x2b1
-rcx = rsp+0x350
-```
-
-`17add2a` builds a post-`a79a7e` object at `rsp+0x230`:
-
-```text
-14ce72c  17add2a(rdi=rsp+0x230, rsi=rsp+0x3a0)
-17add3c  mov [rdi], rax
-17add7b  mov [rbx+0x8], r14
-```
-
-The concrete handoff back into the setup bundle is:
-
-```text
-14ce75d  lea rdi, [rsp+0x2e0]
-14ce765  lea rsi, [rsp+0x230]
-14ce76d  call 166103c
-```
-
-Tracked call state:
-
-```text
-rdi = bundle_base(rsp+0x2e0)
-rsi = post_add2a_obj(rsp+0x230)
-```
-
-## Bundle vtable resolution
-
-The vptr/address-point stored in `[rsp+0x2e0]` resolves as:
-
-```text
-AP 0x187e3c8
-+0x00 -> 0x153cada
-+0x08 -> 0x153cb74
-+0x10 -> 0x153cb86
-+0x18 -> 0xa3fa60
-+0x20 -> 0x165d0fa
-+0x28 -> 0x165dd40
-+0x30 -> 0x153cbfc
-+0x38 -> 0x153cd4e
-+0x40 -> 0x153cdf2
-+0x48 -> 0x153cea8
-+0x50 -> 0x153ceb0
-```
-
-Inside `166103c`, the relevant runtime dispatches are:
-
-```text
-1661089  call [bundle.vtable+0x10]
-1661095  call [bundle.vtable+0x30]
-16610a2  call [bundle.vtable+0x18]
-```
-
-## `bundle.vtable+0x30` method summary
-
-`bundle.vtable+0x30` resolves to `0x153cbfc`.
-
-ABI at `1661095`:
-
-```text
-rdi = bundle_base = rsp+0x2e0
-rsi = local descriptor inside 166103c
-descriptor+0x8 = post_add2a_obj = rsp+0x230
-```
-
-The method preserves those inputs, then prepares bundle-substructure aliases:
-
-```text
-153cc0a  mov rbx, rsi     ; descriptor
-153cc0d  mov r14, rdi     ; bundle
-153cc1e  lea rdx, [rdi+0x10]
-153cc27  mov rdi, rbx
-153cc2a  call 165fe6a
-
-153cc2f  lea r15, [r14+0x90]
-153cc36  lea rax, [r14+0x58]
-153cc3f  lea r13, [r14+0x50]
-153cc43  lea rbp, [r14+0x18]
-```
-
-It parses a descriptor stream and dispatches by tag. Observed bundle mutations are through substructures, not through a direct `bundle+0x30` access:
-
-```text
-153cc94  mov rdi, rbp              ; bundle+0x18 path
+153cc43  lea rbp, [r14+0x18]  ; rbp = bundle+0x18
+153cc94  mov rdi, rbp
 153cc97  call 1507a9e
+153cc9c  mov rdi, rax
+153cc9f  mov rsi, rbx
 153cca2  call 153d2a4
-
-153ccb5  mov rdi, [rsp+0x8]        ; bundle+0x58 path
-153ccba  call 1507b20
-153ccc5  call 153d0d0
-
-153cccc  mov rdi, rbx              ; descriptor
-153cccf  mov rsi, r15              ; bundle+0x90
-153ccd2  call 1660032
-153ccdc  or [r14+0x8], eax
-
-153cce5  mov rdi, rbx              ; descriptor
-153cce8  mov rsi, r13              ; bundle+0x50
-153cceb  call 1660032
-153ccf3  or [r14+0x8], eax
 ```
 
-Current conclusion: `+0x30` is a real bundle mutation method, but it does not show a direct write to `bundle+0x30` in its own body.
-
-## Ruled-out direct writer paths
-
-The following candidate paths have been traced and ruled out as direct `bundle+0x30` writers.
-
-### Local and post-add2a path
-
-- No simple local provider-vector store to `[bundle_base+0x30]` was found.
-- `a79a7e` does not receive `rsp+0x310` directly.
-- `17add2a` builds the `rsp+0x230` object but does not write the bundle slot.
-
-### Bundle+0x18 substructure path
-
-`analysis/restrictions-substructure-writers.md` tested:
+Inside `1507a9e`, `rbx = bundle+0x18`; `[rbx]` is the vector data pointer. Since the constructor set `[bundle+0x18] = bundle+0x30`, the store at `1507b1a` writes the first slot pointer into `bundle+0x30`:
 
 ```text
-bundle+0x18 + 0x18 = bundle+0x30
+1507aa2  mov rbx, rdi               ; rbx = bundle+0x18
+1507aa5  mov r14d, [rdi+0x8]
+1507aa9  mov eax, [rdi+0x10]
+1507aeb  call operator new          ; returns new slot object in rax
+1507b0d  mov rcx, [rbx]             ; rcx = [bundle+0x18] = bundle+0x30
+1507b14  mov [rbx+0x8], edx
+1507b17  mov edx, r14d              ; first append: edx = 0
+1507b1a  mov [rcx+rdx*8], rax       ; [bundle+0x30] = new slot object pointer
 ```
 
-If `1507a9e` wrote `arg+0x18`, that would resolve to `bundle+0x30`. It does not:
+`153d2a4` then fills that newly allocated object from the descriptor stream. The Restrictions factory later reads `[rdx+0x30]`, so it receives this first inline-vector slot pointer.
+
+The destructor/free guard corroborates the inline-storage interpretation:
 
 ```text
-1507a9e initial rdi = bundle+0x18
-writes resolving exactly to bundle+0x30 = 0
-1507ab9  mov [rbx+0x8], ecx  ; resolves to bundle+0x20
-```
-
-The capacity-growth helper reached from `1507a9e` was then traced:
-
-```text
-1507ad1  mov rdi, rbx
-1507ad4  mov esi, r14d
-1507ad7  call d15d98
-```
-
-With `d15d98` interpreted as `rdi=bundle+0x18`, the writes were:
-
-```text
-d15daf  mov [rdi+0xc], esi  ; bundle+0x24
-d15dca  mov [rbx], rax      ; bundle+0x18
-d15e15  mov [rbx+0x8], ecx  ; bundle+0x20
-```
-
-So the `bundle+0x18 -> 1507a9e -> d15d98` vector/resize path is ruled out.
-
-### Other vtable methods
-
-`analysis/restrictions-other-vtable-methods.md` scanned other resolved vtable entries under the ABI assumption `rdi = bundle_base`:
-
-```text
-vtable +0x00 -> writes 1, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
-vtable +0x08 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x10 -> writes 10, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x20 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x28 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x38 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x40 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x48 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 0
-vtable +0x50 -> writes 13, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
-```
-
-The `+0x00 / 0x153cada` hit is an inline-storage/free guard, not a writer:
-
-```text
+153cb29  mov rdi, [rbx+0x18]
 153cb54  lea rax, [rbx+0x30]
 153cb58  cmp rdi, rax
 153cb5d  call free@plt
 ```
 
-### Descriptor-helper branch
+That check avoids freeing the inline vector buffer when the data pointer still equals `bundle+0x30`.
 
-`analysis/restrictions-descriptor-helpers.md` followed the descriptor helper branch from `0x153cbfc`, especially the call where `rdx=bundle+0x10`:
-
-```text
-153cc1e  lea rdx, [rdi+0x10]   ; rdi=bundle_base, so rdx=bundle+0x10
-153cc22  lea rsi, [rsp+0x10]
-153cc27  mov rdi, rbx          ; descriptor
-153cc2a  call 165fe6a
-```
-
-A write to `rdx+0x20` would resolve to `bundle+0x30`. The descriptor-helper trace did not find that:
-
-```text
-165fe6a: exact bundle+0x30 writes 0, aliases/passes 0
-165ffb0: exact bundle+0x30 writes 0, aliases/passes 0
-1660032: exact bundle+0x30 writes 0, aliases/passes 0
-153d2a4: exact bundle+0x30 writes 0, aliases/passes 0
-153d0d0: exact bundle+0x30 writes 0, aliases/passes 0
-```
-
-Important detail: `165ffb0` writes `descriptor+0x30`, not `bundle+0x30`:
-
-```text
-165ffc6  mov [rbx+0x30], rax  ; rbx=descriptor
-```
-
-### Direct descriptor callee branch
-
-`analysis/restrictions-direct-callees.md` followed the direct callees left open by the descriptor-helper trace. The strongest target was `16609b0`, called with `rdx=bundle+0x10`; a write to `rdx+0x20` would have resolved exactly to `bundle+0x30`.
-
-Summary:
-
-```text
-16609b0: exact bundle+0x30 writes 0, aliases/passes 0
-1660346: exact bundle+0x30 writes 0, aliases/passes 0
-165feb3: exact bundle+0x30 writes 0, aliases/passes 0
-1660070: exact bundle+0x30 writes 0, aliases/passes 0
-```
-
-`16609b0` only mutates descriptor counters:
-
-```text
-16609b9  mov [rdi+0x18], ecx  ; descriptor+0x18
-16609c5  mov [rdi+0x18], ecx  ; descriptor+0x18
-16609ca  mov [rdi+0x1c], edx  ; descriptor+0x1c
-```
-
-`1660346` is a descriptor/parser helper. It reads `descriptor+0x30` for callback-like handling, but does not write `bundle+0x30`.
-
-## Current best path
+## Proven path
 
 ```text
 provider-vector caller
-  -> stack bundle object at rsp+0x2e0
-  -> bundle AP 0x187e3c8
-  -> post-add2a object at rsp+0x230
+  -> constructs stack bundle at rsp+0x2e0
+  -> rcx = rsp+0x310 = bundle+0x30
+  -> [bundle+0x18] = bundle+0x30
   -> 166103c(bundle, post_add2a_obj)
   -> bundle.vtable+0x30 = 0x153cbfc
-  -> parsed descriptor data stored into bundle substructures
+  -> 153cbfc selects the bundle+0x18 vector subobject
+  -> 1507a9e appends a newly allocated slot object
+  -> 1507b1a stores that object pointer through [bundle+0x18] into bundle+0x30
+  -> 153d2a4 fills that object from the descriptor stream
   -> provider +0x28 calls pass rdx = rsp+0x2e0
   -> RestrictionsSetupImpl factory reads [rdx+0x30]
   -> Restrictions child +0x18
@@ -330,38 +134,30 @@ provider-vector caller
   -> final readiness dependency chain
 ```
 
-## Remaining open edge
+## Ruled-out direct writer paths
 
-The exact source of the value read by Restrictions as `rdx+0x30` is still not closed. Current evidence suggests it is not written by:
+Earlier traces saw zero direct `bundle+0x30` writes because the real write is indirect through the inline-vector data pointer. These branches are ruled out as direct writers:
 
-1. a simple local provider-vector store,
+1. simple local provider-vector store,
 2. `a79a7e`,
 3. `17add2a`,
-4. `bundle.vtable+0x30` / `0x153cbfc` directly,
-5. the `bundle+0x18 -> 1507a9e` vector-slot helper,
-6. the `bundle+0x18 -> d15d98` resize helper,
-7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking,
-8. the descriptor helpers `165fe6a`, `165ffb0`, `1660032`, `153d2a4`, and `153d0d0`, or
-9. the direct descriptor callees `16609b0`, `1660346`, `165feb3`, and `1660070`.
+4. `bundle.vtable+0x30` / `0x153cbfc` direct body stores,
+5. `bundle+0x18 -> 1507a9e` interpreted only as direct `arg+offset` stores,
+6. `bundle+0x18 -> d15d98` resize helper,
+7. other resolved bundle vtable methods under direct `rdi=bundle_base` tracking,
+8. descriptor helpers `165fe6a`, `165ffb0`, `1660032`, `153d2a4`, and `153d0d0`,
+9. direct descriptor callees `16609b0`, `1660346`, `165feb3`, and `1660070`.
 
-Best remaining interpretation:
+The earlier apparent contradiction is resolved by distinguishing direct field stores from stores through `[bundle+0x18]`, whose data pointer is initialized to the inline storage address `bundle+0x30`.
 
-```text
-bundle+0x30 is likely inline storage/object-layout state, not a separately assigned pointer field in the scanned windows.
-```
+## Current conclusion
 
-Next best targets:
-
-```text
-A) precise stack-layout/object-constructor interpretation around 14ce65f..14ce68d,
-B) inspect provider consumption of [rdx+0x30] as inline object/string/vector state instead of pointer provenance,
-C) bundle+0x50, bundle+0x58, and bundle+0x90 nested object paths where values may be stored into nested objects rather than directly into the bundle.
-```
+The `RestrictionsSetupImpl` dependency consumed at `[bundle+0x30]` is the first object pointer appended into the stack bundle's inline vector storage. That object is allocated by `1507a9e`, stored at `1507b1a`, and filled by `153d2a4` before provider factories consume the shared setup bundle.
 
 ## Evidence files
 
+- `analysis/restrictions-inline-vector-layout.md`
 - `analysis/restrictions-provider-callsite.md`
-- `analysis/restrictions-provider-callsite-summary.md`
 - `analysis/restrictions-bundle30-stackslot.md`
 - `analysis/restrictions-bundle30-consumers.md`
 - `analysis/restrictions-local-slice-a79a7e.md`
@@ -374,7 +170,4 @@ C) bundle+0x50, bundle+0x58, and bundle+0x90 nested object paths where values ma
 - `analysis/restrictions-other-vtable-methods.md`
 - `analysis/restrictions-descriptor-helpers.md`
 - `analysis/restrictions-direct-callees.md`
-- `analysis/shared-setup-bundle-source.md`
-- `analysis/provider-vector-factory-caller.md`
-- `analysis/setup-dependency-bundle30.md`
 - `analysis/final-readiness-provenance-summary.md`
