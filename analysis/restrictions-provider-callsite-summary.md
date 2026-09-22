@@ -195,9 +195,19 @@ It parses a descriptor stream and dispatches by tag. Observed bundle mutations a
 
 Current conclusion: `+0x30` is a real bundle mutation method, but it does not show a direct write to `bundle+0x30` in its own body.
 
-## Substructure and resize-helper findings
+## Ruled-out direct writer paths
 
-`analysis/restrictions-substructure-writers.md` tested the plausible indirect write hypothesis:
+The following candidate paths have been traced and ruled out as direct `bundle+0x30` writers.
+
+### Local and post-add2a path
+
+- No simple local provider-vector store to `[bundle_base+0x30]` was found.
+- `a79a7e` does not receive `rsp+0x310` directly.
+- `17add2a` builds the `rsp+0x230` object but does not write the bundle slot.
+
+### Bundle+0x18 substructure path
+
+`analysis/restrictions-substructure-writers.md` tested:
 
 ```text
 bundle+0x18 + 0x18 = bundle+0x30
@@ -227,13 +237,11 @@ d15dca  mov [rbx], rax      ; bundle+0x18
 d15e15  mov [rbx+0x8], ecx  ; bundle+0x20
 ```
 
-So the `bundle+0x18 -> 1507a9e -> d15d98` vector/resize path is ruled out as the source of `bundle+0x30`.
+So the `bundle+0x18 -> 1507a9e -> d15d98` vector/resize path is ruled out.
 
-## Other vtable method exclusion
+### Other vtable methods
 
-`analysis/restrictions-other-vtable-methods.md` scanned the other resolved vtable entries under the ABI assumption `rdi = bundle_base`.
-
-Summary:
+`analysis/restrictions-other-vtable-methods.md` scanned other resolved vtable entries under the ABI assumption `rdi = bundle_base`:
 
 ```text
 vtable +0x00 -> writes 1, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
@@ -247,20 +255,15 @@ vtable +0x48 -> writes 0, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes
 vtable +0x50 -> writes 13, exact bundle+0x30 writes 0, bundle+0x30 aliases/passes 1
 ```
 
-Important details:
+The `+0x00 / 0x153cada` hit is an inline-storage/free guard, not a writer:
 
 ```text
-+0x00 / 0x153cada aliases bundle+0x30 in a destructor/free comparison:
 153cb54  lea rax, [rbx+0x30]
 153cb58  cmp rdi, rax
 153cb5d  call free@plt
 ```
 
-That is an inline-storage/free guard, not a writer.
-
-Current conclusion: none of the scanned remaining bundle vtable methods produce a direct write resolving exactly to `bundle+0x30`. The only `bundle+0x30` hits are aliases/passes, not stores.
-
-## Descriptor-helper branch findings
+### Descriptor-helper branch
 
 `analysis/restrictions-descriptor-helpers.md` followed the descriptor helper branch from `0x153cbfc`, especially the call where `rdx=bundle+0x10`:
 
@@ -271,7 +274,7 @@ Current conclusion: none of the scanned remaining bundle vtable methods produce 
 153cc2a  call 165fe6a
 ```
 
-A write to `rdx+0x20` would resolve to `bundle+0x30`. The descriptor-helper trace did not find that. Summary:
+A write to `rdx+0x20` would resolve to `bundle+0x30`. The descriptor-helper trace did not find that:
 
 ```text
 165fe6a: exact bundle+0x30 writes 0, aliases/passes 0
@@ -287,9 +290,28 @@ Important detail: `165ffb0` writes `descriptor+0x30`, not `bundle+0x30`:
 165ffc6  mov [rbx+0x30], rax  ; rbx=descriptor
 ```
 
-The slot-fill helpers `153d2a4` and `153d0d0` call `165fe6a` with `rdx=slot+0x10`, then update descriptor parser state in the traced window. They also did not write `bundle+0x30`.
+### Direct descriptor callee branch
 
-Current conclusion: the descriptor-helper branch is ruled out as a direct `bundle+0x30` writer under the tracked ABI windows.
+`analysis/restrictions-direct-callees.md` followed the direct callees left open by the descriptor-helper trace. The strongest target was `16609b0`, called with `rdx=bundle+0x10`; a write to `rdx+0x20` would have resolved exactly to `bundle+0x30`.
+
+Summary:
+
+```text
+16609b0: exact bundle+0x30 writes 0, aliases/passes 0
+1660346: exact bundle+0x30 writes 0, aliases/passes 0
+165feb3: exact bundle+0x30 writes 0, aliases/passes 0
+1660070: exact bundle+0x30 writes 0, aliases/passes 0
+```
+
+`16609b0` only mutates descriptor counters:
+
+```text
+16609b9  mov [rdi+0x18], ecx  ; descriptor+0x18
+16609c5  mov [rdi+0x18], ecx  ; descriptor+0x18
+16609ca  mov [rdi+0x1c], edx  ; descriptor+0x1c
+```
+
+`1660346` is a descriptor/parser helper. It reads `descriptor+0x30` for callback-like handling, but does not write `bundle+0x30`.
 
 ## Current best path
 
@@ -318,16 +340,22 @@ The exact source of the value read by Restrictions as `rdx+0x30` is still not cl
 4. `bundle.vtable+0x30` / `0x153cbfc` directly,
 5. the `bundle+0x18 -> 1507a9e` vector-slot helper,
 6. the `bundle+0x18 -> d15d98` resize helper,
-7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking, or
-8. the descriptor helpers `165fe6a`, `165ffb0`, `1660032`, `153d2a4`, and `153d0d0` under the tracked ABI windows.
+7. the other resolved bundle vtable methods under direct `rdi=bundle_base` tracking,
+8. the descriptor helpers `165fe6a`, `165ffb0`, `1660032`, `153d2a4`, and `153d0d0`, or
+9. the direct descriptor callees `16609b0`, `1660346`, `165feb3`, and `1660070`.
+
+Best remaining interpretation:
+
+```text
+bundle+0x30 is likely inline storage/object-layout state, not a separately assigned pointer field in the scanned windows.
+```
 
 Next best targets:
 
 ```text
-A) bundle constructor/setup semantics around 14ce65f..14ce68d,
-B) inline storage interpretation of bundle+0x30 rather than a separately written pointer,
-C) deeper nested object/value helpers reached by the slot-fill paths, especially 1660346 and 16609b0,
-D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths where values may be stored into nested objects rather than directly into the bundle.
+A) precise stack-layout/object-constructor interpretation around 14ce65f..14ce68d,
+B) inspect provider consumption of [rdx+0x30] as inline object/string/vector state instead of pointer provenance,
+C) bundle+0x50, bundle+0x58, and bundle+0x90 nested object paths where values may be stored into nested objects rather than directly into the bundle.
 ```
 
 ## Evidence files
@@ -345,6 +373,7 @@ D) bundle+0x50, bundle+0x58, and bundle+0x90 helper paths where values may be st
 - `analysis/restrictions-resize-helper.md`
 - `analysis/restrictions-other-vtable-methods.md`
 - `analysis/restrictions-descriptor-helpers.md`
+- `analysis/restrictions-direct-callees.md`
 - `analysis/shared-setup-bundle-source.md`
 - `analysis/provider-vector-factory-caller.md`
 - `analysis/setup-dependency-bundle30.md`
