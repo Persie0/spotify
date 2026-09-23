@@ -1,0 +1,306 @@
+name: Trace Restrictions virtual a0 bridge parallel v15
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-virtual-a0-v15.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-rsp390-r14-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace rsp390 r14 provenance
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=70,aft=220):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `[rsp+0x390] -> r14` provenance v15\n\n']
+          md.append('Focus: trace the concrete receiver loaded at `e95091 r14 = [rsp+0x390]` before `e95105 call [r14.vtable+0xa0]`. Static provenance only.\n\n')
+          md.append('## Local window around receiver load and callback pass\n\n')
+          md.append(fmt(around(0xe95091,90,260)))
+          pats=['[rsp+0x390]','[rsp+0x398]','[rsp+0x388]','[rsp+0x380]','0x390]','0x398]','0x388]','0x380]','rsp+0x390','rsp+0x398']
+          rows=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95600 and any(p in l for p in pats):
+                  rows.append((a,l,t))
+          md.append('## All local references to `[rsp+0x390]` / neighboring slots in e8d000-e95600\n\n')
+          md.append(table(rows,800))
+          # Backward provenance around all writes to rsp+0x390 and +0x398
+          md.append('## Windows around writes/reads of `[rsp+0x390]` and `[rsp+0x398]`\n\n')
+          for a,l,t in rows:
+              if any(w in l for w in ['mov    QWORD PTR [rsp+0x390]', 'mov    QWORD PTR [rsp+0x398]', 'lea    ', 'call   ', 'movaps', 'movdqa']) or '0x390' in l or '0x398' in l:
+                  md.append(f'### `{a:#x}`\n\n')
+                  md.append(fmt(around(a,28,85)))
+          # candidate AP materializations in surrounding constructor window
+          ap_hits=[]
+          interesting_ranges=[(0x1831800,0x1831b00),(0x1844800,0x1844a00),(0x188bc00,0x188be80),(0x1890300,0x1890580)]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95600 and ('lea    ' in l or 'mov    ' in l):
+                  if any(hex(x)[2:] in l for lo,hi in interesting_ranges for x in range(lo,hi,0x8)):
+                      ap_hits.append((a,l,t))
+          # if too broad fails, use comments with exact AP literals seen in v14
+          exact=['1831918','1831940','1831948','1831968','1831970','1831990','18319a8','18319b0','18319b8','18319e0','1831a28','1831a40','1831a48','188bd38','188bd40','18903e8','18903f0','1890480','1890490','1844890','18448d8']
+          ap_hits=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95600 and any(x in l for x in exact):
+                  ap_hits.append((a,l,t))
+          md.append('## Candidate AP literal materializations in the surrounding window\n\n')
+          md.append(table(ap_hits,500))
+          md.append('## Interpretation guide\n\n')
+          md.append('If `[rsp+0x390]` is filled from a constructed object or shared pointer before `e95091`, the decisive rows are the last writer to `[rsp+0x390]` and the AP literal installed into that pointed object.\n')
+          Path('out/restrictions-rsp390-r14-provenance-v15.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-rsp390-r14-provenance-v15
+          path: out/restrictions-rsp390-r14-provenance-v15.md
+
+  trace-plus-a0-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus a0 AP candidates
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=28,aft=115):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          # Bases from v14 plus ranges likely referenced around the e95 builder.
+          bases=[0x1831918,0x1831940,0x1831948,0x1831968,0x1831970,0x1831990,0x18319a8,0x18319b0,0x18319b8,0x18319e0,0x18319f0,0x1831a10,0x1831a28,0x1831a40,0x1831a48,0x188bd38,0x188bd40,0x188bde0,0x18903e8,0x18903f0,0x1890480,0x1890490,0x1844890,0x18448d8]
+          md=['# Restrictions `+0xa0` AP candidate binding v15\n\n']
+          md.append('Focus: list concrete vtable/AP candidates whose `+0xa0` slot could be called at `e95105`, then dump candidate method windows. Static provenance only.\n\n')
+          md.append('## Candidate AP table\n\n')
+          md.append('| AP base | +0x00 | +0x10 | +0x20 | +0x78 | +0xa0 | +0xa8 | tags |\n|---:|---:|---:|---:|---:|---:|---:|---|\n')
+          targets=[]
+          for base in bases:
+              vals=[]
+              for off in [0,0x10,0x20,0x78,0xa0,0xa8]:
+                  vals.append(relmap.get(base+off,(None,''))[0])
+              tags=[]
+              for t in vals:
+                  if t is None: continue
+                  targets.append(t)
+                  if 0xe90000 <= t <= 0xe9b000: tags.append('near-e95/e99')
+                  if 0xfd3000 <= t <= 0xfd5600: tags.append('near-fd')
+                  if 0x10a0000 <= t <= 0x10c4000: tags.append('restrictions')
+                  if 0x17d0000 <= t <= 0x17ef000: tags.append('callback/helper')
+              def hx(v): return '-' if v is None else f'{v:#x}'
+              md.append(f'| `{base:#x}` | `{hx(vals[0])}` | `{hx(vals[1])}` | `{hx(vals[2])}` | `{hx(vals[3])}` | `{hx(vals[4])}` | `{hx(vals[5])}` | `{", ".join(sorted(set(tags)))}` |\n')
+          md.append('\n')
+          md.append('## Relocation slices for candidate APs\n\n')
+          for base in bases:
+              md.append(f'### AP `{base:#x}`\n\n```text\n')
+              for off,target,line in rels:
+                  if base <= off < base+0xc0:
+                      md.append(line+'\n')
+              md.append('```\n')
+          md.append('## Target windows for `+0xa0` candidate methods\n\n')
+          plus_a0=[relmap.get(base+0xa0,(None,''))[0] for base in bases]
+          for t in sorted(set(x for x in plus_a0 if x is not None)):
+              if 0x900000 <= t <= 0x1800000:
+                  md.append(f'### target `{t:#x}`\n\n')
+                  md.append(fmt(around(t,35,145)))
+          # Text materializations of the candidate bases
+          exact=[hex(b)[2:] for b in bases]
+          hits=[]
+          for a,l,t in ins:
+              if any(x in l for x in exact):
+                  hits.append((a,l,t))
+          md.append('## Text materializations of candidate AP bases\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          for a,l,t in hits[:650]:
+              md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          if len(hits)>650: md.append(f'| ... | truncated {len(hits)-650} more |\n')
+          Path('out/restrictions-plus-a0-candidates-v15.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus-a0-candidates-v15
+          path: out/restrictions-plus-a0-candidates-v15.md
+
+  trace-plus-a0-package-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus a0 package flow
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=50,aft=170):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `+0xa0` callback-package flow v15\n\n']
+          md.append('Focus: inspect likely `+0xa0` methods for how they consume `rdx=callback package`, store it, copy it, or invoke package+0x28 (`e99c54`). Static provenance only.\n\n')
+          bases=[0x1831918,0x1831940,0x1831948,0x1831968,0x1831970,0x1831990,0x18319a8,0x18319b0,0x18319b8,0x18319e0,0x1831a28,0x1831a40,0x1831a48,0x188bd38,0x188bd40,0x18903e8,0x18903f0,0x1890480,0x1890490,0x1844890,0x18448d8]
+          plus_a0=[relmap.get(base+0xa0,(None,''))[0] for base in bases]
+          # Focused candidate method windows and filtered rows involving rdx/rsi/callback layout offsets.
+          for t in sorted(set(x for x in plus_a0 if x is not None and 0x900000 <= x <= 0x1800000)):
+              rows=around(t,45,190)
+              md.append(f'## Candidate `+0xa0` method `{t:#x}` full window\n\n')
+              md.append(fmt(rows))
+              filt=[]
+              for a,l,txt in rows:
+                  if any(p in l for p in ['rdx','rsi','rdi','[rdx','[rsi','[rdi','+0x18','+0x20','+0x28','+0x30','+0x38','call   QWORD PTR','call   rax','call   rcx','call   rdx','ff 50','ff 52','ff d0','ff d1','ff d2','e99c54','17da794','17da802']):
+                      filt.append((a,l,txt))
+              md.append(f'### filtered dataflow rows for `{t:#x}`\n\n')
+              md.append(table(filt,400))
+          # Generic text mentions of callback package layout offsets near e94/e95/e99/17da helper regions
+          mentions=[]
+          for a,l,t in ins:
+              if ((0xe90000 <= a <= 0xe98000) or (0xe99000 <= a <= 0xe9b000) or (0x17da000 <= a <= 0x17daa00)):
+                  if any(p in l for p in ['e99c54','17da794','17da802','[rdi+0x28]','[rsi+0x28]','[rdx+0x28]','[rbx+0x28]','[rdi+0x30]','[rsi+0x30]','[rdx+0x30]','[rbx+0x30]','[rdi+0x38]','[rsi+0x38]','[rdx+0x38]','[rbx+0x38]','call   QWORD PTR [rax+0xa0]']):
+                      mentions.append((a,l,t))
+          md.append('## Regional mentions of callback package offsets / e99c54 / 17da helpers\n\n')
+          md.append(table(mentions,800))
+          md.append('## Interpretation guide\n\n')
+          md.append('The key proof would be a `+0xa0` target that stores or copies the `rdx` package, then a later method invokes `[package+0x28]` with an `original` object. If no target directly invokes it, the package is likely enqueued/stored for later dispatch.\n')
+          Path('out/restrictions-plus-a0-package-flow-v15.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus-a0-package-flow-v15
+          path: out/restrictions-plus-a0-package-flow-v15.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs: [trace-rsp390-r14-provenance, trace-plus-a0-candidates, trace-plus-a0-package-flow]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          cp artifacts/restrictions-rsp390-r14-provenance-v15/restrictions-rsp390-r14-provenance-v15.md analysis/
+          cp artifacts/restrictions-plus-a0-candidates-v15/restrictions-plus-a0-candidates-v15.md analysis/
+          cp artifacts/restrictions-plus-a0-package-flow-v15/restrictions-plus-a0-package-flow-v15.md analysis/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-rsp390-r14-provenance-v15.md analysis/restrictions-plus-a0-candidates-v15.md analysis/restrictions-plus-a0-package-flow-v15.md
+          git commit -m 'Trace Restrictions virtual a0 bridge in parallel' || exit 0
+          git pull --rebase origin main
+          git push
