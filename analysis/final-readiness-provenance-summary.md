@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, and narrowing the remaining erased-interface bridge through v13. Static provenance documentation only; no runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, and narrowing the remaining erased-interface bridge through v14. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -76,8 +76,6 @@ child+0x18
 
 ## Installed object AP `0x184d898`
 
-Relocation-backed entries:
-
 ```text
 0x184d898 +0x00 -> 10bff2c
 0x184d898 +0x08 -> 10bff40
@@ -126,7 +124,7 @@ Confirmed method-side consumers:
 
 This closes the key downstream link from the getter value into the `0x198` object.
 
-## Erased bridge around `e99c54`: current status through v13
+## Erased bridge around `e99c54`
 
 Bridge body:
 
@@ -139,7 +137,7 @@ e99ca7  call [consumer.vtable+0x10]
 e99cad  ea785e(rsp+0x18)           ; stack-output cleanup/destructor
 ```
 
-`aab330` is now classified as a weak/shared-owner lock + pointer copier:
+`aab330` is a weak/shared-owner lock + pointer copier:
 
 ```text
 aab330(dest, original):
@@ -154,7 +152,7 @@ aab330(dest, original):
 
 So the bridge source is not hidden inside `aab330`; it is the concrete object stored at `[original]`.
 
-## v13 caller/original-object result
+## v13/v14 callback materialization path
 
 v13 found no direct relocation/AP entry pointing to `e99c54`:
 
@@ -162,7 +160,7 @@ v13 found no direct relocation/AP entry pointing to `e99c54`:
 Relocation entries targeting e99c54: none
 ```
 
-Instead, `e99c54` is materialized as a callback/code pointer in a caller window:
+Instead, `e99c54` is materialized as a packaged callback/code pointer:
 
 ```text
 e950d9  rcx = e99c54
@@ -174,18 +172,59 @@ e950ef  call 17da794              ; packages callback object using rcx=e99c54
 e95105  call [r14.vtable+0xa0]    ; passes packaged callback object via rdx=rbx
 ```
 
-Adjacent preparation for the object passed into the callback packaging:
+v14 resolved the callback-package helper `17da794`:
 
 ```text
-e95099  r14 = [rsp+0x390]
-e950a1  [rsp+0xa30] = r14
-e950a4  [rsp+0xa38] = [rsp+0x398]
-e950ba  copies pair from [rsp+0x70] into [rsp+0xa40]
+17da794(pkg, fn_copy, fn_delete, callback, payload, size):
+  [pkg+0x00..0x17] = zero / empty holder
+  [pkg+0x18] = fn_copy       ; here dfa052
+  [pkg+0x20] = fn_delete     ; here dfa086
+  [pkg+0x28] = callback      ; here e99c54
+  [pkg+0x30] = operator new[](size, align=8)
+  [pkg+0x38] = size          ; here 0x20
+  call [pkg+0x18]([pkg+0x30], payload, size)
 ```
 
-This means `e99c54` is best treated as a packaged erased callback, not as a normal AP-literal method.
+Destructor / cleanup for that package:
 
-## v13 original-object builder candidates
+```text
+17da802(pkg):
+  buf = [pkg+0x30]
+  if buf != 0:
+    if [pkg+0x20] != 0:
+      call [pkg+0x20](buf)
+    [pkg+0x30] = 0
+    delete[] buf, align=8
+```
+
+Call-site binding now known:
+
+```text
+e950cb  rsi = dfa052       ; copy/fill function -> [pkg+0x18]
+e950d2  rdx = dfa086       ; delete/cleanup function -> [pkg+0x20]
+e950d9  rcx = e99c54       ; callback body -> [pkg+0x28]
+e950e8  r9  = 0x20         ; package buffer size -> [pkg+0x38]
+e95102  rdx = rsp+0xbe0    ; callback package passed to virtual +0xa0
+```
+
+Receiver path around the virtual `+0xa0` call:
+
+```text
+e95091  r14 = [rsp+0x390]
+e95099  rax = [rsp+0x398]
+e950a1  [rsp+0xa30] = r14
+e950a4  [rsp+0xa38] = rax
+...
+e950f4  rax = [r14]
+e950f7  rdi = rsp+0x1050
+e950ff  rsi = r14
+e95102  rdx = rsp+0xbe0    ; packaged callback
+e95105  call [rax+0xa0]
+```
+
+This moves the remaining unknown to the concrete vtable behind `r14 = [rsp+0x390]` and its `+0xa0` implementation.
+
+## Original-object builder candidates
 
 The strongest builder materialization found so far:
 
@@ -201,7 +240,7 @@ e92097  b891f8(r15+0x10, stack_object)
 e920a4  [stack_wrapper+0x20] = r15
 ```
 
-Candidate AP table retained from v13:
+Candidate AP table retained:
 
 ```text
 0x1831968: +0x10 -> ea6568, +0x78 -> e992a2
@@ -213,7 +252,7 @@ Candidate AP table retained from v13:
 0x1831a48: +0x10 -> e9929a, +0x78 -> eabb76
 ```
 
-`0x18319e0` is now the most concrete candidate because v13 saw it materialized into a freshly allocated `0x40` object and initialized at `+0x10`. It is not yet proven to be the exact `[original]` object passed into `e99c54`; the next trace should connect the `17da794` packaged callback / virtual `+0xa0` path to the `original` object consumed by `e99c54`.
+`0x18319e0` is still the most concrete provider candidate because v13 saw it materialized into a freshly allocated `0x40` object and initialized at `+0x10`. It is not yet proven to be the exact `[original]` object passed into `e99c54`.
 
 ## Closed items
 
@@ -234,23 +273,28 @@ late 0x198/AP 0x184d5d0 stores installed object at +0x60
 ea785e stack-output cleanup/destructor path
 aab330 classified as weak/shared lock + pointer copier
 e99c54 classified as packaged callback materialized at e950d9, not direct AP relocation
+17da794 callback package layout resolved: +0x18 copy, +0x20 delete, +0x28 callback, +0x30 buffer, +0x38 size
 ```
 
 ## Still open / next best targets
 
 ```text
-Trace helper 17da794 callback-object layout for rcx=e99c54
-Trace the virtual +0xa0 call at e95105 that receives rdx=rsp+0xbe0 packaged callback
-Bind the callback package's original object fields:
+Bind r14 = [rsp+0x390] at e95091 to a concrete AP/vtable.
+Trace the concrete [r14.vtable+0xa0] implementation called at e95105.
+Inside that +0xa0 implementation, find where callback package [rsp+0xbe0] is stored/invoked.
+Bind the callback invocation's original object fields:
   [original]
   [original+0x08]
   [original+0x10]
-Prove or reject AP 0x18319e0 as the concrete [original] provider object
-Then bind provider +0x78 and consumer +0x10 concretely
+Prove or reject AP 0x18319e0 as the concrete [original] provider object.
+Then bind provider +0x78 and consumer +0x10 concretely.
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-callback-package-17da794-v14.md`
+- `analysis/restrictions-virtual-a0-e95105-v14.md`
+- `analysis/restrictions-callback-original-flow-v14.md`
 - `analysis/restrictions-e99c54-callers-v13.md`
 - `analysis/restrictions-original-object-builders-v13.md`
 - `analysis/restrictions-provider-consumer-bindings-v13.md`
