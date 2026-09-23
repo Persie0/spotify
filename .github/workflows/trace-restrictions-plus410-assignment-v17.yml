@@ -1,0 +1,301 @@
+name: Trace Restrictions plus410 assignment parallel v17
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-plus410-assignment-v17.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-local-r13-plus410:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace local r13 plus410 use
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=55,aft=120):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def md_table(rows,limit=700):
+              out='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: out+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: out+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return out+'\n'
+          lo,hi=0xe8d000,0xe95600
+          local=[x for x in ins if lo<=x[0]<=hi]
+          md=['# Restrictions local `[r13+0x410]` assignment/use v17\n\n']
+          md.append('Focus: local dataflow around the known producer site `e930b3 r15=[r13+0x410]` and `e930da call [r15.vtable+0x28]`. Static provenance only.\n\n')
+          md.append('## Producer window around `e930b3` / `e930da`\n\n')
+          md.append(fmt(around(0xe930b3,95,120)))
+          pats=['[r13+0x410]','r13+0x410','[r13+0x570]','r13+0x570','[r13+0x378]','r13+0x378','[rsp+0x390]','[rsp+0x398]','rsp+0x390','rsp+0x398','rsp+0x410']
+          refs=[x for x in local if any(p in x[1] for p in pats)]
+          md.append('## Local refs to key owner fields and receiver stack slots\n\n')
+          md.append(md_table(refs,800))
+          md.append('## Local r13 assignment / base-tracking rows\n\n')
+          r13rows=[]
+          for a,l,t in local:
+              if 'r13' in l and any(op in t for op in ['mov','lea','xchg','push','pop']):
+                  r13rows.append((a,l,t))
+          md.append(md_table(r13rows,900))
+          md.append('## Windows around all local key refs\n\n')
+          for a,l,t in refs[:120]:
+              md.append(f'### `{a:#x}`\n\n')
+              md.append(fmt(around(a,32,75)))
+          md.append('## Local virtual calls after receiver production\n\n')
+          vcalls=[]
+          for a,l,t in local:
+              if 'call' in t and any(x in t for x in ['+0xa0]', '+0xa8]', '+0x28]', '+0x30]', '+0x38]']):
+                  vcalls.append((a,l,t))
+          md.append(md_table(vcalls,500))
+          md.append('## Interpretation\n\n')
+          md.append('The important local invariant to verify is whether any direct write to `[r13+0x410]` exists in this giant function. If none appears, `[r13+0x410]` is an incoming owner-field initialized by an earlier constructor/factory, so the next target is global writes to offset `+0x410`, not this local callsite.\n')
+          Path('out/restrictions-local-r13-plus410-v17.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-local-r13-plus410-v17
+          path: out/restrictions-local-r13-plus410-v17.md
+
+  trace-global-plus410-writers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace global plus410 writers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=60,aft=105):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=1200):
+              s='| addr | class | instruction |\n|---:|---|---|\n'
+              for a,l,t,cl in rows[:limit]: s+=f'| `{a:#x}` | {cl} | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          def classify(t):
+              # Intel syntax: dst first. Treat memory before comma as write.
+              parts=t.split(',',1)
+              if parts and '+0x410]' in parts[0]: return 'write'
+              if 'call' in t and '+0x410]' in t: return 'call-through-field'
+              if '+0x410]' in t: return 'read/use'
+              if '0x410' in t: return 'imm/stack/other'
+              return 'other'
+          rows=[]
+          for a,l,t in ins:
+              if '0x410' in l:
+                  rows.append((a,l,t, classify(t)))
+          writes=[(a,l,t,cl) for a,l,t,cl in rows if cl=='write']
+          callthrough=[(a,l,t,cl) for a,l,t,cl in rows if cl=='call-through-field']
+          md=['# Restrictions global `+0x410` writer search v17\n\n']
+          md.append('Focus: find where an object field at offset `+0x410` is written, because `[r13+0x410]` is the producer object for the receiver pair. Static provenance only.\n\n')
+          md.append('## All disassembly refs containing `0x410`\n\n')
+          md.append(table(rows,1400))
+          md.append('## Direct field writes with `+0x410` as destination\n\n')
+          md.append(table(writes,500))
+          md.append('## Call-through-field refs involving `+0x410`\n\n')
+          md.append(table(callthrough,500))
+          md.append('## Windows around direct `+0x410` writes\n\n')
+          for a,l,t,cl in writes[:90]:
+              md.append(f'### write `{a:#x}`\n\n')
+              md.append(fmt(around(a,50,95)))
+          md.append('## Nearby AP/literal materializations around direct writes\n\n')
+          for a,l,t,cl in writes[:90]:
+              win=around(a,70,110)
+              hits=[]
+              for aa,ll,tt in win:
+                  if any(x in tt for x in ['lea','mov']) and '#' in ll:
+                      hits.append((aa,ll,tt))
+              if hits:
+                  md.append(f'### literals near write `{a:#x}`\n\n')
+                  md.append('```text\n'+'\n'.join(x[1] for x in hits)+'\n```\n')
+          md.append('## Interpretation\n\n')
+          md.append('Prefer a writer whose surrounding window constructs or assigns the same large owner object that later appears as `r13`, not stack-local offsets like `[rsp+0x410]`. A true object-field writer usually has base register `rdi/rbx/r14/r15` and a non-stack source pointer.\n')
+          Path('out/restrictions-global-plus410-writers-v17.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-global-plus410-writers-v17
+          path: out/restrictions-global-plus410-writers-v17.md
+
+  trace-plus28-candidate-methods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus28 candidate methods
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=45,aft=155):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          # v16 high-signal candidates plus near-e99 candidates retained from earlier rounds.
+          bases=[0x1854998,0x184c338,0x181bf48,0x182d060,0x182d068,0x182d070,0x185ac20,0x18b08d0,0x18b08d8,0x18856d0,0x18319b8,0x18319c8,0x1831a30,0x1831980,0x1831988,0x1831990,0x18319e8,0x1831a10,0x188bdb8]
+          md=['# Restrictions `+0x28` concrete candidate methods v17\n\n']
+          md.append('Focus: inspect likely concrete AP/vtable candidates for `[r13+0x410].vtable+0x28`, especially methods that could populate `[rsp+0x390]/[rsp+0x398]` or return/build receiver pairs. Static provenance only.\n\n')
+          md.append('## Candidate AP table\n\n')
+          md.append('| AP base | +0x00 | +0x08 | +0x10 | +0x20 | +0x28 | +0x78 | +0xa0 | +0xa8 | tags |\n|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|\n')
+          targets=[]
+          for b in bases:
+              vals=[]
+              for off in [0,8,0x10,0x20,0x28,0x78,0xa0,0xa8]:
+                  vals.append(relmap.get(b+off,(None,''))[0])
+              def hx(v): return '-' if v is None else f'{v:#x}'
+              tags=[]
+              for v in vals:
+                  if v is None: continue
+                  targets.append(v)
+                  if 0xe90000 <= v <= 0xe9b000: tags.append('near-e95/e99')
+                  if 0x10a0000 <= v <= 0x10c4000: tags.append('restrictions-ish')
+                  if 0x1140000 <= v <= 0x1150000: tags.append('top-v16-candidate')
+              md.append(f'| `{b:#x}` | `{hx(vals[0])}` | `{hx(vals[1])}` | `{hx(vals[2])}` | `{hx(vals[3])}` | `{hx(vals[4])}` | `{hx(vals[5])}` | `{hx(vals[6])}` | `{hx(vals[7])}` | `{", ".join(sorted(set(tags)))}` |\n')
+          md.append('\n')
+          plus28=sorted(set(relmap.get(b+0x28,(None,''))[0] for b in bases if relmap.get(b+0x28,(None,''))[0] is not None))
+          md.append('## `+0x28` target method windows\n\n')
+          for t in plus28:
+              md.append(f'### target `{t:#x}`\n\n')
+              md.append(fmt(around(t,55,185)))
+              # local refs in the method window that matter
+              hits=[]
+              for aa,ll,tt in around(t,0,240):
+                  if any(p in ll for p in ['0x390','0x398','0x410','+0xa0]', '+0xa8]', '+0x28]', '17da794', 'e99c54', 'e9940c', 'e9959c']):
+                      hits.append((aa,ll,tt))
+              if hits:
+                  md.append('Relevant refs in this target window:\n\n')
+                  md.append('```text\n'+'\n'.join(x[1] for x in hits)+'\n```\n')
+          md.append('## Text materializations of candidate AP bases\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          exact=[hex(b)[2:] for b in bases]
+          hits=[]
+          for a,l,t in ins:
+              if any(x in l for x in exact): hits.append((a,l,t))
+          for a,l,t in hits[:700]: md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          if len(hits)>700: md.append(f'| ... | truncated {len(hits)-700} more |\n')
+          md.append('\n## Interpretation\n\n')
+          md.append('A concrete match should either be materialized into the object stored at offset `+0x410`, or its `+0x28` target should directly/indirectly populate the receiver pair later seen at `[rsp+0x390]/[rsp+0x398]`. Without that assignment edge, the AP remains only a candidate.\n')
+          Path('out/restrictions-plus28-candidate-methods-v17.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus28-candidate-methods-v17
+          path: out/restrictions-plus28-candidate-methods-v17.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-local-r13-plus410
+      - trace-global-plus410-writers
+      - trace-plus28-candidate-methods
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: analysis
+          merge-multiple: true
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-local-r13-plus410-v17.md analysis/restrictions-global-plus410-writers-v17.md analysis/restrictions-plus28-candidate-methods-v17.md
+          git commit -m 'Trace Restrictions plus410 assignment in parallel'
+          git pull --rebase origin main
+          git push
