@@ -1,0 +1,315 @@
+name: Trace Restrictions callback package bridge parallel v14
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-callback-package-v14.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-callback-package-17da794:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace callback package helper 17da794
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=44,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=800):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions callback package helper `17da794` v14\n\n']
+          md.append('Focus: classify the helper called at `e950ef` with `rdi=rsp+0xbe0`, `rcx=e99c54`, `r9=0x20`. Static provenance only.\n\n')
+          md.append('## `17da794` body window\n\n')
+          md.append(fmt(around(0x17da794,70,260)))
+          # filtered likely field stores in the helper
+          rows=[]
+          for a,l,t in around(0x17da794,0,360):
+              if any(p in l for p in ['[rdi]', '[rdi+', '[rbx]', '[rbx+', '[rax]', '[rax+', '[rcx]', '[rcx+', '[r9', 'mov    QWORD PTR', 'mov    BYTE PTR', 'lea    ', 'call', 'jmp', 'ret', 'e99c54']):
+                  rows.append((a,l,t))
+          md.append('## Filtered layout/store instructions in `17da794`\n\n')
+          md.append(table(rows,900))
+          # all call sites to 17da794
+          callers=[]
+          for i,(a,l,t) in enumerate(ins):
+              if '17da794' in l:
+                  callers.extend(ins[max(0,i-55):min(len(ins),i+38)])
+          seen=set(); uniq=[]
+          for r in callers:
+              if r[0] not in seen:
+                  seen.add(r[0]); uniq.append(r)
+          md.append('## Visible call-site windows mentioning `17da794`\n\n')
+          md.append(table(uniq,1200))
+          # AP entries targeting helper neighborhood
+          md.append('## Relocations targeting callback helper neighborhood\n\n')
+          md.append('| entry | target | relocation |\n|---:|---:|---|\n')
+          hits=[(off,target,line) for off,target,line in rels if 0x17da000 <= target <= 0x17db000]
+          for off,target,line in hits[:400]:
+              md.append(f'| `{off:#x}` | `{target:#x}` | `{line}` |\n')
+          if len(hits)>400: md.append(f'| ... | ... | truncated {len(hits)-400} more |\n')
+          md.append('\n## Current v14 interpretation target\n\n')
+          md.append('If the helper stores `rcx` into the destination object, this report should expose the callback-code-pointer offset inside the package. If it only delegates to another helper, the callee and destination field offsets should be visible in the filtered instruction table.\n')
+          Path('out/restrictions-callback-package-17da794-v14.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-callback-package-17da794-v14
+          path: out/restrictions-callback-package-17da794-v14.md
+
+  trace-virtual-a0-receiver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace virtual plus a0 receiver around e95105
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=60,aft=220):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions virtual `+0xa0` receiver at `e95105` v14\n\n']
+          md.append('Focus: identify the receiver used at `e95105 call [r14.vtable+0xa0]` and how the callback package at `rsp+0xbe0` is passed. Static provenance only.\n\n')
+          md.append('## Full local window around callback package and virtual `+0xa0` call\n\n')
+          md.append(fmt(win(0xe94ee0,0xe95280)))
+          # filtered register/dataflow rows around r14/rbx/rsp+be0/rsp+1050
+          rows=[]
+          pats=['r14','rbx','0xbe0','0x1050','0xa0','17da794','e99c54','[rax+0xa0]','rsp+0x390','rsp+0x398','rsp+0x320','rsp+0x70']
+          for a,l,t in win(0xe94e00,0xe952c0):
+              if any(p in l for p in pats): rows.append((a,l,t))
+          md.append('## Filtered `r14` / callback-package dataflow rows\n\n')
+          md.append(table(rows,1000))
+          # List AP/vtable candidates with a +0xa0 slot pointing into text.
+          md.append('## Relocation tables with plausible `+0xa0` code slots\n\n')
+          md.append('| AP base | +0x00 | +0x10 | +0xa0 | +0xa8 | tags |\n|---:|---:|---:|---:|---:|---|\n')
+          bases=[]
+          offs=set(off for off,_,_ in rels)
+          for off,target,line in rels:
+              base=off-0xa0
+              if base in offs and 0x900000 <= target <= 0x1800000:
+                  e0=relmap.get(base,(None,''))[0]
+                  e10=relmap.get(base+0x10,(None,''))[0]
+                  ea0=target
+                  ea8=relmap.get(base+0xa8,(None,''))[0]
+                  tags=[]
+                  for t in (e0,e10,ea0,ea8):
+                      if t is None: continue
+                      if 0xe90000 <= t <= 0xea1000: tags.append('near-e95/e99')
+                      if 0xfd0000 <= t <= 0xfe0000: tags.append('fd')
+                      if 0x10a0000 <= t <= 0x10d0000: tags.append('restrictions')
+                  bases.append((base,e0,e10,ea0,ea8,','.join(sorted(set(tags)))))
+          # prioritize near current region
+          bases_sorted=sorted(bases, key=lambda x: (0 if 'near-e95/e99' in x[5] else 1, x[0]))
+          for base,e0,e10,ea0,ea8,tags in bases_sorted[:350]:
+              md.append(f'| `{base:#x}` | `{e0 if e0 is not None else "-"}` | `{e10 if e10 is not None else "-"}` | `{ea0:#x}` | `{ea8 if ea8 is not None else "-"}` | `{tags}` |\n')
+          if len(bases_sorted)>350:
+              md.append(f'| ... | ... | ... | ... | ... | truncated {len(bases_sorted)-350} more |\n')
+          # dump AP target windows for near-e95/e99 +a0 candidates only
+          md.append('\n## Target windows for near-region `+0xa0` candidates\n\n')
+          near_targets=sorted(set(ea0 for base,e0,e10,ea0,ea8,tags in bases_sorted if 'near-e95/e99' in tags))[:60]
+          for t in near_targets:
+              md.append(f'### `+0xa0` target `{t:#x}`\n\n')
+              md.append(fmt(around(t,28,100)))
+          Path('out/restrictions-virtual-a0-e95105-v14.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-virtual-a0-e95105-v14
+          path: out/restrictions-virtual-a0-e95105-v14.md
+
+  trace-callback-original-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace callback invocation and original flow
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=42,aft=150):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions callback invocation/original flow v14\n\n']
+          md.append('Focus: find how the package containing `e99c54` is later invoked and what object becomes `rdi`/`original` for `e99c54`. Static provenance only.\n\n')
+          # all text mentions of e99c54, 17da794, e950d9, and key package offsets
+          terms=['e99c54','17da794','rsp+0xbe0','rsp+0x1050','[rax+0xa0]','0xbe0','0x1050']
+          hits=[]
+          for i,(a,l,t) in enumerate(ins):
+              if any(term in l for term in terms):
+                  hits.extend(ins[max(0,i-22):min(len(ins),i+30)])
+          seen=set(); uniq=[]
+          for r in hits:
+              if r[0] not in seen:
+                  seen.add(r[0]); uniq.append(r)
+          md.append('## Text windows mentioning callback package / `e99c54`\n\n')
+          md.append(table(uniq,1200))
+          # dump plausible callback-invoker functions found in package/helper neighborhood.
+          for name,addr in [('callback body e99c54',0xe99c54),('callback destructor e99c1e',0xe99c1e),('package helper 17da794',0x17da794),('post-package transformer e994ce',0xe994ce),('installer/helper e9965e',0xe9965e),('builder candidate e9207e',0xe9207e)]:
+              md.append(f'## `{name}` `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,55,190)))
+          # AP entries targeting e994ce/e9965e/e99c1e/e99c54 or near callback methods
+          targets=[0xe99c54,0xe99c1e,0xe994ce,0xe9965e,0x17da794]
+          md.append('## Direct relocation/AP entries for key callback-flow functions\n\n')
+          md.append('| entry | target | function | relocation |\n|---:|---:|---|---|\n')
+          count=0
+          for off,target,line in rels:
+              if target in targets or (0xe99000 <= target <= 0xe99d20):
+                  fname={0xe99c54:'e99c54',0xe99c1e:'e99c1e',0xe994ce:'e994ce',0xe9965e:'e9965e',0x17da794:'17da794'}.get(target,'near-e99')
+                  md.append(f'| `{off:#x}` | `{target:#x}` | `{fname}` | `{line}` |\n')
+                  count+=1
+                  if count>=500: break
+          if count==0:
+              md.append('| none | - | - | no direct entries found |\n')
+          md.append('\n## Current v14 interpretation target\n\n')
+          md.append('The decisive evidence is whether the package stores a direct code pointer and whether the virtual `+0xa0` receiver copies it into an erased holder that later calls `e99c54`. If not visible, the report should identify the next concrete helper after `e95105`.\n')
+          Path('out/restrictions-callback-original-flow-v14.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-callback-original-flow-v14
+          path: out/restrictions-callback-original-flow-v14.md
+
+  commit-reports:
+    needs:
+      - trace-callback-package-17da794
+      - trace-virtual-a0-receiver
+      - trace-callback-original-flow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          cp artifacts/restrictions-callback-package-17da794-v14/restrictions-callback-package-17da794-v14.md analysis/
+          cp artifacts/restrictions-virtual-a0-e95105-v14/restrictions-virtual-a0-e95105-v14.md analysis/
+          cp artifacts/restrictions-callback-original-flow-v14/restrictions-callback-original-flow-v14.md analysis/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-callback-package-17da794-v14.md analysis/restrictions-virtual-a0-e95105-v14.md analysis/restrictions-callback-original-flow-v14.md
+          git commit -m 'Trace Restrictions callback package bridge in parallel' || exit 0
+          git pull --rebase origin main
+          git push
