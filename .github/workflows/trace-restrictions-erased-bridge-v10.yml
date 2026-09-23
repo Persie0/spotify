@@ -1,0 +1,305 @@
+name: Trace Restrictions erased bridge candidates parallel v10
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-erased-bridge-v10.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-source-plus78:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace e99c96 source virtual +0x78
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=45,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=650):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions erased source virtual `+0x78` trace v10\n\n']
+          md.append('Focus: concrete provenance for the `e99c96 call [source.vtable+0x78]` erased-interface bridge. Static analysis only.\n\n')
+          md.append('## e99c96 local bridge window\n\n')
+          md.append(fmt(around(0xe99c96,55,70)))
+          # all direct +0x78 virtual calls in text, to compare call shapes
+          plus78=[]
+          for i,(a,l,t) in enumerate(ins):
+              if '[rax+0x78]' in l or '[rcx+0x78]' in l or '[rdx+0x78]' in l or '[r8+0x78]' in l:
+                  plus78.extend(ins[max(0,i-7):min(len(ins),i+9)])
+          seen=set(); plus78u=[]
+          for row in plus78:
+              if row[0] not in seen:
+                  seen.add(row[0]); plus78u.append(row)
+          md.append('## All observed virtual `+0x78` call shapes\n\n')
+          md.append(table(plus78u,900))
+          # AP relocation entries with +0x78 populated by any target, especially near APs seen before
+          ap_rows=[]
+          for off,target,line in rels:
+              if off & 7 == 0 and (off % 0x1000) != 0:
+                  base=off-0x78
+                  # keep plausible vtable regions around known AP clusters
+                  if 0x1800000 <= base <= 0x1895000:
+                      ap_rows.append((base, target, line))
+          md.append('## Relocation entries that could serve as AP+0x78\n\n')
+          md.append('| possible_ap | +0x78 target | relocation |\n|---:|---:|---|\n')
+          for base,target,line in ap_rows[:600]:
+              md.append(f'| `{base:#x}` | `{target:#x}` | `{line.strip()}` |\n')
+          if len(ap_rows)>600: md.append(f'| ... | ... | truncated {len(ap_rows)-600} more |\n')
+          # Calls to aab330 which creates the source wrapper used by e99c96 path
+          aab=[]
+          for i,(a,l,t) in enumerate(ins):
+              if 'aab330' in l:
+                  aab.extend(ins[max(0,i-14):min(len(ins),i+16)])
+          seen=set(); aabu=[]
+          for row in aab:
+              if row[0] not in seen:
+                  seen.add(row[0]); aabu.append(row)
+          md.append('\n## `aab330` wrapper/source creation callsites\n\n')
+          md.append(table(aabu,520))
+          Path('out/restrictions-source-plus78-v10.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-source-plus78-v10
+          path: out/restrictions-source-plus78-v10.md
+
+  trace-consumer-plus10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace e99ca7 consumer virtual +0x10
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=50,aft=150):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=650):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions erased consumer virtual `+0x10` trace v10\n\n']
+          md.append('Focus: concrete provenance for `e99ca7 call [consumer.vtable+0x10]`, where consumer is loaded from original object `+0x10`. Static analysis only.\n\n')
+          md.append('## e99ca7 local bridge window\n\n')
+          md.append(fmt(around(0xe99ca7,60,90)))
+          # e99d07 callers and argument shape
+          callers=[]
+          for i,(a,l,t) in enumerate(ins):
+              if 'e99d07' in l:
+                  callers.extend(ins[max(0,i-18):min(len(ins),i+14)])
+          seen=set(); callersu=[]
+          for row in callers:
+              if row[0] not in seen:
+                  seen.add(row[0]); callersu.append(row)
+          md.append('## Direct callsites mentioning `e99d07`\n\n')
+          md.append(table(callersu,680))
+          # all virtual +0x10 call shapes in bridge nearby functions
+          ranges=[(0xe99000,0xe9b500),(0xfd3600,0xfd5600),(0x10ba000,0x10bd200)]
+          hits=[]
+          for a,l,t in ins:
+              if any(start<=a<=end for start,end in ranges):
+                  if 'call   QWORD PTR [rax+0x10]' in l or 'call   QWORD PTR [rcx+0x10]' in l or 'call   QWORD PTR [rdx+0x10]' in l:
+                      idx=addrs.index(a)
+                      hits.extend(ins[max(0,idx-8):min(len(ins),idx+10)])
+          seen=set(); hitsu=[]
+          for row in hits:
+              if row[0] not in seen:
+                  seen.add(row[0]); hitsu.append(row)
+          md.append('## Nearby virtual `+0x10` call shapes\n\n')
+          md.append(table(hitsu,850))
+          # AP +0x10 relocation entries around known AP regions
+          ap_rows=[]
+          for off,target,line in rels:
+              base=off-0x10
+              if 0x1800000 <= base <= 0x1895000:
+                  ap_rows.append((base,target,line))
+          md.append('## Relocation entries that could serve as AP+0x10\n\n')
+          md.append('| possible_ap | +0x10 target | relocation |\n|---:|---:|---|\n')
+          for base,target,line in ap_rows[:600]:
+              md.append(f'| `{base:#x}` | `{target:#x}` | `{line.strip()}` |\n')
+          if len(ap_rows)>600: md.append(f'| ... | ... | truncated {len(ap_rows)-600} more |\n')
+          Path('out/restrictions-consumer-plus10-v10.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-consumer-plus10-v10
+          path: out/restrictions-consumer-plus10-v10.md
+
+  trace-ea785e-output:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace ea785e stack-output handling
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=45,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=700):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `ea785e` stack-output handling trace v10\n\n']
+          md.append('Focus: classify `ea785e(stack output)` after the erased bridge calls at `e99c96/e99ca7`. Static analysis only.\n\n')
+          for name,addr in [('ea785e',0xea785e),('aab330',0xaab330),('a9e486',0xa9e486),('aa6d30',0xaa6d30),('10add2a',0x10add2a)]:
+              md.append(f'## `{name}` window `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,40,150)))
+          # callsites of ea785e and common cleanup helpers around stack outputs
+          hits=[]
+          for i,(a,l,t) in enumerate(ins):
+              if any(s in l for s in ['ea785e','aab330','10add2a']) and 0xe00000 <= a <= 0x1100000:
+                  hits.extend(ins[max(0,i-10):min(len(ins),i+12)])
+          seen=set(); hitsu=[]
+          for row in hits:
+              if row[0] not in seen:
+                  seen.add(row[0]); hitsu.append(row)
+          md.append('## Related callsites in bridge/restrictions range\n\n')
+          md.append(table(hitsu,900))
+          # filtered operations inside ea785e-ish window
+          filt=[]
+          for a,l,t in ins:
+              if 0xea785e <= a <= 0xea7a80 and any(p in l for p in ['+0x18]', '+0x10]', '+0x8]', 'call', 'jmp', 'mov', 'test']):
+                  filt.append((a,l,t))
+          md.append('## Filtered `ea785e` body signals\n\n')
+          md.append(table(filt,500))
+          Path('out/restrictions-ea785e-output-v10.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-ea785e-output-v10
+          path: out/restrictions-ea785e-output-v10.md
+
+  commit-reports:
+    needs:
+      - trace-source-plus78
+      - trace-consumer-plus10
+      - trace-ea785e-output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -maxdepth 3 -type f -name '*.md' -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-source-plus78-v10.md analysis/restrictions-consumer-plus10-v10.md analysis/restrictions-ea785e-output-v10.md
+          if git diff --cached --quiet; then
+            echo 'No report changes to commit'
+            exit 0
+          fi
+          git commit -m 'Trace Restrictions erased bridge candidates in parallel'
+          git pull --rebase origin main
+          git push
