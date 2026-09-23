@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, following downstream consumers, and narrowing the remaining erased-interface bridge through v10. Static provenance documentation only; no runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, following downstream consumers, and narrowing the remaining erased-interface bridge through v11. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -27,7 +27,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `fd381a state+0x40` dependency remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation. The direct AP identity does not appear in the `fd381a` window; the remaining gap is through erased interfaces and temporary stack output.
+The `fd381a state+0x40` dependency remains best explained as a RestrictionsSetupImpl-derived readiness source, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation. The direct AP identity does not appear in the `fd381a` window; the remaining gap is through erased interfaces and temporary stack output.
 
 ## Restrictions service / child getter path
 
@@ -48,15 +48,6 @@ b411a4   mov rax, [rdi+0x18]
 b411a8   ret
 ```
 
-Relocation-backed child AP evidence:
-
-```text
-child AP 0x184da88
-  +0x00 -> 10c09c6
-  +0x08 -> 10c0a66
-  +0x38 -> b411a4
-```
-
 ## Setup-bundle source: closed
 
 `bundle+0x30` is the first element of inline vector storage for the vector subobject at `bundle+0x18`.
@@ -64,7 +55,6 @@ child AP 0x184da88
 ```text
 provider-vector caller
   -> constructs setup bundle at rsp+0x2e0
-  -> rcx = rsp+0x310 = bundle+0x30
   -> [bundle+0x18] = bundle+0x30
   -> 166103c(bundle, post_add2a_obj)
   -> bundle.vtable+0x30 = 0x153cbfc
@@ -76,20 +66,9 @@ provider-vector caller
   -> factory passes it as rcx into constructor 0x10aba36
 ```
 
-## Descriptor/builder false leads: closed
-
-```text
-slot AP 0x187e2f8
-  +0x30 -> 0x153d2a4
-  +0x90 -> 0x165dd40
-  +0x98 -> 0x153d0d0
-```
-
-`0x165dd40` and helper chains are descriptor/builder/buffer logic, not the final readiness object. Wrapper-local `builder+0x18` was rejected because it overlaps stack-local output/canary layout in the wrapper path.
+Descriptor/builder/buffer false leads are closed. `0x165dd40` and helpers are descriptor/builder/buffer logic, not the final readiness object.
 
 ## Direct `child+0x18` writer: resolved
-
-The true direct writer is `[rsp+0x60] = this+0x18` followed by `10ac1a9`:
 
 ```text
 10aba8a  lea rax, [rdi+0x18]
@@ -119,34 +98,25 @@ Follow-up reads:
 
 ## Installed object AP `0x184d898`
 
-Relocation-backed AP/method entries start as:
-
 ```text
 0x184d898 +0x00 -> 10bff2c
 0x184d898 +0x08 -> 10bff40
 0x184d898 +0x10 -> 10bff52
 0x184d898 +0x18 -> 10bffde
-0x184d8c8        -> abfe12
-0x184d8d0        -> abfe54
 ```
 
-Known method semantics after v9:
+Known method semantics:
 
 ```text
 10bff2c:
-  [this+0x00] = 0x184d898
-  de1c52(this+0x08)
-  => reset/destruct payload at +0x08
+  reset/destruct payload at this+0x08
 
 10bff40:
-  calls 10bff2c(this)
-  operator delete(this)
-  => deleting destructor wrapper
+  deleting destructor wrapper
 
 10bff52:
   calls virtual [this.vtable+0x20] with rsi=this+0x08 payload
   transforms external rdx via a7b836 and 17c4ef2
-  destroys temp string
   => forwarding/string helper over installed payload
 
 10bffde:
@@ -160,12 +130,10 @@ Known method semantics after v9:
     [this+0x00] = 0
     [this+0x18] = 0
   returns this
-  => condition/update helper over installed payload; strongest readiness-style method so far
+  => condition/update helper over installed payload
 ```
 
-## Payload at `allocated_0x28+0x08`
-
-`107162a` classifies as a move/copy installer for the erased/shared payload stored at `allocated_0x28+0x08`:
+Payload install:
 
 ```text
 107162a(dst, src):
@@ -191,20 +159,7 @@ stack_wrapper:
   +0x18 = 10adc16
 ```
 
-So the direct `b411a4` return object is:
-
-```text
-child+0x18
-  = allocated_0x28
-  -> AP/literal 0x184d898
-  -> erased/shared payload at +0x08
-     -> installed by 107162a from stack_wrapper
-     -> destructor/reset through 10bff2c -> de1c52(this+0x08)
-```
-
 ## Late consumer: `0x198` object AP `0x184d5d0`
-
-The constructor builds a `0x198` object with AP `0x184d5d0` and stores the installed `this+0x18` object into field `+0x60`:
 
 ```text
 10ad136  rax = [rsp+0x60]
@@ -213,28 +168,20 @@ The constructor builds a `0x198` object with AP `0x184d5d0` and stores the insta
 10ad160  rbp = allocated_0x198
 10ad19e  lea rax, 0x184d5d0
 10ad1a5  [rbp+0x00] = 0x184d5d0
-...
 10ad217  [rbp+0x60] = rbx          ; captures installed this+0x18
 ```
 
-Confirmed method-side `+0x60` consumers and deeper v9 flow:
+Confirmed method-side `+0x60` consumers:
 
 ```text
 0x184d720 +0x150 -> 10bb09e
-  10bb0c9  eax = [this+0x50]
-  10bb0d8  al  = [this+0x54]
-  10bb0e5  r14 = [this+0x60]
-  10bb0f8  rax = [r14]
-  10bb107  rdi = r14
-  10bb10a  call [rax+0x10]
-  => calls installed AP 0x184d898 method +0x10 (10bff52)
+  reads [this+0x50] and [this+0x54]
+  r14 = [this+0x60]
+  calls installed AP 0x184d898 method +0x10 (10bff52)
 
 0x184d728 +0x158 -> 10bb16e
-  10bb186  rsi = [this+0x60]
-  10bb18a  rax = [rsi]
-  10bb199  rdi = stack out
-  10bb19c  call [rax+0x18]
-  => calls installed AP 0x184d898 method +0x18 (10bffde)
+  rsi = [this+0x60]
+  calls installed AP 0x184d898 method +0x18 (10bffde)
   if returned stack payload is present and passes 177f852:
     [this+0x50] = clamped result code <= 5
     [this+0x54] = result flag byte
@@ -246,13 +193,11 @@ This closes the key downstream link:
 0x184d5d0 object
   +0x60 = installed child+0x18 object / AP 0x184d898
   methods +0x150/+0x158 call that installed object via +0x10/+0x18
-  +0x158 refreshes 0x198 cached fields +0x50/+0x54 from the installed object result
-  +0x150 reads those cached fields and passes them into the installed object +0x10 helper
+  +0x158 refreshes cached fields +0x50/+0x54 from the installed-object result
+  +0x150 reads those cached fields and calls installed object +0x10
 ```
 
-## Erased `e99c96/e99ca7` bridge: v10 status
-
-v10 narrows the bridge structure but still does not resolve the concrete source/consumer vtables by literal AP identity.
+## Erased `e99c96/e99ca7` bridge: v11 status
 
 Current local bridge shape:
 
@@ -273,36 +218,29 @@ e99ca1  rdi = rbx
 e99ca4  rsi = rsp+0x18             ; same stack output
 e99ca7  call [rax+0x10]            ; consumer-side virtual consumes stack output
 
-e99cad  ea785e(rsp+0x18)           ; stack-output cleanup/normalization destructor
+e99cad  ea785e(rsp+0x18)           ; stack-output cleanup/destructor
 ```
 
-`ea785e` is now classified as cleanup, not as the producer:
+`ea785e` is cleanup, not the producer:
 
 ```text
 ea785e:
-  rbx = rdi
   e0c8c6(rdi + 0xa8)
-  aad132(rbx + 0x70)
+  aad132(rdi + 0x70)
 ```
 
-Adjacent helper `ea77fa` confirms this stack-output pattern:
+v11 did **not** close the erased bridge, but it narrowed the candidate space:
 
 ```text
-ea7813  rsi = [rdi+0x8]
-ea781d  call [source.vtable+0x78] into stack output
-ea7823  checks byte [stack+0x522]
-ea782d  ea785e(stack output)
-ea7845  returns boolean from checked byte
+likely provider/bridge AP candidate group includes near-e99 tables:
+  0x1831968 +0x78 -> 0xe992a2
+  0x1831980 +0x78 -> 0xe99368
+  0x18319e0 +0x78 -> 0xe9929a
+  0x1831938 +0x78 -> 0xe9939c
+  0x188bd68 +0x78 -> 0xe99382
 ```
 
-So v10 closes `ea785e` as stack-output cleanup and narrows the remaining unknowns to:
-
-```text
-concrete provider object returned by aab330(original)
-concrete provider virtual +0x78 implementation
-concrete consumer object at [original+0x10]
-concrete consumer virtual +0x10 implementation
-```
+The same candidate table still shows many unrelated `+0x78` entries around Restrictions AP tables. Therefore the bridge should not be treated as resolved by AP-literal matching alone. The next useful step is dataflow through `aab330`, not another broad relocation scan.
 
 ## Side paths
 
@@ -337,9 +275,9 @@ later reused as local byte/vector storage around 10acf8d and 10ad163+
 10ac513  [wrapper_0xd8+0x18] = 0
 ```
 
-Still relevant to construction, but not the direct `b411a4 -> child+0x18` getter value.
+These remain relevant to construction, but not the direct `b411a4 -> child+0x18` getter value.
 
-## Current closed items
+## Closed items
 
 ```text
 setup-bundle +0x30 source
@@ -363,8 +301,8 @@ ea785e stack-output cleanup/destructor path
 ## Still open / next best targets
 
 ```text
-Trace aab330 internals to identify provider object stored into [rsp+0x8]
-Resolve concrete provider virtual +0x78 target for e99c96
+Trace aab330 internals and stores to [rsp+0x8] / provider slot
+Resolve which near-e99 AP candidate is actually returned by aab330
 Resolve concrete consumer object [original+0x10]
 Resolve concrete consumer virtual +0x10 target for e99ca7
 Tie the erased e99c96/e99ca7 stack output to fd4c04/fd381a state+0x40 without relying on AP literals
@@ -372,27 +310,13 @@ Tie the erased e99c96/e99ca7 stack output to fd4c04/fd381a state+0x40 without re
 
 ## Evidence reports
 
+- `analysis/restrictions-aab330-provider-v11.md`
+- `analysis/restrictions-plus78-plus10-candidates-v11.md`
+- `analysis/restrictions-original-consumer-owner-v11.md`
 - `analysis/restrictions-source-plus78-v10.md`
 - `analysis/restrictions-consumer-plus10-v10.md`
 - `analysis/restrictions-ea785e-output-v10.md`
 - `analysis/restrictions-condition-propagation-v9.md`
 - `analysis/restrictions-184d5d0-callers-v9.md`
 - `analysis/restrictions-fd381a-state-bridge-v9.md`
-- `analysis/restrictions-installed-method-semantics-v8.md`
-- `analysis/restrictions-184d5d0-reader-flows-v8.md`
-- `analysis/restrictions-fd381a-bridge-deeper-v8.md`
-- `analysis/restrictions-payload-107162a-v7.md`
-- `analysis/restrictions-ap184d5d0-60-readers-v7.md`
-- `analysis/restrictions-fd381a-bridge-v7.md`
-- `analysis/restrictions-side-paths-v7.md`
-- `analysis/restrictions-ap184d898-methods-v6.md`
-- `analysis/restrictions-ap184d5d0-methods-v6.md`
-- `analysis/restrictions-this18-to-0x198-bridge-v6.md`
-- `analysis/restrictions-installed-ap184d898-v5.md`
-- `analysis/restrictions-child184da88-v5.md`
-- `analysis/restrictions-late-0x198-184d5d0-v5.md`
-- `analysis/restrictions-this18-rsp60-v4.md`
-- `analysis/restrictions-rsp70-late-v4.md`
-- `analysis/restrictions-rsp40-late-v4.md`
-- `analysis/restrictions-output-store-10ac7dd.md`
-- `analysis/restrictions-wrapper80-provenance.md`
+- older v4-v8 reports remain available in `analysis/`.
