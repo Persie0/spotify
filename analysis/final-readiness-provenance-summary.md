@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, and tracing all currently open downstream/side branches through v7.
+Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, and following the downstream `0x184d5d0` readers through v8.
 
 ## Correct high-level chain
 
@@ -144,7 +144,7 @@ Relocation-backed AP/method entries start as:
 0x184d8d0        -> abfe54
 ```
 
-Known method semantics:
+Known method semantics after v8:
 
 ```text
 10bff2c:
@@ -158,20 +158,23 @@ Known method semantics:
   => deleting destructor wrapper
 
 10bff52:
-  delegates through object field [this+0x20]
-  uses this+0x08 as payload input
+  calls virtual [this.vtable+0x20] with rsi=this+0x08 payload
   transforms external rdx via a7b836 and 17c4ef2
-  => payload/string-style forwarding helper, not direct readiness verdict yet
+  destroys temp string
+  => forwarding/string helper over installed payload
 
 10bffde:
-  delegates through object field [this+0x20]
-  then calls 17c4edc and tests result
-  => boolean/condition helper over installed payload, still needs semantic naming
+  calls virtual [input.vtable+0x20] with rsi=input+0x08 payload
+  calls 17c4edc(temp, out, 0), tests boolean result
+  if true:
+    [this+0x10] = [rsp+0x30]
+    [this+0x00..0x0f] = [rsp+0x20..0x2f]
+  => condition/update helper; strongest semantic readiness-style method so far
 ```
 
-## Payload at `allocated_0x28+0x08`: v7 result
+## Payload at `allocated_0x28+0x08`
 
-`107162a` now classifies as a move/copy installer for the erased/shared payload stored at `allocated_0x28+0x08`:
+`107162a` classifies as a move/copy installer for the erased/shared payload stored at `allocated_0x28+0x08`:
 
 ```text
 107162a(dst, src):
@@ -223,21 +226,35 @@ The constructor builds a `0x198` object with AP `0x184d5d0` and stores the insta
 10ad217  [rbp+0x60] = rbx          ; captures installed this+0x18
 ```
 
-v7 found real method-side `+0x60` consumers:
+Confirmed method-side `+0x60` consumers and deeper v8 flow:
 
 ```text
 0x184d720 +0x150 -> 10bb09e
-  10bb0e5  r14 = [rdi+0x60]
+  10bb0e5  r14 = [this+0x60]
+  10bb0f8  rax = [r14]
+  10bb107  rdi = r14
+  10bb10a  call [rax+0x10]
+  => calls installed AP 0x184d898 method +0x10 (10bff52)
 
 0x184d728 +0x158 -> 10bb16e
-  10bb186  rsi = [rdi+0x60]
+  10bb186  rsi = [this+0x60]
+  10bb18a  rax = [rsi]
+  10bb199  rdi = stack out
+  10bb19c  call [rax+0x18]
+  => calls installed AP 0x184d898 method +0x18 (10bffde)
+  if result payload is present and passes 177f852:
+    updates [this+0x50] and [this+0x54]
 ```
 
-These are the strongest confirmed downstream readers of the installed `child+0x18` object so far.
+This closes the key downstream link:
 
-Other nearby `+0x60` hits such as `10baa40: call [rax+0x60]` are wrapper/delegation calls through another object's vtable, not direct reads of `0x198+0x60`.
+```text
+0x184d5d0 object
+  +0x60 = installed child+0x18 object / AP 0x184d898
+  methods +0x150/+0x158 call that installed object via +0x10/+0x18
+```
 
-## Side paths: v7 status
+## Side paths
 
 `[rsp+0x40]`:
 
@@ -269,24 +286,39 @@ later reused as local byte/vector storage around 10acf8d and 10ad163+
 10ac503  [wrapper_0xd8+0x00] = 0x184d9a8
 10ac506  [wrapper_0xd8+0x08] = r14
 10ac50f  [wrapper_0xd8+0x10] = allocated_0x150
-10ac513  [wrapper_0xd8+0x18] = 0
 ```
 
-These are still relevant side construction paths but not the direct `b411a4 -> child+0x18` value.
+These side paths remain relevant construction branches but are not the direct `b411a4 -> child+0x18` getter value.
 
-## `fd381a` bridge: v7 status
+## `10ac7dd` correction
 
-v7 captured the known `e99d07` / `fd4c04` / `fd381a` neighborhoods and confirms this branch remains separate from the constructor-local side paths. No direct contradiction to the Restrictions-derived interpretation was found.
-
-Current confidence statement:
+`10ac7dd` writes `this+0x40`, not `this+0x18`:
 
 ```text
-Restrictions child+0x18 is fully resolved as AP 0x184d898 + erased/shared payload.
-The 0x198/AP 0x184d5d0 object is the strongest confirmed downstream consumer and has direct method-side readers of +0x60.
-The exact handoff from the Restrictions-derived consumer into fd381a state+0x40/+0x140 is still not fully closed.
+10aba93  lea rax, [rdi+0x40]
+10aba97  [rsp+0x18] = rax          ; this+0x40
+
+10ac7d5  mov rax, [rsp+0x18]
+10ac7dd  mov [rax], r14            ; this+0x40 = r14
 ```
 
-## Closed items
+Useful for the broader graph, but not for the direct `b411a4` getter value.
+
+## fd381a bridge: v8 status
+
+v8 did not find literal AP materialization of `0x184d898` or `0x184d5d0` inside the `fd381a` window. The bridge is therefore still likely through erased payload/interface state rather than literal AP identity.
+
+Current strongest bridge statement:
+
+```text
+Restrictions child getter path
+  -> b411a4 returns installed AP 0x184d898 object
+  -> 0x198/AP 0x184d5d0 captures it at +0x60
+  -> 0x184d5d0 methods +0x150/+0x158 call AP 0x184d898 +0x10/+0x18
+  -> fd381a likely receives the readiness/mode result through erased interface chain, not direct AP literals
+```
+
+## Current closed items
 
 ```text
 setup-bundle +0x30 source
@@ -297,34 +329,42 @@ buffer/growth emit helpers
 builder sink/refill abstraction
 local output builder layout / builder+0x18 false lead
 post-wrapper return-value consumption
-child getter b411a4 = [rdi+0x18]
+child getter b411a4 classified as trivial [rdi+0x18] getter
 child AP 0x184da88 +0x38 = b411a4
-[rsp+0x40] provenance as constructor arg rdx, then later stack-slot reuse
+[rsp+0x40] provenance as constructor arg rdx saved at entry
 10ac7dd classified as this+0x40, not child+0x18
 [rsp+0x60] classified as &this+0x18
 this+0x18 direct writer at 10ac1a9
-installed child+0x18 object AP 0x184d898
-payload install into allocated_0x28+0x08 via 107162a
-late 0x198/AP 0x184d5d0 consumer stores installed child+0x18 at +0x60
-0x184d5d0 direct +0x60 readers at 10bb0e5 / 10bb186
-side paths [rsp+0x70], [rsp+0x40], wrapper_0xd8 classified as non-direct getter paths
+installed this+0x18 object AP 0x184d898
+payload move/install helper 107162a
+late 0x198/AP 0x184d5d0 consumer stores installed this+0x18 at +0x60
+0x184d5d0 methods +0x150/+0x158 read +0x60
+0x184d5d0 +0x150 calls AP 0x184d898 +0x10
+0x184d5d0 +0x158 calls AP 0x184d898 +0x18
 ```
 
 ## Still open / next best targets
 
 ```text
-Name semantics of 10bff52 / 10bffde:
-  follow [this+0x20] provider in the installed AP 0x184d898 payload
+Name the semantic payload/result produced by 10bffde:
+  - trace 17c4edc / 177f852 / 177fcc4 helpers
+  - identify the stored structure copied into [this+0x00..0x10]
 
-Trace 0x184d5d0 +0x60 readers deeper:
-  AP +0x150 -> 10bb09e -> 10bb0e5 reads [rdi+0x60]
-  AP +0x158 -> 10bb16e -> 10bb186 reads [rdi+0x60]
-
-Close bridge to fd381a:
-  prove or reject whether 0x184d5d0 or AP 0x184d898 eventually feeds fd381a state+0x40 virtual +0x140
+Bridge into fd381a:
+  - trace erased interface chain rather than AP literals
+  - follow fd381a state+0x40 virtual +0x140 callers/return values
+  - compare with 0x184d5d0 +0x150/+0x158 outputs
 ```
 
-## Latest evidence reports
+## Evidence reports
+
+Latest:
+
+- `analysis/restrictions-installed-method-semantics-v8.md`
+- `analysis/restrictions-184d5d0-reader-flows-v8.md`
+- `analysis/restrictions-fd381a-bridge-deeper-v8.md`
+
+Earlier key evidence:
 
 - `analysis/restrictions-payload-107162a-v7.md`
 - `analysis/restrictions-ap184d5d0-60-readers-v7.md`
@@ -336,3 +376,12 @@ Close bridge to fd381a:
 - `analysis/restrictions-installed-ap184d898-v5.md`
 - `analysis/restrictions-child184da88-v5.md`
 - `analysis/restrictions-late-0x198-184d5d0-v5.md`
+- `analysis/restrictions-this18-rsp60-v4.md`
+- `analysis/restrictions-output-store-10ac7dd.md`
+- `analysis/restrictions-wrapper80-provenance.md`
+- `analysis/restrictions-vtable28-provenance.md`
+- `analysis/restrictions-provider-callsite-summary.md`
+- `analysis/restrictions-factory-consumption.md`
+- `analysis/restrictions-constructor-dataflow.md`
+- `analysis/field428-install-proof.md`
+- `docs/15-skip-ad-signal.md`
