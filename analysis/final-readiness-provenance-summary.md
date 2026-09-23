@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, and following downstream consumers through v9. This document is static provenance documentation only; it does not describe runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, following downstream consumers, and narrowing the remaining erased-interface bridge through v10. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -27,7 +27,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `fd381a state+0x40` dependency remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation. The direct AP identity does not appear in the `fd381a` window; the remaining gap is an erased-interface/temporary-object bridge.
+The `fd381a state+0x40` dependency remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation. The direct AP identity does not appear in the `fd381a` window; the remaining gap is through erased interfaces and temporary stack output.
 
 ## Restrictions service / child getter path
 
@@ -250,29 +250,58 @@ This closes the key downstream link:
   +0x150 reads those cached fields and passes them into the installed object +0x10 helper
 ```
 
-## Remaining fd381a bridge gap
+## Erased `e99c96/e99ca7` bridge: v10 status
 
-v9 again found no direct literal/AP identity for `0x184d898` or `0x184d5d0` in the `fd381a` window. The active bridge remains erased-interface based:
+v10 narrows the bridge structure but still does not resolve the concrete source/consumer vtables by literal AP identity.
+
+Current local bridge shape:
 
 ```text
-e99c82  rsi = [r14]
-e99c8e  rax = [rsi]
-e99c96  call [rax+0x78]      ; provider-side virtual
+e99c72  r14 = rsp+0x8
+e99c77  rdi = r14
+e99c7a  rsi = original object
+e99c7d  aab330(&stack_slot, original)
 
+e99c82  rsi = [r14]                ; provider/source produced by aab330
+e99c8e  rax = [rsi]
+e99c91  rdi = rsp+0x18             ; stack output
+e99c96  call [rax+0x78]            ; provider-side virtual fills stack output
+
+e99c8a  rbx = [original+0x10]      ; consumer
 e99c99  rax = [rbx]
 e99ca1  rdi = rbx
-e99ca4  rsi = stack out
-e99ca7  call [rax+0x10]      ; consumer-side virtual
+e99ca4  rsi = rsp+0x18             ; same stack output
+e99ca7  call [rax+0x10]            ; consumer-side virtual consumes stack output
 
-e99cad  ea785e(stack out)
+e99cad  ea785e(rsp+0x18)           ; stack-output cleanup/normalization destructor
 ```
 
-Next best target for the remaining bridge is therefore **not another AP-literal scan**, but resolving the concrete vtable/provider behind:
+`ea785e` is now classified as cleanup, not as the producer:
 
 ```text
-source object at e99c82/e99c96 virtual +0x78
-consumer object at e99ca7 virtual +0x10
-ea785e stack-output normalizer/destructor path
+ea785e:
+  rbx = rdi
+  e0c8c6(rdi + 0xa8)
+  aad132(rbx + 0x70)
+```
+
+Adjacent helper `ea77fa` confirms this stack-output pattern:
+
+```text
+ea7813  rsi = [rdi+0x8]
+ea781d  call [source.vtable+0x78] into stack output
+ea7823  checks byte [stack+0x522]
+ea782d  ea785e(stack output)
+ea7845  returns boolean from checked byte
+```
+
+So v10 closes `ea785e` as stack-output cleanup and narrows the remaining unknowns to:
+
+```text
+concrete provider object returned by aab330(original)
+concrete provider virtual +0x78 implementation
+concrete consumer object at [original+0x10]
+concrete consumer virtual +0x10 implementation
 ```
 
 ## Side paths
@@ -328,19 +357,24 @@ installed child+0x18 object AP 0x184d898
 late 0x198/AP 0x184d5d0 consumer stores installed object at +0x60
 0x184d5d0 +0x150/+0x158 read +0x60 and dispatch to installed object +0x10/+0x18
 0x184d5d0 +0x158 refreshes cache fields +0x50/+0x54 from installed-object result
+ea785e stack-output cleanup/destructor path
 ```
 
 ## Still open / next best targets
 
 ```text
-Resolve concrete vtable/provider for e99c96 call [source.vtable+0x78]
-Resolve concrete consumer method for e99ca7 call [consumer.vtable+0x10]
-Trace ea785e stack-output normalization/destruction
+Trace aab330 internals to identify provider object stored into [rsp+0x8]
+Resolve concrete provider virtual +0x78 target for e99c96
+Resolve concrete consumer object [original+0x10]
+Resolve concrete consumer virtual +0x10 target for e99ca7
 Tie the erased e99c96/e99ca7 stack output to fd4c04/fd381a state+0x40 without relying on AP literals
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-source-plus78-v10.md`
+- `analysis/restrictions-consumer-plus10-v10.md`
+- `analysis/restrictions-ea785e-output-v10.md`
 - `analysis/restrictions-condition-propagation-v9.md`
 - `analysis/restrictions-184d5d0-callers-v9.md`
 - `analysis/restrictions-fd381a-state-bridge-v9.md`
@@ -362,4 +396,3 @@ Tie the erased e99c96/e99ca7 stack output to fd4c04/fd381a state+0x40 without re
 - `analysis/restrictions-rsp40-late-v4.md`
 - `analysis/restrictions-output-store-10ac7dd.md`
 - `analysis/restrictions-wrapper80-provenance.md`
-- `analysis/restrictions-vtable28-provenance.md`
