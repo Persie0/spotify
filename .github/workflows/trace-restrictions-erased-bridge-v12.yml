@@ -1,0 +1,324 @@
+name: Trace Restrictions concrete erased bridge parallel v12
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-erased-bridge-v12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-aab330-internals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace aab330 internals
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m:
+                  ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m:
+                  rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=50,aft=170):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=500):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]:
+                  s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `aab330` provider-slot internals v12\n\n']
+          md.append('Focus: identify what `aab330(&stack_slot, original)` stores into `[rsp+0x8]` before the `e99c96` provider virtual `+0x78` call. Static provenance only.\n\n')
+          md.append('## `aab330` window\n\n')
+          md.append(fmt(around(0xaab330,70,260)))
+          # all call sites to aab330 by symbol/comment and target displacement string
+          callers=[]
+          for i,(a,l,t) in enumerate(ins):
+              if 'aab330' in l or 'call   aab330' in l:
+                  callers.extend(ins[max(0,i-18):min(len(ins),i+34)])
+          seen=set(); callers_u=[]
+          for row in callers:
+              if row[0] not in seen:
+                  seen.add(row[0]); callers_u.append(row)
+          md.append('## All visible call-site windows for `aab330`\n\n')
+          md.append(table(callers_u,900))
+          # dataflow-ish filtered instructions around aab330 body
+          rows=[]
+          for a,l,t in around(0xaab330,0,320):
+              if any(p in l for p in ['[rdi]', '[rdi+', '[rbx]', '[rbx+', '[rsi]', '[rsi+', 'operator new', '17edf00', 'mov    QWORD PTR', 'lea    ', 'call   QWORD PTR', 'jmp    QWORD PTR', 'test', 'cmov', 'ret']):
+                  rows.append((a,l,t))
+          md.append('## Filtered provider-slot relevant instructions inside `aab330`\n\n')
+          md.append(table(rows,700))
+          # AP/table references near possible aab330 helpers
+          helper_targets=[]
+          for off,target,line in rels:
+              if 0xaa9000 <= target <= 0xaad800:
+                  helper_targets.append((off,target,line))
+          md.append('## Relocation entries pointing into the `aab330` helper region\n\n')
+          md.append('| entry | target | relocation |\n|---:|---:|---|\n')
+          for off,target,line in helper_targets[:220]:
+              md.append(f'| `{off:#x}` | `{target:#x}` | `{line}` |\n')
+          if len(helper_targets)>220:
+              md.append(f'| ... | ... | truncated {len(helper_targets)-220} more |\n')
+          md.append('\n## Current v12 interpretation\n\n')
+          md.append('This report should distinguish whether `aab330` is a direct provider factory, an optional/shared wrapper extractor, or a stack-slot copier. The decisive evidence is any store through the first argument (`rdi`, the `&stack_slot`) and the source object read from the second argument (`rsi`, the original object).\n')
+          Path('out/restrictions-aab330-internals-v12.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-aab330-internals-v12
+          path: out/restrictions-aab330-internals-v12.md
+
+  trace-near-e99-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace near-e99 AP candidates
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=28,aft=105):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          candidates=[0x1831968,0x1831980,0x18319e0,0x1831938,0x188bd68,0x1831a00,0x1831a48]
+          md=['# Restrictions near-e99 AP candidates v12\n\n']
+          md.append('Focus: inspect the near-`e99` AP/vtable candidates from v11 and bind their `+0x78` and `+0x10` entries where possible. Static provenance only.\n\n')
+          md.append('## Candidate AP entry table\n\n')
+          md.append('| AP base | +0x00 | +0x10 | +0x78 | +0x80 | note |\n|---:|---:|---:|---:|---:|---|\n')
+          all_targets=[]
+          for base in candidates:
+              e0=relmap.get(base,(None,''))[0]
+              e10=relmap.get(base+0x10,(None,''))[0]
+              e78=relmap.get(base+0x78,(None,''))[0]
+              e80=relmap.get(base+0x80,(None,''))[0]
+              note=[]
+              for t in (e0,e10,e78,e80):
+                  if t is not None:
+                      all_targets.append(t)
+                      if 0xe99000 <= t <= 0xe9a800: note.append('near-e99')
+                      if 0xfd3000 <= t <= 0xfd5600: note.append('near-fd')
+                      if 0x10b0000 <= t <= 0x10c2000: note.append('restrictions')
+              md.append(f'| `{base:#x}` | `{e0 if e0 is not None else "-"}` | `{e10 if e10 is not None else "-"}` | `{e78 if e78 is not None else "-"}` | `{e80 if e80 is not None else "-"}` | `{", ".join(sorted(set(note)))}` |\n')
+          md.append('\n')
+          for base in candidates:
+              md.append(f'## AP candidate `{base:#x}` relocation slice\n\n```text\n')
+              for off,target,line in rels:
+                  if base <= off < base+0x100:
+                      md.append(line+'\n')
+              md.append('```\n')
+          # dump target windows for all unique targets in candidate APs
+          md.append('## Target windows for candidate entries\n\n')
+          for target in sorted(set(t for t in all_targets if t is not None)):
+              if 0x900000 <= target <= 0x1800000:
+                  md.append(f'### target `{target:#x}`\n\n')
+                  md.append(fmt(around(target,32,115)))
+          # text mentions of candidate AP literals / target functions
+          interesting=[hex(c)[2:] for c in candidates]+[hex(t)[2:] for t in set(all_targets) if t is not None]
+          hits=[]
+          for a,l,t in ins:
+              if any(s in l for s in interesting):
+                  hits.append((a,l,t))
+          md.append('## Text mentions/materializations of candidate APs/targets\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          for a,l,t in hits[:450]:
+              md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          if len(hits)>450:
+              md.append(f'| ... | truncated {len(hits)-450} more |\n')
+          Path('out/restrictions-near-e99-ap-candidates-v12.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-near-e99-ap-candidates-v12
+          path: out/restrictions-near-e99-ap-candidates-v12.md
+
+  trace-original-plus10-consumer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace original+0x10 consumer
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=42,aft=170):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=650):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `original+0x10` consumer provenance v12\n\n']
+          md.append('Focus: identify the consumer object loaded at `e99c8a rbx = [original+0x10]` and its virtual `+0x10` method. Static provenance only.\n\n')
+          for name,addr in [('bridge e99c54',0xe99c54),('outer e99d07',0xe99d07),('fd4c04 bridge',0xfd4c04),('fd381a final state user',0xfd381a)]:
+              md.append(f'## `{name}` `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,46,210)))
+          # AP entries that point to e99c54 or nearby bridge funcs
+          bridge_entries=[]
+          for off,target,line in rels:
+              if target in (0xe99c54,0xe99d07,0xfd4c04,0xfd381a) or 0xe99000 <= target <= 0xe9a800 or 0xfd3600 <= target <= 0xfd5600:
+                  bridge_entries.append((off,target,line))
+          md.append('## Relocation/AP entries pointing to e99/fd bridge neighborhoods\n\n')
+          md.append('| entry | target | relocation |\n|---:|---:|---|\n')
+          for off,target,line in bridge_entries[:420]:
+              md.append(f'| `{off:#x}` | `{target:#x}` | `{line}` |\n')
+          if len(bridge_entries)>420:
+              md.append(f'| ... | ... | truncated {len(bridge_entries)-420} more |\n')
+          md.append('\n')
+          # local writes/reads to +0x10 in relevant bridge windows
+          filt=[]
+          for start,end in [(0xe99000,0xe9b400),(0xfd3600,0xfd5800),(0x10ab000,0x10adc80)]:
+              for a,l,t in win(start,end):
+                  if any(p in l for p in ['+0x10]', '[rdi+0x10]', '[rbx+0x10]', '[rsi+0x10]', '[rax+0x10]', '[rcx+0x10]', '[rdx+0x10]', 'ff 50 10', 'ff 53 10', 'ff 90 10']):
+                      filt.append((a,l,t))
+          md.append('## Filtered `+0x10` reads/writes/calls in bridge-related ranges\n\n')
+          md.append(table(filt,1000))
+          # direct call/mention windows for e99c54
+          callers=[]
+          for i,(a,l,t) in enumerate(ins):
+              if 'e99c54' in l:
+                  callers.extend(ins[max(0,i-14):min(len(ins),i+32)])
+          seen=set(); callers_u=[]
+          for row in callers:
+              if row[0] not in seen:
+                  seen.add(row[0]); callers_u.append(row)
+          md.append('## Text mentions/call-site windows for `e99c54`\n\n')
+          md.append(table(callers_u,700))
+          Path('out/restrictions-original-plus10-consumer-v12.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-original-plus10-consumer-v12
+          path: out/restrictions-original-plus10-consumer-v12.md
+
+  commit-reports:
+    needs:
+      - trace-aab330-internals
+      - trace-near-e99-candidates
+      - trace-original-plus10-consumer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -maxdepth 3 -type f -name '*.md' -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-aab330-internals-v12.md analysis/restrictions-near-e99-ap-candidates-v12.md analysis/restrictions-original-plus10-consumer-v12.md
+          if git diff --cached --quiet; then
+            echo 'No report changes to commit'
+            exit 0
+          fi
+          git commit -m 'Trace Restrictions erased bridge internals in parallel'
+          git pull --rebase origin main
+          git push
