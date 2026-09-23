@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, classifying callback packaging, and narrowing the virtual `+0xa0` bridge through v15. Static provenance documentation only; no runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, classifying callback packaging, and narrowing the virtual bridge through v16. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -192,7 +192,9 @@ Destructor/cleanup:
     delete[] buf
 ```
 
-The callback package is then passed to a virtual receiver:
+## v15/v16 virtual bridge result
+
+The callback package is passed to a receiver object loaded from `[rsp+0x390]`:
 
 ```text
 e95091  r14 = [rsp+0x390]
@@ -208,11 +210,11 @@ e95102  rdx = rsp+0xbe0    ; callback package, [pkg+0x28] = e99c54
 e95105  call [rax+0xa0]
 ```
 
-## v15 virtual `+0xa0` bridge result
-
-v15 found the same receiver object `r14 = [rsp+0x390]` used earlier in the same function, before the `e95105` call:
+v15 found the same receiver object used earlier in the same function. v16 confirms the immediate producer site for that receiver pair:
 
 ```text
+e93091  rax = [r13+0x570]
+e93098  cmp byte [rax+0x1], 0
 e930b3  r15 = [r13+0x410]
 e930d4  rax = [r15]
 e930d7  rdi = r15
@@ -220,20 +222,18 @@ e930da  call [rax+0x28]
 
 e930dd  r14 = [rsp+0x390]
 e930e5  rax = [rsp+0x398]
-...
+```
+
+The produced receiver pair is immediately used for two earlier callback registrations:
+
+```text
 e9313a  rcx = e9940c
 e93150  call 17da794              ; packages callback e9940c
 e93155  rax = [r14]
 e93160  rsi = r14
 e93163  rdx = rsp+0xbe0
 e93166  call [rax+0xa0]
-```
 
-Then another package is sent through `+0xa8`:
-
-```text
-e931bd  rsi = b29876
-e931c4  rdx = b8dbe9
 e931cb  rcx = e9959c
 e931e4  call 17da794              ; packages callback e9959c
 e931e9  rax = [r14]
@@ -253,16 +253,17 @@ e95102  rdx = rsp+0xbe0
 e95105  call [rax+0xa0]
 ```
 
-Important v15 conclusion:
+Important v16 conclusion:
 
 ```text
-The concrete producer of [rsp+0x390] is now upstream of the r14 calls:
-  r15 = [r13+0x410]
-  call [r15.vtable+0x28]
-  then [rsp+0x390] / [rsp+0x398] contain the receiver pair used by +0xa0/+0xa8.
-```
+The immediate producer of [rsp+0x390]/[rsp+0x398] is localized to:
+  object = [r13+0x410]
+  call [object.vtable+0x28]
 
-So the next target is not `17da794` anymore; it is the object at `[r13+0x410]` and its virtual `+0x28` method.
+v16 does not yet bind the concrete AP/vtable for [r13+0x410].
+The broad +0x28 candidate scan is noisy because many unrelated +0x28 methods also reference stack slots.
+The next target should trace the construction/assignment of field [r13+0x410], not broaden the AP scan further.
+```
 
 ## AP candidates retained
 
@@ -309,15 +310,15 @@ e99c54 classified as packaged callback materialized at e950d9, not direct AP rel
 17da794 callback package layout resolved
 17da802 callback package cleanup resolved
 virtual +0xa0 receiver path localized to r14 = [rsp+0x390]
-producer for [rsp+0x390] localized to [r13+0x410] virtual +0x28
+producer call for [rsp+0x390] localized to [r13+0x410] virtual +0x28
 ```
 
 ## Still open / next best targets
 
 ```text
-Trace object at [r13+0x410] before e930da.
+Trace construction/assignment of field [r13+0x410].
 Bind [r13+0x410].vtable +0x28 concretely.
-Inspect the +0x28 implementation for writes to:
+Inspect that +0x28 implementation for how it produces:
   [rsp+0x390]
   [rsp+0x398]
 Then bind r14's AP and concrete +0xa0/+0xa8 implementations.
@@ -326,6 +327,9 @@ Only after that, trace where the e99c54 package is invoked and what original obj
 
 ## Evidence reports
 
+- `analysis/restrictions-r13-plus410-provenance-v16.md`
+- `analysis/restrictions-plus28-candidates-v16.md`
+- `analysis/restrictions-plus28-writer-flow-v16.md`
 - `analysis/restrictions-rsp390-r14-provenance-v15.md`
 - `analysis/restrictions-plus-a0-candidates-v15.md`
 - `analysis/restrictions-plus-a0-package-flow-v15.md`
