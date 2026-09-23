@@ -1,0 +1,290 @@
+name: Trace Restrictions producer plus28 bridge parallel v16
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-producer-plus28-v16.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-r13-410-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace r13 plus410 provenance
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=70,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=700):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `[r13+0x410] -> [rsp+0x390]` producer provenance v16\n\n']
+          md.append('Focus: localize the object loaded at `e930b3 r15 = [r13+0x410]`, the virtual `+0x28` call at `e930da`, and the post-call receiver pair `[rsp+0x390]/[rsp+0x398]`. Static provenance only.\n\n')
+          for addr,title in [(0xe930b3,'producer object load and +0x28 call'),(0xe930da,'exact virtual +0x28 call'),(0xe930dd,'post-call receiver pair read'),(0xe93166,'same receiver +0xa0 registration'),(0xe95105,'later e99c54 registration via +0xa0')]:
+              md.append(f'## Window: {title} `{addr:#x}`\n\n')
+              md.append(fmt(around(addr)))
+          pats=['[r13+0x410]','0x410]','+0x410','[rsp+0x390]','[rsp+0x398]','0x390]','0x398]','[rax+0x28]','[rax+0xa0]','[rax+0xa8]']
+          rows=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95650 and any(p in l for p in pats): rows.append((a,l,t))
+          md.append('## Local references to producer field / receiver slots / virtual registration calls\n\n')
+          md.append(table(rows,900))
+          md.append('## Windows around relevant references\n\n')
+          for a,l,t in rows:
+              if any(x in l for x in ['0x410','0x390','0x398','[rax+0x28]','[rax+0xa0]','[rax+0xa8]']):
+                  md.append(f'### `{a:#x}`\n\n')
+                  md.append(fmt(around(a,32,90)))
+          rflow=[]
+          for a,l,t in ins:
+              if 0xe90000 <= a <= 0xe95650 and any(x in l for x in ['r13','r15','r14','rsp+0x390','rsp+0x398','rsp+0x388','rsp+0x380']):
+                  rflow.append((a,l,t))
+          md.append('## Register/dataflow rows in e90000-e95650\n\n')
+          md.append(table(rflow,1200))
+          Path('out/restrictions-r13-plus410-provenance-v16.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-r13-plus410-provenance-v16
+          path: out/restrictions-r13-plus410-provenance-v16.md
+
+  trace-plus28-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus28 AP candidates
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          relmap={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def body(addr,maxi=180):
+              i=ni(addr); out=[]
+              for a,l,t in ins[i:i+maxi]:
+                  out.append((a,l,t))
+                  if len(out)>8 and ('ret' in t or 'int3' in t): break
+              return out
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def hx(v): return '-' if v is None else f'{v:#x}'
+          # Candidate vtable bases: every relocation-backed table with populated +0x28, scored by text locality and body relevance.
+          bases=sorted(set(off-k for off,_,_ in rels for k in [0,8,0x10,0x18,0x20,0x28,0x30,0x78,0xa0,0xa8] if (off-k) in relmap))
+          rows=[]; selected=[]
+          for b in bases:
+              vals={off:relmap.get(b+off,(None,''))[0] for off in [0,8,0x10,0x18,0x20,0x28,0x30,0x78,0xa0,0xa8]}
+              t=vals[0x28]
+              if t is None: continue
+              bd=body(t,160)
+              txt='\n'.join(l for _,l,_ in bd)
+              score=0; tags=[]
+              if 0xe8d000 <= t <= 0xe95650: score+=8; tags.append('target-local-e9')
+              if 0xe99000 <= t <= 0xe9a500: score+=5; tags.append('target-e99')
+              if 0x1831800 <= b <= 0x1831b00 or 0x1844800 <= b <= 0x1844a00 or 0x188bc00 <= b <= 0x1890600: score+=5; tags.append('known-candidate-region')
+              for needle,pts in [('0x390',8),('0x398',8),('0x410',6),('17da794',5),('e99',4),('[rax+0xa0]',4),('[rax+0xa8]',4),('rsp+0x',1)]:
+                  if needle in txt: score+=pts; tags.append(needle)
+              if score>0:
+                  selected.append((score,b,vals,t,tags,bd))
+                  rows.append((score,b,vals,t,tags))
+          selected=sorted(selected, key=lambda x:(-x[0], x[1]))[:90]
+          rows=sorted(rows, key=lambda x:(-x[0], x[1]))[:180]
+          md=['# Restrictions `+0x28` producer candidate binding v16\n\n']
+          md.append('Focus: identify concrete vtables whose `+0x28` method could be called at `e930da` and write/produce the receiver pair later read from `[rsp+0x390]/[rsp+0x398]`. Static provenance only.\n\n')
+          md.append('## Scored candidate AP/vtable rows with populated `+0x28`\n\n')
+          md.append('| score | AP base | +0x00 | +0x08 | +0x10 | +0x20 | +0x28 | +0x78 | +0xa0 | +0xa8 | tags |\n|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|\n')
+          for score,b,vals,t,tags in rows:
+              md.append(f'| {score} | `{b:#x}` | `{hx(vals[0])}` | `{hx(vals[8])}` | `{hx(vals[0x10])}` | `{hx(vals[0x20])}` | `{hx(vals[0x28])}` | `{hx(vals[0x78])}` | `{hx(vals[0xa0])}` | `{hx(vals[0xa8])}` | `{", ".join(sorted(set(tags)))}` |\n')
+          md.append('\n## Candidate `+0x28` method windows\n\n')
+          seen=set()
+          for score,b,vals,t,tags,bd in selected:
+              if t in seen: continue
+              seen.add(t)
+              md.append(f'### AP `{b:#x}` +0x28 -> `{t:#x}` score {score}\n\n')
+              md.append(fmt(bd))
+          # exact text materializations of selected bases in e8d-e956
+          exact=[hex(b)[2:] for _,b,_,_,_,_ in selected]
+          hits=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95650 and any(x in l for x in exact): hits.append((a,l,t))
+          md.append('## Local materializations of selected candidate AP bases\n\n')
+          md.append('| addr | instruction |\n|---:|---|\n')
+          for a,l,t in hits[:700]: md.append(f'| `{a:#x}` | `{l.strip()}` |\n')
+          if len(hits)>700: md.append(f'| ... | truncated {len(hits)-700} more |\n')
+          Path('out/restrictions-plus28-candidates-v16.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus28-candidates-v16
+          path: out/restrictions-plus28-candidates-v16.md
+
+  trace-plus28-writer-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus28 writer flow
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=55,aft=150):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `+0x28` writer / receiver-pair flow v16\n\n']
+          md.append('Focus: inspect all local `call [*.vtable+0x28]` sites and the before/after flow that fills `[rsp+0x390]/[rsp+0x398]`. Static provenance only.\n\n')
+          calls=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95650 and ('[rax+0x28]' in l or '[rcx+0x28]' in l or '[rdx+0x28]' in l or '[rsi+0x28]' in l or '[rdi+0x28]' in l):
+                  calls.append((a,l,t))
+          md.append('## Local virtual `+0x28` calls\n\n')
+          md.append(table(calls,500))
+          for a,l,t in calls:
+              md.append(f'### `+0x28` call at `{a:#x}`\n\n')
+              md.append(fmt(around(a,42,115)))
+          writers=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95650 and any(p in l for p in ['QWORD PTR [rsp+0x390]','QWORD PTR [rsp+0x398]','XMMWORD PTR [rsp+0x380]','XMMWORD PTR [rsp+0x390]','[rsp+0x390]','[rsp+0x398]','[rsp+0x380]']):
+                  writers.append((a,l,t))
+          md.append('## All local reads/writes of receiver slots\n\n')
+          md.append(table(writers,900))
+          # Proximity graph: windows around slot refs immediately before/after +0x28 calls
+          md.append('## Receiver-slot windows\n\n')
+          for a,l,t in writers:
+              md.append(f'### slot reference at `{a:#x}`\n\n')
+              md.append(fmt(around(a,30,80)))
+          # Track package callback registrations after produced pair
+          regs=[]
+          for a,l,t in ins:
+              if 0xe8d000 <= a <= 0xe95650 and any(p in l for p in ['17da794','e9940c','e9959c','e99c54','[rax+0xa0]','[rax+0xa8]']): regs.append((a,l,t))
+          md.append('## Local callback registration sequence after receiver-pair production\n\n')
+          md.append(table(regs,900))
+          Path('out/restrictions-plus28-writer-flow-v16.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus28-writer-flow-v16
+          path: out/restrictions-plus28-writer-flow-v16.md
+
+  commit-reports:
+    needs:
+      - trace-r13-410-provenance
+      - trace-plus28-candidates
+      - trace-plus28-writer-flow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          cp artifacts/restrictions-r13-plus410-provenance-v16/restrictions-r13-plus410-provenance-v16.md analysis/
+          cp artifacts/restrictions-plus28-candidates-v16/restrictions-plus28-candidates-v16.md analysis/
+          cp artifacts/restrictions-plus28-writer-flow-v16/restrictions-plus28-writer-flow-v16.md analysis/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-r13-plus410-provenance-v16.md analysis/restrictions-plus28-candidates-v16.md analysis/restrictions-plus28-writer-flow-v16.md
+          git commit -m 'Trace Restrictions producer plus28 bridge in parallel' || exit 0
+          git pull --rebase origin main
+          git push
