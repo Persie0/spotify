@@ -1,0 +1,312 @@
+name: Trace Restrictions provider consumer bridge parallel v11
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-provider-consumer-v11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-aab330-provider:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace aab330 provider creation
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=40,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=500):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s += f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s += f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `aab330(original)` provider creation v11\n\n']
+          md.append('Focus: classify the provider created at `e99c7d aab330(&stack_slot, original)` for the erased bridge. Static provenance only.\n\n')
+          for name,addr in [('bridge method e99c54',0xe99c54),('aab330',0xaab330),('aab330 prelude',0xaab2c0)]:
+              md.append(f'## {name} `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,42,190)))
+          # Direct call sites / text references to aab330.
+          x=[]
+          for i,(a,l,t) in enumerate(ins):
+              if 'aab330' in l or '32bfd' in l:
+                  x.extend(ins[max(0,i-10):min(len(ins),i+16)])
+          seen=set(); ux=[]
+          for row in x:
+              if row[0] not in seen:
+                  seen.add(row[0]); ux.append(row)
+          md.append('## Direct call-site windows mentioning `aab330`\n\n'+table(ux,900))
+          # Relocation entries that point at bridge methods, often revealing owner AP tables.
+          targets={0xe99c54,0xe99c1e,0xe99c00,0xe99d07,0xea785e,0xaab330}
+          hit_rels=[r for r in rels if r[1] in targets or (0xe99c00 <= r[1] <= 0xe99d20) or (0xaab200 <= r[1] <= 0xaab480)]
+          md.append('## Relocation entries pointing into bridge/provider area\n\n```text\n')
+          for _,_,line in hit_rels[:500]: md.append(line+'\n')
+          if len(hit_rels)>500: md.append(f'... truncated {len(hit_rels)-500} more\n')
+          md.append('```\n')
+          # Try to infer AP bases around a relocation that targets e99c54.
+          md.append('## Candidate AP neighborhoods around e99c54-relocations\n\n')
+          for off,target,line in [r for r in hit_rels if r[1]==0xe99c54][:20]:
+              base=off & ~0x7f
+              neigh=[r for r in rels if base <= r[0] < base+0x120]
+              md.append(f'### relocation `{off:#x}` target `{target:#x}` possible base near `{base:#x}`\n\n```text\n')
+              for _,_,ln in neigh: md.append(ln+'\n')
+              md.append('```\n')
+          Path('out/restrictions-aab330-provider-v11.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-aab330-provider-v11
+          path: out/restrictions-aab330-provider-v11.md
+
+  trace-plus78-plus10-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace plus78 and plus10 candidates
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          rel_by_off={off:(target,line) for off,target,line in rels}
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=20,aft=65):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def score_window(target):
+              txt='\n'.join(l for _,l,_ in around(target,8,40))
+              pats=['[rdi]', '[rdi+', '[rsi]', '[rsi+', '[rdx]', '[rdx+', 'call', 'movups', 'movaps', 'test', 'cmp']
+              return sum(txt.count(p) for p in pats)
+          def table(rows,limit=600):
+              s='| AP base | entry | target | score | note |\n|---:|---:|---:|---:|---|\n'
+              for base,entry,target,score,note in rows[:limit]:
+                  s += f'| `{base:#x}` | `{entry:#x}` | `{target:#x}` | `{score}` | {note} |\n'
+              if len(rows)>limit: s += f'| ... | ... | ... | ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          # Candidate APs are relocation-address groups where both +0x10 and +0x78 exist.
+          rows=[]
+          for off,target,line in rels:
+              base=off-0x78
+              if base in rel_by_off and base+0x10 in rel_by_off:
+                  t10,_=rel_by_off[base+0x10]
+                  score=score_window(target)+score_window(t10)
+                  note=[]
+                  if 0xe99000 <= target <= 0xe9a500 or 0xe99000 <= t10 <= 0xe9a500: note.append('near-e99 bridge')
+                  if 0x10b0000 <= target <= 0x10c1000 or 0x10b0000 <= t10 <= 0x10c1000: note.append('near restrictions methods')
+                  if 0xfd3000 <= target <= 0xfd6000 or 0xfd3000 <= t10 <= 0xfd6000: note.append('near fd bridge')
+                  if 0xea7000 <= target <= 0xea7a50 or 0xea7000 <= t10 <= 0xea7a50: note.append('near ea785e')
+                  rows.append((base,0x78,target,score,', '.join(note)))
+          rows=sorted(rows, key=lambda r: (not bool(r[4]), -r[3], r[0]))
+          md=['# Restrictions `+0x78/+0x10` erased-interface candidate table v11\n\n']
+          md.append('Focus: candidate AP/vtable rows that have both a `+0x78` entry and a `+0x10` entry, to narrow the erased bridge around `e99c96/e99ca7`. Static provenance only.\n\n')
+          md.append('## Candidate APs with both `+0x78` and `+0x10` entries\n\n')
+          md.append(table(rows,900))
+          # Expand the top candidates.
+          md.append('## Top candidate method windows\n\n')
+          for base,_,target,score,note in rows[:24]:
+              t10,_=rel_by_off.get(base+0x10,(0,''))
+              md.append(f'### AP `{base:#x}`: +0x78 -> `{target:#x}`, +0x10 -> `{t10:#x}` score={score} {note}\n\n')
+              md.append('#### +0x78 target\n\n'+fmt(around(target,18,75)))
+              md.append('#### +0x10 target\n\n'+fmt(around(t10,18,75)))
+          # Also direct search for instruction call shapes.
+          hits=[]
+          for i,(a,l,t) in enumerate(ins):
+              if any(p in l for p in ['+0x78]', '+0x10]']) and ('call' in l or 'jmp' in l):
+                  hits.extend(ins[max(0,i-3):min(len(ins),i+5)])
+          seen=set(); uniq=[]
+          for row in hits:
+              if row[0] not in seen:
+                  seen.add(row[0]); uniq.append(row)
+          md.append('## All observed indirect `+0x78/+0x10` call-shape snippets\n\n```text\n')
+          for _,line,_ in uniq[:900]: md.append(line+'\n')
+          if len(uniq)>900: md.append(f'... truncated {len(uniq)-900} more\n')
+          md.append('```\n')
+          Path('out/restrictions-plus78-plus10-candidates-v11.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-plus78-plus10-candidates-v11
+          path: out/restrictions-plus78-plus10-candidates-v11.md
+
+  trace-original-consumer-owner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace original consumer owner
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=40,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=650):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s += f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s += f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions original/consumer owner trace v11\n\n']
+          md.append('Focus: identify the owner object passed to `e99c54` and the consumer stored at `[original+0x10]`. Static provenance only.\n\n')
+          # e99c54 owner AP relocation candidates.
+          e99_rels=[r for r in rels if 0xe99c00 <= r[1] <= 0xe99d20]
+          md.append('## Relocations into e99c bridge method region\n\n```text\n')
+          for _,_,line in e99_rels[:500]: md.append(line+'\n')
+          if len(e99_rels)>500: md.append(f'... truncated {len(e99_rels)-500} more\n')
+          md.append('```\n')
+          for off,target,line in [r for r in e99_rels if r[1]==0xe99c54][:20]:
+              base=off & ~0xff
+              neigh=[r for r in rels if base <= r[0] < base+0x180]
+              md.append(f'## Candidate owner AP neighborhood for e99c54 relocation at `{off:#x}`\n\n```text\n')
+              for _,_,ln in neigh: md.append(ln+'\n')
+              md.append('```\n')
+          # Search writes into +0x10 near constructors/functions that mention e99c54 neighborhood APs.
+          interesting=[]
+          for i,(a,l,t) in enumerate(ins):
+              if any(p in l for p in ['e99c54','e99c1e','e99d07','[rbx+0x10]', '[rdi+0x10]', '[rax+0x10]', '[r14+0x10]']):
+                  if any(q in l for q in ['e99c54','e99c1e','e99d07']) or 'mov' in l or 'call' in l:
+                      interesting.extend(ins[max(0,i-5):min(len(ins),i+8)])
+          seen=set(); uniq=[]
+          for row in interesting:
+              if row[0] not in seen:
+                  seen.add(row[0]); uniq.append(row)
+          md.append('## Candidate +0x10 writes/calls and bridge mentions\n\n'+table(uniq,900))
+          # Wider windows around bridge funcs and fd4c04 handoff.
+          for name,addr in [('e99c54 bridge',0xe99c54),('e99d07',0xe99d07),('fd4c04',0xfd4c04),('fd381a',0xfd381a)]:
+              md.append(f'## {name} window `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,38,160)))
+          Path('out/restrictions-original-consumer-owner-v11.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-original-consumer-owner-v11
+          path: out/restrictions-original-consumer-owner-v11.md
+
+  commit-reports:
+    needs:
+      - trace-aab330-provider
+      - trace-plus78-plus10-candidates
+      - trace-original-consumer-owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -type f -name '*.md' -maxdepth 3 -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-aab330-provider-v11.md analysis/restrictions-plus78-plus10-candidates-v11.md analysis/restrictions-original-consumer-owner-v11.md
+          if git diff --cached --quiet; then
+            echo 'No report changes to commit'
+            exit 0
+          fi
+          git commit -m 'Trace Restrictions provider consumer bridge in parallel'
+          git pull --rebase origin main
+          git push
