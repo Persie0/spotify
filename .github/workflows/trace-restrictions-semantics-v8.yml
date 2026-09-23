@@ -1,0 +1,288 @@
+name: Trace Restrictions semantic bridges parallel v8
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-semantics-v8.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-installed-method-semantics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace 0x184d898 method semantics
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=22,aft=110):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=260):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions installed object method semantics v8\n\n']
+          md.append('Focus: semantic classification of AP `0x184d898` methods `10bff52` and `10bffde`, including their helper callees and payload offsets.\n\n')
+          ap=0x184d898
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x120]
+          md.append('## AP `0x184d898` relocation entries\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          for name,addr in [('reset/destructor body',0x10bff2c),('deleting destructor',0x10bff40),('string/forward helper candidate',0x10bff52),('boolean/condition helper candidate',0x10bffde)]:
+              md.append(f'## {name} `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,18,95)))
+          helpers=[0xa7b836,0x17c4ef2,0x17c4edc,0xde1c52,0x107162a,0x10adc16,0xac39da]
+          for h in helpers:
+              md.append(f'## Helper window `{h:#x}`\n\n')
+              md.append(fmt(around(h,16,70)))
+          method_window=[]
+          for start,end in [(0x10bff52,0x10bffb3),(0x10bffde,0x10c0060)]:
+              method_window.extend(win(start,end))
+          signals=[]
+          for a,l,t in method_window:
+              if any(x in l for x in ['[rax+0x20]','[rdi+0x20]','[rbx+0x20]','[rsi+0x8]','[rdi+0x8]','call','cmp','test','set','mov    ebp','mov    rbx','mov    rax','add    rsi,0x8']):
+                  signals.append((a,l,t))
+          md.append('## Method-internal signals\n\n'+table(signals,400))
+          # Xrefs to important helpers and methods, to distinguish generic helpers from this-specific paths.
+          pats=['10bff52','10bffde','17c4ef2','17c4edc','a7b836','10adc16','ac39da','107162a']
+          xrefs=[]
+          for a,l,t in ins:
+              if any(p in l for p in pats):
+                  xrefs.append((a,l,t))
+          md.append('## Text mentions / call sites for methods and helpers\n\n'+table(xrefs,500))
+          md.append('## v8 interpretation checklist\n\n')
+          md.append('- `10bff52` and `10bffde` both call the installed payload through virtual `+0x20` before doing string/bool work.\n')
+          md.append('- `10bffde` contains the stronger readiness-style boolean branch because it calls `17c4edc` and tests its return.\n')
+          md.append('- This report does not patch behavior; it only classifies the static dataflow.\n')
+          Path('out/restrictions-installed-method-semantics-v8.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-installed-method-semantics-v8
+          path: out/restrictions-installed-method-semantics-v8.md
+
+  trace-184d5d0-reader-flows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace 0x184d5d0 +0x60 reader flows
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=26,aft=130):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=400):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `0x184d5d0 +0x60` reader flow trace v8\n\n']
+          md.append('Focus: go deeper than v7 for actual AP methods that read the captured installed `child+0x18` at object field `+0x60`.\n\n')
+          ap=0x184d5d0
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x200]
+          md.append('## AP entries around 0x184d5d0\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          targets=[0x10bb09e,0x10bb16e,0x10bb258,0x10bc22a,0x10bc6aa,0x10bc716,0x10bd038,0x10bd098]
+          for t in targets:
+              md.append(f'## Reader/candidate method `{t:#x}`\n\n')
+              md.append(fmt(around(t,24,125)))
+          # summarize exact +0x60 read/call and subsequent use within local windows
+          all_hits=[]
+          for t in targets:
+              rows=around(t,8,95)
+              for a,l,op in rows:
+                  if any(x in l for x in ['[rdi+0x60]','[rbx+0x60]','[r14+0x60]','[r15+0x60]','[rax+0x60]','call','ff 50','ff 90','mov    rsi','mov    r14','mov    rdi','test','cmp','set']):
+                      all_hits.append((a,l,op))
+          md.append('## Condensed local flow signals\n\n'+table(all_hits,700))
+          # all materializations of 184d5d0
+          mats=[]
+          for a,l,t in ins:
+              if '184d5d0' in l or '10bd03c' in l:
+                  mats.append((a,l,t))
+          md.append('## AP materializations / constructors\n\n'+table(mats,200))
+          md.append('## v8 interpretation checklist\n\n')
+          md.append('- `10bb09e` and `10bb16e` are the two strongest direct readers of field `+0x60`.\n')
+          md.append('- The next useful step after v8 is to name the callee reached immediately after the loaded `+0x60` object is moved into argument registers.\n')
+          Path('out/restrictions-184d5d0-reader-flows-v8.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-184d5d0-reader-flows-v8
+          path: out/restrictions-184d5d0-reader-flows-v8.md
+
+  trace-fd381a-bridge-deeper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace fd381a bridge deeper
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=30,aft=180):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=450):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions bridge to `fd381a state+0x40/+0x140` deeper trace v8\n\n']
+          md.append('Focus: narrow the remaining gap between the Restrictions-derived object graph and the known `e99d07 -> fd4c04 -> fd381a` readiness/mode discriminator path.\n\n')
+          for label,addr in [('e99d07',0xe99d07),('fd4c04',0xfd4c04),('fd381a',0xfd381a),('fd381a vicinity +0x140 virtual',0xfd381a+0x140)]:
+              md.append(f'## `{label}` window near `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,30,190)))
+          # collect strong signal instructions in broad windows
+          ranges=[(0xe99d07,0xe9b200),(0xfd4c04,0xfd6000),(0xfd381a,0xfd4b20)]
+          signals=[]
+          pats=['[rax+0x140]','[rcx+0x140]','[rdx+0x140]','[rdi+0x40]','[rbx+0x40]','[r14+0x40]','[r15+0x40]','+0x140','+0x40','fd381a','fd4c04','e99d07','0x184d5d0','0x184d898','call   QWORD PTR']
+          for start,end in ranges:
+              for a,l,t in win(start,end):
+                  if any(p in l for p in pats):
+                      signals.append((a,l,t))
+          md.append('## Condensed bridge signals\n\n'+table(signals,900))
+          # xrefs to known bridge funcs
+          xrefs=[]
+          for a,l,t in ins:
+              if any(x in l for x in ['e99d07','fd4c04','fd381a','184d5d0','184d898']):
+                  xrefs.append((a,l,t))
+          md.append('## Text mentions of bridge functions/APs\n\n'+table(xrefs,550))
+          md.append('## v8 interpretation checklist\n\n')
+          md.append('- This report is intended to decide whether `0x184d5d0` or `0x184d898` appears directly in the known `fd381a` path.\n')
+          md.append('- If direct AP materialization is absent, the bridge is likely through erased payloads/virtual interfaces rather than literal AP identity.\n')
+          Path('out/restrictions-fd381a-bridge-deeper-v8.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-fd381a-bridge-deeper-v8
+          path: out/restrictions-fd381a-bridge-deeper-v8.md
+
+  commit-reports:
+    needs:
+      - trace-installed-method-semantics
+      - trace-184d5d0-reader-flows
+      - trace-fd381a-bridge-deeper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find out -type f -name '*.md' -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-installed-method-semantics-v8.md \
+                  analysis/restrictions-184d5d0-reader-flows-v8.md \
+                  analysis/restrictions-fd381a-bridge-deeper-v8.md
+          git commit -m 'Trace Restrictions semantic bridges in parallel' || exit 0
+          git pull --rebase origin main
+          git push
