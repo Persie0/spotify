@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, and narrowing the remaining erased-interface bridge through v14. Static provenance documentation only; no runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, classifying callback packaging, and narrowing the virtual `+0xa0` bridge through v15. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -27,7 +27,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `fd381a state+0x40` dependency remains best explained as a RestrictionsSetupImpl-derived readiness source. Direct AP identity for `0x184d898` / `0x184d5d0` still does not appear in the `fd381a` window; the active remaining bridge is through erased interfaces, callback packaging, and temporary stack output.
+The `fd381a state+0x40` dependency remains best explained as a RestrictionsSetupImpl-derived readiness source. Direct AP identity for `0x184d898` / `0x184d5d0` still does not appear in the `fd381a` window; the remaining bridge is through erased interfaces, callback packages, and stack-output objects.
 
 ## Restrictions service / child getter path
 
@@ -75,6 +75,8 @@ child+0x18
 ```
 
 ## Installed object AP `0x184d898`
+
+Relocation-backed entries:
 
 ```text
 0x184d898 +0x00 -> 10bff2c
@@ -152,40 +154,33 @@ aab330(dest, original):
 
 So the bridge source is not hidden inside `aab330`; it is the concrete object stored at `[original]`.
 
-## v13/v14 callback materialization path
+## Callback package result through v14
 
-v13 found no direct relocation/AP entry pointing to `e99c54`:
-
-```text
-Relocation entries targeting e99c54: none
-```
-
-Instead, `e99c54` is materialized as a packaged callback/code pointer:
+`e99c54` has no direct relocation/AP entry. It is materialized as a callback/code pointer and packaged by `17da794`:
 
 ```text
+e950cb  rsi = dfa052
+e950d2  rdx = dfa086
 e950d9  rcx = e99c54
 e950e0  rbx = rsp+0xbe0
-e950e8  r9 = 0x20
+e950e8  r9  = 0x20
 e950ec  rdi = rbx
-e950ef  call 17da794              ; packages callback object using rcx=e99c54
-
-e95105  call [r14.vtable+0xa0]    ; passes packaged callback object via rdx=rbx
+e950ef  call 17da794
 ```
 
-v14 resolved the callback-package helper `17da794`:
+Concrete package layout:
 
 ```text
 17da794(pkg, fn_copy, fn_delete, callback, payload, size):
-  [pkg+0x00..0x17] = zero / empty holder
-  [pkg+0x18] = fn_copy       ; here dfa052
-  [pkg+0x20] = fn_delete     ; here dfa086
-  [pkg+0x28] = callback      ; here e99c54
-  [pkg+0x30] = operator new[](size, align=8)
-  [pkg+0x38] = size          ; here 0x20
+  [pkg+0x18] = fn_copy       ; dfa052 at e950ef
+  [pkg+0x20] = fn_delete     ; dfa086 at e950ef
+  [pkg+0x28] = callback      ; e99c54 at e950ef
+  [pkg+0x30] = allocated buffer
+  [pkg+0x38] = size          ; 0x20 at e950ef
   call [pkg+0x18]([pkg+0x30], payload, size)
 ```
 
-Destructor / cleanup for that package:
+Destructor/cleanup:
 
 ```text
 17da802(pkg):
@@ -194,65 +189,103 @@ Destructor / cleanup for that package:
     if [pkg+0x20] != 0:
       call [pkg+0x20](buf)
     [pkg+0x30] = 0
-    delete[] buf, align=8
+    delete[] buf
 ```
 
-Call-site binding now known:
-
-```text
-e950cb  rsi = dfa052       ; copy/fill function -> [pkg+0x18]
-e950d2  rdx = dfa086       ; delete/cleanup function -> [pkg+0x20]
-e950d9  rcx = e99c54       ; callback body -> [pkg+0x28]
-e950e8  r9  = 0x20         ; package buffer size -> [pkg+0x38]
-e95102  rdx = rsp+0xbe0    ; callback package passed to virtual +0xa0
-```
-
-Receiver path around the virtual `+0xa0` call:
+The callback package is then passed to a virtual receiver:
 
 ```text
 e95091  r14 = [rsp+0x390]
 e95099  rax = [rsp+0x398]
 e950a1  [rsp+0xa30] = r14
 e950a4  [rsp+0xa38] = rax
-...
+e950ba  copies pair from [rsp+0x70] into [rsp+0xa40]
+
 e950f4  rax = [r14]
 e950f7  rdi = rsp+0x1050
 e950ff  rsi = r14
-e95102  rdx = rsp+0xbe0    ; packaged callback
+e95102  rdx = rsp+0xbe0    ; callback package, [pkg+0x28] = e99c54
 e95105  call [rax+0xa0]
 ```
 
-This moves the remaining unknown to the concrete vtable behind `r14 = [rsp+0x390]` and its `+0xa0` implementation.
+## v15 virtual `+0xa0` bridge result
 
-## Original-object builder candidates
-
-The strongest builder materialization found so far:
+v15 found the same receiver object `r14 = [rsp+0x390]` used earlier in the same function, before the `e95105` call:
 
 ```text
-e92039  operator new(0x160)
-e9204a  [r12] = 0x18319a8
+e930b3  r15 = [r13+0x410]
+e930d4  rax = [r15]
+e930d7  rdi = r15
+e930da  call [rax+0x28]
 
-e92076  operator new(0x40)
-e9207e  rax = 0x18319e0
-e92085  [r15] = 0x18319e0
-e9208b  rdi = r15+0x10
-e92097  b891f8(r15+0x10, stack_object)
-e920a4  [stack_wrapper+0x20] = r15
+e930dd  r14 = [rsp+0x390]
+e930e5  rax = [rsp+0x398]
+...
+e9313a  rcx = e9940c
+e93150  call 17da794              ; packages callback e9940c
+e93155  rax = [r14]
+e93160  rsi = r14
+e93163  rdx = rsp+0xbe0
+e93166  call [rax+0xa0]
 ```
 
-Candidate AP table retained:
+Then another package is sent through `+0xa8`:
 
 ```text
-0x1831968: +0x10 -> ea6568, +0x78 -> e992a2
+e931bd  rsi = b29876
+e931c4  rdx = b8dbe9
+e931cb  rcx = e9959c
+e931e4  call 17da794              ; packages callback e9959c
+e931e9  rax = [r14]
+e931ef  rsi = r14
+e931f2  rdx = rsp+0xbe0
+e931f5  call [rax+0xa8]
+```
+
+Later, the `e99c54` package uses the same `r14` receiver and virtual `+0xa0`:
+
+```text
+e950d9  rcx = e99c54
+e950ef  call 17da794
+e950f4  rax = [r14]
+e950ff  rsi = r14
+e95102  rdx = rsp+0xbe0
+e95105  call [rax+0xa0]
+```
+
+Important v15 conclusion:
+
+```text
+The concrete producer of [rsp+0x390] is now upstream of the r14 calls:
+  r15 = [r13+0x410]
+  call [r15.vtable+0x28]
+  then [rsp+0x390] / [rsp+0x398] contain the receiver pair used by +0xa0/+0xa8.
+```
+
+So the next target is not `17da794` anymore; it is the object at `[r13+0x410]` and its virtual `+0x28` method.
+
+## AP candidates retained
+
+Near-`e99`/`e95` candidate group:
+
+```text
+0x1831968: +0x10 -> ea6568, +0x78 -> e992a2, +0xa0 -> ad647a
 0x1831980: +0x10 -> ea657c, +0x78 -> e99368
-0x18319e0: +0x10 -> e992c8, +0x78 -> e9929a
+0x18319e0: +0x10 -> e992c8, +0x78 -> e9929a, +0xa0 -> eaaf6e
 0x1831938: +0x10 -> ea662e, +0x78 -> e9939c
 0x188bd68: +0x10 -> 160c142, +0x78 -> e99382
 0x1831a00: +0x10 -> e99382, +0x78 -> eaaf5c
-0x1831a48: +0x10 -> e9929a, +0x78 -> eabb76
+0x1831a48: +0x10 -> e9929a, +0x78 -> eabb76, +0xa0 -> eaba80
 ```
 
-`0x18319e0` is still the most concrete provider candidate because v13 saw it materialized into a freshly allocated `0x40` object and initialized at `+0x10`. It is not yet proven to be the exact `[original]` object passed into `e99c54`.
+Additional callback-package wrapper APs seen locally:
+
+```text
+0x1844890: +0xa0 -> 1008f1e
+0x18448d8: +0xa0 -> 1009cb0
+```
+
+These local wrapper APs describe stack/package helper objects around the callback machinery; they do not yet prove the concrete AP of `r14 = [rsp+0x390]`.
 
 ## Closed items
 
@@ -273,31 +306,29 @@ late 0x198/AP 0x184d5d0 stores installed object at +0x60
 ea785e stack-output cleanup/destructor path
 aab330 classified as weak/shared lock + pointer copier
 e99c54 classified as packaged callback materialized at e950d9, not direct AP relocation
-17da794 callback package layout resolved: +0x18 copy, +0x20 delete, +0x28 callback, +0x30 buffer, +0x38 size
+17da794 callback package layout resolved
+17da802 callback package cleanup resolved
+virtual +0xa0 receiver path localized to r14 = [rsp+0x390]
+producer for [rsp+0x390] localized to [r13+0x410] virtual +0x28
 ```
 
 ## Still open / next best targets
 
 ```text
-Bind r14 = [rsp+0x390] at e95091 to a concrete AP/vtable.
-Trace the concrete [r14.vtable+0xa0] implementation called at e95105.
-Inside that +0xa0 implementation, find where callback package [rsp+0xbe0] is stored/invoked.
-Bind the callback invocation's original object fields:
-  [original]
-  [original+0x08]
-  [original+0x10]
-Prove or reject AP 0x18319e0 as the concrete [original] provider object.
-Then bind provider +0x78 and consumer +0x10 concretely.
+Trace object at [r13+0x410] before e930da.
+Bind [r13+0x410].vtable +0x28 concretely.
+Inspect the +0x28 implementation for writes to:
+  [rsp+0x390]
+  [rsp+0x398]
+Then bind r14's AP and concrete +0xa0/+0xa8 implementations.
+Only after that, trace where the e99c54 package is invoked and what original object reaches e99c54.
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-rsp390-r14-provenance-v15.md`
+- `analysis/restrictions-plus-a0-candidates-v15.md`
+- `analysis/restrictions-plus-a0-package-flow-v15.md`
 - `analysis/restrictions-callback-package-17da794-v14.md`
 - `analysis/restrictions-virtual-a0-e95105-v14.md`
 - `analysis/restrictions-callback-original-flow-v14.md`
-- `analysis/restrictions-e99c54-callers-v13.md`
-- `analysis/restrictions-original-object-builders-v13.md`
-- `analysis/restrictions-provider-consumer-bindings-v13.md`
-- `analysis/restrictions-aab330-internals-v12.md`
-- `analysis/restrictions-near-e99-ap-candidates-v12.md`
-- `analysis/restrictions-original-plus10-consumer-v12.md`
