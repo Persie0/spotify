@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, and following the downstream `0x184d5d0` readers through v8.
+Compact current state after resolving the Restrictions setup-bundle source, rejecting descriptor/builder false leads, proving the direct `this+0x18` writer, tracing the installed object, and following downstream consumers through v9. This document is static provenance documentation only; it does not describe runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -27,7 +27,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `fd381a state+0x40` dependency remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation.
+The `fd381a state+0x40` dependency remains best explained as a **RestrictionsSetupImpl-derived readiness source**, not TimelineAds owner `+0x50`, `0x18678f8`, or the old raw `0x6b0` interpretation. The direct AP identity does not appear in the `fd381a` window; the remaining gap is an erased-interface/temporary-object bridge.
 
 ## Restrictions service / child getter path
 
@@ -74,20 +74,6 @@ provider-vector caller
   -> 153d2a4 fills slot object from descriptor stream
   -> RestrictionsSetupImpl factory reads [rdx+0x30]
   -> factory passes it as rcx into constructor 0x10aba36
-```
-
-Factory call:
-
-```text
-10ab824  mov rax, [rbx+0x30]
-10ab828  mov [rsp+0x40], rax
-...
-10ab93c  mov rdi, rbx
-10ab93f  mov rsi, [rsp+0x58]
-10ab944  mov rdx, [rsp+0x50]
-10ab949  mov rcx, [rsp+0x40]
-10ab94e  mov r9,  [rsp+0x48]
-10ab97f  call 10aba36
 ```
 
 ## Descriptor/builder false leads: closed
@@ -144,7 +130,7 @@ Relocation-backed AP/method entries start as:
 0x184d8d0        -> abfe54
 ```
 
-Known method semantics after v8:
+Known method semantics after v9:
 
 ```text
 10bff2c:
@@ -169,7 +155,12 @@ Known method semantics after v8:
   if true:
     [this+0x10] = [rsp+0x30]
     [this+0x00..0x0f] = [rsp+0x20..0x2f]
-  => condition/update helper; strongest semantic readiness-style method so far
+    [this+0x18] = 1
+  if false:
+    [this+0x00] = 0
+    [this+0x18] = 0
+  returns this
+  => condition/update helper over installed payload; strongest readiness-style method so far
 ```
 
 ## Payload at `allocated_0x28+0x08`
@@ -226,10 +217,12 @@ The constructor builds a `0x198` object with AP `0x184d5d0` and stores the insta
 10ad217  [rbp+0x60] = rbx          ; captures installed this+0x18
 ```
 
-Confirmed method-side `+0x60` consumers and deeper v8 flow:
+Confirmed method-side `+0x60` consumers and deeper v9 flow:
 
 ```text
 0x184d720 +0x150 -> 10bb09e
+  10bb0c9  eax = [this+0x50]
+  10bb0d8  al  = [this+0x54]
   10bb0e5  r14 = [this+0x60]
   10bb0f8  rax = [r14]
   10bb107  rdi = r14
@@ -242,8 +235,9 @@ Confirmed method-side `+0x60` consumers and deeper v8 flow:
   10bb199  rdi = stack out
   10bb19c  call [rax+0x18]
   => calls installed AP 0x184d898 method +0x18 (10bffde)
-  if result payload is present and passes 177f852:
-    updates [this+0x50] and [this+0x54]
+  if returned stack payload is present and passes 177f852:
+    [this+0x50] = clamped result code <= 5
+    [this+0x54] = result flag byte
 ```
 
 This closes the key downstream link:
@@ -252,6 +246,33 @@ This closes the key downstream link:
 0x184d5d0 object
   +0x60 = installed child+0x18 object / AP 0x184d898
   methods +0x150/+0x158 call that installed object via +0x10/+0x18
+  +0x158 refreshes 0x198 cached fields +0x50/+0x54 from the installed object result
+  +0x150 reads those cached fields and passes them into the installed object +0x10 helper
+```
+
+## Remaining fd381a bridge gap
+
+v9 again found no direct literal/AP identity for `0x184d898` or `0x184d5d0` in the `fd381a` window. The active bridge remains erased-interface based:
+
+```text
+e99c82  rsi = [r14]
+e99c8e  rax = [rsi]
+e99c96  call [rax+0x78]      ; provider-side virtual
+
+e99c99  rax = [rbx]
+e99ca1  rdi = rbx
+e99ca4  rsi = stack out
+e99ca7  call [rax+0x10]      ; consumer-side virtual
+
+e99cad  ea785e(stack out)
+```
+
+Next best target for the remaining bridge is therefore **not another AP-literal scan**, but resolving the concrete vtable/provider behind:
+
+```text
+source object at e99c82/e99c96 virtual +0x78
+consumer object at e99ca7 virtual +0x10
+ea785e stack-output normalizer/destructor path
 ```
 
 ## Side paths
@@ -280,43 +301,14 @@ later reused as local byte/vector storage around 10acf8d and 10ad163+
 `wrapper_0xd8 / AP 0x184d9a8`:
 
 ```text
-10ac4ec  call [constructor_arg_rdx.vtable+0x28]
-10ac4ef  r14 = return
 10ac4f7  operator new(0xd8)
 10ac503  [wrapper_0xd8+0x00] = 0x184d9a8
-10ac506  [wrapper_0xd8+0x08] = r14
+10ac506  [wrapper_0xd8+0x08] = r14_return
 10ac50f  [wrapper_0xd8+0x10] = allocated_0x150
+10ac513  [wrapper_0xd8+0x18] = 0
 ```
 
-These side paths remain relevant construction branches but are not the direct `b411a4 -> child+0x18` getter value.
-
-## `10ac7dd` correction
-
-`10ac7dd` writes `this+0x40`, not `this+0x18`:
-
-```text
-10aba93  lea rax, [rdi+0x40]
-10aba97  [rsp+0x18] = rax          ; this+0x40
-
-10ac7d5  mov rax, [rsp+0x18]
-10ac7dd  mov [rax], r14            ; this+0x40 = r14
-```
-
-Useful for the broader graph, but not for the direct `b411a4` getter value.
-
-## fd381a bridge: v8 status
-
-v8 did not find literal AP materialization of `0x184d898` or `0x184d5d0` inside the `fd381a` window. The bridge is therefore still likely through erased payload/interface state rather than literal AP identity.
-
-Current strongest bridge statement:
-
-```text
-Restrictions child getter path
-  -> b411a4 returns installed AP 0x184d898 object
-  -> 0x198/AP 0x184d5d0 captures it at +0x60
-  -> 0x184d5d0 methods +0x150/+0x158 call AP 0x184d898 +0x10/+0x18
-  -> fd381a likely receives the readiness/mode result through erased interface chain, not direct AP literals
-```
+Still relevant to construction, but not the direct `b411a4 -> child+0x18` getter value.
 
 ## Current closed items
 
@@ -324,48 +316,37 @@ Restrictions child getter path
 setup-bundle +0x30 source
 factory-consumption path
 slot AP relocation targets
-0x165dd40 branch helpers
-buffer/growth emit helpers
-builder sink/refill abstraction
-local output builder layout / builder+0x18 false lead
-post-wrapper return-value consumption
-child getter b411a4 classified as trivial [rdi+0x18] getter
+descriptor/builder/buffer false leads
+child getter b411a4 = trivial [rdi+0x18] getter
 child AP 0x184da88 +0x38 = b411a4
-[rsp+0x40] provenance as constructor arg rdx saved at entry
-10ac7dd classified as this+0x40, not child+0x18
-[rsp+0x60] classified as &this+0x18
+[rsp+0x60] = &this+0x18
 this+0x18 direct writer at 10ac1a9
-installed this+0x18 object AP 0x184d898
-payload move/install helper 107162a
-late 0x198/AP 0x184d5d0 consumer stores installed this+0x18 at +0x60
-0x184d5d0 methods +0x150/+0x158 read +0x60
-0x184d5d0 +0x150 calls AP 0x184d898 +0x10
-0x184d5d0 +0x158 calls AP 0x184d898 +0x18
+installed child+0x18 object AP 0x184d898
+107162a payload installer into allocated_0x28+0x08
+10bff52 forwarding/helper method
+10bffde condition/update method
+late 0x198/AP 0x184d5d0 consumer stores installed object at +0x60
+0x184d5d0 +0x150/+0x158 read +0x60 and dispatch to installed object +0x10/+0x18
+0x184d5d0 +0x158 refreshes cache fields +0x50/+0x54 from installed-object result
 ```
 
 ## Still open / next best targets
 
 ```text
-Name the semantic payload/result produced by 10bffde:
-  - trace 17c4edc / 177f852 / 177fcc4 helpers
-  - identify the stored structure copied into [this+0x00..0x10]
-
-Bridge into fd381a:
-  - trace erased interface chain rather than AP literals
-  - follow fd381a state+0x40 virtual +0x140 callers/return values
-  - compare with 0x184d5d0 +0x150/+0x158 outputs
+Resolve concrete vtable/provider for e99c96 call [source.vtable+0x78]
+Resolve concrete consumer method for e99ca7 call [consumer.vtable+0x10]
+Trace ea785e stack-output normalization/destruction
+Tie the erased e99c96/e99ca7 stack output to fd4c04/fd381a state+0x40 without relying on AP literals
 ```
 
 ## Evidence reports
 
-Latest:
-
+- `analysis/restrictions-condition-propagation-v9.md`
+- `analysis/restrictions-184d5d0-callers-v9.md`
+- `analysis/restrictions-fd381a-state-bridge-v9.md`
 - `analysis/restrictions-installed-method-semantics-v8.md`
 - `analysis/restrictions-184d5d0-reader-flows-v8.md`
 - `analysis/restrictions-fd381a-bridge-deeper-v8.md`
-
-Earlier key evidence:
-
 - `analysis/restrictions-payload-107162a-v7.md`
 - `analysis/restrictions-ap184d5d0-60-readers-v7.md`
 - `analysis/restrictions-fd381a-bridge-v7.md`
@@ -377,11 +358,8 @@ Earlier key evidence:
 - `analysis/restrictions-child184da88-v5.md`
 - `analysis/restrictions-late-0x198-184d5d0-v5.md`
 - `analysis/restrictions-this18-rsp60-v4.md`
+- `analysis/restrictions-rsp70-late-v4.md`
+- `analysis/restrictions-rsp40-late-v4.md`
 - `analysis/restrictions-output-store-10ac7dd.md`
 - `analysis/restrictions-wrapper80-provenance.md`
 - `analysis/restrictions-vtable28-provenance.md`
-- `analysis/restrictions-provider-callsite-summary.md`
-- `analysis/restrictions-factory-consumption.md`
-- `analysis/restrictions-constructor-dataflow.md`
-- `analysis/field428-install-proof.md`
-- `docs/15-skip-ad-signal.md`
