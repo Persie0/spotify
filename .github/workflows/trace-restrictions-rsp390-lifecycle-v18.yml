@@ -1,0 +1,252 @@
+name: Trace Restrictions rsp390 lifecycle parallel v18
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-rsp390-lifecycle-v18.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-rsp390-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace rsp390 lifecycle
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=55,aft=105):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=900):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          lo,hi=0xe92f2c,0xe95600
+          local=[x for x in ins if lo<=x[0]<=hi]
+          pats=['rsp+0x390','rsp+0x398','rsp+0x380','rsp+0x388','r13+0x480','r13+0x410','r13+0x570','r13+0x378','af2eb8','e930da','e95105','e93166','e931f5']
+          refs=[x for x in local if any(p in x[1] for p in pats)]
+          md=['# Restrictions `[rsp+0x390]` receiver lifecycle v18\n\n']
+          md.append('Focus: correct the v16/v17 assumption by tracing where `[rsp+0x390]/[rsp+0x398]` is first initialized, then how it is reused around `+0xa0/+0xa8`. Static provenance only.\n\n')
+          md.append('## Function entry and first receiver-pair initialization\n\n')
+          md.append(fmt(around(0xe92f4d,25,70)))
+          md.append('## Later `+0x28` pre-use call and receiver load\n\n')
+          md.append(fmt(around(0xe930b3,35,55)))
+          md.append('## Callback registration uses of same receiver pair\n\n')
+          md.append('### first +0xa0 package e9940c\n\n')
+          md.append(fmt(around(0xe9313a,25,55)))
+          md.append('### +0xa8 package e9959c\n\n')
+          md.append(fmt(around(0xe931bd,25,55)))
+          md.append('### later +0xa0 package e99c54\n\n')
+          md.append(fmt(around(0xe95091,35,80)))
+          md.append('## All local refs to receiver slots and owner fields\n\n')
+          md.append(table(refs,1000))
+          md.append('## Windows around writes/LEAs to `[rsp+0x390]/[rsp+0x398]`\n\n')
+          for a,l,t in refs:
+              if any(p in l for p in ['[rsp+0x390]', '[rsp+0x398]', 'rsp+0x390', 'rsp+0x398']) and any(op in t for op in ['lea','mov','call']):
+                  md.append(f'### `{a:#x}`\n\n')
+                  md.append(fmt(around(a,25,45)))
+          md.append('## Interpretation\n\n')
+          md.append('If `e92f64/e92f6b/e92f73` is the only direct constructor of `[rsp+0x390]`, then `[r13+0x480]` is the source of the receiver pair. The `e930da` `[r13+0x410].vtable+0x28` call remains important, but should be treated as pre-use gate/update until a callee write-back to `[rsp+0x390]/[rsp+0x398]` is proven.\n')
+          Path('out/restrictions-rsp390-lifecycle-v18.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-rsp390-lifecycle-v18
+          path: out/restrictions-rsp390-lifecycle-v18.md
+
+  trace-af2eb8-receiver-copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace af2eb8 receiver copy
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=45,aft=140):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=800):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions `af2eb8` receiver-copy helper v18\n\n']
+          md.append('Focus: inspect `af2eb8`, called as `af2eb8(&rsp+0x390, [r13+0x480])`, to classify receiver-pair initialization. Static provenance only.\n\n')
+          md.append('## Callsite\n\n')
+          md.append(fmt(around(0xe92f64,20,35)))
+          md.append('## `af2eb8` target window\n\n')
+          md.append(fmt(around(0xaf2eb8,55,180)))
+          helpers=[]
+          for a,l,t in around(0xaf2eb8,0,220):
+              if 'call' in t or any(p in l for p in ['[rdi]', '[rdi+0x8]', '[rsi]', '[rsi+0x8]', '+0x10]', 'lock inc']):
+                  helpers.append((a,l,t))
+          md.append('## Relevant refs/calls in `af2eb8` window\n\n')
+          md.append(table(helpers,500))
+          calls=[]
+          for a,l,t in ins:
+              if 'af2eb8' in l or 'call   af2eb8' in l:
+                  calls.append((a,l,t))
+          md.append('## All text references/calls to `af2eb8`\n\n')
+          md.append(table(calls,500))
+          md.append('## Interpretation\n\n')
+          md.append('A shared-pointer-like copy helper should read source pointer/control fields from `rsi`, write destination pointer/control fields at `rdi`, and increment a refcount when the control block is non-null. If confirmed, the receiver pair at `[rsp+0x390]/[rsp+0x398]` comes directly from `[r13+0x480]`.\n')
+          Path('out/restrictions-af2eb8-receiver-copy-v18.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-af2eb8-receiver-copy-v18
+          path: out/restrictions-af2eb8-receiver-copy-v18.md
+
+  trace-owner-field-writers-fixed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace owner field writers fixed
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=35,aft=70):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def classify(t,off):
+              if f'+{off}]' in t.split(',',1)[0] or f'{off}]' in t.split(',',1)[0]: return 'write'
+              if 'call' in t and f'+{off}]' in t: return 'call-through-field'
+              return 'read/use'
+          md=['# Restrictions owner field writer search fixed v18\n\n']
+          md.append('Focus: robust search for global reads/writes of owner fields `+0x480` and `+0x410`. Static provenance only.\n\n')
+          for off in ['0x480','0x410','0x570','0x378']:
+              rows=[]
+              for a,l,t in ins:
+                  if off in l and '[' in l and ']' in l:
+                      rows.append((a,l,t,classify(t,off)))
+              md.append(f'## All refs containing `{off}`\n\n')
+              md.append('| addr | class | instruction |\n|---:|---|---|\n')
+              for a,l,t,cl in rows[:1200]: md.append(f'| `{a:#x}` | {cl} | `{l.strip()}` |\n')
+              if len(rows)>1200: md.append(f'| ... | ... | truncated {len(rows)-1200} more |\n')
+              writes=[x for x in rows if x[3]=='write']
+              md.append(f'\n### Windows around `{off}` writes\n\n')
+              for a,l,t,cl in writes[:60]:
+                  md.append(f'#### `{a:#x}`\n\n')
+                  md.append(fmt(around(a,35,70)))
+          md.append('## Interpretation\n\n')
+          md.append('For the current bridge, `+0x480` is now as important as `+0x410`: `+0x480` feeds the receiver pair copied into `[rsp+0x390]`, while `+0x410` is a pre-use virtual `+0x28` receiver.\n')
+          Path('out/restrictions-owner-field-writers-fixed-v18.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-owner-field-writers-fixed-v18
+          path: out/restrictions-owner-field-writers-fixed-v18.md
+
+  commit-reports:
+    runs-on: ubuntu-latest
+    needs:
+      - trace-rsp390-lifecycle
+      - trace-af2eb8-receiver-copy
+      - trace-owner-field-writers-fixed
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: analysis
+          merge-multiple: true
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-rsp390-lifecycle-v18.md analysis/restrictions-af2eb8-receiver-copy-v18.md analysis/restrictions-owner-field-writers-fixed-v18.md
+          git commit -m 'Trace Restrictions rsp390 lifecycle in parallel'
+          git pull --rebase origin main
+          git push
