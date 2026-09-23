@@ -1,0 +1,256 @@
+name: Trace Restrictions final bridge candidates parallel v9
+
+on:
+  push:
+    paths:
+      - '.github/workflows/trace-restrictions-bridge-v9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  trace-184d5d0-callers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace 184d5d0 method callers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          rel=subprocess.check_output(['readelf','-rW',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          rel_re=re.compile(r'^\s*([0-9a-f]+)\s+\S+\s+R_X86_64_RELATIVE\s+([0-9a-f]+)')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          rels=[]
+          for line in rel.splitlines():
+              m=rel_re.match(line)
+              if m: rels.append((int(m.group(1),16), int(m.group(2),16), line.rstrip()))
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=34,aft=110):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=240):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          ap=0x184d5d0
+          md=['# Restrictions 0x184d5d0 caller / method-index bridge v9\n\n']
+          md.append('Focus: relate AP `0x184d5d0` entries that read `+0x60` back to method-table indexes and downstream call shape. Static analysis only; no patching or runtime modification.\n\n')
+          ap_rels=[r for r in rels if ap <= r[0] < ap+0x220]
+          md.append('## AP entries around 0x184d5d0\n\n```text\n')
+          md.extend(line+'\n' for _,_,line in ap_rels)
+          md.append('```\n')
+          for off,target,_ in ap_rels:
+              if target in (0x10bb09e,0x10bb16e,0x10bb258):
+                  md.append(f'## AP entry `{off-ap:#x}` -> `{target:#x}`\n\n')
+                  md.append(fmt(around(target,28,130)))
+          # Scan for direct mentions/materializations of the AP and method targets.
+          mentions=[]
+          for a,l,t in ins:
+              if any(s in l for s in ['184d5d0','10bb09e','10bb16e','10bb258','184d720','184d728','184d730']):
+                  mentions.append((a,l,t))
+          md.append('## Text mentions / materializations\n\n'+table(mentions,300))
+          # Heuristic: look around indirect calls with offsets +0x150/+0x158 and +0x60 reads.
+          hits=[]
+          for i,(a,l,t) in enumerate(ins):
+              if any(p in l for p in ['+0x150]', '+0x158]', '[rdi+0x60]', '[r14+0x60]', '[rbx+0x60]', 'ff 90 50 01 00 00', 'ff 90 58 01 00 00']):
+                  hits.extend(ins[max(0,i-4):min(len(ins),i+8)])
+          # de-duplicate preserving order
+          seen=set(); unique=[]
+          for row in hits:
+              if row[0] not in seen:
+                  seen.add(row[0]); unique.append(row)
+          md.append('## Candidate method-index / +0x60 hits\n\n'+table(unique,420))
+          Path('out/restrictions-184d5d0-callers-v9.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-184d5d0-callers-v9
+          path: out/restrictions-184d5d0-callers-v9.md
+
+  trace-fd381a-state-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace fd381a state bridge
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=36,aft=160):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=520):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions fd381a state bridge v9\n\n']
+          md.append('Focus: the remaining erased-interface bridge between the Restrictions-derived objects and `fd381a state+0x40 / virtual +0x140`. Static provenance only.\n\n')
+          for name,addr in [('e99d07',0xe99d07),('fd4c04',0xfd4c04),('fd381a',0xfd381a)]:
+              md.append(f'## `{name}` window `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,45,190)))
+          # filtered signals in the wider bridge areas
+          ranges=[(0xe99d07,0xe9b200),(0xfd4b00,0xfd5600),(0xfd3600,0xfd4300)]
+          filt=[]
+          pats=['+0x40]', '+0x58]', '+0x140]', 'ff 90 40 01 00 00', '184d898', '184d5d0', 'b411a4', '10bb09e', '10bb16e', '10bffde', '10bff52']
+          for start,end in ranges:
+              for a,l,t in win(start,end):
+                  if any(p in l for p in pats): filt.append((a,l,t))
+          md.append('## Filtered bridge signals\n\n'+table(filt,800))
+          # direct xrefs to fd381a/fd4c04/e99d07 by literal mention
+          mentions=[]
+          for a,l,t in ins:
+              if any(s in l for s in ['fd381a','fd4c04','e99d07']): mentions.append((a,l,t))
+          md.append('## Text mentions of bridge functions\n\n'+table(mentions,280))
+          Path('out/restrictions-fd381a-state-bridge-v9.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-fd381a-state-bridge-v9
+          path: out/restrictions-fd381a-state-bridge-v9.md
+
+  trace-condition-propagation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Orbit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download r1 --repo Persie0/spotify --pattern 'spotify-9-1-84-2205.apk' --clobber
+          unzip -p spotify-9-1-84-2205.apk lib/x86_64/liborbit-jni-spotify.so > liborbit-jni-spotify.so
+      - name: Trace condition propagation
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          so='liborbit-jni-spotify.so'
+          dis=subprocess.check_output(['objdump','-d','-M','intel',so], text=True, errors='replace')
+          insn_re=re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s)+)\s*(.*)$')
+          ins=[]
+          for line in dis.splitlines():
+              m=insn_re.match(line)
+              if m: ins.append((int(m.group(1),16), line.rstrip(), m.group(3).strip()))
+          addrs=[a for a,_,_ in ins]
+          def ni(addr):
+              lo,hi=0,len(addrs)-1
+              while lo<hi:
+                  mid=(lo+hi)//2
+                  if addrs[mid]<addr: lo=mid+1
+                  else: hi=mid
+              return lo
+          def around(addr,b=32,aft=140):
+              i=ni(addr); return ins[max(0,i-b):min(len(ins),i+aft)]
+          def win(start,end): return [(a,l,t) for a,l,t in ins if start<=a<=end]
+          def fmt(rows): return '```text\n'+'\n'.join(l for _,l,_ in rows)+'\n```\n'
+          def table(rows,limit=420):
+              s='| addr | instruction |\n|---:|---|\n'
+              for a,l,t in rows[:limit]: s+=f'| `{a:#x}` | `{l.strip()}` |\n'
+              if len(rows)>limit: s+=f'| ... | truncated {len(rows)-limit} more |\n'
+              return s+'\n'
+          md=['# Restrictions condition propagation from 10bffde / 10bb16e v9\n\n']
+          md.append('Focus: how the condition/update result from installed object method `10bffde` is propagated through the `0x184d5d0` reader methods.\n\n')
+          for name,addr in [('10bff52 stringify/helper',0x10bff52),('10bffde condition/update helper',0x10bffde),('10bb09e caller of +0x10',0x10bb09e),('10bb16e caller of +0x18',0x10bb16e),('10bb258 larger method',0x10bb258)]:
+              md.append(f'## {name} `{addr:#x}`\n\n')
+              md.append(fmt(around(addr,28,170)))
+          # summarize reads/writes to state-like fields around the 0x198 object methods
+          filt=[]
+          for a,l,t in win(0x10bb09e,0x10bb360):
+              if any(p in l for p in ['[rbx+0x50]', '[rbx+0x54]', '[rdi+0x50]', '[rdi+0x54]', '[rdi+0x60]', '[rbx+0x60]', '[r14]', '[rax+0x18]', '[rax+0x10]', 'call   QWORD PTR']):
+                  filt.append((a,l,t))
+          md.append('## Field updates / virtual calls in reader methods\n\n'+table(filt,520))
+          Path('out/restrictions-condition-propagation-v9.md').write_text(''.join(md), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restrictions-condition-propagation-v9
+          path: out/restrictions-condition-propagation-v9.md
+
+  commit-reports:
+    needs:
+      - trace-184d5d0-callers
+      - trace-fd381a-state-bridge
+      - trace-condition-propagation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Commit reports
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          find artifacts -type f -name '*.md' -maxdepth 3 -print -exec cp {} analysis/ \;
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add analysis/restrictions-184d5d0-callers-v9.md analysis/restrictions-fd381a-state-bridge-v9.md analysis/restrictions-condition-propagation-v9.md
+          if git diff --cached --quiet; then
+            echo 'No report changes to commit'
+            exit 0
+          fi
+          git commit -m 'Trace Restrictions final bridge candidates in parallel'
+          git pull --rebase origin main
+          git push
