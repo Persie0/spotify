@@ -1,6 +1,6 @@
 # Final Skip-Ad readiness provenance summary
 
-Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, classifying callback packaging, and narrowing the virtual bridge through v16. Static provenance documentation only; no runtime patching or bypass behavior.
+Compact current state after resolving the Restrictions setup-bundle source, proving the direct `child+0x18` writer, tracing the installed object and downstream consumers, classifying callback packaging, and correcting the receiver-pair lifecycle through v18. Static provenance documentation only; no runtime patching or bypass behavior.
 
 ## Correct high-level chain
 
@@ -27,7 +27,7 @@ Skip-Ad adapter outer+0x58 / this+0x40
 fd381a state+0x40 virtual +0x140 readiness/mode discriminator
 ```
 
-The `fd381a state+0x40` dependency remains best explained as a RestrictionsSetupImpl-derived readiness source. Direct AP identity for `0x184d898` / `0x184d5d0` still does not appear in the `fd381a` window; the remaining bridge is through erased interfaces, callback packages, and stack-output objects.
+The `fd381a state+0x40` dependency remains best explained as a RestrictionsSetupImpl-derived readiness source. Direct AP identity for `0x184d898` / `0x184d5d0` still does not appear in the `fd381a` window; the remaining bridge is through erased interfaces, callback packages, and receiver-pair stack objects.
 
 ## Restrictions service / child getter path
 
@@ -192,77 +192,59 @@ Destructor/cleanup:
     delete[] buf
 ```
 
-## v15/v16 virtual bridge result
+## Corrected receiver-pair lifecycle through v18
 
-The callback package is passed to a receiver object loaded from `[rsp+0x390]`:
+v16 initially localized the receiver near `[r13+0x410].vtable+0x28`, but v17/v18 corrected the producer. The receiver pair is initialized at function entry from `owner+0x480`:
 
 ```text
-e95091  r14 = [rsp+0x390]
-e95099  rax = [rsp+0x398]
-e950a1  [rsp+0xa30] = r14
-e950a4  [rsp+0xa38] = rax
-e950ba  copies pair from [rsp+0x70] into [rsp+0xa40]
-
-e950f4  rax = [r14]
-e950f7  rdi = rsp+0x1050
-e950ff  rsi = r14
-e95102  rdx = rsp+0xbe0    ; callback package, [pkg+0x28] = e99c54
-e95105  call [rax+0xa0]
+e92f4d  r13 = rsi                       ; owner/context object
+e92f64  rsi = [r13+0x480]
+e92f6b  rdi = &rsp+0x390
+e92f73  af2eb8(&rsp+0x390, [r13+0x480])
 ```
 
-v15 found the same receiver object used earlier in the same function. v16 confirms the immediate producer site for that receiver pair:
+`af2eb8` is a shared-pointer-style copy helper, copying pointer/control fields from the source pair to the destination and incrementing control-block refcounts:
 
 ```text
-e93091  rax = [r13+0x570]
-e93098  cmp byte [rax+0x1], 0
-e930b3  r15 = [r13+0x410]
-e930d4  rax = [r15]
-e930d7  rdi = r15
-e930da  call [rax+0x28]
+af2eb8:
+  [dst+0x00] = [src+0x00]
+  [dst+0x08] = [src+0x08]
+  if [dst+0x08] != 0:
+    lock inc [control+0x08]
+  [dst+0x10] = [src+0x10]
+  [dst+0x18] = [src+0x18]
+  ... additional pair/subobject copy paths continue in the helper
+```
 
+The same receiver pair is then loaded and reused for the callback packages:
+
+```text
 e930dd  r14 = [rsp+0x390]
 e930e5  rax = [rsp+0x398]
-```
 
-The produced receiver pair is immediately used for two earlier callback registrations:
-
-```text
 e9313a  rcx = e9940c
-e93150  call 17da794              ; packages callback e9940c
-e93155  rax = [r14]
-e93160  rsi = r14
-e93163  rdx = rsp+0xbe0
-e93166  call [rax+0xa0]
+e93150  call 17da794
+e93166  call [r14.vtable+0xa0]
 
 e931cb  rcx = e9959c
-e931e4  call 17da794              ; packages callback e9959c
-e931e9  rax = [r14]
-e931ef  rsi = r14
-e931f2  rdx = rsp+0xbe0
-e931f5  call [rax+0xa8]
-```
+e931e4  call 17da794
+e931f5  call [r14.vtable+0xa8]
 
-Later, the `e99c54` package uses the same `r14` receiver and virtual `+0xa0`:
-
-```text
 e950d9  rcx = e99c54
 e950ef  call 17da794
-e950f4  rax = [r14]
-e950ff  rsi = r14
-e95102  rdx = rsp+0xbe0
-e95105  call [rax+0xa0]
+e95105  call [r14.vtable+0xa0]
 ```
 
-Important v16 conclusion:
+Corrected interpretation:
 
 ```text
-The immediate producer of [rsp+0x390]/[rsp+0x398] is localized to:
-  object = [r13+0x410]
-  call [object.vtable+0x28]
+[rsp+0x390]/[rsp+0x398] receiver pair source:
+  owner+0x480 via af2eb8 copy helper
 
-v16 does not yet bind the concrete AP/vtable for [r13+0x410].
-The broad +0x28 candidate scan is noisy because many unrelated +0x28 methods also reference stack slots.
-The next target should trace the construction/assignment of field [r13+0x410], not broaden the AP scan further.
+[r13+0x410].vtable+0x28:
+  still important because it runs immediately before the receiver pair is loaded,
+  but it is no longer proven to be the primary producer of [rsp+0x390]/[rsp+0x398].
+  Treat it as a pre-use gate/update/side-effect until a direct write-back is proven.
 ```
 
 ## AP candidates retained
@@ -310,23 +292,27 @@ e99c54 classified as packaged callback materialized at e950d9, not direct AP rel
 17da794 callback package layout resolved
 17da802 callback package cleanup resolved
 virtual +0xa0 receiver path localized to r14 = [rsp+0x390]
-producer call for [rsp+0x390] localized to [r13+0x410] virtual +0x28
+[rsp+0x390]/[rsp+0x398] receiver pair source corrected to owner+0x480 via af2eb8
 ```
 
 ## Still open / next best targets
 
 ```text
-Trace construction/assignment of field [r13+0x410].
-Bind [r13+0x410].vtable +0x28 concretely.
-Inspect that +0x28 implementation for how it produces:
-  [rsp+0x390]
-  [rsp+0x398]
-Then bind r14's AP and concrete +0xa0/+0xa8 implementations.
-Only after that, trace where the e99c54 package is invoked and what original object reaches e99c54.
+Bind concrete object/AP stored at owner+0x480.
+Bind r14 concrete vtable and its +0xa0/+0xa8 implementations.
+Trace owner+0x480 construction/writers with a more precise targeted workflow.
+Keep [r13+0x410].vtable+0x28 as a side-effect/gate candidate and trace it separately.
+Only after binding r14 +0xa0/+0xa8, trace where the e99c54 package is invoked and what original object reaches e99c54.
 ```
 
 ## Evidence reports
 
+- `analysis/restrictions-rsp390-lifecycle-v18.md`
+- `analysis/restrictions-af2eb8-receiver-copy-v18.md`
+- `analysis/restrictions-owner-field-writers-fixed-v18.md` — generated but empty; do not use as evidence
+- `analysis/restrictions-local-r13-plus410-v17.md`
+- `analysis/restrictions-global-plus410-writers-v17.md` — generated but empty; do not use as evidence
+- `analysis/restrictions-plus28-candidate-methods-v17.md`
 - `analysis/restrictions-r13-plus410-provenance-v16.md`
 - `analysis/restrictions-plus28-candidates-v16.md`
 - `analysis/restrictions-plus28-writer-flow-v16.md`
