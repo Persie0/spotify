@@ -1,15 +1,4 @@
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
+plugins {
+    // Pinned to the cached 8.11.1 (see ~/.gradle) so the build works offline-ish.
+    id "com.android.application" version "8.11.1" apply false
 }
