@@ -1,7 +1,31 @@
-# Adblock candidate: seek-to-end during ads (UNPROVEN — needs runtime test)
+# Adblock candidate: seek-to-end during ads — REJECTED (proven statically)
 
-Static evidence + exact falsification protocol. Does NOT change the shipped behavior
-(mute-only) until the test passes. Defensive documentation only.
+## Verdict (2026-09-25): REJECTED. Do not implement, no runtime test needed.
+
+Two independent seals, both in decompiled Java:
+
+1. **Command stripped:** `gjx.m44992A1` builds the available-command set (`a7p0`).
+   During ads (`mo43901p() == true`, i.e. `!zMo43901p == false`), commands
+   4–12 are all removed, including command **5 (seek)**:
+   `m24989c(5, zMo43844K0 && !zMo43901p)`, and 8/9 (skip-next) likewise.
+   So `ACTION_SEEK_TO` (`0x100`, from command 5) and `ACTION_SKIP_TO_NEXT`
+   (`0x20`, from 8/9) are both absent from the MediaSession mask during ads.
+2. **Execution ignores:** `gjx.mo44997c1` (concrete `ox8.mo44997c1`, reached via
+   `onSeekTo → tpd0(f=1) → pdp0.mo43883f → ox8.m68197d1(5, j)` with NO
+   pre-check, unlike skip-next) contains:
+   ```java
+   if (mo43901p()) {
+       yif1.m93819w0("seekTo ignored because an ad is playing");
+       ... return;  // seek dropped
+   }
+   ```
+   Even an unadvertised `seekTo()` (actions are advisory; `onSeekTo` has no
+   `W()` gate) is dropped at execution while an ad plays.
+
+`mo43901p()` == "ad is playing" is confirmed by both the log string and the
+command gating (seek/skip/4/6/7/10/11/12 all require `!ad`).
+
+## Prior evidence (kept for provenance)
 
 ## What is proven statically
 
