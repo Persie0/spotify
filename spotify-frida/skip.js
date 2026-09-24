@@ -21,20 +21,34 @@ var loggedTrackShape = false;
 
 function log(s) { console.log('[spotify-autoskip] ' + s); }
 
-function isAd(playerState) {
-    try {
-        var track = playerState.track();
-        if (track === null) return false;
+    // xul0 optional unwrap: c() == isPresent, b() == get in 9.1.84-2205
+    // (decompiled p.xul0). Try obfuscated names first, then kept names.
+    function zeroArg(obj, names) {
+        for (var i = 0; i < names.length; i++) {
+            try { return { ok: true, value: obj[names[i]]() }; }
+            catch (e) { /* try next */ }
+        }
+        return { ok: false };
+    }
+    function isAd(playerState) {
+        try {
+            var track = playerState.track();
+            if (track === null) return false;
         if (!loggedTrackShape) {
             loggedTrackShape = true;
             log('track class: ' + track.getClass().getName());
         }
         var t = track;
-        try {
-            var present = t.isPresent();
-            if (!present) return false;
-            t = t.get();
-        } catch (e) { /* not a wrapper; use as-is */ }
+            try {
+                var present = zeroArg(track, ['c', 'isPresent']);
+                if (!present.ok) return false;
+                if (present.value === false) return false;
+                var got = zeroArg(track, ['b', 'get']);
+                if (!got.ok || got.value === null) return false;
+                track = got.value;
+            } catch (e) {
+                return false;
+            }
         var metadata = t.metadata();
         if (metadata === null) return false;
         var v = null;

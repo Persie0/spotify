@@ -144,6 +144,22 @@ public final class SkipHook extends XposedModule {
         }
     }
 
+    /** Calls the first existing zero-arg method from {@code names}. */
+    private static Object callZeroArg(Object target, String... names)
+            throws NoSuchMethodException {
+        NoSuchMethodException last = null;
+        for (String name : names) {
+            try {
+                return target.getClass().getMethod(name).invoke(target);
+            } catch (NoSuchMethodException e) {
+                last = e;
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+        throw last != null ? last : new NoSuchMethodException("(empty)");
+    }
+
     /**
      * Best-effort in-process ad check: PlayerState.track() -> ContextTrack
      * metadata key "is_advertisement" == "true". Fail-closed. Logs the track
@@ -170,13 +186,19 @@ public final class SkipHook extends XposedModule {
                 log(Log.INFO, "track class: " + track.getClass().getName());
             }
             try {
-                Object present = track.getClass().getMethod("isPresent").invoke(track);
+                // xul0 optional: c() == isPresent, b() == get in 9.1.84-2205
+                // (decompiled p.xul0: mo49279c/mo49278b). Fall back to
+                // proguard-kept names on other builds.
+                Object present = callZeroArg(track, "c", "isPresent");
                 if (present instanceof Boolean && !((Boolean) present)) {
                     return false;
                 }
-                track = track.getClass().getMethod("get").invoke(track);
-            } catch (NoSuchMethodException ignored) {
-                // Not a wrapper; use as-is.
+                track = callZeroArg(track, "b", "get");
+                if (track == null) {
+                    return false;
+                }
+            } catch (NoSuchMethodException e) {
+                return false;
             }
             Object metadata;
             try {
