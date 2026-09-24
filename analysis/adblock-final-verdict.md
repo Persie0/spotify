@@ -85,6 +85,7 @@ Status after v14–v18 (no change to the external verdict):
 | Auto-press Skip Ad via `sendCustomAction("skip-ad", ...)` | **Not viable — do not implement** | No `skip-ad` handler in `pqd0.onCustomAction`; only media3/bcf commands |
 | Detect Skip-Ad readiness via `PlaybackState.getActions()` bit `0x20` | **Not viable — do not implement** | Bit tracks 8/9, not the signals list; stays absent when Skip Ad becomes ready |
 | Detect Skip-Ad readiness via `PlaybackState` extras/custom actions | **Not viable** | `pqd0.b()` never exports `PlayerState.signals()` there |
+| Seek to ad end via `seekTo()` during ad | **Candidate — UNPROVEN, needs runtime test** | No seeking restriction is ever inserted during ads and the command-5 path exists end to end, but handler acceptance is unverified; see `analysis/adblock-seek-candidate.md` for evidence + falsification protocol. Do not ship until the test passes |
 | In-process `SignalCommand("skip-ad")` / patched Orbit / LSPosed hook | **Out of scope for muter** | Would require in-process code, root/patch, account/ToS risk; contradicts muter's no-patch design |
 
 ## 5. What "finished" means here
