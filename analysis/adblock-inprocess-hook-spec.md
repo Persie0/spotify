@@ -33,9 +33,14 @@ DEX-grounded signatures (verified by direct DEX parse of this APK, 2026-09-25):
 classes9.dex  Lp/b8p0;  super=Lp/h8p0;  <init>(Ljava/lang/Object;)V  // arg = SignalCommand
               methods a/b = 12-arg visitor dispatch (brw..zqw family)
 classes9.dex  Lp/h8p0;  method i(Ljava/lang/Object;)Lp/b8p0;  // == h8p0.m46841i(cmd)
+classes9.dex  Lp/zqw;   implements Function  // Signal-variant visitor in hrw dispatch
+classes2.dex  Lp/c0y;   methods b..j(...)Single  // p8p0 holder (cf. dw3 f32913j)
 classes2.dex  Lp/jo20;  (Skip Ad UI host, dut/mzd1)
 classes10.dex Lp/g511;  super=Lp/qe70;  invoke(...)  // signals.contains reducer
 ```
+
+Ad check constant: `ContextTrack.Metadata.KEY_IS_ADVERTISEMENT = "is_advertisement"`
+(`com/spotify/player/model/ContextTrack.java:105`).
 
 Wire format (resolved, `docs/15-skip-ad-signal.md` §4): `EsSignalRequest`
 `{signal_id="skip-ad", logging_params=<generated>}`, no `parameters`, over
