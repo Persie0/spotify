@@ -86,6 +86,7 @@ Status after v14–v18 (no change to the external verdict):
 | Detect Skip-Ad readiness via `PlaybackState.getActions()` bit `0x20` | **Not viable — do not implement** | Bit tracks 8/9, not the signals list; stays absent when Skip Ad becomes ready |
 | Detect Skip-Ad readiness via `PlaybackState` extras/custom actions | **Not viable** | `pqd0.b()` never exports `PlayerState.signals()` there |
 | Seek to ad end via `seekTo()` during ad | **Not viable — proven** | Commands 4–12 (incl. 5/seek, 8–9/skip) are stripped during ads (`gjx.m44992A1`: `m24989c(5, K0 && !ad)`), and execution drops seeks with `"seekTo ignored because an ad is playing"` (`gjx.mo44997c1`). See `analysis/adblock-seek-candidate.md` |
+| Prev-skip during *seekable* ads | **Not pursued (wrong direction)** | If `seekable==true`, the ad branch skips the `+0x1488` (prev) `ad_disallow` insert and `qm21` stays available — but prev goes backward (re-hears previous track, ad break likely replays). Unproven, wrong UX; not an adblock. Prev-slot writers: `10a6866/10a6f40/10a7089/10a7383/10a75fd/10a76e8` |
 | In-process `SignalCommand("skip-ad")` / patched Orbit / LSPosed hook | **Out of scope for muter** | Would require in-process code, root/patch, account/ToS risk; contradicts muter's no-patch design |
 
 ## 5. What "finished" means here
