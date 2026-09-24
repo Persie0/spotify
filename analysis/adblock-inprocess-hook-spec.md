@@ -52,7 +52,7 @@ separate `ContextPlayer / SkipNext` path — do NOT use it (still `ad_disallow`)
 
 | # | Point | Role | Evidence |
 |---|---|---|---|
-| H1 | `p.hrW` constructor `(r7k, msa0, boolean)` | Capture the `p8p0` singleton (hook ctor, keep instance) | `hrw.java:6` `implements p8p0`; `mo48412a(h8p0):Single` dispatches over visitor family incl. `zqw` (Signal variant) |
+| H1 | `p.hrW` constructor `(r7k, msa0, boolean)` | Capture the `p8p0` singleton (hook ctor, keep instance) | `hrw.java:6` `implements p8p0`; `mo48412a(h8p0):Single` dispatches over visitor family incl. `zqw` (Signal variant). DEX: single ctor `VLLZ`. Second impl `p.xx41` (classes9.dex) DECORATES hrw (`xx41(hrw, dy41)`, adds subscribe-time `yf41` Action) — capture both, prefer `xx41` so fires carry the UI's side effects |
 | H2 | `PlayerState.signals()` (`com.spotify.player.model.PlayerState:157`, returns `pf40` list) | Readiness: fire only when list contains `"skip-ad"` | `p4h1.smali:2980-3000` maps `EsContextPlayerState.signals_` in; `g511` reduces via `contains("skip-ad")` into `jk21` UI state |
 | H3 | Ad check: current `ContextTrack` metadata `is_advertisement=true` (internal twin of the exported `ADVERTISEMENT` flag, `er3.java:436`) | Fire only during real ads | `docs/04-ads-pipeline.md` |
 | H4 (alt. trigger) | The Skip Ad button click itself (`jo20` family; `skip_ad_button_stub 0x7f0b0eb1`) | Optional: log-only observer to compare auto-fire timing vs taps | `analysis/skip-ad-click-handler.md` |
