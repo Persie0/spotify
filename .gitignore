@@ -1,0 +1,13 @@
+# Local build outputs (never commit APKs/AABs or generated files)
+*.apk
+*.aab
+*.ap_
+build/
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+*.log
+.DS_Store

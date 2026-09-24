@@ -6,7 +6,7 @@ via Frida as root, no LSPosed needed** (way 3). Details and every other way belo
 | # | Way | Needs | Effect | Status here | Risk |
 |---|---|---|---|---|---|
 | 1 | Mute companion (`spotify-muter/`) | Nothing (Notification access) | Ad plays silently, music resumes | ✅ Built, proven | Global `STREAM_MUSIC` also mutes other apps during ads |
-| 2 | LSPosed auto-skip (`spotify-autoskip/`) | Root + Zygisk + LSPosed | True skip the instant Skip Ad enables | 🛠️ Scaffold (uncompiled) | `librootChecker.so`; telemetry; version drift |
+| 2 | LSPosed auto-skip (`spotify-autoskip/`) | Root + Zygisk + LSPosed | True skip the instant Skip Ad enables | 🏗️ Builds (`:app:assembleDebug` green, `java_init.list` verified in APK); runtime untested | `librootChecker.so`; telemetry; version drift |
 | 3 | Frida auto-skip (`spotify-frida/skip.js`) | Root only (KSU/Magisk) + PC | True skip, same trigger as #2 | 🛠️ Script (untested) | Same as #2, plus frida-server is detectable |
 | 4 | Patched APK (smali edit) | None technically (reinstall) | Depends on patch | ❌ Not provided | Signature + Play Integrity breakage; update churn |
 | 5 | DNS/VPN/adlist blocking | None | None for audio ads | ❌ Ineffective | Ads share streaming infra; breaks playback |
