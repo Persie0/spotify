@@ -52,18 +52,38 @@ public final class SkipHook extends XposedModule {
         }
 
         // H1: capture p8p0 — hook every p.hrw constructor overload.
+        // (p.xx41 decorates hrw; captured below. Raw hrw always exists first.)
         try {
             Class<?> hrw = Class.forName("p.hrw", false, cl);
             for (Constructor<?> ctor : hrw.getDeclaredConstructors()) {
                 hook(ctor).intercept(chain -> {
                     Object result = chain.proceed();
-                    playerCommands = chain.getThisObject();
+                    if (playerCommands == null) {
+                        playerCommands = chain.getThisObject();
+                    }
                     return result;
                 });
             }
             log(Log.INFO, "hrw capture installed");
         } catch (Throwable t) {
             log(Log.WARN, "hrw hook failed: " + t);
+        }
+
+        // H1b: prefer the decorated p8p0 (p.xx41 wraps hrw and adds a
+        // subscribe-time yf41 side effect). Overwrites the raw capture so a
+        // fire behaves exactly like the UI path, side effects included.
+        try {
+            Class<?> xx41 = Class.forName("p.xx41", false, cl);
+            for (Constructor<?> ctor : xx41.getDeclaredConstructors()) {
+                hook(ctor).intercept(chain -> {
+                    Object result = chain.proceed();
+                    playerCommands = chain.getThisObject();
+                    return result;
+                });
+            }
+            log(Log.INFO, "xx41 capture installed");
+        } catch (Throwable t) {
+            log(Log.WARN, "xx41 hook failed (non-fatal): " + t);
         }
 
         // H2: readiness observer on the concrete PlayerState impl.

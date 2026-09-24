@@ -87,19 +87,35 @@ function fire() {
 }
 
 Java.perform(function () {
-    // H1: capture p8p0 — hook every hrw constructor overload.
+    // H1: capture p8p0 — hook every hrw constructor overload (first wins).
+    // H1b below upgrades to the decorated xx41 when present.
     try {
         var Hrw = Java.use('p.hrw');
         Hrw.$init.overloads.forEach(function (ctor) {
             ctor.implementation = function () {
                 var r = ctor.apply(this, arguments);
-                playerCommands = this;
+                if (playerCommands === null) playerCommands = this;
                 return r;
             };
         });
         log('hrw capture installed');
     } catch (e) {
         log('hrw hook failed: ' + e);
+    }
+
+    // H1b: prefer decorated p8p0 (p.xx41 wraps hrw + yf41 side effect).
+    try {
+        var Xx41 = Java.use('p.xx41');
+        Xx41.$init.overloads.forEach(function (ctor) {
+            ctor.implementation = function () {
+                var r = ctor.apply(this, arguments);
+                playerCommands = this;
+                return r;
+            };
+        });
+        log('xx41 capture installed');
+    } catch (e) {
+        log('xx41 hook failed (non-fatal): ' + e);
     }
 
     // H2: readiness observer.
