@@ -4,9 +4,10 @@ True skip (ad gone, music resumes) by auto-firing Spotify's genuine timed
 Skip Ad signal in-process. Companion to `../spotify-muter` (no-root mute);
 this one needs LSPosed (Zygisk) + a rooted device (Magisk or KernelSU).
 
-Status: **UNCOMPILED, UNTESTED scaffold.** Hook points are DEX-verified
-(`../analysis/adblock-inprocess-hook-spec.md`); the module has never been
-built or run. Do not ship as-is.
+Status: **scaffold, javac-verified but never run.** `SkipHook.java` compiles
+clean against `io.github.libxposed:api:102.0.0` + `android-36` (checked
+2026-09-25); the Gradle build itself was never executed (no wrapper vendored)
+and nothing here has run against a live app. Do not ship as-is.
 
 ## What it does
 
@@ -54,8 +55,8 @@ LSPosed-compatible).
 ```text
 spotify-autoskip/
   settings.gradle  build.gradle  gradle.properties
-  app/build.gradle  (compileOnly xposed api:82)
+  app/build.gradle  (compileOnly io.github.libxposed:api:102.0.0)
   app/src/main/AndroidManifest.xml  (xposedmodule meta)
-  app/src/main/assets/xposed_init   (entry: com.persie.spotifyskipper.SkipHook)
+  app/src/main/resources/META-INF/xposed/java_init.list  (modern entry point)
   app/src/main/java/com/persie/spotifyskipper/SkipHook.java
 ```

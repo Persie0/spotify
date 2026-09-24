@@ -30,6 +30,7 @@ android {
 }
 
 dependencies {
-    // Legacy Xposed API: stable, supported by LSPosed. Provided by the framework at runtime.
-    compileOnly "de.robv.android.xposed:api:82"
+    // Modern Xposed API (LibXposed). Provided by the framework at runtime.
+    // Scaffold javac-verified against 102.0.0 (2026-09-25).
+    compileOnly "io.github.libxposed:api:102.0.0"
 }
