@@ -21,6 +21,9 @@ The APK analyzed here is **Spotify 9.1.84.2205** from release `r1`, decompiled w
 - [Runtime and framework stack](12-runtime-stack.md)
 - [Top-level Spotify package index](13-top-level-package-index.md)
 - [Deep trace: ad milestones, skip delay, and Android skip-next](14-deep-trace-ad-events-media-skip.md)
+- [Skip Ad readiness and signal execution](15-skip-ad-signal.md)
+
+Adblock conclusion: `analysis/adblock-final-verdict.md` (mute-only viable externally; auto-skip via public `MediaSession` APIs rejected with evidence).
 
 ## High-level mental model
 

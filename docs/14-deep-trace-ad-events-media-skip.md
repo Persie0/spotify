@@ -657,11 +657,10 @@ next PlayerState / command update:
 
 The **timer-to-restriction transition itself is not in Android Java/Kotlin code**. A later `ContextPlayer.GetState` update carries the changed restriction into the app. Native string evidence places the relevant delay/restriction vocabulary in `liborbit-jni-spotify.so`.
 
-## 13. Implication for the companion muter
+## 13. Implication for the companion muter (CORRECTED)
 
-A robust companion app does not need to recreate Spotify's countdown logic.
-
-It can observe the current Android playback action mask:
+The heuristic below was an early hypothesis and is now **superseded** by the
+Skip-Ad signal evidence (`docs/15-skip-ad-signal.md`, `analysis/adblock-final-verdict.md`):
 
 ```text
 ad detected
@@ -674,7 +673,15 @@ ACTION_SKIP_TO_NEXT present?
       +-- no  --> mute
 ```
 
-That automatically follows Spotify's own current permission state and remains less brittle than hooking obfuscated internal classes.
+Do not implement it: during ads `ACTION_SKIP_TO_NEXT` tracks internal commands
+8/9 (still gated by `ad_disallow`), while timed Skip Ad is exposed only via the
+in-process `PlayerState.signals()` list and executed via `Signal("skip-ad")`.
+The bit stays absent when Skip Ad becomes ready, and `skipToNext()` cannot
+invoke the Signal path. The correct external behavior remains: mute on the
+exported `ADVERTISEMENT` / `spotify:ad:` marker and restore afterwards.
+
+Original text preserved for provenance; the verdict in
+`analysis/adblock-final-verdict.md` is authoritative.
 
 ## 14. Remaining questions
 

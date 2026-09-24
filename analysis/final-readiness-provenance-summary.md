@@ -295,7 +295,11 @@ virtual +0xa0 receiver path localized to r14 = [rsp+0x390]
 [rsp+0x390]/[rsp+0x398] receiver pair source corrected to owner+0x480 via af2eb8
 ```
 
-## Still open / next best targets
+## Still open / next best targets (pure RE; non-blocking for external adblock)
+
+> Per `analysis/adblock-final-verdict.md`, these threads live entirely in
+> Orbit's in-process object graph and have no public `MediaSession` export, so
+> they do not gate the mute-only external adblock verdict.
 
 ```text
 Bind concrete object/AP stored at owner+0x480.

@@ -259,7 +259,8 @@ Current target:
 - `p8p0` implementation: **resolved to `hrw`**
 - `SignalCommand("skip-ad")` variant dispatch: **resolved through `b8p0 -> zqw`**
 - Esperanto endpoint: **resolved to `spotify.player.esperanto.proto.ContextPlayer / Signal` with `EsSignalRequest`**
-- find the native/Orbit signal handler that consumes signal ID `skip-ad`
+- native/Orbit signal handler for `skip-ad`: **resolved to the secondary dispatcher -> `0x1868200:+0x68 = 0x1371d90` (`smartSkipEmbeddedPodcastAd`)**; see [15-skip-ad-signal.md](15-skip-ad-signal.md) §3.3
+- external adblock verdict: **closed — mute-only; public-API auto-skip rejected**; see `analysis/adblock-final-verdict.md`
 - identify the normal playback-ad reporting event after successful `skip-ad` execution; the recovered `fr0 -> "ad_skipped"` label is **ad-on-app-open telemetry**, not proof for this player signal
 - determine whether Connect uses the same signal or a remote equivalent
 

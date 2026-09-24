@@ -4476,3 +4476,16 @@
 - 'libunwind: %s - %s\n'
 - '_Unwind_Resume'
 - "_Unwind_Resume() can't return"
+
+## Final classification (finished)
+Verdict: 0x1624e22 is a synchronous in-process state-bus action dispatcher, not a logging or network/Esperanto transport sink.
+
+Args/payload: SysV rdi=r15 conductor object, rsi=r12 action-label string, rdx=r14 aux, rcx=rbx aux (mapped at 0x1624e30-0x1624e39). Builds 0xe8 stack frame with string slots at +0xc0/+0xa0/+0x30/+0x18/+0x00 via a9ca1a string-init, then fans out through abdd90 and final virtual [rax+0x10] at 0x1624f6c (rdi=r15, rsi=stack-str, rcx=r14, r8=rbx), returning int status.
+
+Callee roles: 0x177fca0 validation gate (via aa865a + tail 0x177fb60, al=0/1; fail at 0x1624e68 je 0x1624f85 returns 1); 0x17533cc serialization container-init (zero fields, new(8) at 0x1753414, vtable 0x18ab958); 0x175345a field serializer/state-machine (at 0x1624ead); 0x174ebda accessor/shared-lock (vtable +0x20, cmpxchg at 0x174ec2b); 0xa9ca1a string __init (jmp 0x17edea0); 0xabdd90 virtual +0x30 dispatch (0xabdd95-0xabdd9c) with a9e486 refcount (lock xadd at 0xa9e493), not telemetry.
+
+Evidence: 0x1624e63 call 0x177fca0; 0x1624e94 call 0x17533cc; 0x1624ee5 call 0xabdd90; 0x1624f6c call [rax+0x10]; 2-hop strings only message_lite.cc at 0x333c91, protobuf-size at 0x341000, '\n' at 0x368e31 (no Esperanto/ContextPlayer/Signal send, no 0x17d68d2 formatter within 2 hops; a9e486 is release_weak); ad_skipped count 0 in .so.
+
+Paths: smart-skip 0x1371f88 lea rdx=[0x34d976] + push 0x1e -> 0x13825fa -> 0x1382113 (0x1382398 rsi=r15 -> 0x176575c; sink at 0x13824c7 rdi=rbx,rsi=[rsp+0x20],rdx=rsp,rcx=[rsp+0xc0]); e25193 path builds [rsp+0x100] via e25ae6 + b05d52 (lea 0x351934 "success" -> strlen -> 0x176575c) with sink at 0xe250ac/0xe25193 (rdi=[r14+0x2068],rsi=[rsp+0x100],rdx=[rsp+0x1a0],rcx=[rsp+0x340]). Same 4-arg convention and 0x176575c serializer family.
+
+Unknown: stripped C++ class/field names, exact payload field layout beyond string slots, identity of final [rax+0x10] observer target.

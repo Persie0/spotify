@@ -372,6 +372,12 @@ An external MediaSession client therefore cannot assume that the appearance of S
 
 ## 7. Remaining targets
 
+> Adblock scope note: items 1–2 below are pure in-process RE targets. Per
+> `analysis/adblock-final-verdict.md` they do not gate any external,
+> no-root/no-patch muter behavior (no public `MediaSession` export exists for
+> the `+0x140` discriminator or the signals list), so the external adblock
+> question is closed regardless of their outcome.
+
 1. recover the later writer of the proven `P+0x40 = outer+0x58` final signal-state dependency, identify the concrete object written there, and resolve its ABI-compatible scalar virtual `+0x140` mode/state discriminator; continue from `owner+0x428 -> e99d07 -> 0x1843bf8 carrier -> P (0x1832be8) -> P+0x40`, not the rejected raw-0x6b0 / d8 / TimelineAds-wrapper aliases,
 2. connect the proven AdsRuntime/TimelineAds readiness graph (`AdsRuntime+0x1b8 -> TimelineAds owner+0x20/+0x10 -> owner+0x50`) to that final `owner+0x428` availability-state source and determine the exact derived/copied value crossing that boundary,
 3. determine the exact semantic payload carried from `DownloadSetupImpl` and `DspSetupImpl` into their TimelineConductor interval-helper subobjects, beyond the now-proven registry identities,

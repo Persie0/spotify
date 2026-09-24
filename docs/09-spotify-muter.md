@@ -105,17 +105,18 @@ While an ad is muted, another app sharing the media stream is muted as well.
 
 A true Spotify-only audio mute would require a more invasive per-process/per-audio-session solution.
 
-## Possible safe extension: native skip when available
+## Possible safe extension: native skip when available — REJECTED for Skip Ad
 
-A future version can inspect Spotify's MediaSession playback actions.
+A future version was once considered to inspect `ACTION_SKIP_TO_NEXT` and call
+`MediaController.TransportControls.skipToNext()` during ads.
 
-If `ACTION_SKIP_TO_NEXT` is currently exported during an ad, the muter could request:
-
-`MediaController.TransportControls.skipToNext()`
-
-and fall back to mute if unavailable or ineffective.
-
-This would use Spotify's own allowed transport action rather than bypassing its internal restrictions.
+That extension is **rejected** for timed Skip Ad in this build; see
+`analysis/adblock-final-verdict.md`. External `skipToNext()` only reaches
+internal commands 8/9 (still gated by `ad_disallow`), while Skip Ad executes
+through in-process `SignalCommand("skip-ad")` -> `ContextPlayer / Signal`,
+which has no `MediaSession` action or custom-action export. The action-mask bit
+also stays absent when Skip Ad becomes ready, so it cannot serve as a readiness
+signal. The muter therefore stays mute-only by design.
 
 ## Debugging
 
