@@ -1,6 +1,8 @@
 #!/bin/bash
-# Seek-to-end adblock falsification test. Run during Spotify audio-ad playback.
-# Decides analysis/adblock-seek-candidate.md. Read-only except the final seekTo.
+# MediaSession state-dump helper (read-only).
+# NOTE: the seek hypothesis this was written for is REJECTED
+# (analysis/adblock-seek-candidate.md: commands stripped during ads AND
+# "seekTo ignored because an ad is playing"). Kept as an observation tool.
 set -u
 PKG=com.spotify.music
 
