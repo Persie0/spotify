@@ -130,3 +130,15 @@ Expected messages include:
 Spotify ad marker detected; muting media stream
 No Spotify ad marker present; restoring music volume
 ```
+
+## Audit notes (2026-09-25, static review)
+
+- Manifest matches the official `NotificationListenerService` sample exactly
+  (`exported="false"` + `BIND_NOTIFICATION_LISTENER_SERVICE` + intent filter):
+  the system binds NLS components itself, so this is correct, not a defect.
+- `mute()` never overwrites the saved volume while already muted, so
+  back-to-back ads restore the true pre-ad level; `restore()` skips
+  `setStreamVolume` when the user changed volume mid-ad, then clears state.
+- Known transient: on first session attach, metadata may read stale/null, so a
+  ~900 ms unmute/mute flap is possible until the first callback corrects it.
+  Self-healing; no fix applied without device testing.
