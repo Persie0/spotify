@@ -6,9 +6,7 @@ Frida instead of an on-device Xposed module. Needs a **rooted** device
 (`pip install frida-tools`) on a matching-arch `frida-server` binary from
 the Frida releases page.
 
-Status: **UNTESTED script.** Hook points are DEX-verified
-(`../analysis/adblock-inprocess-hook-spec.md`); nothing here has run against
-a live app.
+Status: **UNTESTED script.** Hooks and runtime behavior require validation on a rooted test device.
 
 ## Run
 

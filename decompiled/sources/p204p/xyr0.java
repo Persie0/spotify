@@ -1,7 +1,0 @@
-package p204p;
-
-import android.os.Parcelable;
-
-/* JADX INFO: loaded from: classes10.dex */
-public interface xyr0 extends Parcelable {
-}

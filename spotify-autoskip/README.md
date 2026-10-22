@@ -44,7 +44,6 @@ LSPosed-compatible).
 
 - Re-resolve names per Spotify release: `hrw implements p8p0`,
   `SignalCommand.create`, `PlayerState.signals()`
-  (see `../analysis/adblock-inprocess-hook-spec.md` §4).
 - Check `adb logcat` for `[spotify-autoskip] track class:` — if the
   `isAd()` unwrap is wrong for the build, fix the mapping (fail-closed keeps
   it safe but silent).

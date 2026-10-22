@@ -6,11 +6,11 @@ It does **not** patch Spotify, modify the Spotify account, block network request
 
 ## Why this detector works
 
-The decompiled Spotify 9.1.84.2205 sources in this repository show a direct chain:
+The detector uses playback metadata published through Android's MediaSession API:
 
 1. `com.spotify.player.model.ContextTrack.Metadata.KEY_IS_ADVERTISEMENT` is `"is_advertisement"`.
 2. Spotify creates ad tracks with that metadata set to `"true"`.
-3. In `decompiled/sources/p204p/er3.java`, Spotify converts its internal ad boolean into the Android MediaSession metadata key:
+3. Spotify exposes the advertisement marker through the Android MediaSession metadata key:
    `android.media.metadata.ADVERTISEMENT`.
 4. Spotify also uses media identifiers/URIs beginning with `spotify:ad:`.
 
@@ -173,8 +173,6 @@ It therefore does not need to maintain lists of Spotify ad domains, inspect netw
 - `app/src/main/java/com/persie/spotifymuter/SpotifySessionService.java` — background service and Spotify MediaSession callbacks.
 - `app/src/main/java/com/persie/spotifymuter/VolumeMuter.java` — volume save/mute/restore logic.
 - `app/src/main/java/com/persie/spotifymuter/MainActivity.java` — setup/status UI.
-- `decompiled/sources/p204p/er3.java` — decompiled Spotify code exporting `android.media.metadata.ADVERTISEMENT`.
-- `decompiled/sources/com/spotify/player/model/ContextTrack.java` — Spotify's internal `is_advertisement` metadata key.
 
 ## Testing / debugging
 

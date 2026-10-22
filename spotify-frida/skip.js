@@ -1,8 +1,7 @@
 /*
  * Spotify timed Skip Ad auto-fire via Frida (root only, no LSPosed needed).
  *
- * Usage (rooted device, Spotify 9.1.84-2205; re-resolve names per release,
- * see ../analysis/adblock-inprocess-hook-spec.md):
+ * Usage (rooted device, Spotify 9.1.84-2205; re-resolve names per release):
  *   adb push frida-server /data/local/tmp/ && adb shell "su -c 'chmod 755 /data/local/tmp/frida-server'"
  *   adb shell "su -c '/data/local/tmp/frida-server &'"
  *   frida -U -f com.spotify.music -l skip.js --no-pause
@@ -22,7 +21,7 @@ var loggedTrackShape = false;
 function log(s) { console.log('[spotify-autoskip] ' + s); }
 
     // xul0 optional unwrap: c() == isPresent, b() == get in 9.1.84-2205
-    // (decompiled p.xul0). Try obfuscated names first, then kept names.
+    // (Spotify 9.1.84-2205). Try obfuscated names first, then kept names.
     function zeroArg(obj, names) {
         for (var i = 0; i < names.length; i++) {
             try { return { ok: true, value: obj[names[i]]() }; }

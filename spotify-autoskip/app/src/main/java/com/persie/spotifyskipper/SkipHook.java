@@ -14,8 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * UNCOMPILED-BY-GRADLE SCAFFOLD (javac-checked against api:102.0.0) — see README.
  * Fires Spotify's genuine timed Skip Ad signal in-process as soon as it is
- * available during an ad. Verified hook points for 9.1.84-2205:
- * analysis/adblock-inprocess-hook-spec.md
+ * available during an ad. Targeted to Spotify 9.1.84-2205.
  */
 public final class SkipHook extends XposedModule {
 
@@ -207,7 +206,7 @@ public final class SkipHook extends XposedModule {
             }
             try {
                 // xul0 optional: c() == isPresent, b() == get in 9.1.84-2205
-                // (decompiled p.xul0: mo49279c/mo49278b). Fall back to
+                // (Spotify 9.1.84-2205: mo49279c/mo49278b). Fall back to
                 // proguard-kept names on other builds.
                 Object present = callZeroArg(track, "c", "isPresent");
                 if (present instanceof Boolean && !((Boolean) present)) {
