@@ -52,6 +52,7 @@ public class AdDetectorTest {
         assertFalse(AdDetector.isAd(0L, "spotify:track:abc", 60_000L, true));
         assertFalse(AdDetector.isAd(0L, "spotify:track:abc", 60_001L, true));
     }
+
     @Test
     public void shortTrackRuleOnlyRunsForActiveSpotifySession() {
         assertTrue(AdDetector.isActiveSpotifyPlayback(
@@ -69,5 +70,4 @@ public class AdDetectorTest {
         assertFalse(AdDetector.isActiveSpotifyPlayback(
                 AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_NONE));
     }
-
 }
