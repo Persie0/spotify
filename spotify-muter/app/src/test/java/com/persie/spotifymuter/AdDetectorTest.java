@@ -1,6 +1,7 @@
 package com.persie.spotifymuter;
 
 import org.junit.Test;
+import android.media.session.PlaybackState;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -51,4 +52,20 @@ public class AdDetectorTest {
         assertFalse(AdDetector.isAd(0L, "spotify:track:abc", 60_000L, true));
         assertFalse(AdDetector.isAd(0L, "spotify:track:abc", 60_001L, true));
     }
+    @Test
+    public void shortTrackRuleOnlyRunsForActiveSpotifySession() {
+        assertTrue(AdDetector.isActiveSpotifyPlayback(
+                AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_PLAYING));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
+                "com.google.android.youtube", PlaybackState.STATE_PLAYING));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
+                "com.example.podcast", PlaybackState.STATE_PLAYING));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
+                AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_PAUSED));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
+                AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_STOPPED));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
+                AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_NONE));
+    }
+
 }
