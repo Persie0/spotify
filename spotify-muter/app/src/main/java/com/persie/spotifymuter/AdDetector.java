@@ -40,8 +40,7 @@ final class AdDetector {
         return metadata.containsKey(ADVERTISEMENT_KEY)
                 || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID))
                 || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI))
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_TITLE))
-                ;
+                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
     }
 
     private static boolean nonEmpty(String value) {
