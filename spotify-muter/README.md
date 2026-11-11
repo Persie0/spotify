@@ -141,7 +141,9 @@ The app includes a manual **Restore media volume** button as a failsafe.
 
 Spotify also exports `android.media.metadata.DURATION` through its MediaSession (confirmed in the [Spotify decompile research](https://github.com/Persie0/decompile/blob/main/docs/spotify/architecture/03-media-session-android-integration.md)).
 
-- When **Mute audio shorter than 1 minute** is enabled (the default), any Spotify media item with a known duration strictly between 0 and 60,000 ms is muted, even if Spotify removes its normal ad marker.
+- When **Mute audio shorter than 1 minute** is enabled (the default), a **currently playing Spotify** item with a known duration strictly between 0 and 60,000 ms is muted, even if Spotify removes its normal ad marker.
+- This rule reads duration only from MediaSession controllers whose package is `com.spotify.music`. Other apps' media metadata and durations are ignored.
+- A paused, stopped, buffering, or inactive Spotify session cannot activate muting; if Spotify pauses or stops, the service immediately attempts to restore the saved media volume.
 - A missing, zero, or negative duration does **not** activate the fallback. Exactly 60 seconds does **not** activate it.
 - The flag/URI detector still works even when this fallback is switched off.
 - **False-positive tradeoff:** legitimate songs, interludes, and previews shorter than a minute will also be muted. Disable the setting on the main screen if this is undesirable; the listener reevaluates the current item when the setting changes.
@@ -151,7 +153,7 @@ Spotify also exports `android.media.metadata.DURATION` through its MediaSession 
 
 The current implementation changes Android's global `STREAM_MUSIC` volume.
 
-That means another app using the same media stream at exactly the same time would also be muted during the Spotify ad.
+That means another app using the same media stream at exactly the same time would also be muted during the Spotify ad. The detector does **not** inspect short audio items from other apps, but `STREAM_MUSIC` is a shared Android volume, so it is **not possible to guarantee Spotify-only sound muting** using the existing mechanism.
 
 It does **not** currently change only Spotify's private audio gain.
 
