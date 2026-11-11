@@ -61,6 +61,8 @@ public class AdDetectorTest {
         assertFalse(AdDetector.isActiveSpotifyPlayback(
                 "com.example.podcast", PlaybackState.STATE_PLAYING));
         assertFalse(AdDetector.isActiveSpotifyPlayback(
+                AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_BUFFERING));
+        assertFalse(AdDetector.isActiveSpotifyPlayback(
                 AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_PAUSED));
         assertFalse(AdDetector.isActiveSpotifyPlayback(
                 AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_STOPPED));
