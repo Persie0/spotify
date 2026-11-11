@@ -1,6 +1,7 @@
 package com.persie.spotifymuter;
 
 import android.media.MediaMetadata;
+import android.media.session.PlaybackState;
 
 final class AdDetector {
     static final String SPOTIFY_PACKAGE = "com.spotify.music";
@@ -11,6 +12,15 @@ final class AdDetector {
     static final long SHORT_TRACK_LIMIT_MS = 60_000L;
 
     private AdDetector() {}
+
+    // Only a currently playing Spotify session can activate either muting rule.
+    // Buffering/connecting count so a known ad can be muted before its first sample.
+    static boolean isActiveSpotifyPlayback(String packageName, int playbackState) {
+        return SPOTIFY_PACKAGE.equals(packageName)
+                && (playbackState == PlaybackState.STATE_PLAYING
+                        || playbackState == PlaybackState.STATE_BUFFERING
+                        || playbackState == PlaybackState.STATE_CONNECTING);
+    }
 
     static boolean isAd(MediaMetadata metadata, boolean muteShortTracks) {
         if (metadata == null) {
