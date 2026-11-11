@@ -13,13 +13,11 @@ final class AdDetector {
 
     private AdDetector() {}
 
-    // Only a currently playing Spotify session can activate either muting rule.
-    // Buffering/connecting count so a known ad can be muted before its first sample.
+    // Avoid reacting to a paused, stopped, or buffering Spotify item while
+    // another app is playing through Android's shared music volume stream.
     static boolean isActiveSpotifyPlayback(String packageName, int playbackState) {
         return SPOTIFY_PACKAGE.equals(packageName)
-                && (playbackState == PlaybackState.STATE_PLAYING
-                        || playbackState == PlaybackState.STATE_BUFFERING
-                        || playbackState == PlaybackState.STATE_CONNECTING);
+                && playbackState == PlaybackState.STATE_PLAYING;
     }
 
     static boolean isAd(MediaMetadata metadata, boolean muteShortTracks) {
