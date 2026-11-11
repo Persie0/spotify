@@ -35,7 +35,7 @@ save media volume -> set STREAM_MUSIC to 0
 restore previous volume immediately
 ```
 
-The primary detector is `android.media.metadata.ADVERTISEMENT`. A `spotify:ad:` media ID/URI is used as an additional fallback. There is also an optional (enabled by default) duration fallback for any reported audio item shorter than 60 seconds.
+The primary detector is `android.media.metadata.ADVERTISEMENT`. A `spotify:ad:` media ID/URI is used as an additional fallback.
 
 This is much more reliable than searching the Spotify UI for words such as "Advertisement" or "Werbung", and it continues to work when Spotify is in the background or the screen is off.
 
@@ -68,7 +68,7 @@ register MediaController.Callback
 evaluate current Spotify metadata
 ```
 
-The active-session listener detects Spotify session changes. Controller callbacks are reused by session token instead of being detached and reattached for every notification. Notification changes can still refresh sessions when reconnection is needed.
+Only the Spotify MediaSession can trigger muting; a paused or stopped Spotify session restores media volume. The active-session listener detects Spotify session changes. Controller callbacks are reused by session token instead of being detached and reattached for every notification. Notification changes can still refresh sessions when reconnection is needed.
 
 ## Does the app have to stay open?
 
@@ -106,6 +106,10 @@ Notification Access remains granted unless the user revokes it. Android normally
 
 Some heavily customized Android ROMs may apply unusually aggressive background/battery restrictions. If detection stops on such a device, exclude Spotify Ad Muter from battery optimization/background restrictions.
 
+## Releases
+
+The APK is built from the marker-only main branch. The experimental short-duration fallback is preserved separately in [`feature/spotify-under-60s-fallback`](https://github.com/Persie0/spotify/tree/feature/spotify-under-60s-fallback) and is **not** part of the main release.
+
 ## Setup
 
 1. Install the APK.
@@ -122,7 +126,7 @@ No root is required for the current implementation.
 
 ## Mute behavior
 
-When an ad is detected (or the optional short-track fallback matches):
+When Spotify reports a playback advertisement:
 
 1. Read the current `AudioManager.STREAM_MUSIC` volume.
 2. Save that value in app preferences.
@@ -137,23 +141,11 @@ If the service is disconnected or destroyed, it also attempts to restore the pre
 
 The app includes a manual **Restore media volume** button as a failsafe.
 
-## Optional fallback: audio shorter than one minute
-
-Spotify also exports `android.media.metadata.DURATION` through its MediaSession (confirmed in the [Spotify decompile research](https://github.com/Persie0/decompile/blob/main/docs/spotify/architecture/03-media-session-android-integration.md)).
-
-- When **Mute audio shorter than 1 minute** is enabled (the default), a **currently playing Spotify** item with a known duration strictly between 0 and 60,000 ms is muted, even if Spotify removes its normal ad marker.
-- This rule reads duration only from MediaSession controllers whose package is `com.spotify.music`. Other apps' media metadata and durations are ignored.
-- A paused, stopped, buffering, or inactive Spotify session cannot activate muting; if Spotify pauses or stops, the service immediately attempts to restore the saved media volume.
-- A missing, zero, or negative duration does **not** activate the fallback. Exactly 60 seconds does **not** activate it.
-- The flag/URI detector still works even when this fallback is switched off.
-- **False-positive tradeoff:** legitimate songs, interludes, and previews shorter than a minute will also be muted. Disable the setting on the main screen if this is undesirable; the listener reevaluates the current item when the setting changes.
-- This fallback is not a guarantee against future Spotify changes: if duration metadata is missing or misleading, the muter has no reliable way to distinguish an ad from music using that heuristic.
-
 ## Important limitation: global media volume
 
 The current implementation changes Android's global `STREAM_MUSIC` volume.
 
-That means another app using the same media stream at exactly the same time would also be muted during the Spotify ad. The detector does **not** inspect short audio items from other apps, but `STREAM_MUSIC` is a shared Android volume, so it is **not possible to guarantee Spotify-only sound muting** using the existing mechanism.
+That means another app using the same media stream at exactly the same time would also be muted during the Spotify ad. Android's `STREAM_MUSIC` is shared, so the current mechanism cannot guarantee Spotify-only volume muting while another app plays simultaneously.
 
 It does **not** currently change only Spotify's private audio gain.
 
@@ -197,7 +189,7 @@ adb logcat -s SpotifyAdMuter
 When an ad starts, the service logs:
 
 ```text
-Spotify ad or short track detected; muting media stream
+Spotify ad detected; muting media stream
 ```
 
 When normal playback returns:
