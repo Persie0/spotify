@@ -1,7 +1,6 @@
 package com.persie.spotifymuter;
 
 import android.content.ComponentName;
-import android.content.SharedPreferences;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
@@ -30,24 +29,12 @@ public final class SpotifySessionService extends NotificationListenerService {
 
     private MediaSessionManager mediaSessionManager;
     private ComponentName listenerComponent;
-    private SharedPreferences detectionSettings;
     private boolean connected;
     private boolean sessionListenerRegistered;
     private boolean unknownRestorePending;
 
     private final MediaSessionManager.OnActiveSessionsChangedListener sessionListener =
             this::attachControllers;
-
-    private final SharedPreferences.OnSharedPreferenceChangeListener settingsListener =
-            (preferences, key) -> {
-                if (AdDetector.MUTE_SHORT_TRACKS_KEY.equals(key)) {
-                    if (Looper.myLooper() == Looper.getMainLooper()) {
-                        evaluateAdState();
-                    } else {
-                        mainHandler.post(this::evaluateAdState);
-                    }
-                }
-            };
 
     private final Runnable restoreFromUnknownMetadata = () -> {
         unknownRestorePending = false;
@@ -65,8 +52,6 @@ public final class SpotifySessionService extends NotificationListenerService {
         }
         connected = true;
         listenerComponent = new ComponentName(this, SpotifySessionService.class);
-        detectionSettings = getSharedPreferences(AdDetector.SETTINGS_NAME, MODE_PRIVATE);
-        detectionSettings.registerOnSharedPreferenceChangeListener(settingsListener);
         mediaSessionManager = getSystemService(MediaSessionManager.class);
 
         if (mediaSessionManager == null) {
@@ -123,10 +108,6 @@ public final class SpotifySessionService extends NotificationListenerService {
                 // Android may have already detached this listener.
             }
             sessionListenerRegistered = false;
-        }
-        if (detectionSettings != null) {
-            detectionSettings.unregisterOnSharedPreferenceChangeListener(settingsListener);
-            detectionSettings = null;
         }
         clearControllers();
         VolumeMuter.restore(this);
@@ -194,13 +175,9 @@ public final class SpotifySessionService extends NotificationListenerService {
     }
 
     private boolean hasActiveAd() {
-        boolean shortTrackFallback = detectionSettings == null
-                || detectionSettings.getBoolean(AdDetector.MUTE_SHORT_TRACKS_KEY,
-                        AdDetector.DEFAULT_MUTE_SHORT_TRACKS);
-
         for (SessionRecord record : spotifyControllers.values()) {
             if (isActiveSpotify(record)
-                    && AdDetector.isAd(record.metadata, shortTrackFallback)) {
+                    && AdDetector.isAd(record.metadata)) {
                 return true;
             }
         }
@@ -228,8 +205,8 @@ public final class SpotifySessionService extends NotificationListenerService {
             return;
         }
 
-        // Spotify can retain short-track metadata after pausing or losing playback.
-        // Never let such stale metadata mute a different app's music.
+        // Spotify can retain ad metadata after pausing or losing playback.
+        // Never let stale metadata mute audio playing in a different app.
         if (!hasActiveSpotifyPlayback()) {
             cancelUnknownRestore();
             if (VolumeMuter.isMutedByApp(this)) {
@@ -242,7 +219,7 @@ public final class SpotifySessionService extends NotificationListenerService {
         if (hasActiveAd()) {
             cancelUnknownRestore();
             if (!VolumeMuter.isMutedByApp(this)) {
-                Log.d(TAG, "Spotify ad or short track detected; muting media stream");
+                Log.d(TAG, "Spotify ad detected; muting media stream");
             }
             VolumeMuter.mute(this);
             return;
