@@ -6,6 +6,7 @@ import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
 import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
 import android.os.Handler;
 import android.os.Looper;
 import android.service.notification.NotificationListenerService;
@@ -198,7 +199,24 @@ public final class SpotifySessionService extends NotificationListenerService {
                         AdDetector.DEFAULT_MUTE_SHORT_TRACKS);
 
         for (SessionRecord record : spotifyControllers.values()) {
-            if (AdDetector.isAd(record.metadata, shortTrackFallback)) {
+            if (isActiveSpotify(record)
+                    && AdDetector.isAd(record.metadata, shortTrackFallback)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isActiveSpotify(SessionRecord record) {
+        return AdDetector.isActiveSpotifyPlayback(
+                record.controller.getPackageName(),
+                record.playbackState == null
+                        ? PlaybackState.STATE_NONE : record.playbackState.getState());
+    }
+
+    private boolean hasActiveSpotifyPlayback() {
+        for (SessionRecord record : spotifyControllers.values()) {
+            if (isActiveSpotify(record)) {
                 return true;
             }
         }
@@ -207,6 +225,17 @@ public final class SpotifySessionService extends NotificationListenerService {
 
     private void evaluateAdState() {
         if (!connected) {
+            return;
+        }
+
+        // Spotify can retain short-track metadata after pausing or losing playback.
+        // Never let such stale metadata mute a different app's music.
+        if (!hasActiveSpotifyPlayback()) {
+            cancelUnknownRestore();
+            if (VolumeMuter.isMutedByApp(this)) {
+                Log.d(TAG, "Spotify is not playing; restoring music volume");
+                VolumeMuter.restore(this);
+            }
             return;
         }
 
@@ -221,7 +250,7 @@ public final class SpotifySessionService extends NotificationListenerService {
 
         boolean unknownMetadata = false;
         for (SessionRecord record : spotifyControllers.values()) {
-            if (!AdDetector.isKnownMedia(record.metadata)) {
+            if (isActiveSpotify(record) && !AdDetector.isKnownMedia(record.metadata)) {
                 unknownMetadata = true;
                 break;
             }
@@ -247,6 +276,7 @@ public final class SpotifySessionService extends NotificationListenerService {
     private final class SessionRecord {
         final MediaController controller;
         MediaMetadata metadata;
+        PlaybackState playbackState;
 
         final MediaController.Callback callback = new MediaController.Callback() {
             @Override
@@ -259,14 +289,17 @@ public final class SpotifySessionService extends NotificationListenerService {
             }
 
             @Override
-            public void onPlaybackStateChanged(android.media.session.PlaybackState state) {
-                // The detector depends on metadata, not position or playback-state updates.
-                // Avoid restarting a restore timer for unrelated playback callbacks.
-                if (metadata == null
-                        && spotifyControllers.get(controller.getSessionToken()) == SessionRecord.this) {
-                    metadata = controller.getMetadata();
-                    evaluateAdState();
+            public void onPlaybackStateChanged(PlaybackState state) {
+                if (spotifyControllers.get(controller.getSessionToken()) != SessionRecord.this) {
+                    return;
                 }
+                playbackState = state;
+                if (metadata == null) {
+                    metadata = controller.getMetadata();
+                }
+                // Paused, stopped, or buffering Spotify must not mute another app.
+                // Recheck metadata as soon as Spotify resumes active playback.
+                evaluateAdState();
             }
 
             @Override
@@ -281,6 +314,7 @@ public final class SpotifySessionService extends NotificationListenerService {
 
         void register() {
             controller.registerCallback(callback, mainHandler);
+            playbackState = controller.getPlaybackState();
             metadata = controller.getMetadata();
         }
 
