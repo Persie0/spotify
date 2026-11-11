@@ -30,12 +30,12 @@ Spotify Ad Muter detects the ad
         v
 save media volume -> set STREAM_MUSIC to 0
         |
-        | normal track appears
+        | confirmed normal track appears
         v
-wait ~900 ms -> restore previous volume
+restore previous volume immediately
 ```
 
-The primary detector is `android.media.metadata.ADVERTISEMENT`. A `spotify:ad:` media ID/URI is used as an additional fallback.
+The primary detector is `android.media.metadata.ADVERTISEMENT`. A `spotify:ad:` media ID/URI is used as an additional fallback. There is also an optional (enabled by default) duration fallback for any reported audio item shorter than 60 seconds.
 
 This is much more reliable than searching the Spotify UI for words such as "Advertisement" or "Werbung", and it continues to work when Spotify is in the background or the screen is off.
 
@@ -68,7 +68,7 @@ register MediaController.Callback
 evaluate current Spotify metadata
 ```
 
-Spotify notification changes also trigger a MediaSession refresh so the detector can reconnect if Spotify creates or destroys its playback session.
+The active-session listener detects Spotify session changes. Controller callbacks are reused by session token instead of being detached and reattached for every notification. Notification changes can still refresh sessions when reconnection is needed.
 
 ## Does the app have to stay open?
 
@@ -122,20 +122,30 @@ No root is required for the current implementation.
 
 ## Mute behavior
 
-When an ad is detected:
+When an ad is detected (or the optional short-track fallback matches):
 
 1. Read the current `AudioManager.STREAM_MUSIC` volume.
 2. Save that value in app preferences.
 3. Set `STREAM_MUSIC` to zero.
 4. Keep it muted while Spotify continues reporting an ad.
-5. When Spotify reports normal media again, wait about 900 ms.
-6. Restore the saved volume.
+5. When Spotify reports identifiable normal media, restore the saved volume **immediately** (no 900 ms debounce).
+6. If Spotify temporarily publishes null/empty metadata during a transition, keep the current mute for at most 250 ms before restoring as a failsafe. Repeated playback-state updates do not extend this grace period.
 
-The debounce avoids a very short unmute if Spotify briefly changes metadata while transitioning between ad items and music.
+The app reacts to Spotify's MediaSession callbacks as they arrive; there is no polling interval. The start-of-ad latency is therefore limited by when Spotify publishes the metadata and Android delivers the callback, plus the audio-volume API call. Truly zero-latency detection cannot be guaranteed.
 
 If the service is disconnected or destroyed, it also attempts to restore the previously saved volume.
 
 The app includes a manual **Restore media volume** button as a failsafe.
+
+## Optional fallback: audio shorter than one minute
+
+Spotify also exports `android.media.metadata.DURATION` through its MediaSession (confirmed in the [Spotify decompile research](https://github.com/Persie0/decompile/blob/main/docs/spotify/architecture/03-media-session-android-integration.md)).
+
+- When **Mute audio shorter than 1 minute** is enabled (the default), any Spotify media item with a known duration strictly between 0 and 60,000 ms is muted, even if Spotify removes its normal ad marker.
+- A missing, zero, or negative duration does **not** activate the fallback. Exactly 60 seconds does **not** activate it.
+- The flag/URI detector still works even when this fallback is switched off.
+- **False-positive tradeoff:** legitimate songs, interludes, and previews shorter than a minute will also be muted. Disable the setting on the main screen if this is undesirable; the listener reevaluates the current item when the setting changes.
+- This fallback is not a guarantee against future Spotify changes: if duration metadata is missing or misleading, the muter has no reliable way to distinguish an ad from music using that heuristic.
 
 ## Important limitation: global media volume
 
@@ -185,11 +195,11 @@ adb logcat -s SpotifyAdMuter
 When an ad starts, the service logs:
 
 ```text
-Spotify ad marker detected; muting media stream
+Spotify ad or short track detected; muting media stream
 ```
 
 When normal playback returns:
 
 ```text
-No Spotify ad marker present; restoring music volume
+Normal Spotify track detected; restoring music volume immediately
 ```

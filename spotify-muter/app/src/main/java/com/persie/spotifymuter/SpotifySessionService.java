@@ -1,6 +1,7 @@
 package com.persie.spotifymuter;
 
 import android.content.ComponentName;
+import android.content.SharedPreferences;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
@@ -11,29 +12,46 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class SpotifySessionService extends NotificationListenerService {
     private static final String TAG = "SpotifyAdMuter";
-    private static final long UNMUTE_DEBOUNCE_MS = 900L;
+
+    // Only used if Spotify briefly clears its metadata. Recognized music restores immediately.
+    private static final long UNKNOWN_METADATA_GRACE_MS = 250L;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Map<MediaSession.Token, MediaController.Callback> callbacks = new HashMap<>();
-    private final List<MediaController> spotifyControllers = new ArrayList<>();
+    private final Map<MediaSession.Token, SessionRecord> spotifyControllers = new HashMap<>();
 
     private MediaSessionManager mediaSessionManager;
     private ComponentName listenerComponent;
+    private SharedPreferences detectionSettings;
     private boolean connected;
+    private boolean sessionListenerRegistered;
+    private boolean unknownRestorePending;
 
     private final MediaSessionManager.OnActiveSessionsChangedListener sessionListener =
             this::attachControllers;
 
-    private final Runnable delayedUnmute = () -> {
-        if (!hasActiveAd()) {
-            Log.d(TAG, "No Spotify ad marker present; restoring music volume");
+    private final SharedPreferences.OnSharedPreferenceChangeListener settingsListener =
+            (preferences, key) -> {
+                if (AdDetector.MUTE_SHORT_TRACKS_KEY.equals(key)) {
+                    if (Looper.myLooper() == Looper.getMainLooper()) {
+                        evaluateAdState();
+                    } else {
+                        mainHandler.post(this::evaluateAdState);
+                    }
+                }
+            };
+
+    private final Runnable restoreFromUnknownMetadata = () -> {
+        unknownRestorePending = false;
+        if (!hasActiveAd() && VolumeMuter.isMutedByApp(this)) {
+            Log.d(TAG, "Spotify metadata still unavailable; restoring saved media volume");
             VolumeMuter.restore(this);
         }
     };
@@ -41,19 +59,24 @@ public final class SpotifySessionService extends NotificationListenerService {
     @Override
     public void onListenerConnected() {
         super.onListenerConnected();
+        if (connected) {
+            return;
+        }
         connected = true;
         listenerComponent = new ComponentName(this, SpotifySessionService.class);
+        detectionSettings = getSharedPreferences(AdDetector.SETTINGS_NAME, MODE_PRIVATE);
+        detectionSettings.registerOnSharedPreferenceChangeListener(settingsListener);
         mediaSessionManager = getSystemService(MediaSessionManager.class);
 
         if (mediaSessionManager == null) {
+            VolumeMuter.restore(this);
             return;
         }
 
         try {
             mediaSessionManager.addOnActiveSessionsChangedListener(
-                    sessionListener,
-                    listenerComponent
-            );
+                    sessionListener, listenerComponent, mainHandler);
+            sessionListenerRegistered = true;
             attachControllers(mediaSessionManager.getActiveSessions(listenerComponent));
         } catch (SecurityException e) {
             Log.e(TAG, "Notification access was not accepted by MediaSessionManager", e);
@@ -63,16 +86,14 @@ public final class SpotifySessionService extends NotificationListenerService {
 
     @Override
     public void onListenerDisconnected() {
-        connected = false;
-        mainHandler.removeCallbacks(delayedUnmute);
-        clearControllers();
-        VolumeMuter.restore(this);
+        shutdown();
         super.onListenerDisconnected();
     }
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        if (sbn != null && AdDetector.SPOTIFY_PACKAGE.equals(sbn.getPackageName())) {
+        if (sbn != null && AdDetector.SPOTIFY_PACKAGE.equals(sbn.getPackageName())
+                && spotifyControllers.isEmpty()) {
             refreshSessions();
         }
     }
@@ -86,26 +107,38 @@ public final class SpotifySessionService extends NotificationListenerService {
 
     @Override
     public void onDestroy() {
+        shutdown();
         mainHandler.removeCallbacksAndMessages(null);
-
-        if (connected && mediaSessionManager != null) {
-            try {
-                mediaSessionManager.removeOnActiveSessionsChangedListener(sessionListener);
-            } catch (RuntimeException ignored) {
-                // The listener may already have been detached by the system.
-            }
-        }
-
-        clearControllers();
-        VolumeMuter.restore(this);
         super.onDestroy();
     }
 
+    private void shutdown() {
+        connected = false;
+        cancelUnknownRestore();
+        if (mediaSessionManager != null && sessionListenerRegistered) {
+            try {
+                mediaSessionManager.removeOnActiveSessionsChangedListener(sessionListener);
+            } catch (RuntimeException ignored) {
+                // Android may have already detached this listener.
+            }
+            sessionListenerRegistered = false;
+        }
+        if (detectionSettings != null) {
+            detectionSettings.unregisterOnSharedPreferenceChangeListener(settingsListener);
+            detectionSettings = null;
+        }
+        clearControllers();
+        VolumeMuter.restore(this);
+    }
+
     private void refreshSessions() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post(this::refreshSessions);
+            return;
+        }
         if (!connected || mediaSessionManager == null || listenerComponent == null) {
             return;
         }
-
         try {
             attachControllers(mediaSessionManager.getActiveSessions(listenerComponent));
         } catch (SecurityException e) {
@@ -113,59 +146,59 @@ public final class SpotifySessionService extends NotificationListenerService {
         }
     }
 
+    // Reconcile by session token: notification updates must not unregister live callbacks.
     private void attachControllers(List<MediaController> controllers) {
-        clearControllers();
+        if (!connected) {
+            return;
+        }
 
+        Set<MediaSession.Token> activeTokens = new HashSet<>();
         if (controllers != null) {
             for (MediaController controller : controllers) {
-                if (!AdDetector.SPOTIFY_PACKAGE.equals(controller.getPackageName())) {
-                    continue;
+                if (AdDetector.SPOTIFY_PACKAGE.equals(controller.getPackageName())) {
+                    activeTokens.add(controller.getSessionToken());
                 }
-
-                MediaController.Callback callback = new MediaController.Callback() {
-                    @Override
-                    public void onMetadataChanged(MediaMetadata metadata) {
-                        evaluateAdState();
-                    }
-
-                    @Override
-                    public void onPlaybackStateChanged(android.media.session.PlaybackState state) {
-                        evaluateAdState();
-                    }
-
-                    @Override
-                    public void onSessionDestroyed() {
-                        refreshSessions();
-                    }
-                };
-
-                spotifyControllers.add(controller);
-                callbacks.put(controller.getSessionToken(), callback);
-                controller.registerCallback(callback, mainHandler);
             }
         }
 
+        for (MediaSession.Token token : new HashSet<>(spotifyControllers.keySet())) {
+            if (!activeTokens.contains(token)) {
+                SessionRecord previous = spotifyControllers.remove(token);
+                if (previous != null) {
+                    previous.unregister();
+                }
+            }
+        }
+
+        if (controllers != null) {
+            for (MediaController controller : controllers) {
+                if (!AdDetector.SPOTIFY_PACKAGE.equals(controller.getPackageName())
+                        || spotifyControllers.containsKey(controller.getSessionToken())) {
+                    continue;
+                }
+
+                SessionRecord record = new SessionRecord(controller);
+                spotifyControllers.put(controller.getSessionToken(), record);
+                record.register();
+            }
+        }
         evaluateAdState();
     }
 
     private void clearControllers() {
-        for (MediaController controller : spotifyControllers) {
-            MediaController.Callback callback = callbacks.get(controller.getSessionToken());
-            if (callback != null) {
-                try {
-                    controller.unregisterCallback(callback);
-                } catch (RuntimeException ignored) {
-                    // Session can disappear while detaching.
-                }
-            }
+        for (SessionRecord record : spotifyControllers.values()) {
+            record.unregister();
         }
         spotifyControllers.clear();
-        callbacks.clear();
     }
 
     private boolean hasActiveAd() {
-        for (MediaController controller : spotifyControllers) {
-            if (AdDetector.isAd(controller.getMetadata())) {
+        boolean shortTrackFallback = detectionSettings == null
+                || detectionSettings.getBoolean(AdDetector.MUTE_SHORT_TRACKS_KEY,
+                        AdDetector.DEFAULT_MUTE_SHORT_TRACKS);
+
+        for (SessionRecord record : spotifyControllers.values()) {
+            if (AdDetector.isAd(record.metadata, shortTrackFallback)) {
                 return true;
             }
         }
@@ -173,14 +206,90 @@ public final class SpotifySessionService extends NotificationListenerService {
     }
 
     private void evaluateAdState() {
-        boolean ad = hasActiveAd();
-        mainHandler.removeCallbacks(delayedUnmute);
+        if (!connected) {
+            return;
+        }
 
-        if (ad) {
-            Log.d(TAG, "Spotify ad marker detected; muting media stream");
+        if (hasActiveAd()) {
+            cancelUnknownRestore();
+            if (!VolumeMuter.isMutedByApp(this)) {
+                Log.d(TAG, "Spotify ad or short track detected; muting media stream");
+            }
             VolumeMuter.mute(this);
-        } else {
-            mainHandler.postDelayed(delayedUnmute, UNMUTE_DEBOUNCE_MS);
+            return;
+        }
+
+        boolean unknownMetadata = false;
+        for (SessionRecord record : spotifyControllers.values()) {
+            if (!AdDetector.isKnownMedia(record.metadata)) {
+                unknownMetadata = true;
+                break;
+            }
+        }
+
+        if (!unknownMetadata || spotifyControllers.isEmpty()) {
+            cancelUnknownRestore();
+            if (VolumeMuter.isMutedByApp(this)) {
+                Log.d(TAG, "Normal Spotify track detected; restoring music volume immediately");
+                VolumeMuter.restore(this);
+            }
+        } else if (VolumeMuter.isMutedByApp(this) && !unknownRestorePending) {
+            unknownRestorePending = true;
+            mainHandler.postDelayed(restoreFromUnknownMetadata, UNKNOWN_METADATA_GRACE_MS);
+        }
+    }
+
+    private void cancelUnknownRestore() {
+        mainHandler.removeCallbacks(restoreFromUnknownMetadata);
+        unknownRestorePending = false;
+    }
+
+    private final class SessionRecord {
+        final MediaController controller;
+        MediaMetadata metadata;
+
+        final MediaController.Callback callback = new MediaController.Callback() {
+            @Override
+            public void onMetadataChanged(MediaMetadata newMetadata) {
+                if (spotifyControllers.get(controller.getSessionToken()) != SessionRecord.this) {
+                    return;
+                }
+                metadata = newMetadata;
+                evaluateAdState();
+            }
+
+            @Override
+            public void onPlaybackStateChanged(android.media.session.PlaybackState state) {
+                // The detector depends on metadata, not position or playback-state updates.
+                // Avoid restarting a restore timer for unrelated playback callbacks.
+                if (metadata == null
+                        && spotifyControllers.get(controller.getSessionToken()) == SessionRecord.this) {
+                    metadata = controller.getMetadata();
+                    evaluateAdState();
+                }
+            }
+
+            @Override
+            public void onSessionDestroyed() {
+                refreshSessions();
+            }
+        };
+
+        SessionRecord(MediaController controller) {
+            this.controller = controller;
+        }
+
+        void register() {
+            controller.registerCallback(callback, mainHandler);
+            metadata = controller.getMetadata();
+        }
+
+        void unregister() {
+            try {
+                controller.unregisterCallback(callback);
+            } catch (RuntimeException ignored) {
+                // The session may disappear while detaching.
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import android.provider.Settings;
 import android.service.notification.NotificationListenerService;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +51,25 @@ public final class MainActivity extends Activity {
         access.setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)));
         root.addView(access);
+
+        CheckBox shortTrackFallback = new CheckBox(this);
+        shortTrackFallback.setText("Mute audio shorter than 1 minute (fallback)");
+        shortTrackFallback.setChecked(getSharedPreferences(
+                AdDetector.SETTINGS_NAME, MODE_PRIVATE).getBoolean(
+                AdDetector.MUTE_SHORT_TRACKS_KEY, AdDetector.DEFAULT_MUTE_SHORT_TRACKS));
+        shortTrackFallback.setOnCheckedChangeListener((button, checked) ->
+                getSharedPreferences(AdDetector.SETTINGS_NAME, MODE_PRIVATE)
+                        .edit().putBoolean(AdDetector.MUTE_SHORT_TRACKS_KEY, checked).apply());
+        root.addView(shortTrackFallback);
+
+        TextView shortTrackWarning = new TextView(this);
+        shortTrackWarning.setText(
+                "Short songs and previews can also be muted. Turn this off to use only " +
+                "Spotify's advertisement marker and ad URI."
+        );
+        shortTrackWarning.setTextSize(14f);
+        shortTrackWarning.setPadding(0, 0, 0, dp(18));
+        root.addView(shortTrackWarning);
 
         Button reconnect = button("Reconnect detector");
         reconnect.setOnClickListener(v -> {
