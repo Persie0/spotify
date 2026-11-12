@@ -53,21 +53,6 @@ final class AdDetector {
                 || id.startsWith("spotify:episode:"));
     }
 
-    // A null/empty metadata transition is not evidence that the ad has ended.
-    static boolean isKnownMedia(MediaMetadata metadata) {
-        if (metadata == null) {
-            return false;
-        }
-        return metadata.containsKey(ADVERTISEMENT_KEY)
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID))
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI))
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
-    }
-
-    private static boolean nonEmpty(String value) {
-        return value != null && !value.isEmpty();
-    }
-
     private static boolean looksLikeAdUri(String value) {
         return value != null && value.startsWith("spotify:ad:");
     }
