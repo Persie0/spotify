@@ -108,11 +108,11 @@ Some heavily customized Android ROMs may apply unusually aggressive background/b
 
 ## Releases
 
-**Latest APK:** [Download Spotify Ad Muter v0.2.0 (signed release)](https://github.com/Persie0/spotify/releases/download/v0.2.0/SpotifyAdMuter-v0.2.0-release.apk) · [GitHub Release and SHA-256 checksum](https://github.com/Persie0/spotify/releases/tag/v0.2.0).
+**Latest APK:** [Download Spotify Ad Muter v0.2.1 (signed release)](https://github.com/Persie0/spotify/releases/download/v0.2.1/SpotifyAdMuter-v0.2.1-release.apk) · [GitHub Release and SHA-256 checksum](https://github.com/Persie0/spotify/releases/tag/v0.2.1).
 
 This release contains marker/URI detection only. The experimental short-duration fallback is preserved separately in [`feature/spotify-under-60s-fallback`](https://github.com/Persie0/spotify/tree/feature/spotify-under-60s-fallback) and is **not** part of the main release.
 
-The v0.2.0 APK was signed with a temporary CI key; upgrading an existing install with a different signing key requires uninstalling the earlier APK first.
+The v0.2.1 APK was signed with a temporary CI key; upgrading an existing install with a different signing key requires uninstalling the earlier APK first.
 
 ## Setup
 
