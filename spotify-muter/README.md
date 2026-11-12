@@ -30,9 +30,9 @@ Spotify Ad Muter detects the ad
         v
 save media volume -> set STREAM_MUSIC to 0
         |
-        | confirmed normal track appears
+        | Spotify confirms real music after the full ad break
         v
-restore previous volume immediately
+restore previous volume (after 750 ms of stable track identity)
 ```
 
 The primary detector is `android.media.metadata.ADVERTISEMENT`. A `spotify:ad:` media ID/URI is used as an additional fallback.
@@ -68,7 +68,7 @@ register MediaController.Callback
 evaluate current Spotify metadata
 ```
 
-Only the Spotify MediaSession can trigger muting; a paused or stopped Spotify session restores media volume. The active-session listener detects Spotify session changes. Controller callbacks are reused by session token instead of being detached and reattached for every notification. Notification changes can still refresh sessions when reconnection is needed.
+Only the Spotify MediaSession can trigger muting. The detector stays muted across transient metadata changes, buffering, and brief pauses between ad items. A sustained stop/pause restores volume as a safety fallback. The active-session listener detects Spotify session changes. Controller callbacks are reused by session token instead of being detached and reattached for every notification. Notification changes can still refresh sessions when reconnection is needed.
 
 ## Does the app have to stay open?
 
@@ -136,10 +136,14 @@ When Spotify reports a playback advertisement:
 2. Save that value in app preferences.
 3. Set `STREAM_MUSIC` to zero.
 4. Keep it muted while Spotify continues reporting an ad.
-5. When Spotify reports identifiable normal media, restore the saved volume **immediately** (no 900 ms debounce).
-6. If Spotify temporarily publishes null/empty metadata during a transition, keep the current mute for at most 250 ms before restoring as a failsafe. Repeated playback-state updates do not extend this grace period.
+5. Keep the stream muted through the entire ad break, even if Spotify briefly clears the ad marker or changes sessions between ad 1/2, 2/2 or ad 1/3, 2/3, 3/3.
+6. Only start unmuting once an **actual playable Spotify track** (`spotify:track:`, `spotify:local:`, or `spotify:episode:`) is reported without an advertisement marker and is actively playing.
+7. Require that same normal content identity to remain playing for **750 ms** before restoring volume. Any subsequent ad marker or transition cancels that confirmation, regardless of the number of ads.
+8. If Spotify remains paused/stopped or its MediaSession disappears for **3.5 seconds**, restore volume as a safety fallback so other apps are not left muted.
 
-The app reacts to Spotify's MediaSession callbacks as they arrive; there is no polling interval. The start-of-ad latency is therefore limited by when Spotify publishes the metadata and Android delivers the callback, plus the audio-volume API call. Truly zero-latency detection cannot be guaranteed.
+Blank/unknown metadata, a missing ad flag, a title/cover-art update, or buffering alone **never** ends an ad break. This replaces the previous immediate unmute and 250 ms unknown-metadata restoration, which could cause brief audio from the next advertisement.
+
+The app reacts to Spotify's MediaSession callbacks; it schedules only a one-shot content confirmation or inactivity failsafe, not continuous polling. Ad-start latency is still bounded by when Spotify publishes the marker and Android delivers it. Normal-music restoration has an intentional 750 ms confirmation delay to avoid audible gaps inside multi-ad sequences.
 
 If the service is disconnected or destroyed, it also attempts to restore the previously saved volume.
 
@@ -199,5 +203,5 @@ Spotify ad detected; muting media stream
 When normal playback returns:
 
 ```text
-Normal Spotify track detected; restoring music volume immediately
+Stable normal Spotify content confirmed; restoring music volume
 ```
