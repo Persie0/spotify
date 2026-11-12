@@ -124,6 +124,24 @@ The v0.2.1 APK was signed with a temporary CI key; upgrading an existing install
 
 Notification Access is required because Android only exposes other apps' active MediaSessions to approved notification listeners.
 
+### Troubleshooting: Android blocks Notification Access ("Restricted setting")
+
+On **Android 13 and later**, some devices restrict sensitive settings for apps installed from APKs outside an app store. Because Spotify Ad Muter needs **Notification Access** to read Spotify's MediaSession, Android may show **"Restricted setting"** or disable the permission toggle. This is an operating-system security restriction, not a normal notification permission.
+
+If you downloaded the APK from this repository and trust the app:
+
+1. First try **Spotify Ad Muter → Enable notification access**. If Android says the setting is restricted, dismiss the warning.
+2. Open **Android Settings → Apps → Spotify Ad Muter** (sometimes **See all apps → Spotify Ad Muter**).
+3. On the **App info** screen, open the **three-dot (⋮) menu at the top right** and choose **Allow restricted settings**. On some ROMs, including customized Android versions, that action may appear directly near the top of the App info screen.
+4. Confirm any PIN/fingerprint prompt, return to **Notification Access**, and enable **Spotify Ad Muter**.
+5. Reopen the app and check that **Notification access: ENABLED** appears.
+
+**If the three-dot option is missing:** Try opening the blocked Notification Access switch once before returning to App info. Some Android versions show **Allow restricted settings** only after a restricted permission was requested. Menu labels and placement vary by manufacturer and ROM (including custom ROMs). Search the instructions for your exact Android version/ROM, or ask a troubleshooting assistant such as **Gemini or ChatGPT** with your device model, ROM, and the error message for help locating the setting. An AI assistant cannot grant this permission directly; you must approve it in Android Settings.
+
+**Security:** Allow restricted settings only for an APK from a source you have verified and trust. Notification Access can expose notification information; Android restricts it deliberately. Do not turn on restricted settings indiscriminately for unrelated apps.
+
+See [Google's official Android restricted-settings instructions](https://support.google.com/android/answer/12623953).
+
 No Accessibility Service is required.
 
 No root is required for the current implementation.
