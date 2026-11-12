@@ -39,12 +39,19 @@ final class AdDetector {
         if (metadata == null || isAd(metadata)) {
             return null;
         }
-        String id = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
-        if (isNormalContentId(id)) {
-            return id;
+        return normalContentIdentity(false,
+                metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID),
+                metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI));
+    }
+
+    static String normalContentIdentity(boolean advertisement, String mediaId, String mediaUri) {
+        if (advertisement) {
+            return null;
         }
-        String uri = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI);
-        return isNormalContentId(uri) ? uri : null;
+        if (isNormalContentId(mediaId)) {
+            return mediaId;
+        }
+        return isNormalContentId(mediaUri) ? mediaUri : null;
     }
 
     static boolean isNormalContentId(String id) {
