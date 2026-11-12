@@ -33,6 +33,22 @@ public class AdDetectorTest {
     }
 
     @Test
+    public void genuineSpotifyContentHasDistinctIdentity() {
+        assertTrue(AdDetector.isNormalContentId("spotify:track:music"));
+        assertTrue(AdDetector.isNormalContentId("spotify:local:artist:album:song:123"));
+        assertTrue(AdDetector.isNormalContentId("spotify:episode:podcast"));
+    }
+
+    @Test
+    public void adAndTransitionIdentifiersNeverConfirmNormalContent() {
+        assertFalse(AdDetector.isNormalContentId("spotify:ad:commercial"));
+        assertFalse(AdDetector.isNormalContentId("spotify:interruption:transition"));
+        assertFalse(AdDetector.isNormalContentId(""));
+        assertFalse(AdDetector.isNormalContentId(null));
+        assertFalse(AdDetector.isNormalContentId("https://example.invalid/album-art.jpg"));
+    }
+
+    @Test
     public void onlyActiveSpotifyCanTriggerMuting() {
         assertTrue(AdDetector.isActiveSpotifyPlayback(
                 AdDetector.SPOTIFY_PACKAGE, PlaybackState.STATE_PLAYING));
