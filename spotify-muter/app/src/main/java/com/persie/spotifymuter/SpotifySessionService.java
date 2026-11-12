@@ -327,8 +327,8 @@ public final class SpotifySessionService extends NotificationListenerService {
                 if (metadata == null) {
                     metadata = controller.getMetadata();
                 }
-                // Paused, stopped, or buffering Spotify must not mute another app.
-                // Recheck metadata as soon as Spotify resumes active playback.
+                // Preserve the mute through brief ad-to-ad buffering or pauses.
+                // The inactivity failsafe restores volume only after a sustained stop.
                 evaluateAdState();
             }
 
