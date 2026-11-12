@@ -32,19 +32,36 @@ final class AdDetector {
         return advertisementFlag != 0L || looksLikeAdUri(mediaId);
     }
 
-    // A null/empty metadata transition is not evidence that the ad has ended.
-    static boolean isKnownMedia(MediaMetadata metadata) {
-        if (metadata == null) {
-            return false;
+    // An absent advertisement marker alone is insufficient to end an ad pod:
+    // Spotify may briefly publish unrelated or empty metadata between ads.
+    // Require a real playable Spotify item identity as positive evidence.
+    static String normalContentIdentity(MediaMetadata metadata) {
+        if (metadata == null || isAd(metadata)) {
+            return null;
         }
-        return metadata.containsKey(ADVERTISEMENT_KEY)
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID))
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI))
-                || nonEmpty(metadata.getString(MediaMetadata.METADATA_KEY_TITLE));
+        return normalContentIdentity(false,
+                metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID),
+                metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI));
     }
 
-    private static boolean nonEmpty(String value) {
-        return value != null && !value.isEmpty();
+    static String normalContentIdentity(boolean advertisement, String mediaId, String mediaUri) {
+        if (advertisement) {
+            return null;
+        }
+        if (isNormalContentId(mediaId)) {
+            return mediaId;
+        }
+        return isNormalContentId(mediaUri) ? mediaUri : null;
+    }
+
+    static boolean isNormalContentId(String id) {
+        return hasNonEmptyId(id, "spotify:track:")
+                || hasNonEmptyId(id, "spotify:local:")
+                || hasNonEmptyId(id, "spotify:episode:");
+    }
+
+    private static boolean hasNonEmptyId(String id, String prefix) {
+        return id != null && id.startsWith(prefix) && id.length() > prefix.length();
     }
 
     private static boolean looksLikeAdUri(String value) {

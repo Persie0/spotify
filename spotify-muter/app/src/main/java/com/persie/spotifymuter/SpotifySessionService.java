@@ -21,28 +21,19 @@ import java.util.Set;
 public final class SpotifySessionService extends NotificationListenerService {
     private static final String TAG = "SpotifyAdMuter";
 
-    // Only used if Spotify briefly clears its metadata. Recognized music restores immediately.
-    private static final long UNKNOWN_METADATA_GRACE_MS = 250L;
-
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final AdBreakTracker adBreakTracker = new AdBreakTracker();
     private final Map<MediaSession.Token, SessionRecord> spotifyControllers = new HashMap<>();
 
     private MediaSessionManager mediaSessionManager;
     private ComponentName listenerComponent;
     private boolean connected;
     private boolean sessionListenerRegistered;
-    private boolean unknownRestorePending;
 
     private final MediaSessionManager.OnActiveSessionsChangedListener sessionListener =
             this::attachControllers;
 
-    private final Runnable restoreFromUnknownMetadata = () -> {
-        unknownRestorePending = false;
-        if (!hasActiveAd() && VolumeMuter.isMutedByApp(this)) {
-            Log.d(TAG, "Spotify metadata still unavailable; restoring saved media volume");
-            VolumeMuter.restore(this);
-        }
-    };
+    private final Runnable recheckAdBreak = this::evaluateAdState;
 
     @Override
     public void onListenerConnected() {
@@ -100,7 +91,8 @@ public final class SpotifySessionService extends NotificationListenerService {
 
     private void shutdown() {
         connected = false;
-        cancelUnknownRestore();
+        cancelRecheck();
+        adBreakTracker.reset();
         if (mediaSessionManager != null && sessionListenerRegistered) {
             try {
                 mediaSessionManager.removeOnActiveSessionsChangedListener(sessionListener);
@@ -200,54 +192,115 @@ public final class SpotifySessionService extends NotificationListenerService {
         return false;
     }
 
+    private boolean hasSpotifyTransitionState() {
+        for (SessionRecord record : spotifyControllers.values()) {
+            if (!AdDetector.SPOTIFY_PACKAGE.equals(record.controller.getPackageName())
+                    || record.playbackState == null) {
+                continue;
+            }
+            int state = record.playbackState.getState();
+            if (state == PlaybackState.STATE_BUFFERING
+                    || state == PlaybackState.STATE_CONNECTING
+                    || state == PlaybackState.STATE_SKIPPING_TO_NEXT
+                    || state == PlaybackState.STATE_SKIPPING_TO_PREVIOUS
+                    || state == PlaybackState.STATE_SKIPPING_TO_QUEUE_ITEM) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String playingNormalContentIdentity() {
+        for (SessionRecord record : spotifyControllers.values()) {
+            if (isActiveSpotify(record)) {
+                String id = AdDetector.normalContentIdentity(record.metadata);
+                if (id != null) {
+                    return id;
+                }
+            }
+        }
+        return null;
+    }
+
     private void evaluateAdState() {
         if (!connected) {
             return;
         }
 
-        // Spotify can retain ad metadata after pausing or losing playback.
-        // Never let stale metadata mute audio playing in a different app.
-        if (!hasActiveSpotifyPlayback()) {
-            cancelUnknownRestore();
-            if (VolumeMuter.isMutedByApp(this)) {
-                Log.d(TAG, "Spotify is not playing; restoring music volume");
-                VolumeMuter.restore(this);
-            }
-            return;
-        }
+        boolean spotifyPlaying = hasActiveSpotifyPlayback();
+        boolean muted = VolumeMuter.isMutedByApp(this);
 
-        if (hasActiveAd()) {
-            cancelUnknownRestore();
-            if (!VolumeMuter.isMutedByApp(this)) {
+        if (spotifyPlaying && hasActiveAd()) {
+            cancelRecheck();
+            adBreakTracker.reset();
+            if (!muted) {
                 Log.d(TAG, "Spotify ad detected; muting media stream");
             }
             VolumeMuter.mute(this);
             return;
         }
 
-        boolean unknownMetadata = false;
-        for (SessionRecord record : spotifyControllers.values()) {
-            if (isActiveSpotify(record) && !AdDetector.isKnownMedia(record.metadata)) {
-                unknownMetadata = true;
-                break;
-            }
+        if (!muted) {
+            // Do not track prospective song identities when an ad has not been detected.
+            cancelRecheck();
+            adBreakTracker.reset();
+            return;
         }
 
-        if (!unknownMetadata || spotifyControllers.isEmpty()) {
-            cancelUnknownRestore();
-            if (VolumeMuter.isMutedByApp(this)) {
-                Log.d(TAG, "Normal Spotify track detected; restoring music volume immediately");
-                VolumeMuter.restore(this);
+        long nowMs = android.os.SystemClock.elapsedRealtime();
+
+        if (spotifyPlaying) {
+            adBreakTracker.cancelInactivity();
+            String contentId = playingNormalContentIdentity();
+            if (contentId == null) {
+                // A missing/cleared ad marker, artwork, title, or intermediate ad
+                // is NOT proof of a new song. Keep the existing mute.
+                adBreakTracker.cancelContentCandidate();
+                cancelRecheck();
+                return;
             }
-        } else if (VolumeMuter.isMutedByApp(this) && !unknownRestorePending) {
-            unknownRestorePending = true;
-            mainHandler.postDelayed(restoreFromUnknownMetadata, UNKNOWN_METADATA_GRACE_MS);
+
+            if (adBreakTracker.isContentConfirmed(contentId, nowMs)) {
+                cancelRecheck();
+                adBreakTracker.reset();
+                Log.d(TAG, "Stable normal Spotify content confirmed; restoring music volume");
+                VolumeMuter.restore(this);
+            } else {
+                // Same track identity must remain actively playing for the full window.
+                // Repeated callbacks cannot extend the window.
+                scheduleRecheck(adBreakTracker.contentCheckDelayMs(nowMs));
+            }
+            return;
+        }
+
+        adBreakTracker.cancelContentCandidate();
+        if (hasSpotifyTransitionState()) {
+            // Spotify can buffer or skip between ad 1/3, 2/3 and 3/3.
+            // These transitions do not imply that the ad break has ended.
+            adBreakTracker.cancelInactivity();
+            cancelRecheck();
+            return;
+        }
+
+        // Failsafe for a genuine stop, pause or lost Spotify session: do not
+        // leave Android's GLOBAL media volume muted indefinitely.
+        if (adBreakTracker.isInactiveLongEnough(nowMs)) {
+            cancelRecheck();
+            adBreakTracker.reset();
+            Log.d(TAG, "Spotify remained inactive; restoring media volume (failsafe)");
+            VolumeMuter.restore(this);
+        } else {
+            scheduleRecheck(adBreakTracker.inactivityCheckDelayMs(nowMs));
         }
     }
 
-    private void cancelUnknownRestore() {
-        mainHandler.removeCallbacks(restoreFromUnknownMetadata);
-        unknownRestorePending = false;
+    private void scheduleRecheck(long delayMs) {
+        mainHandler.removeCallbacks(recheckAdBreak);
+        mainHandler.postDelayed(recheckAdBreak, delayMs);
+    }
+
+    private void cancelRecheck() {
+        mainHandler.removeCallbacks(recheckAdBreak);
     }
 
     private final class SessionRecord {
@@ -274,8 +327,8 @@ public final class SpotifySessionService extends NotificationListenerService {
                 if (metadata == null) {
                     metadata = controller.getMetadata();
                 }
-                // Paused, stopped, or buffering Spotify must not mute another app.
-                // Recheck metadata as soon as Spotify resumes active playback.
+                // Preserve the mute through brief ad-to-ad buffering or pauses.
+                // The inactivity failsafe restores volume only after a sustained stop.
                 evaluateAdState();
             }
 

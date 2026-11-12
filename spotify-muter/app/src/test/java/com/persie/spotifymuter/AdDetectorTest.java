@@ -3,7 +3,9 @@ package com.persie.spotifymuter;
 import org.junit.Test;
 import android.media.session.PlaybackState;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AdDetectorTest {
@@ -30,6 +32,42 @@ public class AdDetectorTest {
     @Test
     public void interruptionIsNotTreatedAsAdWithoutMarker() {
         assertFalse(AdDetector.isAd(0L, "spotify:interruption:abc"));
+    }
+
+    @Test
+    public void genuineSpotifyContentHasDistinctIdentity() {
+        assertTrue(AdDetector.isNormalContentId("spotify:track:music"));
+        assertTrue(AdDetector.isNormalContentId("spotify:local:artist:album:song:123"));
+        assertTrue(AdDetector.isNormalContentId("spotify:episode:podcast"));
+    }
+
+    @Test
+    public void adAndTransitionIdentifiersNeverConfirmNormalContent() {
+        assertFalse(AdDetector.isNormalContentId("spotify:ad:commercial"));
+        assertFalse(AdDetector.isNormalContentId("spotify:interruption:transition"));
+        assertFalse(AdDetector.isNormalContentId("spotify:track:"));
+        assertFalse(AdDetector.isNormalContentId("spotify:local:"));
+        assertFalse(AdDetector.isNormalContentId("spotify:episode:"));
+        assertFalse(AdDetector.isNormalContentId(""));
+        assertFalse(AdDetector.isNormalContentId(null));
+        assertFalse(AdDetector.isNormalContentId("https://example.invalid/album-art.jpg"));
+    }
+
+    @Test
+    public void unmarkedAdTransitionsDoNotCountAsRealMusic() {
+        assertNull(AdDetector.normalContentIdentity(false, null, null));
+        assertNull(AdDetector.normalContentIdentity(false, "spotify:ad:two", null));
+        assertNull(AdDetector.normalContentIdentity(false, "spotify:interruption:three", null));
+        assertNull(AdDetector.normalContentIdentity(false, null, "https://cdn.example/artwork.png"));
+        assertNull(AdDetector.normalContentIdentity(true, "spotify:track:stale", null));
+    }
+
+    @Test
+    public void genuineMusicNeedsPositivePlayableUri() {
+        assertEquals("spotify:track:song", AdDetector.normalContentIdentity(
+                false, "spotify:track:song", null));
+        assertEquals("spotify:episode:podcast", AdDetector.normalContentIdentity(
+                false, null, "spotify:episode:podcast"));
     }
 
     @Test
