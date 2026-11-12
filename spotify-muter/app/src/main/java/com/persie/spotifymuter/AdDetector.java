@@ -48,9 +48,13 @@ final class AdDetector {
     }
 
     static boolean isNormalContentId(String id) {
-        return id != null && (id.startsWith("spotify:track:")
-                || id.startsWith("spotify:local:")
-                || id.startsWith("spotify:episode:"));
+        return hasNonEmptyId(id, "spotify:track:")
+                || hasNonEmptyId(id, "spotify:local:")
+                || hasNonEmptyId(id, "spotify:episode:");
+    }
+
+    private static boolean hasNonEmptyId(String id, String prefix) {
+        return id != null && id.startsWith(prefix) && id.length() > prefix.length();
     }
 
     private static boolean looksLikeAdUri(String value) {
