@@ -43,6 +43,9 @@ public class AdDetectorTest {
     public void adAndTransitionIdentifiersNeverConfirmNormalContent() {
         assertFalse(AdDetector.isNormalContentId("spotify:ad:commercial"));
         assertFalse(AdDetector.isNormalContentId("spotify:interruption:transition"));
+        assertFalse(AdDetector.isNormalContentId("spotify:track:"));
+        assertFalse(AdDetector.isNormalContentId("spotify:local:"));
+        assertFalse(AdDetector.isNormalContentId("spotify:episode:"));
         assertFalse(AdDetector.isNormalContentId(""));
         assertFalse(AdDetector.isNormalContentId(null));
         assertFalse(AdDetector.isNormalContentId("https://example.invalid/album-art.jpg"));
