@@ -32,6 +32,27 @@ final class AdDetector {
         return advertisementFlag != 0L || looksLikeAdUri(mediaId);
     }
 
+    // An absent advertisement marker alone is insufficient to end an ad pod:
+    // Spotify may briefly publish unrelated or empty metadata between ads.
+    // Require a real playable Spotify item identity as positive evidence.
+    static String normalContentIdentity(MediaMetadata metadata) {
+        if (metadata == null || isAd(metadata)) {
+            return null;
+        }
+        String id = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
+        if (isNormalContentId(id)) {
+            return id;
+        }
+        String uri = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_URI);
+        return isNormalContentId(uri) ? uri : null;
+    }
+
+    static boolean isNormalContentId(String id) {
+        return id != null && (id.startsWith("spotify:track:")
+                || id.startsWith("spotify:local:")
+                || id.startsWith("spotify:episode:"));
+    }
+
     // A null/empty metadata transition is not evidence that the ad has ended.
     static boolean isKnownMedia(MediaMetadata metadata) {
         if (metadata == null) {
